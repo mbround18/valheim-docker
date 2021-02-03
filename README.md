@@ -16,7 +16,7 @@ services:
       PORT: "2456"
       PASSWORD: "something-secret"
     volumes:
-    - ./tmp/valheim:/home/steam/valheim
+    - ./valheim:/home/steam/valheim
 ```
 
 ## Odin 
