@@ -1,7 +1,7 @@
 use crate::steamcmd::steamcmd_command;
 use crate::executable::{execute_mut};
 use std::process::Stdio;
-use crate::utils::get_working_dir;
+use crate::utils::{get_working_dir};
 
 pub fn invoke(app_id: i64) {
     println!("Installing {} to {}", app_id, get_working_dir());
@@ -14,5 +14,5 @@ pub fn invoke(app_id: i64) {
         .arg("+quit")
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
-    execute_mut(install_command)
+    execute_mut(install_command);
 }
