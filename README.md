@@ -2,6 +2,22 @@
 
 ## Docker
 
+### Docker Compose
+
+```yaml
+services:
+  valheim:
+    image: mbround18/valheim:latest
+    ports:
+      - 2456:2456
+    env: 
+      NAME: "Valheim Docker"
+      WORLD: "Dedicated"
+      PORT: "2456"
+      PASSWORD: "something-secret"
+    volumes:
+    - ./tmp/valheim:/home/steam/valheim
+```
 
 ## Odin 
 
