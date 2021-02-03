@@ -28,10 +28,10 @@ ENV WORLD "Dedicated"
 ENV PORT "2456"
 ENV PASSWORD ""
 
-COPY --from=ScriptSanitize /data/scripts/entrypoint.sh /home/steam/scripts/
+COPY --from=ScriptSanitize --chown=steam:steam  /data/scripts/entrypoint.sh /home/steam/scripts/
 
 WORKDIR /home/steam/valheim
 
-COPY --from=RustBuilder /data/odin/target/release /home/steam/odin
+COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/steam/odin
 
 ENTRYPOINT ["/bin/bash", "/home/steam/scripts/entrypoint.sh"]
