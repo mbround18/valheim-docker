@@ -25,7 +25,12 @@ RUN apk add dos2unix  --update-cache --repository http://dl-3.alpinelinux.org/al
 # --------------- #
 # -- Steam CMD -- #
 # --------------- #
-FROM registry.hub.docker.com/cm2network/steamcmd
+FROM registry.hub.docker.com/cm2network/steamcmd:root
+
+RUN apt-get update \
+    && apt-get install -y htop net-tools nano netcat curl wget
+
+USER steam
 
 RUN mkdir -p /home/steam/valheim \
     && mkdir -p /home/steam/scripts
@@ -37,8 +42,6 @@ ENV PASSWORD ""
 
 COPY --from=ScriptSanitize --chown=steam:steam  /data/scripts/entrypoint.sh /home/steam/scripts/
 COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/steam/odin
-
-USER steam
 
 RUN mkdir -p /home/steam/valheim \
     && echo "export PATH=\"/home/steam/odin:$PATH\"" >> /home/steam/.bashrc \

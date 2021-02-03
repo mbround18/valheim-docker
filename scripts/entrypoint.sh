@@ -28,7 +28,7 @@ fi
 log "Herding Cats..."
 export TERM=linux
 
-odin start
+odin start &
 
 export LD_LIBRARY_PATH=${TEMP_LD_LIBRARY_PATH}
 

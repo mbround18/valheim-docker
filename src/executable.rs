@@ -17,14 +17,6 @@ pub fn find_command(executable: &str) -> Option<Command> {
                 None
             }
         }
-
-        // let executable_path =.unwrap();
-        // if executable_path.exists() {
-        //     Option::from(Command::new(executable_path))
-        // } else {
-        //     eprint!("Failed to find {}", executable);
-        //     None
-        // }
     }
 }
 
