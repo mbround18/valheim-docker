@@ -1,6 +1,7 @@
 services:
   valheim:
     image: mbround18/valheim:latest
+    user: steam
     build:
       context: .
       dockerfile: ./Dockerfile

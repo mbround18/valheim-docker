@@ -36,12 +36,15 @@ ENV PORT "2456"
 ENV PASSWORD ""
 
 COPY --from=ScriptSanitize --chown=steam:steam  /data/scripts/entrypoint.sh /home/steam/scripts/
+COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/steam/odin
+
+USER steam
+
+RUN mkdir -p /home/steam/valheim \
+    && echo "export PATH=\"/home/steam/odin:$PATH\"" >> /home/steam/.bashrc \
+    && chown -R steam:steam /home/steam/ \
+    && chown -R steam:steam /home/steam/valheim
 
 WORKDIR /home/steam/valheim
-
-RUN chown steam:steam -R /home/steam/valheim \
-    && echo "export PATH=\"/home/steam/odin:$PATH\"" >> /home/steam/.bashrc
-
-COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/steam/odin
 
 ENTRYPOINT ["/bin/bash", "/home/steam/scripts/entrypoint.sh"]
