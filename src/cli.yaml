@@ -8,7 +8,7 @@ subcommands:
       version: "1.0"
       author: mbround18
   - start:
-      about: Starts Valheim, Any Options belo can be an ENV variable! just make sure they are all caps.
+      about: Starts Valheim
       version: "1.0"
       author: mbround18
       args:
@@ -16,24 +16,24 @@ subcommands:
             short: n
             long: name
             value_name: NAME
-            about: Sets the name of the server
+            about: Sets the name of the server, (Can be set with ENV variable NAME)
             takes_value: true
         - port:
             short: p
             long: port
             value_name: PORT
-            about: Sets the port of the server
+            about: Sets the port of the server, (Can be set with ENV variable PORT)
             takes_value: true
         - world:
               short: w
               long: world
               value_name: WORLD
-              about: Sets the world of the server
+              about: Sets the world of the server, (Can be set with ENV variable WORLD)
               takes_value: true
         - password:
               long: password
               value_name: PASSWORD
-              about: Sets the password of the server
+              about: Sets the password of the server, (Can be set with ENV variable PASSWORD)
               takes_value: true
   - stop:
       about: Stops Valheim

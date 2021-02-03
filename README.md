@@ -35,6 +35,8 @@ cargo install --git https://github.com/mbround18/valheim-docker
 
 ### Usage
 
+![usage menu](./docs/assets/main-menu.png)
+
 #### Install Valheim
 
 ```sh
@@ -47,6 +49,7 @@ odin install
 odin start
 ```
 
+![start menu](./docs/assets/start-menu.png)
 #### Stop Valheim
 
 ```sh

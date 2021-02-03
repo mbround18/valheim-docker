@@ -9,13 +9,23 @@ pub fn find_command(executable: &str) -> Option<Command> {
         println!("Executing: {} .....", executable.to_string());
         Option::from(Command::new(executable.to_string()))
     } else {
-        let executable_path = which::which(executable).unwrap();
-        if executable_path.exists() {
-            Option::from(Command::new(executable_path))
-        } else {
-            eprint!("Failed to find {}", executable);
-            None
+        match which::which(executable) {
+            Ok(executable_path) => {
+                Option::from(Command::new(executable_path))
+            },
+            Err(_e) => {
+                eprint!("Failed to find {}", executable);
+                None
+            }
         }
+
+        // let executable_path =.unwrap();
+        // if executable_path.exists() {
+        //     Option::from(Command::new(executable_path))
+        // } else {
+        //     eprint!("Failed to find {}", executable);
+        //     None
+        // }
     }
 }
 
