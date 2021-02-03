@@ -1,4 +1,4 @@
-use crate::executable::{create_execution, execute_mut};
+use crate::executable::{create_execution, execute_mut, handle_exit_status};
 use std::process::{Stdio};
 use clap::ArgMatches;
 use std::{process};
@@ -34,8 +34,8 @@ pub fn invoke(args: Option<&ArgMatches>) {
             }
 
         }
-        execute_mut(updated_command);
-        println!("Server Started Successfully!");
+        let result = execute_mut(updated_command);
+        handle_exit_status(result, "Server Started Successfully!".to_string());
     } else {
         println!("Cannot start server! valheim_server.x86_64 not found in current directory!");
         process::exit(1)

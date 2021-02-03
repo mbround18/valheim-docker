@@ -1,5 +1,5 @@
 use crate::utils::get_working_dir;
-use crate::executable::{create_execution, execute_mut};
+use crate::executable::{create_execution, execute_mut, handle_exit_status};
 use std::process::Stdio;
 use std::process;
 use std::path::Path;
@@ -13,8 +13,9 @@ pub fn invoke() {
         let updated_command = command
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit());
-        execute_mut(updated_command);
-        println!("Server Stopped Successfully!");
+
+        let result = execute_mut(updated_command);
+        handle_exit_status(result, "Server Stopped Successfully!".to_string())
     } else {
         println!("Cannot stop server! server_exit.drp not found in current directory!");
         process::exit(1)

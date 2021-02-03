@@ -1,5 +1,5 @@
 use crate::steamcmd::steamcmd_command;
-use crate::executable::{execute_mut};
+use crate::executable::{execute_mut, handle_exit_status};
 use std::process::Stdio;
 use crate::utils::{get_working_dir};
 
@@ -14,5 +14,6 @@ pub fn invoke(app_id: i64) {
         .arg("+quit")
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
-    execute_mut(install_command);
+    let result = execute_mut(install_command);
+    handle_exit_status(result, "Successfully installed Valheim!".to_string())
 }

@@ -1,4 +1,7 @@
-FROM rust as RustBuilder
+# ------------------ #
+# -- Odin Builder -- #
+# ------------------ #
+FROM registry.hub.docker.com/library/rust:latest as RustBuilder
 
 WORKDIR /data/odin
 COPY . .
@@ -6,7 +9,11 @@ COPY . .
 RUN cargo install --path . \
     && cargo build --release
 
-FROM alpine as ScriptSanitize
+# ----------------------- #
+# -- Script Formatting -- #
+# ----------------------- #
+
+FROM registry.hub.docker.com/library/alpine:latest as ScriptSanitize
 
 WORKDIR /data/scripts
 COPY ./scripts/* .
@@ -15,10 +22,10 @@ RUN apk add dos2unix  --update-cache --repository http://dl-3.alpinelinux.org/al
     && dos2unix /data/scripts/**
 
 
-# --------------------------------------------------------------------------------- #
-# --------------------------------------------------------------------------------- #
-# --------------------------------------------------------------------------------- #
-FROM cm2network/steamcmd
+# --------------- #
+# -- Steam CMD -- #
+# --------------- #
+FROM registry.hub.docker.com/cm2network/steamcmd
 
 RUN mkdir -p /home/steam/valheim \
     && mkdir -p /home/steam/scripts

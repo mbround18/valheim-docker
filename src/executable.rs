@@ -1,6 +1,5 @@
-use std::process::{Command, exit};
+use std::process::{Command, exit, ExitStatus};
 use std::path::Path;
-
 
 
 pub fn find_command(executable: &str) -> Option<Command> {
@@ -39,10 +38,28 @@ pub fn create_execution(executable: &str) -> Command {
     }
 }
 
-pub fn execute_mut(command: &mut Command) {
-    let status =  command
+pub fn execute_mut(command: &mut Command) -> std::io::Result<ExitStatus> {
+    command
         .spawn()
         .unwrap()
-        .wait();
-    println!("Exited with status {:?}", status);
+        .wait()
+}
+
+pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: String) {
+    match result {
+        Ok(exit_status) => {
+            if exit_status.success() {
+                println!("{}", success_message);
+            } else {
+                match exit_status.code() {
+                    Some(code) => println!("Exited with status code: {}", code),
+                    None       => println!("Process terminated by signal")
+                }
+            }
+        }
+        _ => {
+            eprint!("An error has occurred and the command returned no exit code!");
+            exit(1)
+        }
+    }
 }

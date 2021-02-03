@@ -25,13 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Docker Login
-        uses: azure/docker-login@v1
-        with:
-          login-server: docker.pkg.github.com
-          username: $GITHUB_ACTOR
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Run tests
         run: |
           docker-compose --file docker-compose.yml build
@@ -48,18 +41,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Docker Login
-        uses: azure/docker-login@v1
-        with:
-          login-server: docker.pkg.github.com
-          username: $GITHUB_ACTOR
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
 
       - name: Log into registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+        run: echo "${{ github.token }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
 
       - name: Push image
         run: |
