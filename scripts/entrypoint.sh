@@ -11,8 +11,8 @@ log () {
 
 initialize
 
-export templdpath=$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/home/steam/valheim/linux64:$LD_LIBRARY_PATH
+export TEMP_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=/home/steam/valheim/linux64:${LD_LIBRARY_PATH}
 export SteamAppId=892970
 export PATH="/home/steam/odin:$PATH"
 
@@ -30,17 +30,16 @@ export TERM=linux
 
 odin start
 
-export LD_LIBRARY_PATH=$templdpath
-
-log "Server Started! :)"
+export LD_LIBRARY_PATH=${TEMP_LD_LIBRARY_PATH}
 
 cleanup() {
     log "Halting server! Received interrupt!"
-    echo 1 > /home/steam/valheim/server_exit.drp
+    odin stop
     exit
 }
 
 trap cleanup INT TERM
+trap cleanup EXIT
 
 while :; do
     sleep 1s

@@ -35,3 +35,7 @@ subcommands:
               value_name: PASSWORD
               about: Sets the password of the server
               takes_value: true
+  - stop:
+      about: Stops Valheim
+      version: "1.0"
+      author: mbround18

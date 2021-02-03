@@ -1,12 +1,11 @@
 mod steamcmd;
 mod commands;
 mod executable;
+mod utils;
 
 use clap::{App, load_yaml};
 
 const GAME_ID: i64 = 896660;
-const GAME_DIR: &str = "/home/steam/valheim";
-
 
 fn main() {
     // The YAML file is found relative to the current file, similar to how modules are found
@@ -14,7 +13,7 @@ fn main() {
     let matches = App::from(yaml).get_matches();
 
     if let Some(ref _match) = matches.subcommand_matches("install") {
-        commands::install::invoke(GAME_ID, GAME_DIR);
+        commands::install::invoke(GAME_ID);
     };
 
     if let Some(ref _match) = matches.subcommand_matches("start") {
@@ -23,6 +22,10 @@ fn main() {
         } else {
             commands::start::invoke(None);
         }
+    };
+
+    if let Some(ref _match) = matches.subcommand_matches("stop") {
+        commands::stop::invoke();
     };
 
 }
