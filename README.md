@@ -22,6 +22,7 @@ services:
 ## Odin 
 
 > Odin relies on Rust. [Please install Rust](https://www.rust-lang.org/tools/install)
+> 
 > Odin also assumes that you have SteamCMD already installed. [Install instructions for SteamCMD.](https://developer.valvesoftware.com/wiki/SteamCMD)
 
 Odin is a CLI tool utilized for installing, starting, and stopping [Valheim] servers
