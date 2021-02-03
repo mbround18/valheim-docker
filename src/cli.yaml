@@ -1,0 +1,37 @@
+name: odin
+version: "0.1.0"
+author: mbround18
+about: Installs and Runs Valheim
+subcommands:
+  - install:
+      about: Installs Valheim with steamcmd
+      version: "1.0"
+      author: mbround18
+  - start:
+      about: Starts Valheim, Any Options belo can be an ENV variable! just make sure they are all caps.
+      version: "1.0"
+      author: mbround18
+      args:
+        - name:
+            short: n
+            long: name
+            value_name: NAME
+            about: Sets the name of the server
+            takes_value: true
+        - port:
+            short: p
+            long: port
+            value_name: PORT
+            about: Sets the port of the server
+            takes_value: true
+        - world:
+              short: w
+              long: world
+              value_name: WORLD
+              about: Sets the world of the server
+              takes_value: true
+        - password:
+              long: password
+              value_name: PASSWORD
+              about: Sets the password of the server
+              takes_value: true

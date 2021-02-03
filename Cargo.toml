@@ -1,0 +1,17 @@
+[package]
+name = "odin"
+version = "0.1.0"
+authors = ["mbround18 <12646562+mbround18@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.0.0-beta.2", features = ["yaml"] }
+
+[profile.dev]
+opt-level = 0
+
+
+[profile.release]
+opt-level = 3

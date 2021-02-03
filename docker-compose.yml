@@ -1,0 +1,10 @@
+services:
+  valheim:
+    image: mbround18/valheim:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 2456:2456
+    volumes:
+    - ./tmp/valheim:/home/steam/valheim
