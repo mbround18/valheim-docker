@@ -1,5 +1,8 @@
 # [Valheim]
 
+![Rust Build](https://github.com/mbround18/valheim-docker/workflows/Rust/badge.svg)
+![Docker Build](https://github.com/mbround18/valheim-docker/workflows/Docker/badge.svg)
+
 ## Docker
 
 ### Docker Compose
