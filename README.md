@@ -3,6 +3,7 @@
 ![Rust Build](https://github.com/mbround18/valheim-docker/workflows/Rust/badge.svg)
 ![Docker Build](https://github.com/mbround18/valheim-docker/workflows/Docker/badge.svg)
 
+
 ## Docker
 
 ### Docker Compose
@@ -32,6 +33,7 @@ services:
 > 
 > Odin is designed to be cross-platform using Rust as its builder.
 > If you have the proper build tools installed you should be able to run Odin on any system. 
+> Current Supported Architecture: Unix & Linux based systems. Windows coming soon. 
 
 Odin is a CLI tool utilized for installing, starting, and stopping [Valheim] servers
 
