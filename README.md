@@ -27,26 +27,26 @@ services:
 
 ## Odin
 
-> Odin relies on Rust. [Please install Rust](https://www.rust-lang.org/tools/install)
->
-> Odin also assumes that you have SteamCMD already installed. [Install instructions for SteamCMD.](https://developer.valvesoftware.com/wiki/SteamCMD)
->
-> Odin is designed to be cross-platform using Rust as its builder.
-> If you have the proper build tools installed you should be able to run Odin on any system.
-> Current Supported Architecture: Unix & Linux based systems. Windows coming soon.
-
 Odin is a CLI tool utilized for installing, starting, and stopping [Valheim] servers
 
+### Gotchyas
+
+- Odin relies on Rust. [Please install Rust](https://www.rust-lang.org/tools/install)
+- Odin also assumes that you have SteamCMD already installed. [Install instructions for SteamCMD.](https://developer.valvesoftware.com/wiki/SteamCMD)
+- If you have the proper build tools installed you should be able to run Odin on any system.
+- Current Supported Architecture: Unix & Linux based systems. Windows coming soon.
 
 ### Installation
 
+> Make sure you have build essentials installed before you install this crate
+
 ```sh
-cargo install --git https://github.com/mbround18/valheim-docker
+cargo install --git https://github.com/mbround18/valheim-docker.git --branch main
 ```
 
 ### Usage
 
-![usage menu](./docs/assets/main-menu.png)
+![![Main Menu](https://github.com/mbround18/valheim-docker/blob/main/docs/assets/main-menu.png?raw=true)](./docs/assets/main-menu.png)
 
 #### Install Valheim
 
@@ -60,7 +60,7 @@ odin install
 odin start
 ```
 
-![start menu](./docs/assets/start-menu.png)
+![![start menu](https://github.com/mbround18/valheim-docker/blob/main/docs/assets/start-menu.png?raw=true)](./docs/assets/start-menu.png)
 #### Stop Valheim
 
 ```sh
