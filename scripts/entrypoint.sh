@@ -10,9 +10,9 @@ log () {
 }
 
 initialize
-
-export TEMP_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
-export LD_LIBRARY_PATH=/home/steam/valheim/linux64:${LD_LIBRARY_PATH}
+#
+#export TEMP_LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
+#export LD_LIBRARY_PATH=/home/steam/valheim/linux64:${LD_LIBRARY_PATH}
 export SteamAppId=892970
 export PATH="/home/steam/odin:$PATH"
 
@@ -26,11 +26,10 @@ else
 fi
 
 log "Herding Cats..."
-export TERM=linux
 
 odin start &
 
-export LD_LIBRARY_PATH=${TEMP_LD_LIBRARY_PATH}
+#export LD_LIBRARY_PATH=${TEMP_LD_LIBRARY_PATH}
 
 cleanup() {
     log "Halting server! Received interrupt!"

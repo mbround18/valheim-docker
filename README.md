@@ -12,7 +12,9 @@ services:
   valheim:
     image: mbround18/valheim:latest
     ports:
-      - 2456:2456
+      - 2456:2456/udp
+      - 2456:2456/udp
+      -  2456:2456/udp
     env: 
       NAME: "Valheim Docker"
       WORLD: "Dedicated"

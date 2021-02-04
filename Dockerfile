@@ -46,7 +46,8 @@ COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/stea
 RUN mkdir -p /home/steam/valheim \
     && echo "export PATH=\"/home/steam/odin:$PATH\"" >> /home/steam/.bashrc \
     && chown -R steam:steam /home/steam/ \
-    && chown -R steam:steam /home/steam/valheim
+    && chown -R steam:steam /home/steam/valheim \
+    && cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
 
 WORKDIR /home/steam/valheim
 

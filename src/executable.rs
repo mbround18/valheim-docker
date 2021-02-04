@@ -31,10 +31,13 @@ pub fn create_execution(executable: &str) -> Command {
 }
 
 pub fn execute_mut(command: &mut Command) -> std::io::Result<ExitStatus> {
-    command
-        .spawn()
-        .unwrap()
-        .wait()
+    match command.spawn() {
+        Ok(mut subprocess) => subprocess.wait(),
+        _ => {
+            println!("Failed to run process!");
+            exit(1)
+        }
+    }
 }
 
 pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: String) {
