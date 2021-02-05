@@ -1,6 +1,8 @@
 use std::env;
 use clap::ArgMatches;
 use std::process::exit;
+use log::{debug};
+use std::path::Path;
 
 pub fn get_working_dir() -> String {
     match env::current_dir() {
@@ -12,20 +14,16 @@ pub fn get_working_dir() -> String {
     }
 }
 
-pub fn get_variable(name: &str, args: Option<&ArgMatches>, default: String) -> Option<String> {
-    let mut variable_value: Option<String> = None;
-    match env::var(name) {
-        Ok(val) => variable_value = Option::from(val),
-        Err(_e) => {
-            if let Some(existing_args) = args {
-                match existing_args.value_of(name) {
-                    Some(val) => {
-                        variable_value = Option::from(val.to_string());
-                    }
-                    None => variable_value = Option::from(default)
-                }
-            }
-        },
+pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
+    debug!("Checking env for {}", name);
+    if let Ok(env_val) = env::var(name) {
+        debug!("Env variable found {}={}", name, env_val);
+        return env_val;
     }
-    variable_value
+    args.value_of(name).unwrap_or(default.as_str()).to_string()
+}
+
+
+pub fn server_installed() -> bool {
+    Path::new(    &[get_working_dir(),  "valheim_server.x86_64".to_string()].join("/")).exists()
 }

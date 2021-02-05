@@ -2,6 +2,19 @@ name: odin
 version: "0.1.0"
 author: mbround18
 about: Installs and Runs Valheim
+args:
+  - debug:
+      short: d
+      long: debug
+      multiple: true
+      help: Sets the logger to log debug events.
+      takes_value: false
+  - dry_run:
+      short: r
+      global: true
+      long: dry-run
+      about: Will output the commands that it intends to run.
+
 subcommands:
   - install:
       about: Installs Valheim with steamcmd
@@ -31,10 +44,12 @@ subcommands:
               about: Sets the world of the server, (Can be set with ENV variable WORLD)
               takes_value: true
         - password:
+              short: s
               long: password
               value_name: PASSWORD
               about: Sets the password of the server, (Can be set with ENV variable PASSWORD)
               takes_value: true
+
   - stop:
       about: Stops Valheim
       version: "1.0"
