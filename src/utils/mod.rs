@@ -16,7 +16,13 @@ pub fn get_working_dir() -> String {
 
 pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
     debug!("Checking env for {}", name);
-    if let Ok(env_val) = env::var(name) {
+    if let Ok(env_val) = env::var(name.to_uppercase()) {
+        if env_val.len() > 0 {
+            debug!("Env variable found {}={}", name, env_val);
+            return env_val;
+        }
+    }
+    if let Ok(env_val) = env::var(format!("SERVER_{}", name).to_uppercase()) {
         debug!("Env variable found {}={}", name, env_val);
         return env_val;
     }
