@@ -22,7 +22,8 @@ services:
       PORT: "2456"
       PASSWORD: "something-secret"
     volumes:
-    - ./valheim:/home/steam/valheim
+    - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
+    - ./valheim/server:/home/steam/valheim
 ```
 
 ## Odin
