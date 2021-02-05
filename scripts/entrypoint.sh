@@ -37,9 +37,8 @@ cleanup() {
     exit
 }
 
-trap cleanup INT TERM
-trap cleanup EXIT
+trap cleanup INT TERM EXIT
 
 while :; do
-    sleep 1s
+  sleep 1s
 done
