@@ -1,10 +1,8 @@
 use crate::utils::{get_working_dir, server_installed};
 use log::{info, error};
 use clap::ArgMatches;
-use std::fs::{File, remove_file};
+use std::fs::{File};
 use std::io::Write;
-use std::thread::sleep;
-use std::time::Duration;
 
 pub fn invoke(args: &ArgMatches) {
     let paths = &[get_working_dir(), "server_exit.drp".to_string()];
@@ -21,9 +19,6 @@ pub fn invoke(args: &ArgMatches) {
         }
         let mut file = File::create(script_path).unwrap();
         file.write_all(b"1").unwrap();
-        info!("Stop file created, waiting for server to stop!");
-        sleep(Duration::from_secs(5));
-        remove_file(script_path).unwrap();
-        info!("Server has been halted!");
+        info!("Stop file created, Check logs, server should be stopping.");
     }
 }

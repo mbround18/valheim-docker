@@ -2,7 +2,7 @@ use crate::executable::{create_execution};
 use std::process::{Stdio};
 use clap::{ArgMatches};
 use crate::utils::{get_variable, server_installed, get_working_dir};
-use std::fs::{File};
+use std::fs::{File, remove_file};
 use std::io::Write;
 use log::{info, error};
 use tinytemplate::TinyTemplate;
@@ -61,6 +61,10 @@ fn parse_arg(args: &ArgMatches, name: &str, default: &str) -> String {
 }
 
 pub fn invoke(args: &ArgMatches) {
+    let paths = &[get_working_dir(), "server_exit.drp".to_string()];
+    let server_exit = &paths.join("/");
+    remove_file(server_exit).unwrap();
+
     let mut command = create_execution("bash");
     let command_args: &str = &[
         parse_arg(args, "port", "2456"),
