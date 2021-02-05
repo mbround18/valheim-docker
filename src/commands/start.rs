@@ -4,7 +4,7 @@ use clap::{ArgMatches};
 use crate::utils::{get_variable, server_installed, get_working_dir};
 use std::fs::{File, remove_file};
 use std::io::Write;
-use log::{info, error};
+use log::{info, error, debug};
 use tinytemplate::TinyTemplate;
 use serde::Serialize;
 
@@ -63,7 +63,12 @@ fn parse_arg(args: &ArgMatches, name: &str, default: &str) -> String {
 pub fn invoke(args: &ArgMatches) {
     let paths = &[get_working_dir(), "server_exit.drp".to_string()];
     let server_exit = &paths.join("/");
-    remove_file(server_exit).unwrap();
+    match remove_file(server_exit) {
+        Ok(_) => info!("Deleted server exit file."),
+        Err(_) => {
+            debug!("Server exit file did no pre-exist. Good!")
+        }
+    };
 
     let mut command = create_execution("bash");
     let command_args: &str = &[
