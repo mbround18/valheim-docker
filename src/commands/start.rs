@@ -16,9 +16,10 @@ struct Context {
 
 static TEMPLATE: &'static &str = &r#"
 #!/usr/bin/env bash
+cd "$(dirname "$0")"
 # This script will be overwritten at each start!
 
-{command} {arguments} &
+{command} {arguments}  2>&1 | tee ./output.log  &
 disown
 
 "#;
@@ -45,7 +46,6 @@ fn create_start_server_script(command: String, arguments: String, dry_run: bool)
                     Ok(_) => println!("Successfully written script file."),
                     _ => println!("Failed to write script file.")
                 };
-
                 match create_execution("chmod").args(&["+x", "./start_server_rusty.sh"]).output() {
                     Ok(_) => info!("Success changing permission"),
                     _ => error!("Unable to change permissions")

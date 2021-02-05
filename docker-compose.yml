@@ -10,4 +10,5 @@ services:
       - "2457:2457/udp"
       - "2458:2458/udp"
     volumes:
-    - ./tmp/valheim:/home/steam/valheim
+    - ./tmp/valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
+    - ./tmp/valheim/server:/home/steam/valheim
