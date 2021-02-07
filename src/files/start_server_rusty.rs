@@ -10,13 +10,12 @@ cd "$(dirname "$0")"
 # This script will be overwritten at each start!
 
 # Launch Command
-{command}                    \
-    -port {port}             \
-    -name "{name}"           \
-    -world "{world}"         \
-    -world "{world}"         \
-    -password "{password}"   \
-    -public 1                \
+{command} \
+    -port {port} \
+    -name "{name}" \
+    -world "{world}" \
+    -password "{password}" \
+    -public 1 \
     2>&1 | tee ./output.log  > /dev/null 2>&1 &
 
 # Capture the PID
