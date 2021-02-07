@@ -5,5 +5,6 @@ if [[ "${AUTO_UPDATE}" = "1" ]]; then
   cd /home/steam/valhaim || exit 1
   odin install
   odin stop
-  odin start > /dev/null 2>&1
+  sleep 60
+  odin start
 fi

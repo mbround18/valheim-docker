@@ -17,7 +17,7 @@ cd "$(dirname "$0")"
     -world "{world}"         \
     -password "{password}"   \
     -public 1                \
-    2>&1 | tee ./output.log  &
+    2>&1 | tee ./output.log  > /dev/null 2>&1 &
 
 # Capture the PID
 echo $! > ./valheim_server.pid

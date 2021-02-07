@@ -6,20 +6,16 @@ use log::{info, error};
 use crate::files::start_server_rusty::{write_rusty_start_script, ValheimArguments};
 use crate::files::server_exit;
 
-fn parse_arg(args: &ArgMatches, name: &str, default: &str) -> String {
-    format!("-{} \"{}\"", name, get_variable(args, name,default.to_string()))
-}
-
 pub fn invoke(args: &ArgMatches) {
     server_exit::delete_if_exist();
     info!("Setting up start scripts...");
     let mut command = create_execution("bash");
     let server_executable = &[get_working_dir(),  "valheim_server.x86_64".to_string()].join("/");
     let script_args = &ValheimArguments {
-        port: parse_arg(args, "port", "2456").to_string(),
-        name: parse_arg(args, "name", "Valheim Docker"),
-        world: parse_arg(args, "world", "Dedicated"),
-        password: parse_arg(args, "password", "12345"),
+        port: get_variable(args, "port", "2456".to_string()).to_string(),
+        name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
+        world: get_variable(args, "world", "Dedicated".to_string()),
+        password: get_variable(args, "password", "12345".to_string()),
         command: server_executable.to_string()
     };
     let dry_run: bool = args.is_present("dry_run");
@@ -34,7 +30,16 @@ pub fn invoke(args: &ArgMatches) {
                 .arg("./start_server_rusty.sh")
                 .env("LD_LIBRARY_PATH", "${PWD}/linux64:${LD_LIBRARY_PATH}");
             match updated_command.output() {
-                Ok(output) => print!("Exit with code {}", output.status),
+                Ok(output) => {
+                    info!("Exit with code {}", output.status);
+                    if output.status.eq("0") {
+                        info!("Server has started successfully!");
+                        info!("Check out ./output.log for the logs.");
+                        info!("Keep an eye out for \"Game Connected\" and you server should be live!");
+                    } else {
+                        error!("Something went wrong!")
+                    }
+                },
                 _ => {
                     error!("An error has occurred!")
                 }

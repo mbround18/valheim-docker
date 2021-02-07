@@ -60,7 +60,7 @@ ENV NAME "Valheim Docker"
 ENV WORLD "Dedicated"
 ENV PORT "2456"
 ENV PASSWORD ""
-ENV AUTO_UPDATE "1"
+ENV AUTO_UPDATE "0"
 
 COPY --from=ScriptSanitize --chown=steam:steam  /data/scripts/*.sh /home/steam/scripts/
 COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/steam/odin

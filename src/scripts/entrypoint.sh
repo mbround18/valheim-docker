@@ -18,16 +18,11 @@ export PATH="/home/steam/odin:$PATH"
 
 
 # Setting up server
-if [ -f "/home/steam/valheim/valheim_server.x86_64" ]; then
-  log "Server installed!"
-else
-  log "Installing Server..."
-  odin install
-fi
+odin install
 
 log "Herding Cats..."
 
-odin start  > /dev/null 2>&1
+odin start
 
 cleanup() {
     log "Halting server! Received interrupt!"
