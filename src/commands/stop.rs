@@ -1,8 +1,10 @@
 use crate::utils::{get_working_dir, server_installed};
-use log::{info, error};
+use log::{info, error, debug};
 use clap::ArgMatches;
-use std::fs::{File};
-use std::io::Write;
+use crate::files::server_pid::is_running;
+use std::thread::sleep;
+use std::time::Duration;
+use crate::files::server_exit::stop_server;
 
 pub fn invoke(args: &ArgMatches) {
     let paths = &[get_working_dir(), "server_exit.drp".to_string()];
@@ -17,8 +19,16 @@ pub fn invoke(args: &ArgMatches) {
             error!("Failed to find server executable!");
             return;
         }
-        let mut file = File::create(script_path).unwrap();
-        file.write_all(b"1").unwrap();
-        info!("Stop file created, Check logs, server should be stopping.");
+        stop_server();
+        info!("Server Stop triggered! Waiting for server to stop.");
+        loop {
+            if is_running() {
+                debug!("Server is still running...");
+                sleep(Duration::from_secs(2));
+            } else {
+                info!("Server has been stopped!");
+                break;
+            }
+        }
     }
 }

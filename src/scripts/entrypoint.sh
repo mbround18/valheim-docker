@@ -27,9 +27,7 @@ fi
 
 log "Herding Cats..."
 
-odin start &
-
-#export LD_LIBRARY_PATH=${TEMP_LD_LIBRARY_PATH}
+odin start  > /dev/null 2>&1
 
 cleanup() {
     log "Halting server! Received interrupt!"
@@ -38,6 +36,8 @@ cleanup() {
 }
 
 trap cleanup INT TERM EXIT
+
+tail -f /home/steam/valheim/output.log
 
 while :; do
   sleep 1s
