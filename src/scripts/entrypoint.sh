@@ -18,18 +18,11 @@ export PATH="/home/steam/odin:$PATH"
 
 
 # Setting up server
-if [ -f "/home/steam/valheim/valheim_server.x86_64" ]; then
-  log "Server installed!"
-else
-  log "Installing Server..."
-  odin install
-fi
+odin install
 
 log "Herding Cats..."
 
-odin start &
-
-#export LD_LIBRARY_PATH=${TEMP_LD_LIBRARY_PATH}
+odin start
 
 cleanup() {
     log "Halting server! Received interrupt!"
@@ -38,6 +31,8 @@ cleanup() {
 }
 
 trap cleanup INT TERM EXIT
+
+tail -f /home/steam/valheim/output.log
 
 while :; do
   sleep 1s

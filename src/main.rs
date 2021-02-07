@@ -3,10 +3,12 @@ mod commands;
 mod executable;
 mod utils;
 mod logger;
+mod files;
 
 use clap::{App, load_yaml};
 use log::{SetLoggerError, LevelFilter, debug};
 use crate::logger::OdinLogger;
+use crate::executable::handle_exit_status;
 
 static LOGGER: OdinLogger = OdinLogger;
 static GAME_ID: i64 = 896660;
@@ -31,7 +33,8 @@ fn main() {
     setup_logger(matches.is_present("debug")).unwrap();
 
     if let Some(ref _match) = matches.subcommand_matches("install") {
-        commands::install::invoke(GAME_ID);
+        let result = commands::install::invoke(GAME_ID);
+        handle_exit_status(result, "Successfully installed Valheim!".to_string())
     };
 
     if let Some(ref start_matches) = matches.subcommand_matches("start") {

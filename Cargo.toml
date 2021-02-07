@@ -14,6 +14,7 @@ which = "4.0.2"
 dialoguer = "0.7.1"
 tinytemplate = "1.1"
 serde = { version = "1.0", features = ["derive"] }
+sysinfo = "0.16.1"
 
 [profile.dev]
 opt-level = 0
