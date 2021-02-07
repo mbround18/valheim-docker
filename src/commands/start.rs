@@ -32,13 +32,9 @@ pub fn invoke(args: &ArgMatches) {
             match updated_command.output() {
                 Ok(output) => {
                     info!("Exit with code {}", output.status);
-                    if output.status.eq("0") {
-                        info!("Server has started successfully!");
-                        info!("Check out ./output.log for the logs.");
-                        info!("Keep an eye out for \"Game Connected\" and you server should be live!");
-                    } else {
-                        error!("Something went wrong!")
-                    }
+                    info!("Server has started...");
+                    info!("Check out ./output.log for the logs.");
+                    info!("Keep an eye out for \"Game server connected\" and you server should be live!");
                 },
                 _ => {
                     error!("An error has occurred!")
