@@ -1,0 +1,11 @@
+odin:
+  - any: ['src/**.rs', 'Cargo*']
+
+docker:
+  - any: ['src/**.sh', 'Dockerfile', 'docker-compose.yml']
+
+documentation:
+  - any: ['docs/*', '*.md']
+
+github:
+  - any: ['.github/*']
