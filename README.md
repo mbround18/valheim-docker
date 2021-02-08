@@ -20,6 +20,7 @@
 ### Docker Compose
 
 ```yaml
+version: "3"
 services:
   valheim:
     image: mbround18/valheim:latest
