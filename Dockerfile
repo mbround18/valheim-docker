@@ -35,7 +35,6 @@ RUN apt-get update          \
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # Copy hello-cron file to the cron.d directory
 COPY --chown=steam:steam  src/cron/auto-update /etc/cron.d/auto-update
