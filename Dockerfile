@@ -31,7 +31,7 @@ RUN apt-get update          \
     && apt-get install -y   \
     htop net-tools nano     \
     netcat curl wget        \
-    cron sudo
+    cron
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
