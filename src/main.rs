@@ -10,6 +10,7 @@ use log::{SetLoggerError, LevelFilter, debug};
 use crate::logger::OdinLogger;
 use crate::executable::handle_exit_status;
 
+const VERSION: &'static str = env!("CARGO_PKG_VERSION");
 static LOGGER: OdinLogger = OdinLogger;
 static GAME_ID: i64 = 896660;
 
@@ -28,7 +29,10 @@ fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
 fn main() {
     // The YAML file is found relative to the current file, similar to how modules are found
     let yaml = load_yaml!("cli.yaml");
-    let matches = App::from(yaml).get_matches();
+    let app = App::from(yaml)
+        .version(VERSION);
+
+    let matches = app.get_matches();
 
     setup_logger(matches.is_present("debug")).unwrap();
 
