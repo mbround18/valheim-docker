@@ -2,7 +2,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:latest
-    user: 1001:1001
+    user: steam
     environment:
       - PORT=30017
       - NAME="Created With Valheim Docker"
