@@ -31,7 +31,7 @@ RUN apt-get update          \
     && apt-get install -y   \
     htop net-tools nano     \
     netcat curl wget        \
-    cron
+    cron sudo
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
@@ -46,15 +46,6 @@ RUN chmod 0644 /etc/cron.d/auto-update
 # Apply cron job
 RUN crontab /etc/cron.d/auto-update
 
-# Setup Directories
-RUN usermod -d /home/steam steam \
-    && mkdir -p /home/steam/valheim \
-    && chown -R steam:steam /home/steam/valheim \
-    && mkdir -p /home/steam/scripts \
-    && chown -R steam:steam /home/steam/scripts
-
-USER steam
-
 # Server Specific env variables.
 ENV NAME "Valheim Docker"
 ENV WORLD "Dedicated"
@@ -62,17 +53,16 @@ ENV PORT "2456"
 ENV PASSWORD ""
 ENV AUTO_UPDATE "0"
 
-COPY --from=ScriptSanitize --chown=steam:steam --chmod=755  /data/scripts/*.sh /home/steam/scripts/
-COPY --from=RustBuilder  --chown=steam:steam --chmod=755 /data/odin/target/release /home/steam/.odin
+COPY --from=ScriptSanitize --chmod=755  /data/scripts/*.sh /home/steam/scripts/
+COPY --from=ScriptSanitize --chmod=755  /data/scripts/init.sh /init.sh
+COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
 
-RUN mkdir -p /home/steam/valheim \
-    && echo "export PATH=\"/home/steam/.odin:$PATH\"" >> /home/steam/.bashrc \
-    && chown -R steam:steam /home/steam/ \
-    && chown -R steam:steam /home/steam/valheim \
-    && cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
 
-WORKDIR /home/steam/valheim
+#WORKDIR /home/steam/valheim
 
-#RUN wget -O /etc/sudoers.d/sudo-lecture-disable https://raw.githubusercontent.com/Whonix/usability-misc/master/etc/sudoers.d/sudo-lecture-disable?raw=True
+ENV PUID=1000
+ENV PGID=1000
+RUN usermod -u ${PUID} steam \
+    && groupmod -g ${PGID} steam
 
-ENTRYPOINT ["/bin/bash", "/home/steam/scripts/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/init.sh"]
