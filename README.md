@@ -64,7 +64,7 @@ cargo install --git https://github.com/mbround18/valheim-docker.git --branch mai
 
 ### Usage
 
-![![Main Menu](https://github.com/mbround18/valheim-docker/blob/main/docs/assets/main-menu.png?raw=true)](./docs/assets/main-menu.png)
+![Main Menu](./docs/assets/main-menu.png)
 
 #### Install Valheim
 
@@ -72,25 +72,33 @@ cargo install --git https://github.com/mbround18/valheim-docker.git --branch mai
 odin install
 ```
 
+![Install Menu](./docs/assets/install-menu.png)
+
 #### Start Valheim
 
 ```sh
 odin start
 ```
 
-![![start menu](https://github.com/mbround18/valheim-docker/blob/main/docs/assets/start-menu.png?raw=true)](./docs/assets/start-menu.png)
+![Start Menu](./docs/assets/start-menu.png)
+
 #### Stop Valheim
 
 ```sh
 odin stop
 ```
 
+![Install Menu](./docs/assets/stop-menu.png)
+
 ## Versions: 
 
 - latest (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
-  - [#18] Fixed issue with the timezone not persisting. 
+  - [#18] Fixed issue with the timezone not persisting.
+  - To exec into the container you now have to include the `-u|--user` argument to access steam directly. Example `docker-compose exec --user steam valheim bash`
+  - There is now a `dry-run` command argument on `odin` to preview what the command would do. 
+  - You can run with `-d|--debug` to get verbose logging of what `odin` is doing. 
 - 1.1.1 (Stable): 
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 
@@ -112,3 +120,5 @@ odin stop
 
 [//]: <> (Links below...................)
 [Valheim]: https://www.valheimgame.com/
+
+[//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)
