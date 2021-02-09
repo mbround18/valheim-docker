@@ -9,7 +9,7 @@ docker:
 
 documentation:
   - docs/*
-  - *.md
+  - ./*.md
 
 github:
   - .github/**/*
