@@ -3,6 +3,12 @@ cd /home/steam/valheim || exit 1
 STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
 
+# Configure ENV
+export "$(grep ^PORT= /home/steam/.env)"
+export "$(grep ^NAME= /home/steam/.env)"
+export "$(grep ^WORLD= /home/steam/.env)"
+export "$(grep ^PASSWORD= /home/steam/.env)"
+
 initialize () {
   echo "
 ###########################################################################
@@ -20,7 +26,15 @@ log () {
 }
 
 
-initialize "Installing Valheim via Odin"
+initialize "
+Installing Valheim via Odin...
+
+Variables being used:
+Port: ${PORT}
+Name: ${NAME}
+World: ${WORLD}
+Password: (REDACTED)
+"
 
 
 export SteamAppId=892970

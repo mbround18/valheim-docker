@@ -45,10 +45,15 @@ chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
 log "Launching as steam..."
 cd /home/steam/valheim || exit 1;
 
-su -s /bin/bash --login steam -c "
-PORT=${PORT}     \
-NAME=${NAME}     \
-WORLD=${WORLD}    \
-PASSWORD=${PASSWORD} \
-/bin/bash /home/steam/scripts/entrypoint.sh
-"
+PORT=$(echo "${PORT}" | tr -d '"')
+NAME=$(echo "${NAME}" | tr -d '"')
+WORLD=$(echo "${WORLD}" | tr -d '"')
+PASSWORD=$(echo "${PASSWORD}" | tr -d '"')
+printf "
+PORT=%s
+NAME=\"%s\"
+WORLD=\"%s\"
+PASSWORD=\"%s\"
+" "${PORT}" "${NAME}" "${WORLD}" "${PASSWORD}" > /home/steam/.env
+
+su -ps /bin/bash --login steam -c "/bin/bash /home/steam/scripts/entrypoint.sh"
