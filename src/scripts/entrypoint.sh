@@ -8,6 +8,7 @@ export "$(grep ^PORT= /home/steam/.env)"
 export "$(grep ^NAME= /home/steam/.env)"
 export "$(grep ^WORLD= /home/steam/.env)"
 export "$(grep ^PASSWORD= /home/steam/.env)"
+export "$(grep ^AUTO_UPDATE= /home/steam/.env)"
 
 initialize () {
   echo "
@@ -34,6 +35,7 @@ Port: ${PORT}
 Name: ${NAME}
 World: ${WORLD}
 Password: (REDACTED)
+Auto Update: ${AUTO_UPDATE}
 "
 
 

@@ -49,11 +49,13 @@ PORT=$(echo "${PORT}" | tr -d '"')
 NAME=$(echo "${NAME}" | tr -d '"')
 WORLD=$(echo "${WORLD}" | tr -d '"')
 PASSWORD=$(echo "${PASSWORD}" | tr -d '"')
+AUTO_UPDATE=$(echo "${AUTO_UPDATE}" | tr -d '"')
 printf "
 PORT=%s
 NAME=\"%s\"
 WORLD=\"%s\"
 PASSWORD=\"%s\"
-" "${PORT}" "${NAME}" "${WORLD}" "${PASSWORD}" > /home/steam/.env
+AUTO_UPDATE=\"%s\"
+" "${PORT}" "${NAME}" "${WORLD}" "${PASSWORD}" "${AUTO_UPDATE}" > /home/steam/.env
 
 su -ps /bin/bash --login steam -c "/bin/bash /home/steam/scripts/entrypoint.sh"
