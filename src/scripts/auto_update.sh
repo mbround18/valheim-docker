@@ -2,9 +2,9 @@
 cd "$(dirname "$0")" || exit 1
 
 if [[ "${AUTO_UPDATE}" = "1" ]]; then
-  cd /home/steam/valhaim || exit 1
+  cd /home/steam/valheim || exit 1
   odin install
   odin stop
-  sleep 60
+  sleep 15
   odin start
 fi

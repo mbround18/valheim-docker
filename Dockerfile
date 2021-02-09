@@ -31,7 +31,7 @@ RUN apt-get update          \
     && apt-get install -y   \
     htop net-tools nano     \
     netcat curl wget        \
-    cron
+    cron sudo
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
@@ -53,24 +53,26 @@ RUN usermod -d /home/steam steam \
     && mkdir -p /home/steam/scripts \
     && chown -R steam:steam /home/steam/scripts
 
-# Switch to steam user.
 USER steam
 
+# Server Specific env variables.
 ENV NAME "Valheim Docker"
 ENV WORLD "Dedicated"
 ENV PORT "2456"
 ENV PASSWORD ""
 ENV AUTO_UPDATE "0"
 
-COPY --from=ScriptSanitize --chown=steam:steam  /data/scripts/*.sh /home/steam/scripts/
-COPY --from=RustBuilder --chown=steam:steam /data/odin/target/release /home/steam/odin
+COPY --from=ScriptSanitize --chown=steam:steam --chmod=755  /data/scripts/*.sh /home/steam/scripts/
+COPY --from=RustBuilder  --chown=steam:steam --chmod=755 /data/odin/target/release /home/steam/.odin
 
 RUN mkdir -p /home/steam/valheim \
-    && echo "export PATH=\"/home/steam/odin:$PATH\"" >> /home/steam/.bashrc \
+    && echo "export PATH=\"/home/steam/.odin:$PATH\"" >> /home/steam/.bashrc \
     && chown -R steam:steam /home/steam/ \
     && chown -R steam:steam /home/steam/valheim \
     && cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
 
 WORKDIR /home/steam/valheim
+
+#RUN wget -O /etc/sudoers.d/sudo-lecture-disable https://raw.githubusercontent.com/Whonix/usability-misc/master/etc/sudoers.d/sudo-lecture-disable?raw=True
 
 ENTRYPOINT ["/bin/bash", "/home/steam/scripts/entrypoint.sh"]

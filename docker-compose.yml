@@ -2,10 +2,11 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:latest
-    user: steam
+    user: 1001:1001
     environment:
-      NAME: "Created With Valheim Docker"
-      PASSWORD: "Banana Phone"
+      - PORT=30017
+      - NAME="Created With Valheim Docker"
+      - PASSWORD="Banana Phone"
     build:
       context: .
       dockerfile: ./Dockerfile

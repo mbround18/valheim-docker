@@ -38,7 +38,10 @@ pub fn write_rusty_start_script(context: &ValheimArguments, dry_run: bool) {
     let mut tt = TinyTemplate::new();
     tt.add_template(
         "hello", &TEMPLATE).unwrap();
-    let content = tt.render("hello", &context).unwrap().replace("&quot;", "\"");
+    let content = tt
+        .render("hello", &context)
+        .unwrap()
+        .replace("&quot;", "\"");
     let file = ManagedFile {
         name: "start_server_rusty.sh"
     };

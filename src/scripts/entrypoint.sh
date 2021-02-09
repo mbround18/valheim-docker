@@ -2,7 +2,10 @@
 initialize () {
   echo "###########################################################################"
   echo "# Valheim Server - $(date)"
+  echo "# Launching Server as $(whoami) .... "
+  echo "# STEAM_UID ${UID} - STEAM_GUID ${GID} "
   echo "###########################################################################"
+  chown -R steam:steam /home/steam/
 }
 
 log () {
