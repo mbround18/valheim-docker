@@ -34,7 +34,7 @@ services:
       - 2456:2456/udp
       - 2457:2457/udp
       - 2458:2458/udp
-    env:
+    environment:
       TZ: "America/Los_Angeles"
       NAME: "Valheim Docker"
       WORLD: "Dedicated"
