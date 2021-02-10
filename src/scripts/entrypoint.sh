@@ -42,8 +42,7 @@ cleanup() {
     odin stop
     exit
 }
-
-trap cleanup INT TERM EXIT
+trap 'cleanup' INT TERM EXIT SIGINT SIGTERM
 
 initialize "
 Valheim Server Started...

@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/usr/bin/env bash
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
 echo "
@@ -30,6 +29,15 @@ log "Setting up file systems"
 STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
 mkdir -p /home/steam/valheim
+
+echo "
+# Load preset env from Dockerfile.
+. /home/steam/scripts/load_env.sh > /dev/null 2>&1 &
+
+# Load Valheim base directory,
+cd /home/steam/valheim
+" > /home/steam/.bashrc
+
 chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
 mkdir -p /home/steam/scripts
 chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/scripts
@@ -64,3 +72,5 @@ write_env_var "PASSWORD" true
 write_env_var "AUTO_UPDATE" true
 
 su -s /bin/bash --login steam -c "/bin/bash /home/steam/scripts/entrypoint.sh"
+
+
