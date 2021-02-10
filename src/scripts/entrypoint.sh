@@ -22,9 +22,7 @@ log () {
   echo "[Valheim][steam]: $1"
 }
 
-
 initialize "Installing Valheim via Odin..."
-
 
 export SteamAppId=892970
 export PATH="/home/steam/.odin:$PATH"
@@ -35,7 +33,9 @@ odin install || exit 1
 
 log "Herding Cats..."
 log "Starting server..."
+
 odin start || exit 1
+
 
 cleanup() {
     log "Halting server! Received interrupt!"

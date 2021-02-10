@@ -4,10 +4,9 @@ use clap::{ArgMatches};
 use crate::utils::{get_variable, server_installed, get_working_dir};
 use log::{info, error};
 use crate::files::start_server_rusty::{write_rusty_start_script, ValheimArguments};
-use crate::files::server_exit;
 
 pub fn invoke(args: &ArgMatches) {
-    server_exit::delete_if_exist();
+    // server_exit::delete_if_exist();
     info!("Setting up start scripts...");
     let mut command = create_execution("bash");
     let server_executable = &[get_working_dir(),  "valheim_server.x86_64".to_string()].join("/");

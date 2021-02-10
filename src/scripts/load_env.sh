@@ -11,6 +11,7 @@ export "$(grep ^PUBLIC= /home/steam/.env)"
 export "$(grep ^PASSWORD= /home/steam/.env)"
 export "$(grep ^AUTO_UPDATE= /home/steam/.env)"
 
+
 echo "
 Variables loaded.....
 
@@ -21,3 +22,4 @@ Public: ${PUBLIC}
 Password: (REDACTED)
 Auto Update: ${AUTO_UPDATE}
 "
+

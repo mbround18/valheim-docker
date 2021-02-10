@@ -18,8 +18,6 @@ cd "$(dirname "$0")"
     -public {public} \
     2>&1 | tee ./output.log  > /dev/null 2>&1 &
 
-# Capture the PID
-echo $! > ./valheim_server.pid
 # Release the process
 disown
 
