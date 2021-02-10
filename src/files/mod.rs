@@ -1,6 +1,4 @@
 pub mod start_server_rusty;
-pub mod server_exit;
-pub mod server_pid;
 
 use crate::utils::get_working_dir;
 use std::path::Path;
