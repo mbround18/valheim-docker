@@ -31,7 +31,8 @@ RUN apt-get update          \
     && apt-get install -y   \
     htop net-tools nano     \
     netcat curl wget        \
-    cron sudo
+    cron sudo gosu          \
+    && gosu nobody true
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
@@ -65,4 +66,4 @@ RUN usermod -u ${PUID} steam \
     && groupmod -g ${PGID} steam \
     && chsh -s /bin/bash steam
 
-ENTRYPOINT ["/init.sh"]
+ENTRYPOINT ["/bin/bash","/init.sh"]
