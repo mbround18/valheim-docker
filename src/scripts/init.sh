@@ -56,7 +56,7 @@ write_env_var() {
   # shellcheck disable=SC2039
   VARIABLE_VALUE=$(printf '%s\n' "${!env_name}" | tr -d '"')
   echo "Writing $1 to env file..."
-  if [ $2 = true ]; then
+  if [[ $2 = true ]]; then
     echo "${env_name}=\"${VARIABLE_VALUE}\"" >> /home/steam/.env
   else
     echo "${env_name}=${VARIABLE_VALUE}" >> /home/steam/.env
@@ -71,6 +71,17 @@ write_env_var "PUBLIC"
 write_env_var "PASSWORD" true
 write_env_var "AUTO_UPDATE" true
 
-su -s /bin/bash --login steam -c "/bin/bash /home/steam/scripts/entrypoint.sh"
 
+trap 'cleanup' INT TERM EXIT
 
+cleanup() {
+  echo "Running Cleanup!....."
+  su -s /bin/bash --login steam -c "/home/steam/scripts/shutdown.sh"
+  exit 0
+}
+
+su -s /bin/bash --login steam -c "/home/steam/scripts/entrypoint.sh"
+
+while :; do
+  sleep 1s
+done

@@ -36,13 +36,13 @@ log "Starting server..."
 
 odin start || exit 1
 
+trap 'cleanup' INT TERM EXIT
 
 cleanup() {
     log "Halting server! Received interrupt!"
     odin stop
     exit
 }
-trap 'cleanup' INT TERM EXIT SIGINT SIGTERM
 
 initialize "
 Valheim Server Started...

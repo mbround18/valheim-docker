@@ -65,4 +65,4 @@ RUN usermod -u ${PUID} steam \
     && groupmod -g ${PGID} steam \
     && chsh -s /bin/bash steam
 
-ENTRYPOINT ["/init.sh"]
+ENTRYPOINT ["/bin/bash","/init.sh"]
