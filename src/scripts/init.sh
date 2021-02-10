@@ -76,11 +76,11 @@ trap 'cleanup' INT TERM EXIT
 
 cleanup() {
   echo "Running Cleanup!....."
-  su -s /bin/bash --login steam -c "/home/steam/scripts/shutdown.sh"
+  gosu steam:steam /home/steam/scripts/shutdown.sh
   exit 0
 }
 
-su -s /bin/bash --login steam -c "/home/steam/scripts/entrypoint.sh"
+gosu steam:steam /home/steam/scripts/entrypoint.sh
 
 while :; do
   sleep 1s
