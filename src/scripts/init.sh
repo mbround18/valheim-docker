@@ -76,12 +76,9 @@ trap 'cleanup' INT TERM EXIT
 
 cleanup() {
   echo "Running Cleanup!....."
-  gosu steam:steam /home/steam/scripts/shutdown.sh
+  cd /home/steam/valheim || exit 1
+  gosu ${STEAM_UID} "odin stop"
   exit 0
 }
 
-gosu steam:steam /home/steam/scripts/entrypoint.sh
-
-while :; do
-  sleep 1s
-done
+gosu ${STEAM_UID} "$@"

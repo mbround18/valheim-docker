@@ -67,3 +67,4 @@ RUN usermod -u ${PUID} steam \
     && chsh -s /bin/bash steam
 
 ENTRYPOINT ["/bin/bash","/init.sh"]
+CMD ["/bin/bash", "/home/steam/scripts/entrypoint.sh"]
