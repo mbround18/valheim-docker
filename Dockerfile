@@ -57,12 +57,12 @@ COPY --from=ScriptSanitize --chmod=755  /data/scripts/*.sh /home/steam/scripts/
 COPY --from=ScriptSanitize --chmod=755  /data/scripts/init.sh /init.sh
 COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
 
-
 #WORKDIR /home/steam/valheim
 
 ENV PUID=1000
 ENV PGID=1000
 RUN usermod -u ${PUID} steam \
-    && groupmod -g ${PGID} steam
+    && groupmod -g ${PGID} steam \
+    && chsh -s /bin/bash steam
 
-ENTRYPOINT ["/bin/bash", "/init.sh"]
+ENTRYPOINT ["/init.sh"]

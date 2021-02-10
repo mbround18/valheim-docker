@@ -1,12 +1,9 @@
 use std::env;
 use clap::ArgMatches;
 use std::process::{exit};
-use log::{info,debug};
+use log::{info,debug, error};
 use std::path::Path;
 use sysinfo::{System, Signal, SystemExt, ProcessExt};
-use crate::executable::{create_execution};
-use std::str::from_utf8;
-use std::convert::TryInto;
 
 pub fn get_working_dir() -> String {
     match env::current_dir() {
@@ -45,27 +42,19 @@ pub fn server_installed() -> bool {
 
 pub fn send_shutdown() {
     info!("Scanning for Valheim process");
-    let pid_scan: &[u8] = &*create_execution("pidof")
-        .arg("valheim_server.x86_64").output().unwrap().stdout;
-
-    let pid_str = match from_utf8(pid_scan) {
-        Ok(v) => v.replace('\n', ""),
-        Err(e) => panic!("Invalid UTF-8 sequence: {}", e),
-    };
-    if pid_str.is_empty() {
-        info!("Process not found!");
-        exit(0)
-    }
-    info!("Pid Found {}", pid_str);
-    let pid: i32 =  pid_str.parse().unwrap();
     let mut system = System::new();
     system.refresh_all();
-    let process = system.get_process(pid.try_into().unwrap());
-
-    if let Some(found_process) = process {
-        info!("Found Process! Sending Interrupt!");
-        found_process.kill(Signal::Interrupt);
-    } else {
+    let processes = system.get_process_by_name("valheim_server.x86_64");
+    if processes.is_empty() {
         info!("Process NOT found!")
+    } else {
+        for found_process in processes {
+            info!("Found Process with pid {}! Sending Interrupt!", found_process.pid());
+            if found_process.kill(Signal::Interrupt) {
+                info!("Process signal interrupt sent successfully!")
+            } else {
+                error!("Failed to send signal interrupt!")
+            }
+        }
     }
 }
