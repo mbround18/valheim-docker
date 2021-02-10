@@ -5,7 +5,7 @@ services:
     environment:
       - PORT=30017
       - NAME="Created With Valheim Docker"
-      - PASSWORD="Banana Phone"
+      - PASSWORD="12345"
       - TZ=America/Chicago
     build:
       context: .

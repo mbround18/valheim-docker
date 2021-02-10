@@ -46,10 +46,11 @@ RUN chmod 0644 /etc/cron.d/auto-update
 RUN crontab /etc/cron.d/auto-update
 
 # Server Specific env variables.
+ENV PORT "2456"
 ENV NAME "Valheim Docker"
 ENV WORLD "Dedicated"
-ENV PORT "2456"
-ENV PASSWORD ""
+ENV PUBLIC "1"
+ENV PASSWORD "12345"
 ENV AUTO_UPDATE "0"
 
 COPY --from=ScriptSanitize --chmod=755  /data/scripts/*.sh /home/steam/scripts/

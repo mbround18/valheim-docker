@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
     -name "{name}" \
     -world "{world}" \
     -password "{password}" \
-    -public 1 \
+    -public {public} \
     2>&1 | tee ./output.log  > /dev/null 2>&1 &
 
 # Capture the PID
@@ -30,6 +30,7 @@ pub struct ValheimArguments {
     pub(crate) port: String,
     pub(crate) name: String,
     pub(crate) world: String,
+    pub(crate) public: String,
     pub(crate) password: String,
     pub(crate) command: String
 }
@@ -45,7 +46,6 @@ pub fn write_rusty_start_script(context: &ValheimArguments, dry_run: bool) {
     let file = ManagedFile {
         name: "start_server_rusty.sh"
     };
-
     if dry_run {
         info!("This would have written a file to\n{}", file.path());
         info!("With contents of:\n{}", content);

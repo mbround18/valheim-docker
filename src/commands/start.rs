@@ -1,5 +1,5 @@
 use crate::executable::{create_execution};
-use std::process::{Stdio};
+use std::process::{Stdio, exit};
 use clap::{ArgMatches};
 use crate::utils::{get_variable, server_installed, get_working_dir};
 use log::{info, error};
@@ -15,9 +15,14 @@ pub fn invoke(args: &ArgMatches) {
         port: get_variable(args, "port", "2456".to_string()).to_string(),
         name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
         world: get_variable(args, "world", "Dedicated".to_string()),
+        public: get_variable(args, "public", "1".to_string()),
         password: get_variable(args, "password", "12345".to_string()),
         command: server_executable.to_string()
     };
+    if script_args.password.len() < 5 {
+        error!("The supplied password is too short! It much be 5 characters or greater!");
+        exit(1)
+    }
     let dry_run: bool = args.is_present("dry_run");
     info!("Looking for burial mounds...");
     write_rusty_start_script(script_args, dry_run);
