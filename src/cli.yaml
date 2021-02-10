@@ -49,8 +49,14 @@ subcommands:
               value_name: PASSWORD
               about: Sets the password of the server, (Can be set with ENV variable PASSWORD)
               takes_value: true
+        - public:
+            short: o
+            long: public
+            value_name: PUBLIC
+            about: Sets the public state of the server, (Can be set with ENV variable PUBLIC)
+            takes_value: true
 
   - stop:
       about: Stops Valheim
-      version: "1.0"
+      version: "1.1"
       author: mbround18

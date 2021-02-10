@@ -4,11 +4,7 @@ STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
 
 # Configure ENV
-export "$(grep ^PORT= /home/steam/.env)"
-export "$(grep ^NAME= /home/steam/.env)"
-export "$(grep ^WORLD= /home/steam/.env)"
-export "$(grep ^PASSWORD= /home/steam/.env)"
-export "$(grep ^AUTO_UPDATE= /home/steam/.env)"
+. /home/steam/scripts/load_env.sh
 
 initialize () {
   echo "
@@ -27,16 +23,7 @@ log () {
 }
 
 
-initialize "
-Installing Valheim via Odin...
-
-Variables being used:
-Port: ${PORT}
-Name: ${NAME}
-World: ${WORLD}
-Password: (REDACTED)
-Auto Update: ${AUTO_UPDATE}
-"
+initialize "Installing Valheim via Odin..."
 
 
 export SteamAppId=892970
@@ -44,11 +31,11 @@ export PATH="/home/steam/.odin:$PATH"
 
 # Setting up server
 log "Running Install..."
-odin install
+odin install || exit 1
 
 log "Herding Cats..."
 log "Starting server..."
-odin start
+odin start || exit 1
 
 cleanup() {
     log "Halting server! Received interrupt!"
