@@ -39,7 +39,6 @@ pub fn server_installed() -> bool {
     Path::new(&[get_working_dir(),  "valheim_server.x86_64".to_string()].join("/")).exists()
 }
 
-
 pub fn send_shutdown() {
     info!("Scanning for Valheim process");
     let mut system = System::new();
@@ -57,4 +56,17 @@ pub fn send_shutdown() {
             }
         }
     }
+}
+
+pub fn wait_for_server_exit() {
+    info!("Waiting for server to completely shutdown...");
+    let mut system = System::new();
+    loop {
+        system.refresh_all();
+        let processes = system.get_process_by_name("valheim_server.x86_64");
+        if processes.is_empty() {
+            break
+        }
+    }
+    info!("Server has been shutdown successfully!")
 }

@@ -24,8 +24,9 @@ RUN apt-get update          \
     && apt-get install -y   \
     htop net-tools nano     \
     netcat curl wget        \
-    cron sudo gosu          \
-    && gosu nobody true
+    cron sudo gosu dos2unix \
+    && gosu nobody true     \
+    && dos2unix
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
@@ -47,8 +48,8 @@ ENV PUBLIC "1"
 ENV PASSWORD "12345"
 ENV AUTO_UPDATE "0"
 
-COPY --from=ScriptSanitize --chmod=755  /data/scripts/*.sh /home/steam/scripts/
-COPY --from=ScriptSanitize --chmod=755  /data/scripts/entrypoint.sh /entrypoint.sh
+COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
+COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
 COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
 
 #WORKDIR /home/steam/valheim

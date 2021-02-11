@@ -44,16 +44,16 @@ log "Starting server..."
 
 odin start || exit 1
 
-trap 'cleanup' INT TERM EXIT
-
 cleanup() {
     log "Halting server! Received interrupt!"
     if [[ -n $TAIL_PID ]];then
       kill $TAIL_PID
     fi
     odin stop
-    exit
 }
+
+trap 'cleanup' INT TERM
+
 
 initialize "
 Valheim Server Started...
@@ -61,6 +61,7 @@ Valheim Server Started...
 Keep an eye out for 'Game server connected' in the log!
 (this indicates its online without any errors.)
 " >> /home/steam/valheim/output.log
+
 tail -f /home/steam/valheim/output.log &
 export TAIL_PID=$!
 wait $TAIL_PID

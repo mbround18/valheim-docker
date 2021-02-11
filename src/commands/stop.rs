@@ -1,4 +1,4 @@
-use crate::utils::{get_working_dir, server_installed, send_shutdown};
+use crate::utils::{get_working_dir, server_installed, send_shutdown, wait_for_server_exit};
 use log::{info, error};
 use clap::ArgMatches;
 
@@ -13,5 +13,6 @@ pub fn invoke(args: &ArgMatches) {
             return;
         }
         send_shutdown();
+        wait_for_server_exit();
     }
 }
