@@ -1,19 +1,13 @@
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-FROM registry.hub.docker.com/library/rust:latest as RustBuilder
-
-WORKDIR /data/odin
-COPY . .
-
-RUN cargo install --path . \
-    && cargo build --release
+FROM mbround18/valheim-odin:latest as RustBuilder
 
 # ----------------------- #
 # -- Script Formatting -- #
 # ----------------------- #
 
-FROM registry.hub.docker.com/library/alpine:latest as ScriptSanitize
+FROM alpine:latest as ScriptSanitize
 
 WORKDIR /data/scripts
 COPY src/scripts/* ./
@@ -21,11 +15,10 @@ COPY src/scripts/* ./
 RUN apk add dos2unix  --update-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted \
     && dos2unix /data/scripts/**
 
-
 # --------------- #
 # -- Steam CMD -- #
 # --------------- #
-FROM registry.hub.docker.com/cm2network/steamcmd:root
+FROM cm2network/steamcmd:root
 
 RUN apt-get update          \
     && apt-get install -y   \
@@ -55,7 +48,7 @@ ENV PASSWORD "12345"
 ENV AUTO_UPDATE "0"
 
 COPY --from=ScriptSanitize --chmod=755  /data/scripts/*.sh /home/steam/scripts/
-COPY --from=ScriptSanitize --chmod=755  /data/scripts/init.sh /init.sh
+COPY --from=ScriptSanitize --chmod=755  /data/scripts/entrypoint.sh /entrypoint.sh
 COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
 
 #WORKDIR /home/steam/valheim
@@ -66,5 +59,5 @@ RUN usermod -u ${PUID} steam \
     && groupmod -g ${PGID} steam \
     && chsh -s /bin/bash steam
 
-ENTRYPOINT ["/bin/bash","/init.sh"]
-CMD ["/bin/bash", "/home/steam/scripts/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
+CMD ["/bin/bash", "/home/steam/scripts/start_valheim.sh"]

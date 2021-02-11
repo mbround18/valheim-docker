@@ -31,11 +31,71 @@ jobs:
         run: |
           docker-compose --file docker-compose.yml build
 
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
+  push_odin:
     needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build image
+        run: |
+          docker build . --file Dockerfile --tag "${GITHUB_IMAGE_NAME}-odin" --tag "${DOCKER_IMAGE_NAME}-odin"
+
+      - name: Log into registry
+        run: |
+          echo "${{ github.token }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.DOCKER_TOKEN }}" | docker login registry.hub.docker.com -u mbround18 --password-stdin
+
+      - name: Push Image to DockerHub
+        run: |
+          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME-odin
+
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "main" ] && VERSION=latest
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag "${DOCKER_IMAGE_NAME}-odin" $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+
+      - name: Push Image to Github
+        run: |
+          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$GITHUB_IMAGE_NAME-odin
+
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "main" ] && VERSION=latest
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag "${GITHUB_IMAGE_NAME}-odin" $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
+
+
+  push_valheim:
+    # Ensure test job passes before pushing image.
+    needs: push_odin
 
     runs-on: ubuntu-latest
     if: github.event_name == 'push'

@@ -1,57 +1,53 @@
 #!/usr/bin/env bash
-cd /home/steam/valheim || exit 1
-STEAM_UID=${PUID:=1000}
-STEAM_GID=${PGID:=1000}
+ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
-# Configure ENV
-. /home/steam/scripts/load_env.sh
-
-initialize () {
-  echo "
+echo "
 ###########################################################################
 Valheim Server - $(date)
-STEAM_UID ${STEAM_UID} - STEAM_GUID ${STEAM_GID}
 
-$1
-
+Initializing your container...
 ###########################################################################
-  "
+"
+
+log() {
+  echo "[Valheim][root]: $1"
 }
 
-log () {
-  echo "[Valheim][steam]: $1"
-}
+# shellcheck disable=SC2039
+if [ "${EUID}" -ne 0 ]; then
+  log "Please run as root"
+  exit
+fi
 
-initialize "Installing Valheim via Odin..."
+log "Switching UID and GID"
+# shellcheck disable=SC2086
+usermod -u ${PUID} steam || echo "Looks like no changes were needed to the user!"
+# shellcheck disable=SC2086
+groupmod -g ${PGID} steam || echo "Looks like no changes were needed to the user!"
 
-export SteamAppId=892970
-export PATH="/home/steam/.odin:$PATH"
+log "Setting up file systems"
+STEAM_UID=${PUID:=1000}
+STEAM_GID=${PGID:=1000}
+mkdir -p /home/steam/valheim
 
-# Setting up server
-log "Running Install..."
-odin install || exit 1
+echo "
+# Load Valheim base directory,
+cd /home/steam/valheim
+" > /home/steam/.bashrc
 
-log "Herding Cats..."
-log "Starting server..."
+chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
+mkdir -p /home/steam/scripts
+chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/scripts
+mkdir -p /home/steam/valheim
+echo "export PATH=\"/home/steam/.odin:$PATH\"" >>/home/steam/.bashrc
+cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
+chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/
+chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
 
-odin start || exit 1
+# Launch run.sh with user steam (-p allow to keep env variables)
+log "Launching as steam..."
+cd /home/steam/valheim || exit 1
 
-trap 'cleanup' INT TERM EXIT
+trap 'exec goso steam cd /home/steam/valheim && odin stop' INT TERM EXIT
 
-cleanup() {
-    log "Halting server! Received interrupt!"
-    odin stop
-    exit
-}
-
-initialize "
-Valheim Server Started...
-
-Keep an eye out for 'Game server connected' in the log!
-(this indicates its online without any errors.)
-" >> /home/steam/valheim/output.log
-tail -f /home/steam/valheim/output.log
-
-while :; do
-  sleep 1s
-done
+exec gosu steam "$@"
