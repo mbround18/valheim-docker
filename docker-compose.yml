@@ -1,6 +1,13 @@
 version: "3"
 services:
+  odin:
+    image: mbround18/valheim-odin:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile.odin
   valheim:
+    depends_on:
+      - odin
     image: mbround18/valheim:latest
     environment:
       - PORT=30017
