@@ -26,6 +26,7 @@ RUN apt-get update          \
     netcat curl wget        \
     cron sudo gosu dos2unix \
     libsdl2-2.0-0           \
+    && rm -rf /var/lib/apt/lists/* \
     && gosu nobody true     \
     && dos2unix
 
