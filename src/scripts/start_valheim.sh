@@ -48,6 +48,9 @@ trap 'cleanup' INT TERM EXIT
 
 cleanup() {
     log "Halting server! Received interrupt!"
+    if [[ -n $TAIL_PID ]];then
+      kill $TAIL_PID
+    fi
     odin stop
     exit
 }
@@ -59,7 +62,8 @@ Keep an eye out for 'Game server connected' in the log!
 (this indicates its online without any errors.)
 " >> /home/steam/valheim/output.log
 tail -f /home/steam/valheim/output.log &
-wait $!
+export TAIL_PID=$!
+wait $TAIL_PID
 
 while :; do
   sleep 1s
