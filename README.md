@@ -21,6 +21,7 @@
 | PUBLIC      | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
 | PASSWORD    | `12345`                | TRUE     | Set this to something unique! |
 | AUTO_UPDATE | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
+| UPDATE_HOUR | `6`                    | FALSE    | Defines when to run the auto update. Possible Values are 0-23, relative to your set timezone. |
 
 
 ### Docker Compose
@@ -41,7 +42,8 @@ services:
       PORT: "2456"
       PUBLIC: "1"
       PASSWORD: "something-secret"
-      AUTO_UPDATE: "0"     
+      AUTO_UPDATE: "0"
+      UPDATE_HOUR: "6" 
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim

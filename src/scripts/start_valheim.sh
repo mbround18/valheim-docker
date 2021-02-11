@@ -30,6 +30,7 @@ World: ${WORLD}
 Public: ${PUBLIC}
 Password: (REDACTED)
 Auto Update: ${AUTO_UPDATE}
+Update Hour: ${UPDATE_HOUR}
 "
 
 export SteamAppId=892970

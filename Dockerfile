@@ -49,6 +49,7 @@ ENV WORLD "Dedicated"
 ENV PUBLIC "1"
 ENV PASSWORD "12345"
 ENV AUTO_UPDATE "0"
+ENV UPDATE_HOUR "6"
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
 COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
