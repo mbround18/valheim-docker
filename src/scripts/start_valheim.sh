@@ -58,7 +58,8 @@ Valheim Server Started...
 Keep an eye out for 'Game server connected' in the log!
 (this indicates its online without any errors.)
 " >> /home/steam/valheim/output.log
-tail -f /home/steam/valheim/output.log
+tail -f /home/steam/valheim/output.log &
+wait $!
 
 while :; do
   sleep 1s
