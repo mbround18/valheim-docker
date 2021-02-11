@@ -64,7 +64,3 @@ Keep an eye out for 'Game server connected' in the log!
 tail -f /home/steam/valheim/output.log &
 export TAIL_PID=$!
 wait $TAIL_PID
-
-while :; do
-  sleep 1s
-done
