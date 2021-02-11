@@ -46,10 +46,10 @@ odin start || exit 1
 
 cleanup() {
     log "Halting server! Received interrupt!"
+    odin stop
     if [[ -n $TAIL_PID ]];then
       kill $TAIL_PID
     fi
-    odin stop
 }
 
 trap 'cleanup' INT TERM
