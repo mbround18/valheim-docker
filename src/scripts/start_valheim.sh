@@ -32,7 +32,7 @@ Password: (REDACTED)
 Auto Update: ${AUTO_UPDATE}
 "
 
-export SteamAppId=${APPID}
+export SteamAppId=${APPID:-892970}
 export PATH="/home/steam/.odin:$PATH"
 
 # Setting up server
