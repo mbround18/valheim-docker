@@ -25,6 +25,7 @@ RUN apt-get update          \
     htop net-tools nano     \
     netcat curl wget        \
     cron sudo gosu dos2unix \
+    libsdl2-dev             \
     && gosu nobody true     \
     && dos2unix
 
