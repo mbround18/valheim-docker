@@ -1,53 +1,82 @@
 #!/usr/bin/env bash
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
-echo "
-###########################################################################
-Valheim Server - $(date)
-
-Initializing your container...
-###########################################################################
-"
-
-log() {
-  echo "[Valheim][root]: $1"
-}
-
 # shellcheck disable=SC2039
 if [ "${EUID}" -ne 0 ]; then
   log "Please run as root"
   exit
 fi
 
+log() {
+  PREFIX="[Valheim][root]"
+  printf "%-16s: %s\n" "${PREFIX}" "$1"
+}
+
+line () {
+  log "###########################################################################"
+}
+
+clean_up() {
+  echo "Safely shutting down..." >> /home/steam/output.log
+  if [[ -n $CRON_PID ]];then
+    kill $CRON_PID
+  fi
+}
+
+trap 'clean_up' INT TERM
+
+setup_cron() {
+  set -f
+  log "Auto Update Enabled..."
+  log "Schedule: ${AUTO_UPDATE_SCHEDULE}"
+  AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
+  printf "%s /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" > /etc/cron.d/auto-update
+  echo "" >> /etc/cron.d/auto-update
+
+  # Give execution rights on the cron job
+  chmod 0644 /etc/cron.d/auto-update
+
+  # Apply cron job
+  crontab /etc/cron.d/auto-update
+  set +f
+  /usr/sbin/cron -f &
+  export CRON_PID=$!
+}
+
+setup_filesystem() {
+  log "Setting up file systems"
+  STEAM_UID=${PUID:=1000}
+  STEAM_GID=${PGID:=1000}
+  mkdir -p /home/steam/valheim
+  chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
+  mkdir -p /home/steam/scripts
+  chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/scripts
+  mkdir -p /home/steam/valheim
+  cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
+  chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/
+  chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
+}
+
+
+line
+log "Valheim Server - $(date)"
+log "Initializing your container..."
+line
+
+
 log "Switching UID and GID"
 # shellcheck disable=SC2086
-usermod -u ${PUID} steam || echo "Looks like no changes were needed to the user!"
+log "$(usermod -u ${PUID} steam)"
 # shellcheck disable=SC2086
-groupmod -g ${PGID} steam || echo "Looks like no changes were needed to the user!"
+log "$(groupmod -g ${PGID} steam)"
 
-log "Setting up file systems"
-STEAM_UID=${PUID:=1000}
-STEAM_GID=${PGID:=1000}
-mkdir -p /home/steam/valheim
+# Configure Cron
+[ "${AUTO_UPDATE:=0}" -eq 1 ] && setup_cron
 
-echo "
-# Load Valheim base directory,
-cd /home/steam/valheim
-" > /home/steam/.bashrc
+# Configure filesystem
+setup_filesystem
 
-chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
-mkdir -p /home/steam/scripts
-chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/scripts
-mkdir -p /home/steam/valheim
-echo "export PATH=\"/home/steam/.odin:$PATH\"" >>/home/steam/.bashrc
-cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
-chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/
-chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
-
-# Launch run.sh with user steam (-p allow to keep env variables)
+# Launch as steam user :)
 log "Launching as steam..."
 cd /home/steam/valheim || exit 1
-
-#trap 'exec goso steam cd /home/steam/valheim && odin stop' INT TERM
-
 exec gosu steam "$@"

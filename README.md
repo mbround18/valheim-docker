@@ -64,7 +64,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - You can run with `-d|--debug` to get verbose logging of what `odin` is doing.
   - [#11] Added check for length of password and fail on odin install or odin stop failures.
   - [#24] Added public variable to dockerfile and odin
-  - [#35] Fix for server now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
+  - [#35] Fix for the server to now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
+  - [#53] Formatted scripts to be more useful and added timezone scheduling. 
 - 1.1.1 (Stable): 
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 
@@ -78,6 +79,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#53]: https://github.com/mbround18/valheim-docker/pull/53
+[#35]: https://github.com/mbround18/valheim-docker/issues/24
 [#24]: https://github.com/mbround18/valheim-docker/issues/24
 [#18]: https://github.com/mbround18/valheim-docker/pull/18
 [#11]: https://github.com/mbround18/valheim-docker/issues/11
