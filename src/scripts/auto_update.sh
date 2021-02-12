@@ -1,12 +1,29 @@
 #!/usr/bin/env bash
-cd "$(dirname "$0")" || exit 1
+export PATH="/home/steam/.odin:$PATH"
 
-. /home/steam/scripts/load_env.sh
+log() {
+  PREFIX="[Valheim][steam]"
+  printf "%-16s: %s\n" "${PREFIX}" "$1"
+}
+line () {
+  log "###########################################################################"
+}
 
-if [[ "${AUTO_UPDATE}" = "1" ]]; then
-  cd /home/steam/valheim || exit 1
-  odin install
-  odin stop
-  sleep 15
-  odin start
-fi
+line
+log "Auto Updater is running...."
+cd /home/steam/valheim || exit 1
+log "Stopping server..."
+odin stop || exit 1
+log "Installing Updates..."
+odin install || exit 1
+log "Starting server..."
+odin start || exit 1
+line
+log "
+Everything looks happy <3
+
+Check your output.log for 'Game server connected'
+"
+line
+
+

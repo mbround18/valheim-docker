@@ -3,36 +3,36 @@ cd /home/steam/valheim || exit 1
 STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
 
-initialize () {
-  echo "
-###########################################################################
-Valheim Server - $(date)
-STEAM_UID ${STEAM_UID} - STEAM_GUID ${STEAM_GID}
-
-$1
-
-###########################################################################
-  "
+log() {
+  PREFIX="[Valheim][steam]"
+  printf "%-16s: %s\n" "${PREFIX}" "$1"
+}
+line () {
+  log "###########################################################################"
 }
 
-log () {
-  echo "[Valheim][steam]: $1"
+initialize () {
+  line
+  log "Valheim Server - $(date)"
+  log "STEAM_UID ${STEAM_UID} - STEAM_GUID ${STEAM_GID}"
+  log "$1"
+  line
 }
 
 initialize "Installing Valheim via Odin..."
+export PATH="/home/steam/.odin:$PATH"
 
-echo "
-Variables loaded.....
 
+log "Variables loaded....."
+log "
 Port: ${PORT}
 Name: ${NAME}
 World: ${WORLD}
 Public: ${PUBLIC}
 Password: (REDACTED)
-Auto Update: ${AUTO_UPDATE}
 "
 
-export SteamAppId=892970
+export SteamAppId=${APPID:-892970}
 export PATH="/home/steam/.odin:$PATH"
 
 # Setting up server
@@ -46,10 +46,10 @@ odin start || exit 1
 
 cleanup() {
     log "Halting server! Received interrupt!"
+    odin stop
     if [[ -n $TAIL_PID ]];then
       kill $TAIL_PID
     fi
-    odin stop
 }
 
 trap 'cleanup' INT TERM

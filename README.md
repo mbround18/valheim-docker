@@ -10,20 +10,23 @@
 
 ### Environment Variables
 
-| Variable    | Default                | Required | Description |
-|-------------|------------------------|----------|-------------|
-| TZ          | `America/Los_Angeles`  | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
-| PUID        | `1000`                 | FALSE    | Sets the User Id of the steam user. |
-| PGID        | `1000`                 | FALSE    | Sets the Group Id of the steam user. |
-| PORT        | `2456`                 | TRUE     | Sets the port your server will listen on. Take not it will also listen on +2 (ex: 2456, 2457, 2458) |
-| NAME        | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
-| WORLD       | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
-| PUBLIC      | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
-| PASSWORD    | `12345`                | TRUE     | Set this to something unique! |
-| AUTO_UPDATE | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
+| Variable             | Default                | Required | Description |
+|----------------------|------------------------|----------|-------------|
+| TZ                   | `America/Los_Angeles`  | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
+| PUID                 | `1000`                 | FALSE    | Sets the User Id of the steam user. |
+| PGID                 | `1000`                 | FALSE    | Sets the Group Id of the steam user. |
+| PORT                 | `2456`                 | TRUE     | Sets the port your server will listen on. Take not it will also listen on +2 (ex: 2456, 2457, 2458) |
+| NAME                 | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
+| WORLD                | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
+| PUBLIC               | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
+| PASSWORD             | `12345`                | TRUE     | Set this to something unique! |
+| AUTO_UPDATE          | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
+| AUTO_UPDATE_SCHEDULE | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here](https://crontab.guru/#0_1_*_*_*) |
 
 
 ### Docker Compose
+
+> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables description notes!
 
 ```yaml
 version: "3"
@@ -35,13 +38,12 @@ services:
       - 2457:2457/udp
       - 2458:2458/udp
     environment:
-      TZ: "America/Los_Angeles"
-      NAME: "Valheim Docker"
-      WORLD: "Dedicated"
-      PORT: "2456"
-      PUBLIC: "1"
-      PASSWORD: "something-secret"
-      AUTO_UPDATE: "0"     
+      - PORT=2456
+      - NAME="Created With Valheim Docker"
+      - WORLD="Dedicated"
+      - PASSWORD="Banana Phone"
+      - TZ=America/Chicago
+      - PUBLIC=1
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim
@@ -64,7 +66,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - You can run with `-d|--debug` to get verbose logging of what `odin` is doing.
   - [#11] Added check for length of password and fail on odin install or odin stop failures.
   - [#24] Added public variable to dockerfile and odin
-  - [#35] Fix for server now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
+  - [#35] Fix for the server to now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
+  - [#53] Formatted scripts to be more useful and added timezone scheduling. 
 - 1.1.1 (Stable): 
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 
@@ -78,6 +81,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#53]: https://github.com/mbround18/valheim-docker/pull/53
+[#35]: https://github.com/mbround18/valheim-docker/issues/24
 [#24]: https://github.com/mbround18/valheim-docker/issues/24
 [#18]: https://github.com/mbround18/valheim-docker/pull/18
 [#11]: https://github.com/mbround18/valheim-docker/issues/11
