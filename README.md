@@ -10,20 +10,23 @@
 
 ### Environment Variables
 
-| Variable    | Default                | Required | Description |
-|-------------|------------------------|----------|-------------|
-| TZ          | `America/Los_Angeles`  | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
-| PUID        | `1000`                 | FALSE    | Sets the User Id of the steam user. |
-| PGID        | `1000`                 | FALSE    | Sets the Group Id of the steam user. |
-| PORT        | `2456`                 | TRUE     | Sets the port your server will listen on. Take not it will also listen on +2 (ex: 2456, 2457, 2458) |
-| NAME        | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
-| WORLD       | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
-| PUBLIC      | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
-| PASSWORD    | `12345`                | TRUE     | Set this to something unique! |
-| AUTO_UPDATE | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
+| Variable             | Default                | Required | Description |
+|----------------------|------------------------|----------|-------------|
+| TZ                   | `America/Los_Angeles`  | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
+| PUID                 | `1000`                 | FALSE    | Sets the User Id of the steam user. |
+| PGID                 | `1000`                 | FALSE    | Sets the Group Id of the steam user. |
+| PORT                 | `2456`                 | TRUE     | Sets the port your server will listen on. Take not it will also listen on +2 (ex: 2456, 2457, 2458) |
+| NAME                 | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
+| WORLD                | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
+| PUBLIC               | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
+| PASSWORD             | `12345`                | TRUE     | Set this to something unique! |
+| AUTO_UPDATE          | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
+| AUTO_UPDATE_SCHEDULE | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here](https://crontab.guru/#0_1_*_*_*) |
 
 
 ### Docker Compose
+
+> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables description notes!
 
 ```yaml
 version: "3"
@@ -41,7 +44,6 @@ services:
       - PASSWORD="Banana Phone"
       - TZ=America/Chicago
       - PUBLIC=1
-      - AUTO_UPDATE=0
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim
