@@ -31,34 +31,32 @@ RUN apt-get update          \
 # Set up timezone information
 ENV TZ=America/Los_Angeles
 
-# Copy hello-cron file to the cron.d directory
-COPY --chown=steam:steam  src/cron/auto-update /etc/cron.d/auto-update
-
-# Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/auto-update
-
-# Apply cron job
-RUN crontab /etc/cron.d/auto-update
-
 # Server Specific env variables.
 ENV PORT "2456"
 ENV NAME "Valheim Docker"
 ENV WORLD "Dedicated"
 ENV PUBLIC "1"
 ENV PASSWORD "12345"
+
+# Auto Update Configs
 ENV AUTO_UPDATE "0"
+ENV AUTO_UPDATE_SCHEDULE "0 1 * * *"
+
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
 COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
 COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
-
-#WORKDIR /home/steam/valheim
+COPY --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 ENV PUID=1000
 ENV PGID=1000
 RUN usermod -u ${PUID} steam \
     && groupmod -g ${PGID} steam \
     && chsh -s /bin/bash steam
+
+
+HEALTHCHECK --interval=1m --timeout=3s \
+  CMD gosu steam pidof valheim_server.x86_64 || exit 1
 
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
 CMD ["/bin/bash", "/home/steam/scripts/start_valheim.sh"]

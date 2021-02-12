@@ -27,9 +27,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Run tests
+      - name: Build Odin
         run: |
-          docker-compose --file docker-compose.yml build
+          docker-compose --file docker-compose.yml build odin
+      - name: Build Valheim
+        run: |
+          docker-compose --file docker-compose.yml build valheim
 
   push_odin:
     needs: test
