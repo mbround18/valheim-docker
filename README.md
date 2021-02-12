@@ -35,13 +35,13 @@ services:
       - 2457:2457/udp
       - 2458:2458/udp
     environment:
-      TZ: "America/Los_Angeles"
-      NAME: "Valheim Docker"
-      WORLD: "Dedicated"
-      PORT: "2456"
-      PUBLIC: "1"
-      PASSWORD: "something-secret"
-      AUTO_UPDATE: "0"     
+      - PORT=2456
+      - NAME="Created With Valheim Docker"
+      - WORLD="Dedicated"
+      - PASSWORD="Banana Phone"
+      - TZ=America/Chicago
+      - PUBLIC=1
+      - AUTO_UPDATE=0
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim

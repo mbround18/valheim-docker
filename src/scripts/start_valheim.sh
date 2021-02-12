@@ -31,7 +31,9 @@ World: ${WORLD}
 Public: ${PUBLIC}
 Password: (REDACTED)
 "
-export SteamAppId=892970
+
+export SteamAppId=${APPID:-892970}
+export PATH="/home/steam/.odin:$PATH"
 
 # Setting up server
 log "Running Install..."
