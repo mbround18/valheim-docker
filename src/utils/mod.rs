@@ -25,7 +25,7 @@ fn parse_variable(value: String) -> String {
 pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
     debug!("Checking env for {}", name);
     if let Ok(env_val) = env::var(name.to_uppercase()) {
-        if env_val.len() > 0 {
+        if !env_val.is_empty() {
             debug!("Env variable found {}={}", name, env_val);
             return parse_variable(env_val);
         }
@@ -34,7 +34,11 @@ pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
         debug!("Env variable found {}={}", name, env_val);
         return parse_variable(env_val);
     }
-    parse_variable(args.value_of(name).unwrap_or(default.as_str()).to_string())
+    parse_variable(
+        args.value_of(name)
+            .unwrap_or_else(|| default.as_str())
+            .to_string(),
+    )
 }
 
 pub fn server_installed() -> bool {

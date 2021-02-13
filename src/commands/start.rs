@@ -11,7 +11,7 @@ pub fn invoke(args: &ArgMatches) {
     let mut command = create_execution("bash");
     let server_executable = &[get_working_dir(), "valheim_server.x86_64".to_string()].join("/");
     let script_args = &ValheimArguments {
-        port: get_variable(args, "port", "2456".to_string()).to_string(),
+        port: get_variable(args, "port", "2456".to_string()),
         name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
         world: get_variable(args, "world", "Dedicated".to_string()),
         public: get_variable(args, "public", "1".to_string()),

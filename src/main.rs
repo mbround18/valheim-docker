@@ -10,7 +10,7 @@ use crate::logger::OdinLogger;
 use clap::{load_yaml, App};
 use log::{debug, LevelFilter, SetLoggerError};
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 static LOGGER: OdinLogger = OdinLogger;
 static GAME_ID: i64 = 896660;
 

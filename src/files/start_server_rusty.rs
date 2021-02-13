@@ -46,16 +46,14 @@ pub fn write_rusty_start_script(context: &ValheimArguments, dry_run: bool) {
     if dry_run {
         info!("This would have written a file to\n{}", file.path());
         info!("With contents of:\n{}", content);
-    } else {
-        if file.write(content) {
-            info!("Created the {} script successfully!", file.path());
-            if file.set_executable() {
-                info!("Successfully set {} to executable!", file.path());
-                return;
-            };
-        } else {
-            error!("Failed to create file!");
-            exit(1);
+    } else if file.write(content) {
+        info!("Created the {} script successfully!", file.path());
+        if file.set_executable() {
+            info!("Successfully set {} to executable!", file.path());
+            return;
         };
+    } else {
+        error!("Failed to create file!");
+        exit(1);
     }
 }
