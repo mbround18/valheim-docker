@@ -1,9 +1,9 @@
-use std::env;
 use clap::ArgMatches;
-use std::process::{exit};
-use log::{info,debug, error};
+use log::{debug, error, info};
+use std::env;
 use std::path::Path;
-use sysinfo::{System, Signal, SystemExt, ProcessExt};
+use std::process::exit;
+use sysinfo::{ProcessExt, Signal, System, SystemExt};
 
 pub fn get_working_dir() -> String {
     match env::current_dir() {
@@ -16,7 +16,10 @@ pub fn get_working_dir() -> String {
 }
 
 fn parse_variable(value: String) -> String {
-    return value.trim_start_matches('"').trim_end_matches('"').to_string()
+    return value
+        .trim_start_matches('"')
+        .trim_end_matches('"')
+        .to_string();
 }
 
 pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
@@ -34,9 +37,8 @@ pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
     parse_variable(args.value_of(name).unwrap_or(default.as_str()).to_string())
 }
 
-
 pub fn server_installed() -> bool {
-    Path::new(&[get_working_dir(),  "valheim_server.x86_64".to_string()].join("/")).exists()
+    Path::new(&[get_working_dir(), "valheim_server.x86_64".to_string()].join("/")).exists()
 }
 
 pub fn send_shutdown() {
@@ -48,7 +50,10 @@ pub fn send_shutdown() {
         info!("Process NOT found!")
     } else {
         for found_process in processes {
-            info!("Found Process with pid {}! Sending Interrupt!", found_process.pid());
+            info!(
+                "Found Process with pid {}! Sending Interrupt!",
+                found_process.pid()
+            );
             if found_process.kill(Signal::Interrupt) {
                 info!("Process signal interrupt sent successfully!")
             } else {
@@ -65,7 +70,7 @@ pub fn wait_for_server_exit() {
         system.refresh_all();
         let processes = system.get_process_by_name("valheim_server.x86_64");
         if processes.is_empty() {
-            break
+            break;
         }
     }
     info!("Server has been shutdown successfully!")

@@ -1,7 +1,6 @@
-use std::process::{Command, exit, ExitStatus};
+use log::{error, info};
 use std::path::Path;
-use log::{info, error};
-
+use std::process::{exit, Command, ExitStatus};
 
 pub fn find_command(executable: &str) -> Option<Command> {
     let script_file = Path::new(executable);
@@ -10,9 +9,7 @@ pub fn find_command(executable: &str) -> Option<Command> {
         Option::from(Command::new(executable.to_string()))
     } else {
         match which::which(executable) {
-            Ok(executable_path) => {
-                Option::from(Command::new(executable_path))
-            },
+            Ok(executable_path) => Option::from(Command::new(executable_path)),
             Err(_e) => {
                 error!("Failed to find {} in path", executable);
                 None
@@ -49,7 +46,7 @@ pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: 
             } else {
                 match exit_status.code() {
                     Some(code) => info!("Exited with status code: {}", code),
-                    None       => info!("Process terminated by signal")
+                    None => info!("Process terminated by signal"),
                 }
             }
         }

@@ -1,8 +1,8 @@
+use crate::executable::execute_mut;
 use crate::steamcmd::steamcmd_command;
-use crate::executable::{execute_mut};
-use std::process::{Stdio, ExitStatus};
-use crate::utils::{get_working_dir};
-use log::{info};
+use crate::utils::get_working_dir;
+use log::info;
+use std::process::{ExitStatus, Stdio};
 
 pub fn invoke(app_id: i64) -> std::io::Result<ExitStatus> {
     info!("Installing {} to {}", app_id, get_working_dir());
