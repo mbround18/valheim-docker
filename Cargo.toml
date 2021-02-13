@@ -7,15 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-pad = "0.1"
 log = "0.4.14"
 clap = { version = "3.0.0-beta.2", features = ["yaml"] }
 which = "4.0.2"
-dialoguer = "0.7.1"
 tinytemplate = "1.1"
 serde = { version = "1.0", features = ["derive"] }
-sysinfo = "0.16.1"
-regex = "1"
+sysinfo = { version = "0.16.1", default_features = false }
 
 
 [profile.dev]
