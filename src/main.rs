@@ -1,16 +1,16 @@
-mod steamcmd;
 mod commands;
 mod executable;
-mod utils;
-mod logger;
 mod files;
+mod logger;
+mod steamcmd;
+mod utils;
 
-use clap::{App, load_yaml};
-use log::{SetLoggerError, LevelFilter, debug};
-use crate::logger::OdinLogger;
 use crate::executable::handle_exit_status;
+use crate::logger::OdinLogger;
+use clap::{load_yaml, App};
+use log::{debug, LevelFilter, SetLoggerError};
 
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 static LOGGER: OdinLogger = OdinLogger;
 static GAME_ID: i64 = 896660;
 
@@ -20,8 +20,7 @@ fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
     } else {
         LevelFilter::Info
     };
-    let result = log::set_logger(&LOGGER)
-        .map(|_| log::set_max_level(level));
+    let result = log::set_logger(&LOGGER).map(|_| log::set_max_level(level));
     debug!("Debugging set to {}", debug.to_string());
     result
 }
@@ -29,8 +28,7 @@ fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
 fn main() {
     // The YAML file is found relative to the current file, similar to how modules are found
     let yaml = load_yaml!("cli.yaml");
-    let app = App::from(yaml)
-        .version(VERSION);
+    let app = App::from(yaml).version(VERSION);
 
     let matches = app.get_matches();
 
@@ -48,5 +46,4 @@ fn main() {
     if let Some(ref stop_matches) = matches.subcommand_matches("stop") {
         commands::stop::invoke(stop_matches);
     };
-
 }

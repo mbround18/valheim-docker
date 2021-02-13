@@ -1,8 +1,8 @@
 use crate::files::{FileManager, ManagedFile};
-use tinytemplate::TinyTemplate;
+use log::{error, info};
 use serde::Serialize;
-use log::{info, error};
 use std::process::exit;
+use tinytemplate::TinyTemplate;
 
 static TEMPLATE: &'static &str = &r#"
 #!/usr/bin/env bash
@@ -30,33 +30,30 @@ pub struct ValheimArguments {
     pub(crate) world: String,
     pub(crate) public: String,
     pub(crate) password: String,
-    pub(crate) command: String
+    pub(crate) command: String,
 }
 
 pub fn write_rusty_start_script(context: &ValheimArguments, dry_run: bool) {
     let mut tt = TinyTemplate::new();
-    tt.add_template(
-        "hello", &TEMPLATE).unwrap();
+    tt.add_template("hello", &TEMPLATE).unwrap();
     let content = tt
         .render("hello", &context)
         .unwrap()
         .replace("&quot;", "\"");
     let file = ManagedFile {
-        name: "start_server_rusty.sh"
+        name: "start_server_rusty.sh",
     };
     if dry_run {
         info!("This would have written a file to\n{}", file.path());
         info!("With contents of:\n{}", content);
-    } else {
-        if file.write(content) {
-            info!("Created the {} script successfully!", file.path());
-            if file.set_executable() {
-                info!("Successfully set {} to executable!", file.path());
-                return;
-            };
-        } else {
-            error!("Failed to create file!");
-            exit(1);
+    } else if file.write(content) {
+        info!("Created the {} script successfully!", file.path());
+        if file.set_executable() {
+            info!("Successfully set {} to executable!", file.path());
+            return;
         };
+    } else {
+        error!("Failed to create file!");
+        exit(1);
     }
 }

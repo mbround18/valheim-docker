@@ -1,6 +1,6 @@
-use crate::utils::{get_working_dir, server_installed, send_shutdown, wait_for_server_exit};
-use log::{info, error};
+use crate::utils::{get_working_dir, send_shutdown, server_installed, wait_for_server_exit};
 use clap::ArgMatches;
+use log::{error, info};
 
 pub fn invoke(args: &ArgMatches) {
     info!("Stopping server {}", get_working_dir());
