@@ -20,13 +20,14 @@ RUN apk add dos2unix  --update-cache --repository http://dl-3.alpinelinux.org/al
 # --------------- #
 FROM cm2network/steamcmd:root
 
-RUN apt-get update          \
-    && apt-get install -y   \
-    htop net-tools nano     \
-    netcat curl wget        \
-    cron sudo gosu dos2unix \
-    libsdl2-dev             \
-    && gosu nobody true     \
+RUN apt-get update                  \
+    && apt-get install -y           \
+    htop net-tools nano             \
+    netcat curl wget                \
+    cron sudo gosu dos2unix         \
+    libsdl2-2.0-0                   \
+    && rm -rf /var/lib/apt/lists/*  \
+    && gosu nobody true             \
     && dos2unix
 
 # Set up timezone information
