@@ -1,6 +1,6 @@
 use crate::executable::create_execution;
 use crate::files::start_server_rusty::{write_rusty_start_script, ValheimArguments};
-use crate::utils::{get_variable, get_working_dir, server_installed};
+use crate::utils::{get_variable, get_working_dir, server_installed, shell_escape};
 use clap::ArgMatches;
 use log::{error, info};
 use std::process::{exit, Stdio};
@@ -11,11 +11,11 @@ pub fn invoke(args: &ArgMatches) {
     let mut command = create_execution("bash");
     let server_executable = &[get_working_dir(), "valheim_server.x86_64".to_string()].join("/");
     let script_args = &ValheimArguments {
-        port: get_variable(args, "port", "2456".to_string()),
-        name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
-        world: get_variable(args, "world", "Dedicated".to_string()),
-        public: get_variable(args, "public", "1".to_string()),
-        password: get_variable(args, "password", "12345".to_string()),
+        port: get_variable(args, "port", "2456"),
+        name: shell_escape(get_variable(args, "name", "Odin \\o/")),
+        world: shell_escape(get_variable(args, "world", "Dedicated")),
+        public: get_variable(args, "public", "1"),
+        password: shell_escape(get_variable(args, "password", "!@#$%^&*()")),
         command: server_executable.to_string(),
     };
     if script_args.password.len() < 5 {

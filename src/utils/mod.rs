@@ -22,7 +22,7 @@ fn parse_variable(value: String) -> String {
         .to_string();
 }
 
-pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
+pub fn get_variable(args: &ArgMatches, name: &str, default: &str) -> String {
     debug!("Checking env for {}", name);
     if let Ok(env_val) = env::var(name.to_uppercase()) {
         if !env_val.is_empty() {
@@ -34,11 +34,13 @@ pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
         debug!("Env variable found {}={}", name, env_val);
         return parse_variable(env_val);
     }
-    parse_variable(
-        args.value_of(name)
-            .unwrap_or_else(|| default.as_str())
-            .to_string(),
-    )
+    parse_variable(args.value_of(name).unwrap_or(default).to_string())
+}
+
+pub fn shell_escape(s: String) -> String {
+    // Surround `s` with ' and replace any inner ' with '"'"' will effectively shell escape strings
+    // in bash
+    format!("'{}'", s.replace("'", r#"'"'"'"#))
 }
 
 pub fn server_installed() -> bool {
