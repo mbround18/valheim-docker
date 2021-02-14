@@ -15,26 +15,21 @@ pub fn get_working_dir() -> String {
     }
 }
 
-fn parse_variable(value: String) -> String {
-    return value
-        .trim_start_matches('"')
-        .trim_end_matches('"')
-        .to_string();
-}
-
 pub fn get_variable(args: &ArgMatches, name: &str, default: &str) -> String {
     debug!("Checking env for {}", name);
     if let Ok(env_val) = env::var(name.to_uppercase()) {
         if !env_val.is_empty() {
             debug!("Env variable found {}={}", name, env_val);
-            return parse_variable(env_val);
+            return env_val;
         }
     }
+
     if let Ok(env_val) = env::var(format!("SERVER_{}", name).to_uppercase()) {
         debug!("Env variable found {}={}", name, env_val);
-        return parse_variable(env_val);
+        return env_val;
     }
-    parse_variable(args.value_of(name).unwrap_or(default).to_string())
+
+    args.value_of(name).unwrap_or(default).to_string()
 }
 
 pub fn shell_escape(s: String) -> String {
