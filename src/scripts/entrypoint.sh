@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+
+# Set up timezone
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
 # shellcheck disable=SC2039
@@ -30,12 +32,10 @@ setup_cron() {
   log "Auto Update Enabled..."
   log "Schedule: ${AUTO_UPDATE_SCHEDULE}"
   AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
-  printf "%s /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" > /etc/cron.d/auto-update
+  printf "%s NAME=$NAME WORLD=$WORLD PORT=$PORT PASSWORD=$PASSWORD PUBLIC=$PUBLIC /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" > /etc/cron.d/auto-update
   echo "" >> /etc/cron.d/auto-update
-
   # Give execution rights on the cron job
   chmod 0644 /etc/cron.d/auto-update
-
   # Apply cron job
   crontab /etc/cron.d/auto-update
   set +f
