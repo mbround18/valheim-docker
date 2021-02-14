@@ -3,6 +3,18 @@
 # Set up timezone
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
+append_bashrc() {
+  LINE=$1
+  FILE='/home/steam/.bashrc'
+  grep -qF -- "$LINE" "$FILE" || echo "$LINE" >> "$FILE"
+}
+
+append_bashrc "export PORT=$PORT"
+append_bashrc "export NAME=$NAME"
+append_bashrc "export WORLD=$WORLD"
+append_bashrc "export PUBLIC=$PUBLIC"
+append_bashrc "export PASSWORD=$PASSWORD"
+
 # shellcheck disable=SC2039
 if [ "${EUID}" -ne 0 ]; then
   log "Please run as root"
