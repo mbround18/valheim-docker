@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-export PATH="/home/steam/.odin:$PATH"
+# Cron uses blank env and does not pick up /usr/local/bin files.
+export PATH="/usr/local/bin:$PATH"
 
 log() {
   PREFIX="[Valheim][steam]"
@@ -12,6 +13,13 @@ line () {
 line
 log "Valheim Server - $(date)"
 log "Starting auto update..."
+log "
+Port: ${PORT}
+Name: ${NAME}
+World: ${WORLD}
+Public: ${PUBLIC}
+Password: (REDACTED)
+"
 line
 
 

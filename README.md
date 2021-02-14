@@ -67,7 +67,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - [#11] Added check for length of password and fail on odin install or odin stop failures.
   - [#24] Added public variable to dockerfile and odin
   - [#35] Fix for the server to now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
-  - [#53] Formatted scripts to be more useful and added timezone scheduling. 
+  - [#53] Formatted scripts to be more useful and added timezone scheduling.
+  - [#77] Fix auto update not acknowledging variables and added odin to system bin.
 - 1.1.1 (Stable): 
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 

@@ -20,8 +20,6 @@ initialize () {
 }
 
 initialize "Installing Valheim via Odin..."
-export PATH="/home/steam/.odin:$PATH"
-
 
 log "Variables loaded....."
 log "
