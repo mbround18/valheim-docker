@@ -20,13 +20,14 @@ RUN apk add dos2unix  --update-cache --repository http://dl-3.alpinelinux.org/al
 # --------------- #
 FROM cm2network/steamcmd:root
 
-RUN apt-get update          \
-    && apt-get install -y   \
-    htop net-tools nano     \
-    netcat curl wget        \
-    cron sudo gosu dos2unix \
-    libsdl2-dev             \
-    && gosu nobody true     \
+RUN apt-get update                  \
+    && apt-get install -y           \
+    htop net-tools nano             \
+    netcat curl wget                \
+    cron sudo gosu dos2unix         \
+    libsdl2-2.0-0                   \
+    && rm -rf /var/lib/apt/lists/*  \
+    && gosu nobody true             \
     && dos2unix
 
 # Set up timezone information
@@ -46,14 +47,15 @@ ENV AUTO_UPDATE_SCHEDULE "0 1 * * *"
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
 COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
+COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /usr/local/odin
 COPY --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 ENV PUID=1000
 ENV PGID=1000
 RUN usermod -u ${PUID} steam \
     && groupmod -g ${PGID} steam \
-    && chsh -s /bin/bash steam
+    && chsh -s /bin/bash steam \
+    && ln -s /usr/local/odin/odin /usr/local/bin/odin
 
 
 HEALTHCHECK --interval=1m --timeout=3s \
