@@ -47,6 +47,10 @@ services:
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim
+    ulimits: # steamcmd attempts to set `ulimits -n 2048`
+      nofile:
+        soft: 2048
+        hard: 2048
 ```
 
 
