@@ -10,7 +10,11 @@ line () {
 }
 
 line
-log "Auto Updater is running...."
+log "Valheim Server - $(date)"
+log "Starting auto update..."
+line
+
+
 cd /home/steam/valheim || exit 1
 log "Stopping server..."
 odin stop || exit 1
