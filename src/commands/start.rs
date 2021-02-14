@@ -12,10 +12,10 @@ pub fn invoke(args: &ArgMatches) {
     let server_executable = &[get_working_dir(), "valheim_server.x86_64".to_string()].join("/");
     let script_args = &ValheimArguments {
         port: get_variable(args, "port", "2456"),
-        name: shell_escape(get_variable(args, "name", "Odin \\o/")),
+        name: shell_escape(get_variable(args, "name", "Valheim powered by Odin")),
         world: shell_escape(get_variable(args, "world", "Dedicated")),
         public: get_variable(args, "public", "1"),
-        password: shell_escape(get_variable(args, "password", "!@#$%^&*()")),
+        password: shell_escape(get_variable(args, "password", "12345")),
         command: server_executable.to_string(),
     };
     if script_args.password.len() < 5 {
