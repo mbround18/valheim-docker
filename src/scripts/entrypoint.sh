@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+# Set up variables
+# shellcheck disable=SC2155
+export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
+export WORLD="$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")"
+export PASSWORD="$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")"
+
 # Set up timezone
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
@@ -14,13 +20,13 @@ log() {
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
 
-line () {
+line() {
   log "###########################################################################"
 }
 
 clean_up() {
-  echo "Safely shutting down..." >> /home/steam/output.log
-  if [[ -n $CRON_PID ]];then
+  echo "Safely shutting down..." >>/home/steam/output.log
+  if [[ -n $CRON_PID ]]; then
     kill $CRON_PID
   fi
 }
@@ -32,8 +38,8 @@ setup_cron() {
   log "Auto Update Enabled..."
   log "Schedule: ${AUTO_UPDATE_SCHEDULE}"
   AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
-  printf "%s NAME=$NAME WORLD=$WORLD PORT=$PORT PASSWORD=$PASSWORD PUBLIC=$PUBLIC /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" > /etc/cron.d/auto-update
-  echo "" >> /etc/cron.d/auto-update
+  printf "%s NAME='${NAME}' WORLD='${WORLD}' PORT=${PORT} PASSWORD='${PASSWORD}' PUBLIC=${PUBLIC} /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" >/etc/cron.d/auto-update
+  echo "" >>/etc/cron.d/auto-update
   # Give execution rights on the cron job
   chmod 0644 /etc/cron.d/auto-update
   # Apply cron job
@@ -57,12 +63,10 @@ setup_filesystem() {
   chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
 }
 
-
 line
 log "Valheim Server - $(date)"
 log "Initializing your container..."
 line
-
 
 log "Switching UID and GID"
 # shellcheck disable=SC2086
