@@ -8,7 +8,7 @@ log() {
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
 
-file_name="backup-$(date +"%y%m%d-%H%M%S").tar.gz"
+file_name="$(date +"%y%m%d-%H%M%S")-${1:-"backup"}.tar.gz"
 
 log "Starting auto backup process..."
 odin backup /home/steam/.config/unity3d/IronGate/Valheim "/home/steam/backups/${file_name}" || exit 1

@@ -74,11 +74,11 @@ subcommands:
       version: "1.0"
       author: mbround18
       args:
-        - INPUT:
-            about: Directory to backup
+        - INPUT_DIR:
+            about: Directory to back up
             required: true
             index: 1
-        - OUTPUT:
-            about: Sets the input file to use
+        - OUTPUT_FILE:
+            about: Sets the output file to use
             required: true
             index: 2

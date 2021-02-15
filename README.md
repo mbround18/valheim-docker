@@ -23,10 +23,10 @@
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |
-| AUTO_BACKUP_SCHEDULE     | `*/15 * * * *`         | FALSE    | Change this value to update based on how frequently you would like the server to update. [If you need help figuring out a cron schedule click here].
+| AUTO_BACKUP_SCHEDULE     | `*/15 * * * *`         | FALSE    | Change to set how frequently you would like the server to backup. [If you need help figuring out a cron schedule click here].
 | AUTO_BACKUP_REMOVE_OLD   | `1`                    | FALSE    | Set to `0` to keep all backups or manually manage them. |
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
-
+| AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
 
 ### Docker Compose
 
@@ -79,6 +79,7 @@ services:
       - AUTO_BACKUP_SCHEDULE="*/15 * * * *"
       - AUTO_BACKUP_REMOVE_OLD=1
       - AUTO_BACKUP_DAYS_TO_LIVE=3
+      - AUTO_BACKUP_ON_SHUTDOWN=1
 volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim
@@ -93,7 +94,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 ## Versions: 
 
 - latest (Stable):
-  - [#] Added backup feature to run based on cronjob. 
+  - [#100] Added backup feature to run based on cronjob. 
 - 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
@@ -120,6 +121,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#100]: https://github.com/mbround18/valheim-docker/pull/100
 [#89]: https://github.com/mbround18/valheim-docker/pull/89
 [#77]: https://github.com/mbround18/valheim-docker/pull/77
 [#53]: https://github.com/mbround18/valheim-docker/pull/53

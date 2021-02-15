@@ -22,6 +22,10 @@ initialize () {
 cleanup() {
     log "Halting server! Received interrupt!"
     odin stop
+    if [ "${AUTO_BACKUP_ON_SHUTDOWN:=0}" -eq 1 ]; then
+        log "Backup on shutdown triggered! Running backup tool..."
+        /bin/bash /home/steam/scripts/auto_backup.sh "shutdown"
+    fi
     if [[ -n $TAIL_PID ]];then
       kill $TAIL_PID
     fi

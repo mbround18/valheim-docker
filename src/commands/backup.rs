@@ -6,8 +6,8 @@ use std::fs::File;
 use std::process::exit;
 
 pub fn invoke(args: &ArgMatches) {
-    let input = args.value_of("INPUT").unwrap();
-    let output = args.value_of("OUTPUT").unwrap();
+    let input = args.value_of("INPUT_DIR").unwrap();
+    let output = args.value_of("OUTPUT_FILE").unwrap();
     debug!("Creating archive of {}", input);
     debug!("Output set to {}", output);
     let tar_gz = match File::create(output) {
