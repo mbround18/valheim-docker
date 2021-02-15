@@ -1,8 +1,9 @@
 use clap::ArgMatches;
-use log::{debug, error, info};
+use log::debug;
 use std::env;
 use std::path::Path;
-use sysinfo::{ProcessExt, Signal, System, SystemExt};
+
+pub const VALHEIM_EXECUTABLE_NAME: &str = "valheim_server.x86_64";
 
 pub fn get_working_dir() -> String {
     env::current_dir().unwrap().to_str().unwrap().to_string()
@@ -26,40 +27,5 @@ pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
 }
 
 pub fn server_installed() -> bool {
-    Path::new(&[get_working_dir(), "valheim_server.x86_64".to_string()].join("/")).exists()
-}
-
-pub fn send_shutdown() {
-    info!("Scanning for Valheim process");
-    let mut system = System::new();
-    system.refresh_all();
-    let processes = system.get_process_by_name("valheim_server.x86_64");
-    if processes.is_empty() {
-        info!("Process NOT found!")
-    } else {
-        for found_process in processes {
-            info!(
-                "Found Process with pid {}! Sending Interrupt!",
-                found_process.pid()
-            );
-            if found_process.kill(Signal::Interrupt) {
-                info!("Process signal interrupt sent successfully!")
-            } else {
-                error!("Failed to send signal interrupt!")
-            }
-        }
-    }
-}
-
-pub fn wait_for_server_exit() {
-    info!("Waiting for server to completely shutdown...");
-    let mut system = System::new();
-    loop {
-        system.refresh_all();
-        let processes = system.get_process_by_name("valheim_server.x86_64");
-        if processes.is_empty() {
-            break;
-        }
-    }
-    info!("Server has been shutdown successfully!")
+    Path::new(&[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/")).exists()
 }

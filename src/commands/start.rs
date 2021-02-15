@@ -1,5 +1,5 @@
 use crate::executable::create_execution;
-use crate::files::config::read_config;
+use crate::files::config::{config_file, read_config};
 use crate::utils::get_working_dir;
 use clap::ArgMatches;
 use daemonize::Daemonize;
@@ -10,15 +10,14 @@ use std::process::exit;
 pub fn invoke(args: &ArgMatches) {
     info!("Setting up start scripts...");
 
-    let config = read_config();
-    if config.password.len() < 5 {
+    let config = config_file();
+    let config_content = read_config(config);
+    if config_content.password.len() < 5 {
         error!("The supplied password is too short! It much be 5 characters or greater!");
         exit(1)
     }
-
     let dry_run: bool = args.is_present("dry_run");
     info!("Looking for burial mounds...");
-    // write_rusty_start_script(&script_args, dry_run);
     if !dry_run {
         let stdout =
             File::create(format!("{}/{}", get_working_dir(), "valheim_server.out")).unwrap();
@@ -34,19 +33,19 @@ pub fn invoke(args: &ArgMatches) {
                 info!("Server has been started and Daemonized. It should be online shortly!")
             })
             .privileged_action(move || {
-                create_execution(&config.command.as_str())
+                create_execution(&config_content.command.as_str())
                     .args(&[
                         "-nographics",
                         "-port",
-                        &config.port.as_str(),
+                        &config_content.port.as_str(),
                         "-name",
-                        &config.name.as_str(),
+                        &config_content.name.as_str(),
                         "-world",
-                        &config.world.as_str(),
+                        &config_content.world.as_str(),
                         "-password",
-                        &config.password.as_str(),
+                        &config_content.password.as_str(),
                         "-public",
-                        &config.public.as_str(),
+                        &config_content.public.as_str(),
                     ])
                     .spawn()
             });
@@ -55,5 +54,15 @@ pub fn invoke(args: &ArgMatches) {
             Ok(_) => println!("Success, daemonized"),
             Err(e) => eprintln!("Error, {}", e),
         }
+    } else {
+        info!(
+            "This command would have launched\n{} -port {} -name {} -world {} -password {} -public {}",
+            &config_content.command,
+            &config_content.port,
+            &config_content.name,
+            &config_content.world,
+            &config_content.password,
+            &config_content.public,
+        )
     }
 }

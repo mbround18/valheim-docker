@@ -1,6 +1,7 @@
-use crate::files::config::write_config;
+use crate::files::config::{config_file, write_config};
 use clap::ArgMatches;
 
 pub fn invoke(args: &ArgMatches) {
-    write_config(args);
+    let config = config_file();
+    write_config(config, args);
 }
