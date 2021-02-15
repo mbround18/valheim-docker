@@ -2,9 +2,11 @@ use crate::files::ValheimArguments;
 use crate::files::{FileManager, ManagedFile};
 use crate::utils::{get_variable, get_working_dir, VALHEIM_EXECUTABLE_NAME};
 use clap::ArgMatches;
+use log::error;
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::process::exit;
 
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
@@ -24,22 +26,26 @@ pub fn read_config(config: ManagedFile) -> ValheimArguments {
 pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
     let server_executable: &str =
         &[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/");
-    let command = PathBuf::from(get_variable(
+
+    let command = match fs::canonicalize(PathBuf::from(get_variable(
         args,
         "server_executable",
         server_executable.to_string(),
-    ));
+    ))) {
+        std::result::Result::Ok(command_path) => command_path.to_str().unwrap().to_string(),
+        std::result::Result::Err(_) => {
+            error!("Failed to find server executable! Please run `odin install`");
+            exit(1)
+        }
+    };
+
     let content = &ValheimArguments {
         port: get_variable(args, "port", "2456".to_string()),
         name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
         world: get_variable(args, "world", "Dedicated".to_string()),
         public: get_variable(args, "public", "1".to_string()),
         password: get_variable(args, "password", "12345".to_string()),
-        command: fs::canonicalize(&command)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .to_string(),
+        command,
     };
     config.write(serde_json::to_string(content).unwrap())
 }
