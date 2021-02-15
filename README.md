@@ -69,6 +69,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - [#35] Fix for the server to now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
   - [#53] Formatted scripts to be more useful and added timezone scheduling.
   - [#77] Fix auto update not acknowledging variables and added odin to system bin.
+  - [#89] Daemonized the server process by using rust specific bindings rather than dropping down to shell. 
 - 1.1.1 (Stable): 
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 
@@ -82,6 +83,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#89]: https://github.com/mbround18/valheim-docker/pull/89
+[#77]: https://github.com/mbround18/valheim-docker/pull/77
 [#53]: https://github.com/mbround18/valheim-docker/pull/53
 [#35]: https://github.com/mbround18/valheim-docker/issues/24
 [#24]: https://github.com/mbround18/valheim-docker/issues/24
