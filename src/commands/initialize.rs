@@ -1,3 +1,6 @@
-// pub fn invoke(args: Option<&ArgMatches>) {
-//     let option
-// }
+use crate::files::config::write_config;
+use clap::ArgMatches;
+
+pub fn invoke(args: &ArgMatches) {
+    write_config(args);
+}

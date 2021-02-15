@@ -38,7 +38,7 @@ setup_cron() {
   log "Auto Update Enabled..."
   log "Schedule: ${AUTO_UPDATE_SCHEDULE}"
   AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
-  printf "%s NAME='${NAME}' WORLD='${WORLD}' PORT=${PORT} PASSWORD='${PASSWORD}' PUBLIC=${PUBLIC} /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" >/etc/cron.d/auto-update
+  printf "%s /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a /home/steam/valheim/valheim_server.out" "${AUTO_UPDATE_SCHEDULE}" >/etc/cron.d/auto-update
   echo "" >>/etc/cron.d/auto-update
   # Give execution rights on the cron job
   chmod 0644 /etc/cron.d/auto-update
