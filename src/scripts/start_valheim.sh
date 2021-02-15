@@ -19,6 +19,14 @@ initialize () {
   line
 }
 
+cleanup() {
+    log "Halting server! Received interrupt!"
+    odin stop
+    if [[ -n $TAIL_PID ]];then
+      kill $TAIL_PID
+    fi
+}
+
 initialize "Installing Valheim via Odin..."
 
 log "Variables loaded....."
@@ -37,32 +45,26 @@ log "Running Install..."
 odin install || exit 1
 
 log "Initializing Variables...."
-odin init || exit 1
+odin configure || exit 1
 
+trap 'cleanup' INT TERM
 
 log "Herding Cats..."
 log "Starting server..."
 
 odin start || exit 1
 
-cleanup() {
-    log "Halting server! Received interrupt!"
-    odin stop
-    if [[ -n $TAIL_PID ]];then
-      kill $TAIL_PID
-    fi
-}
-
-trap 'cleanup' INT TERM
-
-
 initialize "
 Valheim Server Started...
 
 Keep an eye out for 'Game server connected' in the log!
 (this indicates its online without any errors.)
-" >> /home/steam/valheim/valheim_server.out
+" >> /home/steam/valheim/logs/output.log
 
-tail -f /home/steam/valheim/valheim_server.out /home/steam/valheim/valheim_server.err &
+
+log_names=("valheim_server.log" "valheim_server.err" "output.log" "auto-update.out" "auto-backup.out")
+log_files=("${log_names[@]/#/\/home\/steam\/valheim\/logs/}")
+touch "${log_files[@]}"
+tail -F ${log_files[*]} &
 export TAIL_PID=$!
 wait $TAIL_PID

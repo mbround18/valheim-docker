@@ -1,10 +1,9 @@
 use crate::executable::create_execution;
 use crate::files::config::{config_file, read_config};
-use crate::utils::get_working_dir;
+use crate::utils::{create_file, get_working_dir};
 use clap::ArgMatches;
 use daemonize::Daemonize;
 use log::{error, info};
-use std::fs::File;
 use std::process::exit;
 
 pub fn invoke(args: &ArgMatches) {
@@ -19,10 +18,8 @@ pub fn invoke(args: &ArgMatches) {
     let dry_run: bool = args.is_present("dry_run");
     info!("Looking for burial mounds...");
     if !dry_run {
-        let stdout =
-            File::create(format!("{}/{}", get_working_dir(), "valheim_server.out")).unwrap();
-        let stderr =
-            File::create(format!("{}/{}", get_working_dir(), "valheim_server.err")).unwrap();
+        let stdout = create_file(format!("{}/logs/valheim_server.log", get_working_dir()).as_str());
+        let stderr = create_file(format!("{}/logs/valheim_server.err", get_working_dir()).as_str());
         let daemonize = Daemonize::new()
             .working_directory(get_working_dir())
             .user("steam")
@@ -51,8 +48,8 @@ pub fn invoke(args: &ArgMatches) {
             });
 
         match daemonize.start() {
-            Ok(_) => println!("Success, daemonized"),
-            Err(e) => eprintln!("Error, {}", e),
+            Ok(_) => info!("Success, daemonized"),
+            Err(e) => error!("Error, {}", e),
         }
     } else {
         info!(

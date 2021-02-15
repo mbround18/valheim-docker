@@ -18,6 +18,8 @@ services:
       - TZ=America/Los_Angeles
       - AUTO_UPDATE=1
       - AUTO_UPDATE_SCHEDULE="0 1 * * *"
+      - AUTO_BACKUP=1
+      - AUTO_BACKUP_SCHEDULE="*/15 * * * *"
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -28,6 +30,7 @@ services:
     volumes:
     - ./tmp/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./tmp/server:/home/steam/valheim
+    - ./tmp/backups:/home/steam/backups
     - odin-output:/home/steam/.odin
 
 volumes:

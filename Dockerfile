@@ -13,7 +13,7 @@ RUN apt-get update                  \
     htop net-tools nano             \
     netcat curl wget                \
     cron sudo gosu dos2unix         \
-    libsdl2-2.0-0  jq               \
+    libsdl2-2.0-0  jq  multitail    \
     && rm -rf /var/lib/apt/lists/*  \
     && gosu nobody true             \
     && dos2unix
@@ -40,6 +40,12 @@ ENV PASSWORD "12345"
 # Auto Update Configs
 ENV AUTO_UPDATE "0"
 ENV AUTO_UPDATE_SCHEDULE "0 1 * * *"
+
+# Auto Update Configs
+ENV AUTO_BACKUP "0"
+ENV AUTO_BACKUP_SCHEDULE "*/15 * * * *"
+ENV AUTO_BACKUP_REMOVE_OLD "1"
+ENV AUTO_BACKUP_DAYS_TO_LIVE "3"
 
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
