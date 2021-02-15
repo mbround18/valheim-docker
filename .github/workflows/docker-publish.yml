@@ -90,7 +90,13 @@ jobs:
 
       - name: Build image
         run: |
-          docker build . --file Dockerfile --tag $GITHUB_IMAGE_NAME --tag $DOCKER_IMAGE_NAME
+          docker build .                                        \
+          --file Dockerfile                                     \
+          --build-arg GITHUB_SHA="${GITHUB_SHA}"                \
+          --build-arg GITHUB_REF="${GITHUB_REF}"                \
+          --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}"  \
+          --tag $GITHUB_IMAGE_NAME                              \
+          --tag $DOCKER_IMAGE_NAME
 
       - name: Push Image to DockerHub
         run: |
