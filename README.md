@@ -58,6 +58,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 ## Versions: 
 
 - latest (Stable):
+- 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
   - [#18] Fixed issue with the timezone not persisting.
