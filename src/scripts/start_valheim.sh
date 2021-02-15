@@ -31,9 +31,11 @@ Password: (REDACTED)
 "
 
 export SteamAppId=${APPID:-892970}
-export PATH="/home/steam/.odin:$PATH"
 
 # Setting up server
+log "Initializing...."
+odin init || exit 1
+
 log "Running Install..."
 odin install || exit 1
 
@@ -58,8 +60,8 @@ Valheim Server Started...
 
 Keep an eye out for 'Game server connected' in the log!
 (this indicates its online without any errors.)
-" >> /home/steam/valheim/output.log
+" >> /home/steam/valheim/valheim_server.out
 
-tail -f /home/steam/valheim/output.log &
+tail -f /home/steam/valheim/valheim_server.out /home/steam/valheim/valheim_server.err &
 export TAIL_PID=$!
 wait $TAIL_PID

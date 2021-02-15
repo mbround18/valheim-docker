@@ -24,6 +24,20 @@ line() {
   log "###########################################################################"
 }
 
+check_version() {
+  file="/home/steam/.version"
+  sha="$(tail -n+1 $file | head -n1)"
+  branch="$(tail -n+2 $file | head -n1)"
+  repository="$(tail -n+3 $file | head -n1)"
+  github_version="$(curl -s "https://api.github.com/repos/${repository}/branches/${branch//refs\/heads\/}" | jq '.commit.sha')"
+  if [ -z "$github_version" ] || [ "$github_version" == "null" ]; then
+    log "You must be in development. Good luck!"
+  elif [ "$github_version" != "$sha" ]; then
+    log "Hey you! It looks like there is an update on $repository for $branch"
+    log "Please consider running \`docker-compose pull valheim\` or pull the image based on your use case"
+  fi
+}
+
 clean_up() {
   echo "Safely shutting down..." >>/home/steam/output.log
   if [[ -n $CRON_PID ]]; then
@@ -38,7 +52,7 @@ setup_cron() {
   log "Auto Update Enabled..."
   log "Schedule: ${AUTO_UPDATE_SCHEDULE}"
   AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
-  printf "%s NAME='${NAME}' WORLD='${WORLD}' PORT=${PORT} PASSWORD='${PASSWORD}' PUBLIC=${PUBLIC} /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a  /home/steam/valheim/output.log" "${AUTO_UPDATE_SCHEDULE}" >/etc/cron.d/auto-update
+  printf "%s /usr/sbin/gosu steam /bin/bash /home/steam/scripts/auto_update.sh  2>&1 | tee -a /home/steam/valheim/valheim_server.out" "${AUTO_UPDATE_SCHEDULE}" >/etc/cron.d/auto-update
   echo "" >>/etc/cron.d/auto-update
   # Give execution rights on the cron job
   chmod 0644 /etc/cron.d/auto-update
@@ -66,6 +80,7 @@ setup_filesystem() {
 line
 log "Valheim Server - $(date)"
 log "Initializing your container..."
+check_version
 line
 
 log "Switching UID and GID"
