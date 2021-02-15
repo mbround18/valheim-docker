@@ -12,9 +12,9 @@ services:
       - odin
     image: mbround18/valheim:latest
     environment:
-      - PORT=30017
+      - PORT=2456
       - NAME="Created With Valheim Docker"
-      - PASSWORD="12345"
+      - PASSWORD="Change Me! Please."
       - TZ=America/Los_Angeles
       - AUTO_UPDATE=1
       - AUTO_UPDATE_SCHEDULE="0 1 * * *"

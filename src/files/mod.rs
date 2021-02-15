@@ -1,12 +1,22 @@
-pub mod start_server_rusty;
-
+pub mod config;
 use crate::executable::create_execution;
 use crate::utils::get_working_dir;
 use log::{error, info};
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::Path;
+
+#[derive(Deserialize, Serialize)]
+pub struct ValheimArguments {
+    pub(crate) port: String,
+    pub(crate) name: String,
+    pub(crate) world: String,
+    pub(crate) public: String,
+    pub(crate) password: String,
+    pub(crate) command: String,
+}
 
 pub trait FileManager {
     fn path(&self) -> String;
@@ -65,11 +75,16 @@ pub trait FileManager {
 }
 
 pub struct ManagedFile {
-    pub(crate) name: &'static str,
+    pub(crate) name: String,
 }
 
 impl FileManager for ManagedFile {
     fn path(&self) -> String {
-        format!("{}/{}", get_working_dir(), self.name)
+        let supplied_path = Path::new(self.name.as_str());
+        if supplied_path.exists() {
+            supplied_path.to_str().unwrap().to_string()
+        } else {
+            format!("{}/{}", get_working_dir(), self.name)
+        }
     }
 }

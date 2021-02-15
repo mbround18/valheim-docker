@@ -29,16 +29,15 @@ fn main() {
     // The YAML file is found relative to the current file, similar to how modules are found
     let yaml = load_yaml!("cli.yaml");
     let app = App::from(yaml).version(VERSION);
-
     let matches = app.get_matches();
-
     setup_logger(matches.is_present("debug")).unwrap();
-
+    if let Some(ref init_matches) = matches.subcommand_matches("init") {
+        commands::initialize::invoke(init_matches);
+    };
     if let Some(ref _match) = matches.subcommand_matches("install") {
         let result = commands::install::invoke(GAME_ID);
         handle_exit_status(result, "Successfully installed Valheim!".to_string())
     };
-
     if let Some(ref start_matches) = matches.subcommand_matches("start") {
         commands::start::invoke(start_matches);
     };
