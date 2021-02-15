@@ -33,11 +33,12 @@ Password: (REDACTED)
 export SteamAppId=${APPID:-892970}
 
 # Setting up server
-log "Initializing...."
-odin init || exit 1
-
 log "Running Install..."
 odin install || exit 1
+
+log "Initializing Variables...."
+odin init || exit 1
+
 
 log "Herding Cats..."
 log "Starting server..."
