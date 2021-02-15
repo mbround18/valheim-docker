@@ -29,10 +29,17 @@ jobs:
 
       - name: Build Odin
         run: |
-          docker-compose --file docker-compose.yml build odin
+          docker-compose \
+          --file docker-compose.yml \
+          build odin
       - name: Build Valheim
         run: |
-          docker-compose --file docker-compose.yml build valheim
+          docker-compose \
+          --file docker-compose.yml build \
+          --build-arg GITHUB_SHA="${GITHUB_SHA}" \
+          --build-arg GITHUB_REF="${GITHUB_REF}" \
+          --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}" \
+          valheim
 
   push_odin:
     needs: test
@@ -49,7 +56,10 @@ jobs:
 
       - name: Build image
         run: |
-          docker build . --file Dockerfile.odin --tag "${GITHUB_IMAGE_NAME}-odin" --tag "${DOCKER_IMAGE_NAME}-odin"
+          docker build . \
+          --file Dockerfile.odin \
+          --tag "${GITHUB_IMAGE_NAME}-odin" \
+          --tag "${DOCKER_IMAGE_NAME}-odin"
 
       - name: Push Image to DockerHub
         run: |
@@ -90,7 +100,13 @@ jobs:
 
       - name: Build image
         run: |
-          docker build . --file Dockerfile --tag $GITHUB_IMAGE_NAME --tag $DOCKER_IMAGE_NAME
+          docker build . \
+          --file Dockerfile \
+          --build-arg GITHUB_SHA="${GITHUB_SHA}"
+          --build-arg GITHUB_REF="${GITHUB_REF}"
+          --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}"
+          --tag $GITHUB_IMAGE_NAME \
+          --tag $DOCKER_IMAGE_NAME
 
       - name: Push Image to DockerHub
         run: |
