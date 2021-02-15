@@ -35,11 +35,11 @@ jobs:
       - name: Build Valheim
         run: |
           docker-compose \
-          --file docker-compose.yml \
-          --build-arg GITHUB_SHA="${GITHUB_SHA}"
-          --build-arg GITHUB_REF="${GITHUB_REF}"
-          --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}"
-          build valheim
+          --file docker-compose.yml build \
+          --build-arg GITHUB_SHA="${GITHUB_SHA}" \
+          --build-arg GITHUB_REF="${GITHUB_REF}" \
+          --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}" \
+          valheim
 
   push_odin:
     needs: test
