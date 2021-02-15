@@ -32,7 +32,7 @@ check_version() {
   github_version="$(curl -s "https://api.github.com/repos/${repository}/branches/${branch//refs\/heads\/}" | jq '.commit.sha')"
   if [ -z "$github_version" ] || [ "$github_version" == "null" ]; then
     log "You must be in development. Good luck!"
-  elif [ "$github_version" != "$sha" ]; then
+  elif [ "${github_version//\"}" != "${sha//\"}" ]; then
     log "Hey you! It looks like there is an update on $repository for $branch"
     log "Please consider running \`docker-compose pull valheim\` or pull the image based on your use case"
   fi
