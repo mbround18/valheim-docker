@@ -16,7 +16,7 @@ args:
       about: Will output the commands that it intends to run.
 
 subcommands:
-  - init:
+  - configure:
       about: Initializes Odin with its configuration variables.
       version: "1.0"
       author: mbround18
@@ -69,3 +69,16 @@ subcommands:
       about: Stops Valheim
       version: "1.1"
       author: mbround18
+  - backup:
+      about: Backups the current saves to a specifc location
+      version: "1.0"
+      author: mbround18
+      args:
+        - INPUT_DIR:
+            about: Directory to back up
+            required: true
+            index: 1
+        - OUTPUT_FILE:
+            about: Sets the output file to use
+            required: true
+            index: 2

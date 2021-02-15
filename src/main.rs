@@ -31,8 +31,8 @@ fn main() {
     let app = App::from(yaml).version(VERSION);
     let matches = app.get_matches();
     setup_logger(matches.is_present("debug")).unwrap();
-    if let Some(ref init_matches) = matches.subcommand_matches("init") {
-        commands::initialize::invoke(init_matches);
+    if let Some(ref configure_matches) = matches.subcommand_matches("configure") {
+        commands::configure::invoke(configure_matches);
     };
     if let Some(ref _match) = matches.subcommand_matches("install") {
         let result = commands::install::invoke(GAME_ID);
@@ -41,8 +41,10 @@ fn main() {
     if let Some(ref start_matches) = matches.subcommand_matches("start") {
         commands::start::invoke(start_matches);
     };
-
     if let Some(ref stop_matches) = matches.subcommand_matches("stop") {
         commands::stop::invoke(stop_matches);
+    };
+    if let Some(ref backup_matches) = matches.subcommand_matches("backup") {
+        commands::backup::invoke(backup_matches);
     };
 }

@@ -1,7 +1,10 @@
 use clap::ArgMatches;
 use log::debug;
+use log::error;
 use std::env;
+use std::fs::File;
 use std::path::Path;
+use std::process::exit;
 
 pub const VALHEIM_EXECUTABLE_NAME: &str = "valheim_server.x86_64";
 
@@ -28,4 +31,15 @@ pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
 
 pub fn server_installed() -> bool {
     Path::new(&[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/")).exists()
+}
+
+pub fn create_file(path: &str) -> File {
+    let output_path = Path::new(path);
+    match File::create(output_path) {
+        Ok(file) => file,
+        Err(_) => {
+            error!("Failed to create {}", path);
+            exit(1)
+        }
+    }
 }
