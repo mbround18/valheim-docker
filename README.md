@@ -26,6 +26,7 @@
 | AUTO_BACKUP_SCHEDULE     | `*/15 * * * *`         | FALSE    | Change to set how frequently you would like the server to backup. [If you need help figuring out a cron schedule click here].
 | AUTO_BACKUP_REMOVE_OLD   | `1`                    | FALSE    | Set to `0` to keep all backups or manually manage them. |
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
+| AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
 
 ### Docker Compose
@@ -79,6 +80,7 @@ services:
       - AUTO_BACKUP_SCHEDULE="*/15 * * * *"
       - AUTO_BACKUP_REMOVE_OLD=1
       - AUTO_BACKUP_DAYS_TO_LIVE=3
+      - AUTO_BACKUP_ON_UPDATE=1
       - AUTO_BACKUP_ON_SHUTDOWN=1
 volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim

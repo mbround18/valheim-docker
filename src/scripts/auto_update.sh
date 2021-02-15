@@ -26,6 +26,11 @@ line
 cd /home/steam/valheim || exit 1
 log "Stopping server..."
 odin stop || exit 1
+
+if [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ]; then
+    /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
+fi
+
 log "Installing Updates..."
 odin install || exit 1
 log "Starting server..."

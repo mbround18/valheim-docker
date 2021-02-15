@@ -53,10 +53,13 @@ setup_cron() {
     SCRIPT_PATH="/home/steam/scripts/$2"
     CRON_SCHEDULE=$3
     CRON_ENV="$4"
-    printf "%s /usr/sbin/gosu steam /usr/bin/env -i %s /bin/bash %s >> /home/steam/valheim/logs/$CRON_NAME.out 2>&1" \
+    LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
+    rm $LOG_LOCATION
+    printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}"  \
     "${CRON_ENV:-""}"   \
     "${SCRIPT_PATH}"    \
+    "${LOG_LOCATION}"   \
     >/etc/cron.d/${CRON_NAME}
     echo "" >>/etc/cron.d/${CRON_NAME}
     # Give execution rights on the cron job
@@ -97,7 +100,11 @@ if [ "${AUTO_UPDATE:=0}" -eq 1 ]; then
     log "Auto Update Enabled..."
     log "Auto Update Schedule: ${AUTO_UPDATE_SCHEDULE}"
     AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
-    setup_cron "auto-update" "auto_update.sh" "${AUTO_UPDATE_SCHEDULE}"
+    setup_cron \
+    "auto-update" \
+    "auto_update.sh" \
+    "${AUTO_UPDATE_SCHEDULE}" \
+    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0}"
 fi
 if [ "${AUTO_BACKUP:=0}" -eq 1 ]; then
     log "Auto Backup Enabled..."
@@ -109,6 +116,7 @@ if [ "${AUTO_BACKUP:=0}" -eq 1 ]; then
     "${AUTO_BACKUP_SCHEDULE}"   \
     "AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD} AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE}"
 fi
+
 # Apply cron job
 cat /etc/cron.d/* | crontab -
 /usr/sbin/cron -f &
