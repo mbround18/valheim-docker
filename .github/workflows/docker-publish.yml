@@ -29,10 +29,17 @@ jobs:
 
       - name: Build Odin
         run: |
-          docker-compose --file docker-compose.yml build odin
+          docker-compose \
+          --file docker-compose.yml \
+          build odin
       - name: Build Valheim
         run: |
-          docker-compose --file docker-compose.yml build valheim
+          docker-compose \
+          --file docker-compose.yml \
+          --build-arg GITHUB_SHA="${GITHUB_SHA}"
+          --build-arg GITHUB_REF="${GITHUB_REF}"
+          --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}"
+          build valheim
 
   push_odin:
     needs: test
