@@ -1,12 +1,22 @@
-pub mod start_server_rusty;
-
-use crate::utils::get_working_dir;
-use std::path::Path;
-use std::fs::{remove_file, File};
+pub mod config;
 use crate::executable::create_execution;
-use std::io::Write;
-use log::{info,error};
+use crate::utils::get_working_dir;
+use log::{error, info};
+use serde::{Deserialize, Serialize};
 use std::fs;
+use std::fs::{remove_file, File};
+use std::io::Write;
+use std::path::Path;
+
+#[derive(Deserialize, Serialize)]
+pub struct ValheimArguments {
+    pub(crate) port: String,
+    pub(crate) name: String,
+    pub(crate) world: String,
+    pub(crate) public: String,
+    pub(crate) password: String,
+    pub(crate) command: String,
+}
 
 pub trait FileManager {
     fn path(&self) -> String;
@@ -18,7 +28,7 @@ pub trait FileManager {
             Ok(_) => {
                 info!("Successfully deleted {}", self.path());
                 true
-            },
+            }
             Err(_) => {
                 error!("Did not find or could not delete {}", self.path());
                 false
@@ -34,18 +44,16 @@ pub trait FileManager {
     }
     fn write(&self, content: String) -> bool {
         match File::create(self.path()) {
-            Ok(mut file) => {
-                match file.write_all(content.as_bytes()) {
-                    Ok(_) => {
-                        info!("Successfully written {}", self.path());
-                        true
-                    },
-                    _ => {
-                        error!("Failed to write {}", self.path());
-                        false
-                    }
+            Ok(mut file) => match file.write_all(content.as_bytes()) {
+                Ok(_) => {
+                    info!("Successfully written {}", self.path());
+                    true
                 }
-            }
+                _ => {
+                    error!("Failed to write {}", self.path());
+                    false
+                }
+            },
             _ => {
                 error!("Failed to write {}", self.path());
                 false
@@ -53,11 +61,13 @@ pub trait FileManager {
         }
     }
     fn set_executable(&self) -> bool {
-        if let Ok(_output) = create_execution("chmod").args(&["+x", self.path().as_str()]).output() {
+        if let Ok(_output) = create_execution("chmod")
+            .args(&["+x", self.path().as_str()])
+            .output()
+        {
             info!("Successfully set {} to executable", self.path());
             true
-        }
-        else {
+        } else {
             error!("Unable to set {} to executable", self.path());
             false
         }
@@ -65,11 +75,16 @@ pub trait FileManager {
 }
 
 pub struct ManagedFile {
-    pub(crate) name: &'static str
+    pub(crate) name: String,
 }
 
 impl FileManager for ManagedFile {
-    fn path(&self) -> String{
-        format!("{}/{}", get_working_dir(), self.name)
+    fn path(&self) -> String {
+        let supplied_path = Path::new(self.name.as_str());
+        if supplied_path.exists() {
+            supplied_path.to_str().unwrap().to_string()
+        } else {
+            format!("{}/{}", get_working_dir(), self.name)
+        }
     }
 }

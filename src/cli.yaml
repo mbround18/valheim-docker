@@ -16,15 +16,17 @@ args:
       about: Will output the commands that it intends to run.
 
 subcommands:
-  - install:
-      about: Installs Valheim with steamcmd
-      version: "1.0"
-      author: mbround18
-  - start:
-      about: Starts Valheim
+  - configure:
+      about: Initializes Odin with its configuration variables.
       version: "1.0"
       author: mbround18
       args:
+        - server_executable:
+            long: server-executable
+            value_name: SERVER_EXECUTABLE_PATH
+            about: Sets the servers executable path.
+            takes_value: true
+            default_value: ./valheim_server.x86_64
         - name:
             short: n
             long: name
@@ -38,25 +40,45 @@ subcommands:
             about: Sets the port of the server, (Can be set with ENV variable PORT)
             takes_value: true
         - world:
-              short: w
-              long: world
-              value_name: WORLD
-              about: Sets the world of the server, (Can be set with ENV variable WORLD)
-              takes_value: true
+            short: w
+            long: world
+            value_name: WORLD
+            about: Sets the world of the server, (Can be set with ENV variable WORLD)
+            takes_value: true
         - password:
-              short: s
-              long: password
-              value_name: PASSWORD
-              about: Sets the password of the server, (Can be set with ENV variable PASSWORD)
-              takes_value: true
+            short: s
+            long: password
+            value_name: PASSWORD
+            about: Sets the password of the server, (Can be set with ENV variable PASSWORD)
+            takes_value: true
         - public:
             short: o
             long: public
             value_name: PUBLIC
             about: Sets the public state of the server, (Can be set with ENV variable PUBLIC)
             takes_value: true
-
+  - install:
+      about: Installs Valheim with steamcmd
+      version: "2.0"
+      author: mbround18
+  - start:
+      about: Starts Valheim
+      version: "2.0"
+      author: mbround18
   - stop:
       about: Stops Valheim
       version: "1.1"
       author: mbround18
+  - backup:
+      about: Backups the current saves to a specifc location
+      version: "1.0"
+      author: mbround18
+      args:
+        - INPUT_DIR:
+            about: Directory to back up
+            required: true
+            index: 1
+        - OUTPUT_FILE:
+            about: Sets the output file to use
+            required: true
+            index: 2

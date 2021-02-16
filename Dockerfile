@@ -4,31 +4,29 @@
 # ------------------ #
 FROM mbround18/valheim-odin:latest as RustBuilder
 
-# ----------------------- #
-# -- Script Formatting -- #
-# ----------------------- #
-
-FROM alpine:latest as ScriptSanitize
-
-WORKDIR /data/scripts
-COPY src/scripts/* ./
-
-RUN apk add dos2unix  --update-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted \
-    && dos2unix /data/scripts/**
-
 # --------------- #
 # -- Steam CMD -- #
 # --------------- #
 FROM cm2network/steamcmd:root
 
-RUN apt-get update          \
-    && apt-get install -y   \
-    htop net-tools nano     \
-    netcat curl wget        \
-    cron sudo gosu dos2unix \
-    libsdl2-dev             \
-    && gosu nobody true     \
+RUN apt-get update                  \
+    && apt-get install -y           \
+    htop net-tools nano             \
+    netcat curl wget                \
+    cron sudo gosu dos2unix         \
+    libsdl2-2.0-0  jq               \
+    && rm -rf /var/lib/apt/lists/*  \
+    && gosu nobody true             \
     && dos2unix
+
+# Container informaiton
+ARG GITHUB_SHA="not-set"
+ARG GITHUB_REF="not-set"
+ARG GITHUB_REPOSITORY="not-set"
+
+# User config
+ENV PUID=1000
+ENV PGID=1000
 
 # Set up timezone information
 ENV TZ=America/Los_Angeles
@@ -44,17 +42,24 @@ ENV PASSWORD "12345"
 ENV AUTO_UPDATE "0"
 ENV AUTO_UPDATE_SCHEDULE "0 1 * * *"
 
+# Auto Backup Configs
+ENV AUTO_BACKUP "0"
+ENV AUTO_BACKUP_SCHEDULE "*/15 * * * *"
+ENV AUTO_BACKUP_REMOVE_OLD "1"
+ENV AUTO_BACKUP_DAYS_TO_LIVE "3"
+ENV AUTO_BACKUP_ON_UPDATE "0"
+ENV AUTO_BACKUP_ON_SHUTDOWN "0"
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
 COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /home/steam/.odin
+COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /usr/local/odin
 COPY --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
-ENV PUID=1000
-ENV PGID=1000
-RUN usermod -u ${PUID} steam \
-    && groupmod -g ${PGID} steam \
-    && chsh -s /bin/bash steam
+RUN usermod -u ${PUID} steam                            \
+    && groupmod -g ${PGID} steam                        \
+    && chsh -s /bin/bash steam                          \
+    && ln -s /usr/local/odin/odin /usr/local/bin/odin   \
+    && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version
 
 
 HEALTHCHECK --interval=1m --timeout=3s \
