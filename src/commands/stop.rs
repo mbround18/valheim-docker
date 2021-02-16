@@ -37,7 +37,8 @@ fn wait_for_server_exit() {
         if processes.is_empty() {
             break;
         } else {
-            thread::sleep(Duration::from_millis(100));
+            // Delay to keep down CPU usage
+            thread::sleep(Duration::from_secs(1));
         }
     }
     info!("Server has been shutdown successfully!")
