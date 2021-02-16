@@ -51,13 +51,12 @@ ENV AUTO_BACKUP_ON_SHUTDOWN "0"
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
 COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /usr/local/odin
+COPY --from=RustBuilder  --chmod=755 /data/odin/target/release/odin /usr/local/bin/odin
 COPY --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \
     && groupmod -g ${PGID} steam                        \
     && chsh -s /bin/bash steam                          \
-    && ln -s /usr/local/odin/odin /usr/local/bin/odin   \
     && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version
 
 
