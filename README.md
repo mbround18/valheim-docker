@@ -1,7 +1,11 @@
+<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto">
+
 # [Valheim]
 
-![Rust Build](https://github.com/mbround18/valheim-docker/workflows/Rust/badge.svg)
-![Docker Build](https://github.com/mbround18/valheim-docker/workflows/Docker/badge.svg)
+![Docker Pulls](https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge)
+![Rust Build](https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge)
+![Docker Build](https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge)
+
 
 
 ## Docker
