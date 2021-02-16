@@ -28,6 +28,7 @@ services:
     volumes:
     - ./tmp/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./tmp/server:/home/steam/valheim
+    - ./tmp/backups:/home/steam/backups
     - odin-output:/home/steam/.odin
 
 volumes:
