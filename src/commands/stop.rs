@@ -1,7 +1,10 @@
 use crate::utils::{get_working_dir, server_installed, VALHEIM_EXECUTABLE_NAME};
+
 use clap::ArgMatches;
 use log::{error, info};
 use sysinfo::{ProcessExt, Signal, System, SystemExt};
+
+use std::{thread, time::Duration};
 
 fn send_shutdown() {
     info!("Scanning for Valheim process");
@@ -33,6 +36,9 @@ fn wait_for_server_exit() {
         let processes = system.get_process_by_name(VALHEIM_EXECUTABLE_NAME);
         if processes.is_empty() {
             break;
+        } else {
+            // Delay to keep down CPU usage
+            thread::sleep(Duration::from_secs(1));
         }
     }
     info!("Server has been shutdown successfully!")
