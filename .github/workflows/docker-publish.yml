@@ -9,18 +9,16 @@ on:
     tags:
       - v*
     # Specific path
-    paths:
-      - "*"
-      - "!docs"
-      - "!README.md"
+    paths-ignore:
+      - "docs"
+      - "README.md"
 
   # Run tests for any PRs.
   pull_request:
     # Specific path
-    paths:
-      - "*"
-      - "!docs"
-      - "!README.md"
+    paths-ignore:
+      - "docs"
+      - "README.md"
 
 env:
   GITHUB_IMAGE_NAME: valheim
