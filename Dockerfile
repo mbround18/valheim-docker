@@ -51,7 +51,7 @@ ENV AUTO_BACKUP_ON_SHUTDOWN "0"
 
 COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
 COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=RustBuilder  --chmod=755 /data/odin/target/release /usr/local/odin
+COPY --from=RustBuilder  --chmod=755 /data/odin/target/release/odin /usr/local/odin/odin
 COPY --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \
