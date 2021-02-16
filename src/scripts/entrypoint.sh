@@ -83,11 +83,23 @@ setup_filesystem() {
     chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/valheim
 }
 
+check_memory() {
+    MEMORY=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024)))
+    MESSAGE="Your system has less than 2GB of ram!!\nValheim might not run on your system!!"
+    if [ $MEMORY -lt 2000 ]; then
+       line
+       log "${MESSAGE^^}"
+       line
+       line
+    fi
+}
+
 line
 log "Valheim Server - $(date)"
 log "Initializing your container..."
 check_version
 line
+check_memory
 
 log "Switching UID and GID"
 # shellcheck disable=SC2086
@@ -95,8 +107,13 @@ log "$(usermod -u ${PUID} steam)"
 # shellcheck disable=SC2086
 log "$(groupmod -g ${PGID} steam)"
 
+
 # Configure Cron
-if [ "${AUTO_UPDATE:=0}" -eq 1 ]; then
+AUTO_UPDATE="${AUTO_UPDATE:-0}"
+AUTO_BACKUP="${AUTO_BACKUP:-0}"
+
+
+if [ "${AUTO_UPDATE}" -eq 1 ]; then
     log "Auto Update Enabled..."
     log "Auto Update Schedule: ${AUTO_UPDATE_SCHEDULE}"
     AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
@@ -106,7 +123,8 @@ if [ "${AUTO_UPDATE:=0}" -eq 1 ]; then
     "${AUTO_UPDATE_SCHEDULE}" \
     "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0}"
 fi
-if [ "${AUTO_BACKUP:=0}" -eq 1 ]; then
+
+if [ "${AUTO_BACKUP}" -eq 1 ]; then
     log "Auto Backup Enabled..."
     log "Auto Backup Schedule: ${AUTO_BACKUP_SCHEDULE}"
     AUTO_BACKUP_SCHEDULE=$(echo "$AUTO_BACKUP_SCHEDULE" | tr -d '"')
@@ -118,9 +136,11 @@ if [ "${AUTO_BACKUP:=0}" -eq 1 ]; then
 fi
 
 # Apply cron job
-cat /etc/cron.d/* | crontab -
-/usr/sbin/cron -f &
-export CRON_PID=$!
+if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ]; then
+    cat /etc/cron.d/* | crontab -
+    /usr/sbin/cron -f &
+    export CRON_PID=$!
+fi
 
 # Configure filesystem
 setup_filesystem
@@ -129,3 +149,4 @@ setup_filesystem
 log "Launching as steam..."
 cd /home/steam/valheim || exit 1
 exec gosu steam "$@"
+
