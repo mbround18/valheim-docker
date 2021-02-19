@@ -6,11 +6,13 @@
 ![Rust Build](https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge)
 ![Docker Build](https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge)
 
-
-
 ## Docker
 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
+> 
+> Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
+> Modding is not supported by the Valheim officially currently; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
+> See [Getting started with mods]
 
 ### Environment Variables
 
@@ -101,7 +103,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 ## Versions: 
 
 - latest (Stable):
-  - [#100] Added backup feature to run based on cronjob. 
+  - [#100] Added backup feature to run based on cronjob.
+  - Added Mod support
 - 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
@@ -144,6 +147,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 [//]: <> (Links below...................)
 [Odin]: ./docs/odin.md
 [Valheim]: https://www.valheimgame.com/
+[Getting started with mods]: ./docs/getting_started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1_*_*_*
 
 [//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)

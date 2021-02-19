@@ -48,6 +48,7 @@ export SteamAppId=${APPID:-892970}
 log "Running Install..."
 odin install || exit 1
 
+
 log "Initializing Variables...."
 odin configure || exit 1
 
