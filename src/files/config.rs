@@ -18,7 +18,7 @@ pub fn config_file() -> ManagedFile {
 pub fn read_config(config: ManagedFile) -> ValheimArguments {
     let content = config.read();
     if content.is_empty() {
-        panic!("Please initialize odin with `odin init`. See `odin init --help`")
+        panic!("Please initialize odin with `odin configure`. See `odin configure --help`")
     }
     serde_json::from_str(content.as_str()).unwrap()
 }
@@ -57,7 +57,9 @@ mod tests {
     use std::env::current_dir;
 
     #[test]
-    #[should_panic(expected = "Please initialize odin with `odin init`. See `odin init --help`")]
+    #[should_panic(
+        expected = "Please initialize odin with `odin configure`. See `odin configure --help`"
+    )]
     fn can_read_config_panic() {
         let mut rng = rand::thread_rng();
         let n1: u8 = rng.gen();
