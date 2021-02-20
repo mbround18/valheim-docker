@@ -1,0 +1,35 @@
+version: "3"
+services:
+  odin:
+    image: ghcr.io/mbround18/valheim-odin:development-bepinex
+    build:
+      context: .
+      dockerfile: ./Dockerfile.odin
+    volumes:
+    - odin-output:/data/odin/target/release
+  valheim:
+    depends_on:
+      - odin
+    image: ghcr.io/mbround18/valheim:development-bepinex
+    environment:
+      - PORT=2456
+      - NAME="Created With Valheim Docker"
+      - PASSWORD="Change Me! Please."
+      - TZ=America/Los_Angeles
+      - AUTO_UPDATE=1
+      - AUTO_UPDATE_SCHEDULE="0 1 * * *"
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
+    volumes:
+    - ./tmp/saves:/home/steam/.config/unity3d/IronGate/Valheim
+    - ./tmp/server:/home/steam/valheim
+    - ./tmp/backups:/home/steam/backups
+    - odin-output:/home/steam/.odin
+
+volumes:
+  odin-output:

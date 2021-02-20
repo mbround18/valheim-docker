@@ -46,8 +46,11 @@ export SteamAppId=${APPID:-892970}
 
 # Setting up server
 log "Running Install..."
-odin install || exit 1
-
+if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+    odin install || exit 1
+else
+    log "Skipping install process, looks like valheim_server is already installed :)"
+fi
 
 log "Initializing Variables...."
 odin configure || exit 1
