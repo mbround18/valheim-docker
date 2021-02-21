@@ -1,13 +1,15 @@
 use clap::{load_yaml, App};
-use log::{debug, LevelFilter, SetLoggerError};
+use log::{debug, info, LevelFilter, SetLoggerError};
 
 use crate::executable::handle_exit_status;
 use crate::logger::OdinLogger;
+use crate::utils::fetch_env;
 
 mod commands;
 mod executable;
 mod files;
 mod logger;
+mod messages;
 mod steamcmd;
 mod utils;
 
@@ -31,21 +33,32 @@ fn main() {
   let yaml = load_yaml!("cli.yaml");
   let app = App::from(yaml).version(VERSION);
   let matches = app.get_matches();
-  setup_logger(matches.is_present("debug")).unwrap();
+  let debug_mode = matches.is_present("debug") || fetch_env("DEBUG_MODE", "0", false).eq("1");
+  setup_logger(debug_mode).unwrap();
+
+  if !debug_mode {
+    info!("Run with DEBUG_MODE as 1 if you think there is an issue with Odin");
+  }
+  debug!("Debug mode enabled!");
   if let Some(ref configure_matches) = matches.subcommand_matches("configure") {
+    debug!("Launching configure command...");
     commands::configure::invoke(configure_matches);
   };
   if matches.subcommand_matches("install").is_some() {
+    debug!("Launching install command...");
     let result = commands::install::invoke(GAME_ID);
     handle_exit_status(result, "Successfully installed Valheim!".to_string())
   };
   if let Some(ref start_matches) = matches.subcommand_matches("start") {
+    debug!("Launching start command...");
     commands::start::invoke(start_matches);
   };
   if let Some(ref stop_matches) = matches.subcommand_matches("stop") {
+    debug!("Launching stop command...");
     commands::stop::invoke(stop_matches);
   };
   if let Some(ref backup_matches) = matches.subcommand_matches("backup") {
+    debug!("Launching backup command...");
     commands::backup::invoke(backup_matches);
   };
 }

@@ -2,7 +2,7 @@ use crate::files::ValheimArguments;
 use crate::files::{FileManager, ManagedFile};
 use crate::utils::{get_variable, get_working_dir, VALHEIM_EXECUTABLE_NAME};
 use clap::ArgMatches;
-use log::error;
+use log::{debug, error};
 use std::env;
 use std::fs;
 use std::path::PathBuf;
@@ -12,6 +12,7 @@ const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
 pub fn config_file() -> ManagedFile {
   let name = env::var(ODIN_CONFIG_FILE_VAR).unwrap_or_else(|_| "config.json".to_string());
+  debug!("Config file set to: {}", name);
   ManagedFile { name }
 }
 
@@ -45,7 +46,12 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
     password: get_variable(args, "password", "12345".to_string()),
     command,
   };
-  config.write(serde_json::to_string(content).unwrap())
+  let content_to_write = serde_json::to_string(content).unwrap();
+  debug!(
+    "Writing config content: \n{}",
+    serde_json::to_string(content).unwrap()
+  );
+  config.write(content_to_write)
 }
 
 #[cfg(test)]

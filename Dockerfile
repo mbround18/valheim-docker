@@ -1,7 +1,8 @@
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-FROM mbround18/valheim-odin:latest as RustBuilder
+ARG ODIN_IMAGE_VERSION=latest
+FROM mbround18/valheim-odin:${ODIN_IMAGE_VERSION} as RustBuilder
 
 # --------------- #
 # -- Steam CMD -- #
@@ -13,7 +14,7 @@ RUN apt-get update                  \
     htop net-tools nano gcc g++     \
     netcat curl wget zip unzip      \
     cron sudo gosu dos2unix         \
-    libsdl2-2.0-0  jq               \
+    libsdl2-2.0-0  jq   libc6-dev   \
     && rm -rf /var/lib/apt/lists/*  \
     && gosu nobody true             \
     && dos2unix
@@ -49,19 +50,22 @@ ENV AUTO_BACKUP_DAYS_TO_LIVE "3"
 ENV AUTO_BACKUP_ON_UPDATE "0"
 ENV AUTO_BACKUP_ON_SHUTDOWN "0"
 
-COPY --chmod=755 ./src/scripts/*.sh /home/steam/scripts/
-COPY --chmod=755  ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=RustBuilder  --chmod=755 /data/odin/target/release/odin /usr/local/bin/odin
-COPY --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
+COPY ./src/scripts/*.sh /home/steam/scripts/
+COPY ./src/scripts/entrypoint.sh /entrypoint.sh
+COPY --from=RustBuilder  /data/odin/target/release/odin /usr/local/bin/odin
+COPY ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \
     && groupmod -g ${PGID} steam                        \
     && chsh -s /bin/bash steam                          \
-    && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version
+    && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version \
+    && chmod 755 -R /home/steam/scripts/                \
+    && chmod 755 /entrypoint.sh                         \
+    && chmod 755 /usr/local/bin/odin
 
 
 HEALTHCHECK --interval=1m --timeout=3s \
-  CMD gosu steam pidof valheim_server.x86_64 || exit 1
+  CMD pidof valheim_server.x86_64 || exit 1
 
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
 CMD ["/bin/bash", "/home/steam/scripts/start_valheim.sh"]

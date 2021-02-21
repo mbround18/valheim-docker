@@ -30,3 +30,21 @@ pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
 pub fn server_installed() -> bool {
   Path::new(&[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/")).exists()
 }
+
+pub(crate) fn fetch_env(name: &str, default: &str, is_multiple: bool) -> String {
+  match env::var(name) {
+    Ok(val) => {
+      let formatted_value = val.replace("\"", "");
+      debug!("Found env var '{}': '{}'", name, formatted_value);
+      if is_multiple {
+        format!(":{}", formatted_value)
+      } else {
+        formatted_value
+      }
+    }
+    Err(_) => {
+      debug!("Using default env var '{}': '{}'", name, default);
+      default.to_string()
+    }
+  }
+}

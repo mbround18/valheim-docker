@@ -1,6 +1,6 @@
 [package]
 name = "odin"
-version = "1.1.0"
+version = "1.2.0"
 authors = ["mbround18 <12646562+mbround18@users.noreply.github.com>"]
 edition = "2018"
 
