@@ -24,8 +24,8 @@ fn exit_action() {
   info!("(this indicates its online without any errors.)")
 }
 
-fn run_server(config: &ValheimArguments) -> std::io::Result<Child> {
-  let mut command = create_execution(&config.command.as_str());
+fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
+  let mut command = create_execution(&config.command);
   info!("--------------------------------------------------------------------------------------------------------------");
   let ld_library_path_value = fetch_env(
     LD_LIBRARY_PATH_VAR,
@@ -33,20 +33,24 @@ fn run_server(config: &ValheimArguments) -> std::io::Result<Child> {
     true,
   );
   debug!("Setting up base command");
-  let base_command = command.args(&[
-    "-nographics",
-    "-batchmode",
-    "-port",
-    &config.port.as_str(),
-    "-name",
-    &config.name.as_str(),
-    "-world",
-    &config.world.as_str(),
-    "-password",
-    &config.password.as_str(),
-    "-public",
-    &config.public.as_str(),
-  ]);
+  let base_command = command
+    .args(&[
+      "-nographics",
+      "-batchmode",
+      "-port",
+      &config.port.as_str(),
+      "-name",
+      &config.name.as_str(),
+      "-world",
+      &config.world.as_str(),
+      "-password",
+      &config.password.as_str(),
+      "-public",
+      &config.public.as_str(),
+    ])
+    .env("SteamAppId", fetch_env("APPID", "892970", false))
+    .current_dir(get_working_dir());
+  info!("Executable: {}", &config.command);
   info!("Launching Command...");
 
   if is_bepinex_installed() {
@@ -77,11 +81,6 @@ pub fn invoke(args: &ArgMatches) {
   if !dry_run {
     let stdout = create_file(format!("{}/logs/valheim_server.log", get_working_dir()).as_str());
     let stderr = create_file(format!("{}/logs/valheim_server.err", get_working_dir()).as_str());
-    if is_bepinex_installed() {
-      debug!("Testing build environment for BepInEx");
-      build_environment();
-    }
-
     let daemonize = Daemonize::new()
       .working_directory(get_working_dir())
       .user("steam")
@@ -89,7 +88,7 @@ pub fn invoke(args: &ArgMatches) {
       .stdout(stdout)
       .stderr(stderr)
       .exit_action(exit_action)
-      .privileged_action(move || run_server(&config_content));
+      .privileged_action(move || spawn_server(&config_content));
 
     match daemonize.start() {
       Ok(_) => info!("Success, daemonized"),

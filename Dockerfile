@@ -9,14 +9,14 @@ FROM mbround18/valheim-odin:${ODIN_IMAGE_VERSION} as RustBuilder
 # --------------- #
 FROM cm2network/steamcmd:root
 
-RUN apt-get update                  \
-    && apt-get install -y           \
-    htop net-tools nano gcc g++     \
-    netcat curl wget zip unzip      \
-    cron sudo gosu dos2unix         \
-    libsdl2-2.0-0  jq   libc6-dev   \
-    && rm -rf /var/lib/apt/lists/*  \
-    && gosu nobody true             \
+RUN apt-get update                     \
+    && apt-get install -y              \
+    htop net-tools nano gcc g++        \
+    netcat curl wget zip unzip         \
+    cron sudo gosu dos2unix            \
+    libsdl2-2.0-0  jq   libc6-dev      \
+    && rm -rf /var/lib/apt/lists/*     \
+    && gosu nobody true                \
     && dos2unix
 
 # Container informaiton
