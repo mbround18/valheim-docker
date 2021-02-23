@@ -51,6 +51,16 @@ pub(crate) fn fetch_env(name: &str, default: &str, is_multiple: bool) -> String 
   formatted_value
 }
 
+pub(crate) fn path_exists(path: &str) -> bool {
+  let state = Path::new(path).exists();
+  debug!(
+    "Path {} {}",
+    path,
+    if state { "exists" } else { "does not exist" }
+  );
+  state
+}
+
 #[cfg(test)]
 mod fetch_env_tests {
   use crate::utils::fetch_env;
