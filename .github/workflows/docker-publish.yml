@@ -13,9 +13,7 @@ on:
   pull_request:
 
 env:
-  GITHUB_IMAGE_NAME: valheim
   DOCKER_IMAGE_NAME: mbround18/valheim
-
 
 jobs:
   # Run tests.
@@ -25,13 +23,25 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
+
       - uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
+        with:
+          key: docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
+          restore-keys: |
+            docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
 
       - name: Build Odin
         run: |
+          # Gather Utils
+          . ./.github/scripts/utils.sh
+
+          # Parse version
+          VERSION="${GITHUB_REF}"
+          VERSION="$(parse_version)"
+          echo VERSION=$VERSION
+
           docker-compose \
           --file docker-compose.yml \
           build odin
@@ -56,6 +66,10 @@ jobs:
       - uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
+        with:
+          key: docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
+          restore-keys: |
+            docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
 
       - name: Log into registry
         run: |
@@ -66,24 +80,22 @@ jobs:
         run: |
           docker build . \
           --file Dockerfile.odin \
-          --tag "${GITHUB_IMAGE_NAME}-odin" \
           --tag "${DOCKER_IMAGE_NAME}-odin"
 
       - name: Push Image to DockerHub
         run: |
+          # Gather Utils
+          . ./.github/scripts/utils.sh
+
+          # Parse variables
           IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME-odin
 
           # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          IMAGE_ID="${IMAGE_ID,,}"
 
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
+          # Parse version
+          VERSION="${GITHUB_REF}"
+          VERSION="$(parse_version)"
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
@@ -104,6 +116,10 @@ jobs:
       - uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
+        with:
+          key: docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
+          restore-keys: |
+            docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
 
       - name: Log into registry
         run: |
@@ -117,24 +133,22 @@ jobs:
           --build-arg GITHUB_SHA="${GITHUB_SHA}"                \
           --build-arg GITHUB_REF="${GITHUB_REF}"                \
           --build-arg GITHUB_REPOSITORY="${GITHUB_REPOSITORY}"  \
-          --tag $GITHUB_IMAGE_NAME                              \
           --tag $DOCKER_IMAGE_NAME
 
       - name: Push Image to DockerHub
         run: |
-          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME
+          # Gather Utils
+          . ./.github/scripts/utils.sh
+
+          # Parse variables
+          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME-odin
 
           # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          IMAGE_ID="${IMAGE_ID,,}"
 
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
+          # Parse version
+          VERSION="${GITHUB_REF}"
+          VERSION="$(parse_version)"
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
