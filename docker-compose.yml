@@ -18,6 +18,7 @@ services:
       - TZ=America/Los_Angeles
       - AUTO_UPDATE=1
       - AUTO_UPDATE_SCHEDULE="0 1 * * *"
+      - DEBUG_MODE=1
     build:
       context: .
       dockerfile: ./Dockerfile
