@@ -3,7 +3,7 @@
 
 parse_version() {
   # Strip git ref prefix from version
-  VERSION="${VERSION:-github.ref}"
+  VERSION="${VERSION:-latest}"
   VERSION="${VERSION//refs\/heads\//}"
   VERSION="${VERSION//refs\/tags\/v/}"
 
