@@ -34,7 +34,7 @@ jobs:
           . ./.github/scripts/utils.sh
 
           # Parse version
-          VERSION="$( github.ref )"
+          VERSION="${GITHUB_REF}"
           VERSION="$(parse_version)"
           echo VERSION=$VERSION
 
@@ -86,7 +86,7 @@ jobs:
           IMAGE_ID="${IMAGE_ID,,}"
 
           # Parse version
-          VERSION="$( github.ref )"
+          VERSION="${GITHUB_REF}"
           VERSION="$(parse_version)"
 
           echo IMAGE_ID=$IMAGE_ID
@@ -135,7 +135,7 @@ jobs:
           IMAGE_ID="${IMAGE_ID,,}"
 
           # Parse version
-          VERSION="$( github.ref )"
+          VERSION="${GITHUB_REF}"
           VERSION="$(parse_version)"
 
           echo IMAGE_ID=$IMAGE_ID
