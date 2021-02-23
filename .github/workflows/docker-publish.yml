@@ -141,7 +141,7 @@ jobs:
           . ./.github/scripts/utils.sh
 
           # Parse variables
-          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME-odin
+          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME
 
           # Change all uppercase to lowercase
           IMAGE_ID="${IMAGE_ID,,}"
