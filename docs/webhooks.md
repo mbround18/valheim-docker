@@ -1,0 +1,57 @@
+# Webhook Configuration
+
+## Environment Variables
+
+| Variable                            | Default                            | Required | Description |
+|-------------------------------------|------------------------------------|----------|-------------|
+| WEBHOOK_BROADCAST_MESSAGE           | CHANGE_ME                           | true     | You set this. See `odin notify --help` |
+| WEBHOOK_UPDATING_MESSAGE            | `Server Status: Updating`          | false    | Set the Updating message of your server |
+| WEBHOOK_UPDATE_SUCCESSFUL_MESSAGE   | `Server Status: Update Successful` | false    | Set the Update Successful message of your server |
+| WEBHOOK_UPDATE_FAILED_MESSAGE       | `Server Status: Update Failed`     | false    | Set the Update Failed message of your server |
+| WEBHOOK_STARTING_MESSAGE            | `Server Status: Starting`          | false    | Set the Starting message of your server |
+| WEBHOOK_START_SUCCESSFUL_MESSAGE    | `Server Status: Start Successful`  | false    | Set the Start Successful message of your server |
+| WEBHOOK_START_FAILED_MESSAGE        | `Server Status: Start Failed`      | false    | Set the Start Failed message of your server |
+| WEBHOOK_STOPPING_MESSAGE            | `Server Status: Stopping`          | false    | Set the Stopping message of your server |
+| WEBHOOK_STOP_SUCCESSFUL_MESSAGE     | `Server Status: Stop Successful`   | false    | Set the Stop Successful message of your server |
+| WEBHOOK_STOP_FAILED_MESSAGE         | `Server Status: Stop Failed`       | false    | Set the Stop Failed message of your server |
+
+
+## POST Body Example
+
+```Json
+{
+  "event_type": "Broadcast",
+  "event_message": "Server Status: Broadcast",
+  "timestamp": "02/22/2021 17:18:04 -08:00"
+}
+```
+
+| Key             | Description |
+|-----------------|-------------|
+| `event_type`    | Name of the event |
+| `event_message` | A description of the event. |
+| `timestamp`     | ISO8601 timestamp |
+
+## Considerations
+
+- The expected HTTP codes returned from the webhook should be either 204 or 201 to be considered successful. 
+    - 204 is the default return http code for a webhook as it signifies the request has been processed.
+    - 201 was included in case you want to stream into an endpoint for creating a resource. 
+      - Example 1, logging actions on the server.
+      - Example 2, using json-server to debug webhooks.  
+    
+## Developing/Debugging Webhooks
+
+1. Start json-server
+   
+    ```shell
+    docker run --rm -p 3000:3000 vimagick/json-server  -H 0.0.0.0 -p 3000 -w db.json
+    ```
+   
+2. Run notify against the webhook
+   
+    ```shell
+    cargo run -- notify "Derp Testing another notification" --webhook "http://127.0.0.1:3000/posts"
+    ```
+
+
