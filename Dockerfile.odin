@@ -31,5 +31,5 @@ RUN cargo build --release --bin odin
 FROM rust as runtime
 WORKDIR /data/odin
 COPY --from=builder /data/odin/target/release/odin /usr/local/bin
-ENTRYPOINT ["./usr/local/bin/odin"]
+ENTRYPOINT ["/usr/local/bin/odin"]
 CMD ["--version"]
