@@ -138,6 +138,13 @@ services:
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
 
+## Sponsors
+
+<a href="https://github.com/AtroposOrbis">
+  <img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4" />
+</a>
+
+
 ## Versions: 
 
 - latest (Stable):
