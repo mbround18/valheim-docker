@@ -18,7 +18,7 @@
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 > 
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
-> Modding is not supported by the Valheim officially currently; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
+> Modding is not supported by the Valheim developers officially yet; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
 > See [Getting started with mods]
 
 ### Environment Variables
