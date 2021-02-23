@@ -11,7 +11,7 @@ FROM cm2network/steamcmd:root
 
 RUN apt-get update                     \
     && apt-get install -y              \
-    htop net-tools nano gcc g++        \
+    htop net-tools nano gcc g++ gdb    \
     netcat curl wget zip unzip         \
     cron sudo gosu dos2unix            \
     libsdl2-2.0-0  jq   libc6-dev      \
