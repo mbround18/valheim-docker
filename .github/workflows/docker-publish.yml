@@ -27,6 +27,10 @@ jobs:
       - uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
+        with:
+          key: docker-layer-caching-${{ github.workflow }}-{hash}
+          restore-keys: |
+            docker-layer-caching-${{ github.workflow }}-{hash}
 
       - name: Build Odin
         run: |
@@ -62,6 +66,10 @@ jobs:
       - uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
+        with:
+          key: docker-layer-caching-${{ github.workflow }}-{hash}
+          restore-keys: |
+            docker-layer-caching-${{ github.workflow }}-{hash}
 
       - name: Log into registry
         run: |
@@ -108,6 +116,10 @@ jobs:
       - uses: satackey/action-docker-layer-caching@v0.0.11
         # Ignore the failure of a step and avoid terminating the job.
         continue-on-error: true
+        with:
+          key: docker-layer-caching-${{ github.workflow }}-{hash}
+          restore-keys: |
+            docker-layer-caching-${{ github.workflow }}-{hash}
 
       - name: Log into registry
         run: |
