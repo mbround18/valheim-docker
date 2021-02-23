@@ -59,7 +59,7 @@ subcommands:
             takes_value: true
   - install:
       about: Installs Valheim with steamcmd
-      version: "2.0"
+      version: "2.1"
       author: mbround18
   - start:
       about: Starts Valheim

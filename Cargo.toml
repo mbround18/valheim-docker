@@ -1,6 +1,6 @@
 [package]
 name = "odin"
-version = "1.1.0"
+version = "1.2.0"
 authors = ["mbround18 <12646562+mbround18@users.noreply.github.com>"]
 edition = "2018"
 
@@ -16,7 +16,6 @@ serde_json = "1.0"
 daemonize = "0.4"
 tar = "0.4"
 flate2 = "1.0"
-
 
 [dev-dependencies]
 rand = "0.8.3"

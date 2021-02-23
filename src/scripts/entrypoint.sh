@@ -54,7 +54,7 @@ setup_cron() {
     CRON_SCHEDULE=$3
     CRON_ENV="$4"
     LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
-    rm $LOG_LOCATION
+    rm $LOG_LOCATION > /dev/null
     printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}"  \
     "${CRON_ENV:-""}"   \

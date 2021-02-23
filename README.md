@@ -13,13 +13,17 @@
     <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge">
 </a>
 
-
-
 ## Docker
 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
+> 
+> Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
+> Modding is not supported by the Valheim officially currently; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
+> See [Getting started with mods]
 
 ### Environment Variables
+
+> See further on down for advanced environment variables. 
 
 | Variable                 | Default                | Required | Description |
 |--------------------------|------------------------|----------|-------------|
@@ -39,7 +43,6 @@
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
-| ODIN_CONFIG_FILE         | `config.json`          | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host |
 
 ### Docker Compose
 
@@ -100,6 +103,36 @@ services:
       - ./valheim/backups:/home/steam/backups
 ```
 
+### Advanced Environment Variables
+
+> Editing or adding these can cause issues! They are intended to give you more access to the system.
+
+#### Odin Specific
+
+> These are set automatically by [Odin];
+> you DO NOT need to set these and only mess with them if you Know what you are doing.
+
+| Variable                 | Default                | Required | Description |
+|--------------------------|------------------------|----------|-------------|
+| DEBUG_MOD                | `0`                    | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing. 
+| ODIN_CONFIG_FILE         | `config.json`          | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host |
+| ODIN_WORKING_DIR         | `$PWD`                 | FALSE    | Sets the directory you wish to run `odin` commands in and can be used to set where valheim is managed from. |
+
+#### BepInEx/Modded Variables
+
+> These are set automatically by [Odin] for a basic BepInEx installation; 
+> you DO NOT need to set these and only mess with them if you Know what you are doing.
+
+| Variable                 | Default                                                  | Required | Description |
+|--------------------------|----------------------------------------------------------|----------|-------------|
+| LD_PRELOAD               | `libdoorstop_x64.so`                                     | TRUE     | Sets which library to preload on Valheim start. |
+| LD_LIBRARY_PATH          | `./linux64:/home/steam/valheim/doorstop_libs`            | TRUE     | Sets which library paths it should look in for preload libs. | 
+| DOORSTOP_ENABLE          | `TRUE`                                                   | TRUE     | Enables Doorstop or not. |
+| DOORSTOP_LIB             | `libdoorstop_x64.so`                                     | TRUE     | Which doorstop lib to load | 
+| DOORSTOP_LIBS            | `/home/steam/valheim/doorstop_libs`                      | TRUE     | Where to look for doorstop libs. | 
+| DOORSTOP_INVOKE_DLL_PATH | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload dll to load. |
+| DYLD_LIBRARY_PATH        | `"/home/steam/valheim/doorstop_libs"`                    | TRUE     | Sets the library paths. NOTE: This variable is weird and MUST have quotes around it! |
+| DYLD_INSERT_LIBRARIES    | `/home/steam/valheim/doorstop_libs/libdoorstop_x64.so`   | TRUE     | Sets which library to load. |
 
 ### [Odin]
 
@@ -108,7 +141,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 ## Versions: 
 
 - latest (Stable):
-  - [#100] Added backup feature to run based on cronjob. 
+  - [#100] Added backup feature to run based on cronjob.
+  - [#148] Added Mod support
 - 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
@@ -135,6 +169,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#148]: https://github.com/mbround18/valheim-docker/pull/148
 [#100]: https://github.com/mbround18/valheim-docker/pull/100
 [#89]: https://github.com/mbround18/valheim-docker/pull/89
 [#77]: https://github.com/mbround18/valheim-docker/pull/77
@@ -151,6 +186,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 [//]: <> (Links below...................)
 [Odin]: ./docs/odin.md
 [Valheim]: https://www.valheimgame.com/
+[Getting started with mods]: ./docs/getting_started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1_*_*_*
 
 [//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)

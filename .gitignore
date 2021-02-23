@@ -2,3 +2,4 @@
 target/
 tmp/
 *.env*
+docker-compose.*.yml

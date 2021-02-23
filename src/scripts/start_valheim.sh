@@ -31,44 +31,45 @@ cleanup() {
     fi
 }
 
-initialize "Installing Valheim via Odin..."
-
+initialize "Installing Valheim via $(odin --version)..."
 log "Variables loaded....."
-log "
-Port: ${PORT}
-Name: ${NAME}
-World: ${WORLD}
-Public: ${PUBLIC}
-Password: (REDACTED)
-"
-
+log "Port: ${PORT}"
+log "Name: ${NAME}"
+log "World: ${WORLD}"
+log "Public: ${PUBLIC}"
+log "Password: (REDACTED)"
 export SteamAppId=${APPID:-892970}
 
 # Setting up server
 log "Running Install..."
-odin install || exit 1
+if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+    odin install || exit 1
+else
+    log "Skipping install process, looks like valheim_server is already installed :)"
+fi
+cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
 
+
+# Setting up server
 log "Initializing Variables...."
 odin configure || exit 1
 
+
+# Setting up script traps
 trap 'cleanup' INT TERM
 
-log "Herding Cats..."
+# Starting server
 log "Starting server..."
-
 odin start || exit 1
 
-initialize "
-Valheim Server Started...
+sleep 2
 
-Keep an eye out for 'Game server connected' in the log!
-(this indicates its online without any errors.)
-" >> /home/steam/valheim/logs/output.log
-
-
+# Initializing all logs
+log "Herding Graydwarfs..."
 log_names=("valheim_server.log" "valheim_server.err" "output.log" "auto-update.out" "auto-backup.out")
 log_files=("${log_names[@]/#/\/home\/steam\/valheim\/logs/}")
-touch "${log_files[@]}"
+touch "${log_files[@]}" # Destroy logs on start up, this can be changed later to roll logs or archive them.
 tail -F ${log_files[*]} &
 export TAIL_PID=$!
+# Waiting for logs.
 wait $TAIL_PID
