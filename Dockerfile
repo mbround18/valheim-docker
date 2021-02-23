@@ -2,7 +2,7 @@
 # -- Odin Builder -- #
 # ------------------ #
 ARG ODIN_IMAGE_VERSION=latest
-FROM mbround18/valheim-odin:${ODIN_IMAGE_VERSION} as RustBuilder
+FROM mbround18/valheim-odin:${ODIN_IMAGE_VERSION} as runtime
 
 # --------------- #
 # -- Steam CMD -- #
@@ -52,7 +52,7 @@ ENV AUTO_BACKUP_ON_SHUTDOWN "0"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=RustBuilder  /data/odin/target/release/odin /usr/local/bin/odin
+COPY --from=runtime /usr/local/bin/odin /usr/local/bin/odin
 COPY ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \
