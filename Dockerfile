@@ -58,8 +58,7 @@ RUN usermod -u ${PUID} steam                            \
     && chmod 755 -R /home/steam/scripts/                \
     && chmod 755 /entrypoint.sh                         \
     && chmod 755 /usr/local/bin/odin                    \
-    && dos2unix /entrypoint.sh                          \
-    && dos2unix /home/steam/scripts/*.sh
+    && dos2unix /entrypoint.sh /home/steam/.bashrc  /home/steam/scripts/*.sh
 
 
 HEALTHCHECK --interval=1m --timeout=3s \
