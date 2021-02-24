@@ -57,7 +57,9 @@ RUN usermod -u ${PUID} steam                            \
     && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version \
     && chmod 755 -R /home/steam/scripts/                \
     && chmod 755 /entrypoint.sh                         \
-    && chmod 755 /usr/local/bin/odin
+    && chmod 755 /usr/local/bin/odin                    \
+    && dos2unix /entrypoint.sh                          \
+    && dos2unix /home/steam/scripts/*.sh
 
 
 HEALTHCHECK --interval=1m --timeout=3s \
