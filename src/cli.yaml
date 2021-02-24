@@ -88,7 +88,7 @@ subcommands:
       author: mbround18
       args:
         - MESSAGE:
-            about: Directory to back up
+            about: Message to send to the webhook.
             required: true
             index: 1
         - webhook_url:

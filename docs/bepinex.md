@@ -20,10 +20,8 @@
 
 3. Download BepInEx
 
-  > Not this is a basic installation! [Click here to check for updates on the package supplied below](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/)
-
   ```shell
-  wget -O /home/steam/tmp/bepinex.zip https://cdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-5.4.601.zip
+  wget -O /home/steam/tmp/bepinex.zip https://github.com/valheimPlus/ValheimPlus/releases/download/0.8.6/UnixServer.zip
   ```
 
 4. Extract the BepInEx zip file
@@ -31,36 +29,36 @@
   > Overwrite files with `A`
 
   ```shell
-  unzip /home/steam/tmp/bepinex.zip -d /home/steam/tmp/bepinex
+  unzip /home/steam/tmp/bepinex.zip -d /home/steam/valheim
   
   ```
 
-5. Copy and cleanup files
+5. Cleanup files
 
   ```shell
-  cp -rp  /home/steam/tmp/bepinex/BepInExPack_Valheim/* /home/steam/valheim
   cd /home/steam/valheim && rm -rf /home/steam/tmp
   ```
 
 6. Restart your server.
 
-> You should see a huge disclaimer in your console about running with bepin ex. 
+> You should see a huge disclaimer in your console about running with bepinex. 
 
 ## BepInEx/Modded Variables
 
 > These are set automatically by [Odin] for a basic BepInEx installation;
 > you DO NOT need to set these and only mess with them if you Know what you are doing.
 
-| Variable                 | Default                                                  | Required | Description |
-|--------------------------|----------------------------------------------------------|----------|-------------|
-| LD_PRELOAD               | `libdoorstop_x64.so`                                     | TRUE     | Sets which library to preload on Valheim start. |
-| LD_LIBRARY_PATH          | `./linux64:/home/steam/valheim/doorstop_libs`            | TRUE     | Sets which library paths it should look in for preload libs. | 
-| DOORSTOP_ENABLE          | `TRUE`                                                   | TRUE     | Enables Doorstop or not. |
-| DOORSTOP_LIB             | `libdoorstop_x64.so`                                     | TRUE     | Which doorstop lib to load | 
-| DOORSTOP_LIBS            | `/home/steam/valheim/doorstop_libs`                      | TRUE     | Where to look for doorstop libs. | 
-| DOORSTOP_INVOKE_DLL_PATH | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload dll to load. |
-| DYLD_LIBRARY_PATH        | `"/home/steam/valheim/doorstop_libs"`                    | TRUE     | Sets the library paths. NOTE: This variable is weird and MUST have quotes around it! |
-| DYLD_INSERT_LIBRARIES    | `/home/steam/valheim/doorstop_libs/libdoorstop_x64.so`   | TRUE     | Sets which library to load. |
+| Variable                      | Default                                                  | Required | Description |
+|-------------------------------|----------------------------------------------------------|----------|-------------|
+| LD_PRELOAD                    | `libdoorstop_x64.so`                                     | TRUE     | Sets which library to preload on Valheim start. |
+| LD_LIBRARY_PATH               | `./linux64:/home/steam/valheim/doorstop_libs`            | TRUE     | Sets which library paths it should look in for preload libs. | 
+| DOORSTOP_ENABLE               | `TRUE`                                                   | TRUE     | Enables Doorstop or not. |
+| DOORSTOP_LIB                  | `libdoorstop_x64.so`                                     | TRUE     | Which doorstop lib to load | 
+| DOORSTOP_LIBS                 | `/home/steam/valheim/doorstop_libs`                      | TRUE     | Where to look for doorstop libs. | 
+| DOORSTOP_INVOKE_DLL_PATH      | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload dll to load. |
+| DOORSTOP_CORLIB_OVERRIDE_PATH | `/home/steam/valheim/unstripped_corlib`                  | TRUE     | Sets where the decompiled libraries containing base mono files are located at |              
+| DYLD_LIBRARY_PATH             | `"/home/steam/valheim/doorstop_libs"`                    | TRUE     | Sets the library paths. NOTE: This variable is weird and MUST have quotes around it! |
+| DYLD_INSERT_LIBRARIES         | `/home/steam/valheim/doorstop_libs/libdoorstop_x64.so`   | TRUE     | Sets which library to load. |
 
 
 [Odin]: ./odin.md

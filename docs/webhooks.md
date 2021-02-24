@@ -4,16 +4,17 @@
 
 | Variable                            | Default                            | Required | Description |
 |-------------------------------------|------------------------------------|----------|-------------|
-| WEBHOOK_BROADCAST_MESSAGE           | CHANGE_ME                           | true     | You set this. See `odin notify --help` |
-| WEBHOOK_UPDATING_MESSAGE            | `Server Status: Updating`          | false    | Set the Updating message of your server |
-| WEBHOOK_UPDATE_SUCCESSFUL_MESSAGE   | `Server Status: Update Successful` | false    | Set the Update Successful message of your server |
-| WEBHOOK_UPDATE_FAILED_MESSAGE       | `Server Status: Update Failed`     | false    | Set the Update Failed message of your server |
-| WEBHOOK_STARTING_MESSAGE            | `Server Status: Starting`          | false    | Set the Starting message of your server |
-| WEBHOOK_START_SUCCESSFUL_MESSAGE    | `Server Status: Start Successful`  | false    | Set the Start Successful message of your server |
-| WEBHOOK_START_FAILED_MESSAGE        | `Server Status: Start Failed`      | false    | Set the Start Failed message of your server |
-| WEBHOOK_STOPPING_MESSAGE            | `Server Status: Stopping`          | false    | Set the Stopping message of your server |
-| WEBHOOK_STOP_SUCCESSFUL_MESSAGE     | `Server Status: Stop Successful`   | false    | Set the Stop Successful message of your server |
-| WEBHOOK_STOP_FAILED_MESSAGE         | `Server Status: Stop Failed`       | false    | Set the Stop Failed message of your server |
+| WEBHOOK_URL                         | ``                                 | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| WEBHOOK_BROADCAST_MESSAGE           | CHANGE_ME                          | TRUE     | You set this. See `odin notify --help` |
+| WEBHOOK_UPDATING_MESSAGE            | `Server Status: Updating`          | FALSE    | Set the Updating message of your server |
+| WEBHOOK_UPDATE_SUCCESSFUL_MESSAGE   | `Server Status: Update Successful` | FALSE    | Set the Update Successful message of your server |
+| WEBHOOK_UPDATE_FAILED_MESSAGE       | `Server Status: Update Failed`     | FALSE    | Set the Update Failed message of your server |
+| WEBHOOK_STARTING_MESSAGE            | `Server Status: Starting`          | FALSE    | Set the Starting message of your server |
+| WEBHOOK_START_SUCCESSFUL_MESSAGE    | `Server Status: Start Successful`  | FALSE    | Set the Start Successful message of your server |
+| WEBHOOK_START_FAILED_MESSAGE        | `Server Status: Start Failed`      | FALSE    | Set the Start Failed message of your server |
+| WEBHOOK_STOPPING_MESSAGE            | `Server Status: Stopping`          | FALSE    | Set the Stopping message of your server |
+| WEBHOOK_STOP_SUCCESSFUL_MESSAGE     | `Server Status: Stop Successful`   | FALSE    | Set the Stop Successful message of your server |
+| WEBHOOK_STOP_FAILED_MESSAGE         | `Server Status: Stop Failed`       | FALSE    | Set the Stop Failed message of your server |
 
 
 ## POST Body Example

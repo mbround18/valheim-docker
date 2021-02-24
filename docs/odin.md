@@ -9,7 +9,7 @@ Odin is a CLI tool utilized for installing, starting, and stopping [Valheim] ser
 
 | Variable                 | Default                | Required | Description |
 |--------------------------|------------------------|----------|-------------|
-| DEBUG_MOD                | `0`                    | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing.
+| DEBUG_MODE               | `0`                    | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing.
 | ODIN_CONFIG_FILE         | `config.json`          | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host |
 | ODIN_WORKING_DIR         | `$PWD`                 | FALSE    | Sets the directory you wish to run `odin` commands in and can be used to set where valheim is managed from. |
 
