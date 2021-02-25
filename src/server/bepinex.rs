@@ -1,4 +1,4 @@
-use crate::commands::start::{LD_LIBRARY_PATH_VAR, LD_PRELOAD_VAR};
+use crate::constants;
 use crate::utils::{fetch_env, get_working_dir, path_exists};
 use log::{debug, info};
 use std::ops::Add;
@@ -48,9 +48,9 @@ pub struct BepInExEnvironment {
 }
 
 pub fn build_environment() -> BepInExEnvironment {
-  let ld_preload = fetch_env(LD_PRELOAD_VAR, "", false).add(doorstop_lib().as_str());
+  let ld_preload = fetch_env(constants::LD_PRELOAD_VAR, "", false).add(doorstop_lib().as_str());
   let ld_library_path = fetch_env(
-    LD_LIBRARY_PATH_VAR,
+    constants::LD_LIBRARY_PATH_VAR,
     format!("./linux64:{}", doorstop_libs()).as_str(),
     false,
   );
@@ -129,9 +129,9 @@ pub fn invoke(command: &mut Command, environment: &BepInExEnvironment) -> std::i
       &environment.doorstop_corlib_override_path,
     )
     // LD_LIBRARY_PATH must not have quotes around it.
-    .env(LD_LIBRARY_PATH_VAR, &environment.ld_library_path)
+    .env(constants::LD_LIBRARY_PATH_VAR, &environment.ld_library_path)
     // LD_PRELOAD must not have quotes around it.
-    .env(LD_PRELOAD_VAR, &environment.ld_preload)
+    .env(constants::LD_PRELOAD_VAR, &environment.ld_preload)
     // DYLD_LIBRARY_PATH is weird af and MUST have quotes around it.
     .env(
       DYLD_LIBRARY_PATH_VAR,

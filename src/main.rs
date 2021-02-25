@@ -6,16 +6,16 @@ use crate::logger::OdinLogger;
 use crate::utils::fetch_env;
 
 mod commands;
+mod constants;
 mod executable;
 mod files;
 mod logger;
 mod messages;
+mod server;
 mod steamcmd;
 mod utils;
 
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 static LOGGER: OdinLogger = OdinLogger;
-static GAME_ID: i64 = 896660;
 
 fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
   let level = if debug {
@@ -31,7 +31,7 @@ fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
 fn main() {
   // The YAML file is found relative to the current file, similar to how modules are found
   let yaml = load_yaml!("cli.yaml");
-  let app = App::from(yaml).version(VERSION);
+  let app = App::from(yaml).version(constants::VERSION);
   let matches = app.get_matches();
   let debug_mode = matches.is_present("debug") || fetch_env("DEBUG_MODE", "0", false).eq("1");
   setup_logger(debug_mode).unwrap();
@@ -46,7 +46,7 @@ fn main() {
   };
   if matches.subcommand_matches("install").is_some() {
     debug!("Launching install command...");
-    let result = commands::install::invoke(GAME_ID);
+    let result = commands::install::invoke(constants::GAME_ID);
     handle_exit_status(result, "Successfully installed Valheim!".to_string())
   };
   if let Some(ref start_matches) = matches.subcommand_matches("start") {
