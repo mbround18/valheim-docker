@@ -52,61 +52,38 @@
 
 #### Simple
 
-> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables description notes!
+> Environment variables are custom to each setup. To not have any issues when pulling in the latest changes via git they're defined in an own file named valheim.env
+> See valheim.env.example for a basic example file.
 
-```yaml
-version: "3"
-services:
-  valheim:
-    image: mbround18/valheim:latest
-    ports:
-      - 2456:2456/udp
-      - 2457:2457/udp
-      - 2458:2458/udp
-    environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - WORLD="Dedicated"
-      - PASSWORD="Banana Phone"
-      - TZ=America/Chicago
-      - PUBLIC=1
-    volumes:
-    - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
-    - ./valheim/server:/home/steam/valheim
+```ini
+PORT=2456
+NAME=Created With Valheim Docker
+PASSWORD=Change Me! Please.
+TZ=America/Los_Angeles
+AUTO_UPDATE=1
+AUTO_UPDATE_SCHEDULE=0 1 * * *
 ```
 
 #### Everything but the kitchen sink
 
-```yaml
-version: "3"
-services:
-  valheim:
-    image: mbround18/valheim:latest
-    ports:
-      - 2456:2456/udp
-      - 2457:2457/udp
-      - 2458:2458/udp
-    environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - WORLD="Dedicated"
-      - PASSWORD="Strong! Password @ Here"
-      - TZ=America/Chicago
-      - PUBLIC=1
-      - AUTO_UPDATE=1
-      - AUTO_UPDATE_SCHEDULE="0 1 * * *"
-      - AUTO_BACKUP=1
-      - AUTO_BACKUP_SCHEDULE="*/15 * * * *"
-      - AUTO_BACKUP_REMOVE_OLD=1
-      - AUTO_BACKUP_DAYS_TO_LIVE=3
-      - AUTO_BACKUP_ON_UPDATE=1
-      - AUTO_BACKUP_ON_SHUTDOWN=1
-      - WEBHOOK_URL="https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
-      - UPDATE_ON_STARTUP=0
-    volumes:
-      - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
-      - ./valheim/server:/home/steam/valheim
-      - ./valheim/backups:/home/steam/backups
+```ini
+PORT=2456
+NAME=Created With Valheim Docker
+WORLD=Dedicated
+PASSWORD=Strong! Password @ Here
+TZ=America/Chicago
+PUBLIC=1
+AUTO_UPDATE=1
+AUTO_UPDATE_SCHEDULE=0 1 * * *
+AUTO_BACKUP=1
+AUTO_BACKUP_SCHEDULE=*/15 * * * *
+AUTO_BACKUP_REMOVE_OLD=1
+AUTO_BACKUP_DAYS_TO_LIVE=3
+AUTO_BACKUP_ON_UPDATE=1
+AUTO_BACKUP_ON_SHUTDOWN=1
+WEBHOOK_URL=https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET
+UPDATE_ON_STARTUP=0
+>>>>>>> Put environment variables into own file
 ```
 
 ### [Odin]

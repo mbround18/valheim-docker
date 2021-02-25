@@ -11,13 +11,8 @@ services:
     depends_on:
       - odin
     image: mbround18/valheim:latest
-    environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - PASSWORD="Change Me! Please."
-      - TZ=America/Los_Angeles
-      - AUTO_UPDATE=1
-      - AUTO_UPDATE_SCHEDULE="0 1 * * *"
+    env_file:
+      - valheim.env
     build:
       context: .
       dockerfile: ./Dockerfile
