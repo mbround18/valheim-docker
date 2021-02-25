@@ -82,3 +82,16 @@ subcommands:
             about: Sets the output file to use
             required: true
             index: 2
+  - update:
+      about: Deals with updating an existing valheim server installation
+      args:
+        - check:
+            long: check
+            short: c
+            conflicts_with:
+                - force
+        - force:
+            long: force
+            short: f
+            conflicts_with:
+                - check
