@@ -104,7 +104,7 @@ pub fn is_bepinex_installed() -> bool {
     bepinex_env.dyld_library_path,
     bepinex_env.doorstop_invoke_dll,
   ];
-  let expected_state = path_exists(&checks[0]);
+  let expected_state = true;
   let output = checks.iter().all(|ref v| path_exists(&v) == expected_state);
   if output {
     debug!("Yay! looks like we found all the required files for BepInEx to run! <3")
