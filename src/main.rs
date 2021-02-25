@@ -61,4 +61,9 @@ fn main() {
     debug!("Launching backup command...");
     commands::backup::invoke(backup_matches);
   };
+
+  if let Some(ref update_matches) = matches.subcommand_matches("update") {
+    debug!("Launching update command...");
+    commands::update::invoke(update_matches);
+  }
 }
