@@ -44,6 +44,7 @@
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
 | WEBHOOK_URL              | ``                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
+| UPDATE_ON_STARTUP        | `1`                    | FALSE    | Tries to update the server the container is started. |
 
 ### Docker Compose
 
@@ -99,6 +100,7 @@ services:
       - AUTO_BACKUP_ON_UPDATE=1
       - AUTO_BACKUP_ON_SHUTDOWN=1
       - WEBHOOK_URL="https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
+      - UPDATE_ON_STARTUP=0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./valheim/server:/home/steam/valheim
