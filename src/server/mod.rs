@@ -27,7 +27,7 @@ pub fn is_installed() -> bool {
     .exists()
 }
 
-pub fn exit_action() {
+fn exit_action() {
   if bepinex::is_bepinex_installed() {
     info!("Server has been started with BepInEx! Keep in mind this may cause errors!!");
     messages::modding_disclaimer()

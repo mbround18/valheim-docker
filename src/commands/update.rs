@@ -1,9 +1,11 @@
 use clap::ArgMatches;
 use log::{debug, error, info};
 
-use std::process::exit;
+use std::{fs, path::Path, process::exit};
 
-use crate::{constants, files::config::load_config, server};
+use crate::{
+  constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
+};
 
 enum Action {
   Check,
@@ -113,15 +115,105 @@ fn update_server() {
 }
 
 fn update_is_available() -> bool {
-  get_latest_buildid() != get_current_buildid()
+  let latest_buildid = get_latest_buildid();
+  let current_buildid = get_current_buildid();
+  debug!(
+    "latest buildid: {}, current buildid: {}",
+    latest_buildid, current_buildid
+  );
+
+  latest_buildid != current_buildid
 }
 
 fn get_current_buildid() -> String {
-  // TODO: Can parse this from the app manifest
-  todo!();
+  let manifest_path = Path::new(&get_working_dir())
+    .join("steamapps")
+    .join("appmanifest_896660.acf");
+  let manifest_data = fs::read_to_string(manifest_path).expect("Failed to read manifest file");
+  extract_buildid_from_manifest(&manifest_data).to_string()
 }
 
 fn get_latest_buildid() -> String {
-  // TODO: can parse this from the program output of the one command
-  todo!();
+  let args = &[
+    "+login anonymous",
+    &format!("+app_info_print {}", constants::GAME_ID),
+    "+quit",
+  ];
+  let mut steamcmd = steamcmd_command();
+  let app_info_output = steamcmd
+    .args(args)
+    .output()
+    .expect("Failed to run steamcmd");
+  assert!(app_info_output.status.success());
+
+  let stdout = String::from_utf8(app_info_output.stdout).expect("steamcmd returned invalid UTF-8");
+  extract_buildid_from_app_info(&stdout).to_string()
+}
+
+fn extract_buildid_from_manifest(manifest: &str) -> &str {
+  let mut lines = manifest.lines();
+  let build_id_line = loop {
+    let line = lines.next().unwrap().trim();
+
+    if line.starts_with("\"buildid\"") {
+      break line;
+    }
+  };
+
+  split_vdf_key_val(build_id_line).1
+}
+
+fn extract_buildid_from_app_info(app_info: &str) -> &str {
+  let mut lines = app_info.lines();
+  while let Some(line) = lines.next() {
+    if line.trim() == "\"public\"" {
+      break;
+    }
+  }
+
+  assert_eq!(lines.next().map(|line| line.trim()), Some("{"));
+  let build_id_line = lines.next().unwrap().trim();
+  assert!(build_id_line.starts_with("\"buildid\""));
+
+  split_vdf_key_val(build_id_line).1
+}
+
+// Note: This is super brittle and will fail if there is whitespace within the key or value _or_ if
+// there are escaped " at the end of the key or value
+fn split_vdf_key_val(vdf_pair: &str) -> (&str, &str) {
+  let mut pieces = vdf_pair.trim().split_whitespace();
+  let key = pieces.next().expect("Missing vdf key").trim_matches('"');
+  let val = pieces.next().expect("Missing vdf val").trim_matches('"');
+
+  (key, val)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  use std::fs;
+
+  #[test]
+  fn extracting_buildid_from_manifest() {
+    let sample_file = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("tests")
+      .join("assets")
+      .join("example_app_manifest.txt");
+    let manifest_data = fs::read_to_string(sample_file).expect("Sample manifest file missing");
+
+    assert_eq!(extract_buildid_from_manifest(&manifest_data), "6246034");
+  }
+
+  #[test]
+  fn extracting_buildid_from_app_info() {
+    let sample_file = Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("tests")
+      .join("assets")
+      .join("example_steamcmd_app_info.txt");
+    let app_info_output =
+      fs::read_to_string(sample_file).expect("Sample app info output file missing");
+
+    assert_eq!(extract_buildid_from_app_info(&app_info_output), "6246034");
+  }
 }
