@@ -134,6 +134,7 @@ Only use the documentation link below if you want advanced settings!
 <a href="https://github.com/AtroposOrbis">
   <img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4" />
 </a>
+<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/13275296?s=460&v=4" /></a>
 
 
 ## Versions: 
