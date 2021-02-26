@@ -192,14 +192,19 @@ fn split_vdf_key_val(vdf_pair: &str) -> (&str, &str) {
 mod tests {
   use super::*;
 
-  use std::fs;
+  use once_cell::sync::Lazy;
+
+  use std::path::PathBuf;
+
+  static TEST_ASSET_DIR: Lazy<PathBuf> = Lazy::new(|| {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("tests")
+      .join("assets")
+  });
 
   #[test]
   fn extracting_buildid_from_manifest() {
-    let sample_file = Path::new(env!("CARGO_MANIFEST_DIR"))
-      .join("tests")
-      .join("assets")
-      .join("example_app_manifest.txt");
+    let sample_file = TEST_ASSET_DIR.join("example_app_manifest.txt");
     let manifest_data = fs::read_to_string(sample_file).expect("Sample manifest file missing");
 
     assert_eq!(extract_buildid_from_manifest(&manifest_data), "6246034");
@@ -207,10 +212,7 @@ mod tests {
 
   #[test]
   fn extracting_buildid_from_app_info() {
-    let sample_file = Path::new(env!("CARGO_MANIFEST_DIR"))
-      .join("tests")
-      .join("assets")
-      .join("example_steamcmd_app_info.txt");
+    let sample_file = TEST_ASSET_DIR.join("example_steamcmd_app_info.txt");
     let app_info_output =
       fs::read_to_string(sample_file).expect("Sample app info output file missing");
 
