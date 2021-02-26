@@ -21,7 +21,10 @@
 
 ```Json
 {
-  "event_type": "Broadcast",
+  "event_type": {
+    "name": "Broadcast",
+    "status": "triggered"
+  },
   "event_message": "Server Status: Broadcast",
   "timestamp": "02/22/2021 17:18:04 -08:00"
 }
@@ -29,7 +32,8 @@
 
 | Key             | Description |
 |-----------------|-------------|
-| `event_type`    | Name of the event |
+| `event_type.name`  | Name of the event |
+| `event_type.status`  | Status of the event |
 | `event_message` | A description of the event. |
 | `timestamp`     | ISO8601 timestamp |
 

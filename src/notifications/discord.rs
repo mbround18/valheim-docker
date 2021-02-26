@@ -1,13 +1,30 @@
+use crate::notifications::EventStatus;
 use crate::notifications::NotificationMessage;
+use crate::utils::fetch_env;
 use inflections::case::to_title_case;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::str::FromStr;
 
-const SUCCESS_COLOR: i32 = 4961603;
-const FAILURE_COLOR: i32 = 16388413;
-const GENERIC_COLOR: i32 = 32614;
+#[derive(Debug)]
+enum Color {
+  Success = 0x4B_B5_43,
+  Failure = 0xFA_11_3D,
+  Generic = 0x00_7F_66,
+}
+
 const DISCORD_WEBHOOK_BASE: &str = "https://discord.com/api/webhooks";
+
+impl From<EventStatus> for Color {
+  fn from(event: EventStatus) -> Self {
+    use EventStatus::{Failed, Successful};
+    match event {
+      Successful => Self::Success,
+      Failed => Self::Failure,
+      _ => Self::Generic,
+    }
+  }
+}
 
 pub fn is_discord_webhook(webhook_url: &str) -> bool {
   webhook_url.starts_with(DISCORD_WEBHOOK_BASE)
@@ -26,27 +43,30 @@ pub struct DiscordWebHookBody {
   embeds: Vec<DiscordWebHookEmbed>,
 }
 
-pub fn build_discord_payload(event: NotificationMessage) -> DiscordWebHookBody {
-  let server_name = env::var("NAME").unwrap_or_else(|_| String::from("Your Valheim Server"));
-  let name = event.event_type.to_string();
-  let color = if name.contains("Successful") {
-    SUCCESS_COLOR
-  } else if name.contains("Failure") {
-    FAILURE_COLOR
-  } else {
-    GENERIC_COLOR
-  };
-  let payload = DiscordWebHookBody {
-    content: to_title_case(format!("Notification From: {}", server_name).as_str()),
-    embeds: vec![DiscordWebHookEmbed {
-      title: name,
-      description: event.event_message,
-      color,
-    }],
-  };
-  debug!(
-    "Discord Payload: {}",
-    serde_json::to_string(&payload).unwrap()
-  );
-  payload
+impl DiscordWebHookBody {
+  pub fn new(event: &NotificationMessage) -> Self {
+    let server_name = fetch_env("NAME", "Your Valheim Server", false);
+    let status = &event.event_type.status;
+    let event_status = EventStatus::from_str(status).unwrap_or(EventStatus::Failed);
+    let color: i32 = Color::from(event_status) as i32;
+    let payload = DiscordWebHookBody {
+      content: to_title_case(format!("Notification From: {}", server_name).as_str()),
+      embeds: vec![DiscordWebHookEmbed {
+        title: String::from(&event.event_type.name),
+        description: String::from(&event.event_message),
+        color,
+      }],
+    };
+    debug!(
+      "Discord Payload: {}",
+      serde_json::to_string(&payload).unwrap()
+    );
+    payload
+  }
+}
+
+impl From<&NotificationMessage> for DiscordWebHookBody {
+  fn from(event: &NotificationMessage) -> Self {
+    Self::new(event)
+  }
 }

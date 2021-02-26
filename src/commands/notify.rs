@@ -1,4 +1,4 @@
-use crate::notifications::{NotificationEvent, NotificationEventType};
+use crate::notifications::enums::notification_event::NotificationEvent;
 use crate::utils::get_variable;
 use clap::ArgMatches;
 use log::{error, info};
@@ -8,8 +8,7 @@ pub fn invoke(args: &ArgMatches) {
   let webhook_url = get_variable(&args, "webhook_url", "".to_string());
   if !webhook_url.is_empty() {
     info!("Sending Broadcast: {}", message);
-    NotificationEventType::Broadcast
-      .send_custom_notification(webhook_url.as_str(), message.as_str())
+    NotificationEvent::Broadcast.send_custom_notification(webhook_url.as_str(), message.as_str())
   } else {
     error!("Failed to send notification! Webhook url not provided!")
   }
