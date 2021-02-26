@@ -83,11 +83,9 @@ pub fn invoke(args: &ArgMatches) {
           ),
           (_, false) => info!("Dry run: No update is available. Nothing to do."),
         }
-      } else {
-        if update_available {
-          debug!("Updating the installation!");
-          update_server()
-        }
+      } else if update_available {
+        debug!("Updating the installation!");
+        update_server()
       }
     }
   }
