@@ -42,8 +42,12 @@ export SteamAppId=${APPID:-892970}
 
 # Setting up server
 log "Running Install..."
-if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+if [ ! -f "./valheim_server.x86_64" ] || \
+    [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
     odin install || exit 1
+elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1]; then
+    log "Attempting to update before launching the server!"
+    /bin/bash /home/steam/scripts/auto_update.sh
 else
     log "Skipping install process, looks like valheim_server is already installed :)"
 fi

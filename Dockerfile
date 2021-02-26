@@ -44,7 +44,8 @@ ENV PUID=1000                           \
     AUTO_BACKUP_REMOVE_OLD="1"          \
     AUTO_BACKUP_DAYS_TO_LIVE="3"        \
     AUTO_BACKUP_ON_UPDATE="0"           \
-    AUTO_BACKUP_ON_SHUTDOWN="0"
+    AUTO_BACKUP_ON_SHUTDOWN="0"         \
+    UPDATE_ON_STARTUP="1"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
