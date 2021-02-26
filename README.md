@@ -139,6 +139,7 @@ Only use the documentation link below if you want advanced settings!
 - latest (Stable):
   - [#100] Added backup feature to run based on cronjob.
   - [#148] Added Mod support
+  - Added webhook configuration and documentation updates [#158]
 - 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
@@ -165,6 +166,7 @@ Only use the documentation link below if you want advanced settings!
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#158]: https://github.com/mbround18/valheim-docker/pull/158
 [#148]: https://github.com/mbround18/valheim-docker/pull/148
 [#100]: https://github.com/mbround18/valheim-docker/pull/100
 [#89]: https://github.com/mbround18/valheim-docker/pull/89
