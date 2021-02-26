@@ -45,7 +45,7 @@ log "Running Install..."
 if [ ! -f "./valheim_server.x86_64" ] || \
     [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
     odin install || exit 1
-elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1]; then
+elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
     log "Attempting to update before launching the server!"
     /bin/bash /home/steam/scripts/auto_update.sh
 else
