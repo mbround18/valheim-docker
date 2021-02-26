@@ -13,17 +13,11 @@ enum Action {
 
 impl Action {
   fn new(check: bool, force: bool) -> Self {
-    assert!(
-      !(check && force),
-      "`check` and `force` are mutually exlusive!"
-    );
-
-    if check {
-      Self::Check
-    } else if force {
-      Self::Force
-    } else {
-      Self::Regular
+    match (check, force) {
+      (true, true) => panic!("`check` and `force` are mutually exlusive!"),
+      (true, false) => Self::Check,
+      (false, true) => Self::Force,
+      (false, false) => Self::Regular,
     }
   }
 }
@@ -49,19 +43,19 @@ pub fn invoke(args: &ArgMatches) {
   }
 
   match Action::new(check, force) {
-    Action::Check => {
-      if dry_run {
-        if update_available {
-          info!("Dry run: An update is available. This would exit with 0 to indicate this.");
-        } else {
-          info!("Dry run: No update is available. This would exit with 1 to indicate this.");
-        }
-      } else if !update_available {
-        // TODO: should we do a value other than 1 here, and if we do then what value?
-        // 0 exit code indicates there is an update while 1 indicates the server is up to date
-        exit(1);
+    Action::Check => match (dry_run, update_available) {
+      (true, true) => {
+        info!("Dry run: An update is available. This would exit with 0 to indicate this.")
       }
-    }
+      (true, false) => {
+        info!("Dry run: No update is available. This would exit with 1 to indicate this.")
+      }
+      // 0 indicates that an update is available
+      (false, true) => exit(0),
+      // TODO: should we do a value other than 1 here, and if we do then what value?
+      // 1 indicates the server is up to date
+      (false, false) => exit(1),
+    },
     Action::Force => match (dry_run, server_running) {
       (true, true) => info!("Dry run: Server would be shutdown, updated, and brought back online"),
       (true, false) => info!("Dry run: The server is offline and would be updated"),
@@ -92,10 +86,8 @@ pub fn invoke(args: &ArgMatches) {
 }
 
 fn update_server() {
-  // back up if it was before
-  let server_was_running = server::is_running();
-
   // Shutdown the server if it's running
+  let server_was_running = server::is_running();
   if server_was_running {
     server::send_shutdown();
     server::wait_for_exit();
