@@ -82,3 +82,17 @@ subcommands:
             about: Sets the output file to use
             required: true
             index: 2
+  - notify:
+      about: Sends a notification to the provided webhook.
+      version: "1.1"
+      author: mbround18
+      args:
+        - MESSAGE:
+            about: Message to send to the webhook.
+            required: true
+            index: 1
+        - webhook_url:
+            long: webhook
+            value_name: WEBHOOK_URL
+            about: Sets the webhook to send a notification to, (Can be set with ENV variable WEBHOOK_URL)
+            takes_value: true

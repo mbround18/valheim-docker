@@ -43,6 +43,7 @@
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
+| WEBHOOK_URL              | ``                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
 
 ### Docker Compose
 
@@ -97,46 +98,34 @@ services:
       - AUTO_BACKUP_DAYS_TO_LIVE=3
       - AUTO_BACKUP_ON_UPDATE=1
       - AUTO_BACKUP_ON_SHUTDOWN=1
+      - WEBHOOK_URL="https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./valheim/server:/home/steam/valheim
       - ./valheim/backups:/home/steam/backups
 ```
 
-### Advanced Environment Variables
-
-> Editing or adding these can cause issues! They are intended to give you more access to the system.
-
-#### Odin Specific
-
-> These are set automatically by [Odin];
-> you DO NOT need to set these and only mess with them if you Know what you are doing.
-
-| Variable                 | Default                | Required | Description |
-|--------------------------|------------------------|----------|-------------|
-| DEBUG_MOD                | `0`                    | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing. 
-| ODIN_CONFIG_FILE         | `config.json`          | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host |
-| ODIN_WORKING_DIR         | `$PWD`                 | FALSE    | Sets the directory you wish to run `odin` commands in and can be used to set where valheim is managed from. |
-
-#### BepInEx/Modded Variables
-
-> These are set automatically by [Odin] for a basic BepInEx installation; 
-> you DO NOT need to set these and only mess with them if you Know what you are doing.
-
-| Variable                 | Default                                                  | Required | Description |
-|--------------------------|----------------------------------------------------------|----------|-------------|
-| LD_PRELOAD               | `libdoorstop_x64.so`                                     | TRUE     | Sets which library to preload on Valheim start. |
-| LD_LIBRARY_PATH          | `./linux64:/home/steam/valheim/doorstop_libs`            | TRUE     | Sets which library paths it should look in for preload libs. | 
-| DOORSTOP_ENABLE          | `TRUE`                                                   | TRUE     | Enables Doorstop or not. |
-| DOORSTOP_LIB             | `libdoorstop_x64.so`                                     | TRUE     | Which doorstop lib to load | 
-| DOORSTOP_LIBS            | `/home/steam/valheim/doorstop_libs`                      | TRUE     | Where to look for doorstop libs. | 
-| DOORSTOP_INVOKE_DLL_PATH | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload dll to load. |
-| DYLD_LIBRARY_PATH        | `"/home/steam/valheim/doorstop_libs"`                    | TRUE     | Sets the library paths. NOTE: This variable is weird and MUST have quotes around it! |
-| DYLD_INSERT_LIBRARIES    | `/home/steam/valheim/doorstop_libs/libdoorstop_x64.so`   | TRUE     | Sets which library to load. |
-
 ### [Odin]
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
+
+[Click here to see advanced environment variables for Odin](./docs/odin.md)
+
+### [BepInEx Support](./docs/bepinex.md)
+
+This repo automatically launches with the proper environment variables for BepInEx. 
+However, you have to install it manually in the container due to the fact that the modding community around Valheim is still in its infancy.
+
+[Click Here to view documentation on BepInEx Support](./docs/bepinex.md)
+
+
+### [Webhook Support](./docs/webhooks.md)
+
+This repo can automatically send notifications to discord via the WEBHOOK_URL variable. 
+Only use the documentation link below if you want advanced settings!
+
+[Click Here to view documentation on Webhook Support](./docs/webhooks.md)
+
 
 ## Sponsors
 
