@@ -134,6 +134,6 @@ jobs:
           
           # Send release notification
           docker run --rm \
-          -e NAME="Release Notification" \
-          mbround18/valheim-odin:$VERSION notify "New release of ${DOCKER_IMAGE_NAME}:${VERSION} !! Please use 'docker-compose pull' to pull the latest verion. Then restart your server via docker-compose." \
+          -e NAME="New Version: ${DOCKER_IMAGE_NAME}:${VERSION}" \
+          mbround18/valheim-odin:$VERSION notify "New release of ${DOCKER_IMAGE_NAME}:${VERSION} !! Please use pull the latest ${DOCKER_IMAGE_NAME}:${VERSION}. Then restart your server via your preferred method." \
           --webhook "${{ secrets.RELEASE_WEBHOOK }}"
