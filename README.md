@@ -13,6 +13,8 @@
     <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge">
 </a>
 
+
+
 ## Docker
 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
@@ -136,6 +138,16 @@ Only use the documentation link below if you want advanced settings!
 </a>
 <a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/13275296?s=460&v=4" /></a>
 
+## Release Notifications
+
+If you would like to have release notifications tied into your Discord server, click here: 
+
+<a href="https://discord.gg/3kTNUZz276">
+  <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"  />
+</a>
+
+**Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled. 
+[Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
 ## Versions: 
 
