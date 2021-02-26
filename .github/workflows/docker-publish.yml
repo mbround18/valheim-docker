@@ -24,14 +24,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-#       - uses: satackey/action-docker-layer-caching@v0.0.11
-#         # Ignore the failure of a step and avoid terminating the job.
-#         continue-on-error: true
-#         with:
-#           key: docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
-#           restore-keys: |
-#             docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
-
       - name: Build Odin
         run: |
           # Gather Utils
@@ -62,14 +54,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-#       - uses: satackey/action-docker-layer-caching@v0.0.11
-#         # Ignore the failure of a step and avoid terminating the job.
-#         continue-on-error: true
-#         with:
-#           key: docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
-#           restore-keys: |
-#             docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
 
       - name: Log into registry
         run: |
@@ -102,7 +86,7 @@ jobs:
 
           docker tag "${DOCKER_IMAGE_NAME}-odin" $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-
+          
   push_valheim:
     # Ensure test job passes before pushing image.
     needs: push_odin
@@ -112,14 +96,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      
-#       - uses: satackey/action-docker-layer-caching@v0.0.11
-#         # Ignore the failure of a step and avoid terminating the job.
-#         continue-on-error: true
-#         with:
-#           key: docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
-#           restore-keys: |
-#             docker-layer-caching-${{ github.workflow }}-${{ github.ref }}
 
       - name: Log into registry
         run: |
@@ -155,3 +131,9 @@ jobs:
 
           docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+          
+          # Send release notification
+          docker run --rm \
+          -e NAME="Release Notification" \
+          mbround18/valheim-odin:$VERSION notify "New release of ${IMAGE_ID}:${VERSION} !! Please use 'docker-compose pull' to pull the latest verion. Then restart your server via docker-compose." \
+          --webhook "${{ secrets.RELEASE_WEBHOOK }}"
