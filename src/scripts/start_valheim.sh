@@ -47,7 +47,12 @@ if [ ! -f "./valheim_server.x86_64" ] || \
     odin install || exit 1
 elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
     log "Attempting to update before launching the server!"
-    /bin/bash /home/steam/scripts/auto_update.sh
+    if [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ]; then
+        /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
+    fi
+
+    log "Installing Updates..."
+    odin install || exit 1
 else
     log "Skipping install process, looks like valheim_server is already installed :)"
 fi
