@@ -14,6 +14,7 @@ enum Color {
 }
 
 const DISCORD_WEBHOOK_BASE: &str = "https://discord.com/api/webhooks";
+const DISCORDAPP_WEBHOOK_BASE: &str = "https://discordapp.com/api/webhooks";
 
 impl From<EventStatus> for Color {
   fn from(event: EventStatus) -> Self {
@@ -27,7 +28,7 @@ impl From<EventStatus> for Color {
 }
 
 pub fn is_discord_webhook(webhook_url: &str) -> bool {
-  webhook_url.starts_with(DISCORD_WEBHOOK_BASE)
+  webhook_url.starts_with(DISCORD_WEBHOOK_BASE) || webhook_url.starts_with(DISCORDAPP_WEBHOOK_BASE)
 }
 
 #[derive(Deserialize, Serialize)]

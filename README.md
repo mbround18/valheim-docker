@@ -13,6 +13,8 @@
     <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge">
 </a>
 
+
+
 ## Docker
 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
@@ -44,6 +46,7 @@
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
 | WEBHOOK_URL              | ``                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
+| UPDATE_ON_STARTUP        | `1`                    | FALSE    | Tries to update the server the container is started. |
 
 ### Docker Compose
 
@@ -99,6 +102,7 @@ services:
       - AUTO_BACKUP_ON_UPDATE=1
       - AUTO_BACKUP_ON_SHUTDOWN=1
       - WEBHOOK_URL="https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
+      - UPDATE_ON_STARTUP=0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./valheim/server:/home/steam/valheim
@@ -132,7 +136,18 @@ Only use the documentation link below if you want advanced settings!
 <a href="https://github.com/AtroposOrbis">
   <img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4" />
 </a>
+<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/13275296?s=460&v=4" /></a>
 
+## Release Notifications
+
+If you would like to have release notifications tied into your Discord server, click here: 
+
+<a href="https://discord.gg/3kTNUZz276">
+  <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"  />
+</a>
+
+**Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled. 
+[Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
 ## Versions: 
 
