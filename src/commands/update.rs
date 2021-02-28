@@ -1,7 +1,7 @@
 use clap::ArgMatches;
 use log::{debug, error, info};
 
-use std::{fs, path::Path, process::exit};
+use std::{fs, io::ErrorKind, path::Path, process::exit};
 
 use crate::{
   constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
@@ -134,7 +134,22 @@ fn get_current_buildid() -> String {
 }
 
 fn get_latest_buildid() -> String {
+  // Remove the cached file to force an updated response. This is done because `steamcmd` seems to
+  // refuse to update information before querying the app_info even with `+app_info_update 1` or
+  // `+@bCSForceNoCache 1`
+  let appinfo_file = Path::new("/home/steam/Steam/appcache/appinfo.vdf");
+  fs::remove_file(appinfo_file).unwrap_or_else(|e| match e.kind() {
+    // AOK if it doesn't exist
+    ErrorKind::NotFound => {}
+    err_kind => {
+      error!("Failed to remove appinfo file! Error: {:?}", err_kind);
+      exit(1);
+    }
+  });
+
+  // Now pull the latest app info
   let args = &[
+    "+@ShutdownOnFailedCommand 1",
     "+login anonymous",
     &format!("+app_info_print {}", constants::GAME_ID),
     "+quit",
