@@ -72,7 +72,7 @@ jobs:
           . ./.github/scripts/utils.sh
 
           # Parse variables
-          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME-odin
+          IMAGE_ID=$DOCKER_IMAGE_NAME-odin
 
           # Change all uppercase to lowercase
           IMAGE_ID="${IMAGE_ID,,}"
@@ -83,9 +83,10 @@ jobs:
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
-
-          docker tag "${DOCKER_IMAGE_NAME}-odin" $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+          
+          docker tag "${DOCKER_IMAGE_NAME}-odin" registry.hub.docker.com/$IMAGE_ID:$VERSION
+          docker tag "${DOCKER_IMAGE_NAME}-odin" ghcr.io/$IMAGE_ID:$VERSION
+          docker push registry.hub.docker.com/$IMAGE_ID:$VERSION
           docker push ghcr.io/$IMAGE_ID:$VERSION
           
   push_valheim:
@@ -118,7 +119,7 @@ jobs:
           . ./.github/scripts/utils.sh
 
           # Parse variables
-          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME
+          IMAGE_ID=$DOCKER_IMAGE_NAME
 
           # Change all uppercase to lowercase
           IMAGE_ID="${IMAGE_ID,,}"
@@ -130,8 +131,9 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+          docker tag $DOCKER_IMAGE_NAME registry.hub.docker.com/$IMAGE_ID:$VERSION
+          docker tag "$DOCKER_IMAGE_NAME ghcr.io/$IMAGE_ID:$VERSION
+          docker push registry.hub.docker.com/$IMAGE_ID:$VERSION
           docker push ghcr.io/$IMAGE_ID:$VERSION
 
           # Send release notification
