@@ -121,7 +121,7 @@ if [ "${AUTO_UPDATE}" -eq 1 ]; then
     "auto-update" \
     "auto_update.sh" \
     "${AUTO_UPDATE_SCHEDULE}" \
-    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0}"
+    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0} WEBHOOK_URL=${WEBHOOK_URL}"
 fi
 
 if [ "${AUTO_BACKUP}" -eq 1 ]; then
