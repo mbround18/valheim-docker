@@ -55,3 +55,42 @@ odin stop
 ```
 
 ![Install Menu](./assets/stop-menu.png)
+
+
+### Status
+
+#### Local Server
+
+```sh
+odin status
+```
+
+#### Remote Server
+
+Replace the `xx.xx.xx.xx` with your server IP and `query-port` with the `PORT` variable +1 (ex: if `2456` use `2457` which is the steam query port.)
+
+```shell
+odin status --address "xx.xx.xx.xx:query-port"
+```
+
+#### As JSON information 
+
+If run with `--json`
+
+**NOTE**: `BepInEx` information will be as described below unless you call status inside the container. 
+
+```json
+{
+  "server": {
+    "name": "Valheim WooHoo PC Gaming",
+    "version": "1.0.0.0",
+    "players": 0,
+    "max_players": 64,
+    "map": "Valheim WooHoo PC Gaming"
+  },
+  "bepinex": {
+    "installed": false,
+    "mods": []
+  }
+}
+```

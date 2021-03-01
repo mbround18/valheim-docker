@@ -1,4 +1,4 @@
-mod bepinex;
+pub mod bepinex;
 
 use crate::commands::start::bepinex::{build_environment, is_bepinex_installed};
 use crate::executable::create_execution;

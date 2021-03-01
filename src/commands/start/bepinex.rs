@@ -66,7 +66,7 @@ pub fn build_environment() -> BepInExEnvironment {
     doorstop_insert_lib().as_str(),
     false,
   );
-  info!("Checking for BepInEx Environment...");
+  debug!("Checking for BepInEx Environment...");
   let environment = BepInExEnvironment {
     ld_preload,
     ld_library_path,
@@ -112,6 +112,20 @@ pub fn is_bepinex_installed() -> bool {
     debug!("Uhh ohh!!! Looks like you are missing something.")
   }
   output
+}
+
+pub fn fetch_bepinex_mod_list() -> Vec<String> {
+  glob::glob(format!("{}/BepInEx/plugins/*.dll", get_working_dir()).as_str())
+    .unwrap()
+    .map(|g| {
+      g.unwrap()
+        .file_stem()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string()
+    })
+    .collect()
 }
 
 pub fn invoke(command: &mut Command, environment: &BepInExEnvironment) -> std::io::Result<Child> {

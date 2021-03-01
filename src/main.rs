@@ -1,5 +1,5 @@
 use clap::{load_yaml, App};
-use log::{debug, info, LevelFilter, SetLoggerError};
+use log::{debug, LevelFilter, SetLoggerError};
 
 use crate::executable::handle_exit_status;
 use crate::logger::OdinLogger;
@@ -39,9 +39,6 @@ fn main() {
   let matches = app.get_matches();
   let debug_mode = matches.is_present("debug") || fetch_env("DEBUG_MODE", "0", false).eq("1");
   setup_logger(debug_mode).unwrap();
-  if !debug_mode {
-    info!("Run with DEBUG_MODE as 1 if you think there is an issue with Odin");
-  }
   debug!("Debug mode enabled!");
   if let Some(ref configure_matches) = matches.subcommand_matches("configure") {
     debug!("Launching configure command...");
@@ -71,4 +68,7 @@ fn main() {
     debug!("Launching notify command...");
     commands::notify::invoke(notify_matches);
   };
+  if let Some(ref status_matches) = matches.subcommand_matches("status") {
+    commands::status::invoke(status_matches);
+  }
 }

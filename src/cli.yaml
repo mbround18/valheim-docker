@@ -96,3 +96,19 @@ subcommands:
             value_name: WEBHOOK_URL
             about: Sets the webhook to send a notification to, (Can be set with ENV variable WEBHOOK_URL)
             takes_value: true
+  - status:
+      about: Print out of your server status
+      version: "1.0"
+      author: mbround18
+      args:
+        - json:
+            about: Print out as json
+            required: false
+            takes_value: false
+            long: json
+            short: j
+        - address:
+            about: Search for server information based on address
+            required: false
+            takes_value: true
+            long: address

@@ -1,6 +1,6 @@
 use crate::files::ValheimArguments;
 use crate::files::{FileManager, ManagedFile};
-use crate::utils::{get_variable, get_working_dir, VALHEIM_EXECUTABLE_NAME};
+use crate::utils::{get_working_dir, parse_arg_variable, VALHEIM_EXECUTABLE_NAME};
 use clap::ArgMatches;
 use log::{debug, error};
 use std::env;
@@ -26,7 +26,7 @@ pub fn read_config(config: ManagedFile) -> ValheimArguments {
 
 pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
   let server_executable: &str = &[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/");
-  let command = match fs::canonicalize(PathBuf::from(get_variable(
+  let command = match fs::canonicalize(PathBuf::from(parse_arg_variable(
     args,
     "server_executable",
     server_executable.to_string(),
@@ -39,11 +39,11 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
   };
 
   let content = &ValheimArguments {
-    port: get_variable(args, "port", "2456".to_string()),
-    name: get_variable(args, "name", "Valheim powered by Odin".to_string()),
-    world: get_variable(args, "world", "Dedicated".to_string()),
-    public: get_variable(args, "public", "1".to_string()),
-    password: get_variable(args, "password", "12345".to_string()),
+    port: parse_arg_variable(args, "port", "2456".to_string()),
+    name: parse_arg_variable(args, "name", "Valheim powered by Odin".to_string()),
+    world: parse_arg_variable(args, "world", "Dedicated".to_string()),
+    public: parse_arg_variable(args, "public", "1".to_string()),
+    password: parse_arg_variable(args, "password", "12345".to_string()),
     command,
   };
   let content_to_write = serde_json::to_string(content).unwrap();

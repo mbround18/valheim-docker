@@ -32,6 +32,7 @@
 | TZ                       | `America/Los_Angeles`  | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
 | PUID                     | `1000`                 | FALSE    | Sets the User Id of the steam user. |
 | PGID                     | `1000`                 | FALSE    | Sets the Group Id of the steam user. |
+| ADDRESS                  | `Your Public IP`       | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
 | PORT                     | `2456`                 | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458) |
 | NAME                     | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
 | WORLD                    | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
