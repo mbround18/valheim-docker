@@ -57,7 +57,7 @@ jobs:
 
       - name: Log into registry
         run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login docker.pkg.github.com -u mbround18 --password-stdin
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "${{ secrets.DOCKER_TOKEN }}" | docker login registry.hub.docker.com -u mbround18 --password-stdin
 
       - name: Build image
@@ -101,7 +101,7 @@ jobs:
 
       - name: Log into registry
         run: |
-          echo "${{ secrets.GHCR_TOKEN }}" | docker login docker.pkg.github.com -u mbround18 --password-stdin
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "${{ secrets.DOCKER_TOKEN }}" | docker login registry.hub.docker.com -u mbround18 --password-stdin
 
       - name: Build image
