@@ -66,7 +66,7 @@ jobs:
           --file Dockerfile.odin \
           --tag "${DOCKER_IMAGE_NAME}-odin"
 
-      - name: Push Image to DockerHub
+      - name: Push Image
         run: |
           # Gather Utils
           . ./.github/scripts/utils.sh
@@ -86,6 +86,7 @@ jobs:
 
           docker tag "${DOCKER_IMAGE_NAME}-odin" $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
+          docker push ghcr.io/$IMAGE_ID:$VERSION
           
   push_valheim:
     # Ensure test job passes before pushing image.
@@ -131,7 +132,8 @@ jobs:
 
           docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
-          
+          docker push ghcr.io/$IMAGE_ID:$VERSION
+
           # Send release notification
           docker run --rm \
           -e NAME="New Version: ${DOCKER_IMAGE_NAME}:${VERSION}" \
