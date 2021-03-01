@@ -132,7 +132,7 @@ jobs:
           echo VERSION=$VERSION
 
           docker tag $DOCKER_IMAGE_NAME registry.hub.docker.com/$IMAGE_ID:$VERSION
-          docker tag "$DOCKER_IMAGE_NAME ghcr.io/$IMAGE_ID:$VERSION
+          docker tag $DOCKER_IMAGE_NAME ghcr.io/$IMAGE_ID:$VERSION
           docker push registry.hub.docker.com/$IMAGE_ID:$VERSION
           docker push ghcr.io/$IMAGE_ID:$VERSION
 
