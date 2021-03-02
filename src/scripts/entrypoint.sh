@@ -57,7 +57,7 @@ setup_cron() {
     rm $LOG_LOCATION > /dev/null
     printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}"  \
-    "${CRON_ENV:-""}"   \
+    "ODIN_CONFIG_FILE=${ODIN_CONFIG_FILE} ODIN_WORKING_DIR=${ODIN_WORKING_DIR} ${CRON_ENV:-""}"   \
     "${SCRIPT_PATH}"    \
     "${LOG_LOCATION}"   \
     >/etc/cron.d/${CRON_NAME}
