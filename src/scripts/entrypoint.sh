@@ -57,7 +57,7 @@ setup_cron() {
     rm $LOG_LOCATION > /dev/null
     printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}"  \
-    "${CRON_ENV:-""}"   \
+    "ODIN_CONFIG_FILE=${ODIN_CONFIG_FILE} ODIN_WORKING_DIR=${ODIN_WORKING_DIR} ${CRON_ENV:-""}"   \
     "${SCRIPT_PATH}"    \
     "${LOG_LOCATION}"   \
     >/etc/cron.d/${CRON_NAME}
@@ -121,7 +121,7 @@ if [ "${AUTO_UPDATE}" -eq 1 ]; then
     "auto-update" \
     "auto_update.sh" \
     "${AUTO_UPDATE_SCHEDULE}" \
-    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0}"
+    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0} WEBHOOK_URL=${WEBHOOK_URL}"
 fi
 
 if [ "${AUTO_BACKUP}" -eq 1 ]; then
