@@ -86,7 +86,7 @@ subcommands:
       about: >
           Attempts to update an existing Valheim server installation. By
           default this involves checking for an update, if an update is
-          available, the server will shut down, updated, and brought back online
+          available, the server will be shut down, updated, and brought back online
           if it was running before. If no update is available then there should
           be no effect from calling this.
       args:
