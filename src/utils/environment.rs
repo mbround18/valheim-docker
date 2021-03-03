@@ -2,13 +2,19 @@ use log::debug;
 use std::env;
 
 pub fn fetch_var(name: &str, default: &str) -> String {
-  let value = env::var(name).unwrap_or_else(|_| String::from(default));
-  if value.is_empty() {
-    debug!("Using default env var '{}': '{}'", name, default);
-    default.to_string()
-  } else {
-    debug!("Env var found '{}': '{}'", name, default);
-    value
+  match env::var(name) {
+    Ok(value) => {
+      debug!("Env var found '{}': '{}'", name, value);
+      if value.is_empty() {
+        String::from(default)
+      } else {
+        value
+      }
+    }
+    Err(_) => {
+      debug!("Env var default '{}': '{}'", name, default);
+      String::from(default)
+    }
   }
 }
 
