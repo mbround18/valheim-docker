@@ -24,7 +24,7 @@ line
 
 cd /home/steam/valheim || exit 1
 
-if [ odin update --check ]; then
+if odin update --check; then
     log "An update is available. Starting the update process..."
 
     # Store if the server is currently running
