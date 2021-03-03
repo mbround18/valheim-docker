@@ -6,7 +6,7 @@ use crate::{
   constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct UpdateInfo {
   current_buildid: String,
   latest_buildid: String,
@@ -17,6 +17,18 @@ impl UpdateInfo {
     let current_buildid = get_current_buildid();
     let latest_buildid = get_latest_buildid();
 
+    Self::internal_new(current_buildid, latest_buildid)
+  }
+
+  #[cfg(test)]
+  pub fn new_testing(manifest_contents: &str, app_info_output: &str) -> Self {
+    let current_buildid = extract_buildid_from_manifest(manifest_contents).to_string();
+    let latest_buildid = extract_buildid_from_app_info(app_info_output).to_string();
+
+    Self::internal_new(current_buildid, latest_buildid)
+  }
+
+  fn internal_new(current_buildid: String, latest_buildid: String) -> Self {
     Self {
       current_buildid,
       latest_buildid,
@@ -27,12 +39,12 @@ impl UpdateInfo {
     self.current_buildid != self.latest_buildid
   }
 
-  // pub fn current_buildid(&self) -> String {
-  //   self.current_buildid.clone()
+  // pub fn current_buildid(&self) -> &str {
+  //   &self.current_buildid
   // }
 
-  // pub fn latest_buildid(&self) -> String {
-  //   self.latest_buildid.clone()
+  // pub fn latest_buildid(&self) -> &str {
+  //   &self.latest_buildid
   // }
 }
 
@@ -174,20 +186,65 @@ mod tests {
       .join("assets")
   });
 
+  const CURRENT_MANIFEST_FILENAME: &str = "example_current_app_manifest.txt";
+  const CURRENT_APP_INFO_FILENAME: &str = "example_current_steamcmd_app_info.txt";
+  const UPDATED_APP_INFO_FILENAME: &str = "example_updated_steamcmd_app_info.txt";
+
+  const CURRENT_BUILDID: &str = "6246034";
+  const UPDATED_BUILDID: &str = "6315977";
+
+  fn read_sample_file(filename: &str) -> String {
+    let filepath = TEST_ASSET_DIR.join(filename);
+    fs::read_to_string(&filepath)
+      .unwrap_or_else(|_| panic!("Sample file missing: '{}'", filepath.display()))
+  }
+
   #[test]
   fn extracting_buildid_from_manifest() {
-    let sample_file = TEST_ASSET_DIR.join("example_app_manifest.txt");
-    let manifest_data = fs::read_to_string(sample_file).expect("Sample manifest file missing");
-
-    assert_eq!(extract_buildid_from_manifest(&manifest_data), "6246034");
+    let manifest_data = read_sample_file(CURRENT_MANIFEST_FILENAME);
+    assert_eq!(
+      extract_buildid_from_manifest(&manifest_data),
+      CURRENT_BUILDID
+    );
   }
 
   #[test]
   fn extracting_buildid_from_app_info() {
-    let sample_file = TEST_ASSET_DIR.join("example_steamcmd_app_info.txt");
-    let app_info_output =
-      fs::read_to_string(sample_file).expect("Sample app info output file missing");
+    let app_info_output = read_sample_file(CURRENT_APP_INFO_FILENAME);
+    assert_eq!(
+      extract_buildid_from_app_info(&app_info_output),
+      CURRENT_BUILDID
+    );
+  }
 
-    assert_eq!(extract_buildid_from_app_info(&app_info_output), "6246034");
+  #[test]
+  fn update_info() {
+    let current_manifest_data = read_sample_file(CURRENT_MANIFEST_FILENAME);
+    let current_app_info_output = read_sample_file(CURRENT_APP_INFO_FILENAME);
+    let updated_app_info_output = read_sample_file(UPDATED_APP_INFO_FILENAME);
+
+    // Verify updated info looks right
+    let updated_update_info =
+      UpdateInfo::new_testing(&current_manifest_data, &current_app_info_output);
+    assert_eq!(
+      updated_update_info,
+      UpdateInfo {
+        current_buildid: CURRENT_BUILDID.to_string(),
+        latest_buildid: CURRENT_BUILDID.to_string()
+      }
+    );
+    assert!(!updated_update_info.update_available());
+
+    // Verify that info indicating an update looks right
+    let pending_update_info =
+      UpdateInfo::new_testing(&current_manifest_data, &updated_app_info_output);
+    assert_eq!(
+      pending_update_info,
+      UpdateInfo {
+        current_buildid: CURRENT_BUILDID.to_string(),
+        latest_buildid: UPDATED_BUILDID.to_string()
+      }
+    );
+    assert!(pending_update_info.update_available());
   }
 }
