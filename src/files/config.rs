@@ -1,9 +1,9 @@
 use crate::files::ValheimArguments;
 use crate::files::{FileManager, ManagedFile};
+use crate::utils::environment::fetch_var;
 use crate::utils::{get_variable, get_working_dir, VALHEIM_EXECUTABLE_NAME};
 use clap::ArgMatches;
 use log::{debug, error};
-use std::env;
 use std::fs;
 use std::path::PathBuf;
 use std::process::exit;
@@ -11,7 +11,7 @@ use std::process::exit;
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
 pub fn config_file() -> ManagedFile {
-  let name = env::var(ODIN_CONFIG_FILE_VAR).unwrap_or_else(|_| "config.json".to_string());
+  let name = fetch_var(ODIN_CONFIG_FILE_VAR, "config.json");
   debug!("Config file set to: {}", name);
   ManagedFile { name }
 }
@@ -58,6 +58,7 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
 mod tests {
   use super::*;
   use rand::Rng;
+  use std::env;
   use std::env::current_dir;
 
   #[test]

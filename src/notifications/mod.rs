@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::notifications::discord::{is_discord_webhook, DiscordWebHookBody};
 use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::notification_event::{EventType, NotificationEvent};
+use reqwest::Url;
 
 mod discord;
 pub mod enums;
@@ -29,7 +30,10 @@ fn fetch_webhook_url() -> Result<String, VarError> {
 }
 
 fn is_webhook_enabled() -> bool {
-  fetch_webhook_url().is_ok()
+  match fetch_webhook_url() {
+    Ok(url) => !url.is_empty() && Url::parse(url.as_str()).is_ok(),
+    Err(_) => false,
+  }
 }
 
 fn parse_webhook_env_var(event_type: EventType) -> String {
@@ -113,6 +117,41 @@ impl NotificationEvent {
 }
 
 #[cfg(test)]
+mod webhook_tests {
+  use super::*;
+  use serial_test::serial;
+  use std::env::{remove_var, set_var};
+
+  #[test]
+  #[serial]
+  fn is_webhook_enabled_found_var_valid_url() {
+    set_var("WEBHOOK_URL", "http://127.0.0.1:3000/dummy-url");
+    assert_eq!(is_webhook_enabled(), true);
+  }
+
+  #[test]
+  #[serial]
+  fn is_webhook_enabled_found_var_invalid_url() {
+    set_var("WEBHOOK_URL", "LOCALHOST");
+    assert_eq!(is_webhook_enabled(), false);
+  }
+
+  #[test]
+  #[serial]
+  fn is_webhook_enabled_not_found_var() {
+    remove_var("WEBHOOK_URL");
+    assert_eq!(is_webhook_enabled(), false);
+  }
+
+  #[test]
+  #[serial]
+  fn is_webhook_enabled_empty_var() {
+    set_var("WEBHOOK_URL", "");
+    assert_eq!(is_webhook_enabled(), false);
+  }
+}
+
+#[cfg(test)]
 mod enum_tests {
   use inflections::case::to_title_case;
 
@@ -124,6 +163,7 @@ mod enum_tests {
   fn parse_enum_as_string() {
     assert_eq!(to_title_case(Broadcast.to_string().as_str()), "Broadcast");
   }
+
   #[test]
   fn parse_enum_create_notification() {
     let event = NotificationEvent::Stop(EventStatus::Running);

@@ -1,5 +1,5 @@
 use crate::commands::start::{LD_LIBRARY_PATH_VAR, LD_PRELOAD_VAR};
-use crate::utils::{fetch_env, get_working_dir, path_exists};
+use crate::utils::{environment, get_working_dir, path_exists};
 use log::{debug, info};
 use std::ops::Add;
 use std::process::{Child, Command};
@@ -13,27 +13,25 @@ const DOORSTOP_INVOKE_DLL_PATH_VAR: &str = "DOORSTOP_INVOKE_DLL_PATH";
 const DOORSTOP_CORLIB_OVERRIDE_PATH_VAR: &str = "DOORSTOP_CORLIB_OVERRIDE_PATH";
 
 fn doorstop_lib() -> String {
-  fetch_env(DOORSTOP_LIB_VAR, "libdoorstop_x64.so", false)
+  environment::fetch_var(DOORSTOP_LIB_VAR, "libdoorstop_x64.so")
 }
 
 fn doorstop_libs() -> String {
-  fetch_env(
+  environment::fetch_var(
     DOORSTOP_LIBS_VAR,
     format!("{}/doorstop_libs", get_working_dir()).as_str(),
-    false,
   )
 }
 
 fn doorstop_insert_lib() -> String {
   let default = format!("{}/{}", doorstop_libs(), doorstop_lib().replace(":", ""));
-  fetch_env(DYLD_INSERT_LIBRARIES_VAR, default.as_str(), false)
+  environment::fetch_var(DYLD_INSERT_LIBRARIES_VAR, default.as_str())
 }
 
 fn doorstop_invoke_dll() -> String {
-  fetch_env(
+  environment::fetch_var(
     DOORSTOP_INVOKE_DLL_PATH_VAR,
     format!("{}/BepInEx/core/BepInEx.Preloader.dll", get_working_dir()).as_str(),
-    false,
   )
 }
 
@@ -48,24 +46,19 @@ pub struct BepInExEnvironment {
 }
 
 pub fn build_environment() -> BepInExEnvironment {
-  let ld_preload = fetch_env(LD_PRELOAD_VAR, "", false).add(doorstop_lib().as_str());
-  let ld_library_path = fetch_env(
+  let ld_preload = environment::fetch_var(LD_PRELOAD_VAR, "").add(doorstop_lib().as_str());
+  let ld_library_path = environment::fetch_var(
     LD_LIBRARY_PATH_VAR,
     format!("./linux64:{}", doorstop_libs()).as_str(),
-    false,
   );
   let doorstop_invoke_dll_value = doorstop_invoke_dll();
-  let doorstop_corlib_override_path = fetch_env(
+  let doorstop_corlib_override_path = environment::fetch_var(
     DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
     format!("{}/{}", get_working_dir(), "unstripped_corlib").as_str(),
-    false,
   );
-  let dyld_library_path = fetch_env(DYLD_LIBRARY_PATH_VAR, doorstop_libs().as_str(), false);
-  let dyld_insert_libraries = fetch_env(
-    DYLD_INSERT_LIBRARIES_VAR,
-    doorstop_insert_lib().as_str(),
-    false,
-  );
+  let dyld_library_path = environment::fetch_var(DYLD_LIBRARY_PATH_VAR, doorstop_libs().as_str());
+  let dyld_insert_libraries =
+    environment::fetch_var(DYLD_INSERT_LIBRARIES_VAR, doorstop_insert_lib().as_str());
   info!("Checking for BepInEx Environment...");
   let environment = BepInExEnvironment {
     ld_preload,
