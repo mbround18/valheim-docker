@@ -83,18 +83,25 @@ subcommands:
             required: true
             index: 2
   - update:
-      about: Updates an existing Valheim server installation. Note that the server must be brought offline to update.
+      about: >
+          Attempts to update an exsiting Valheim server installation. By
+          default this involves checking for an update, if an update is
+          available the server will shut down, updated, and brought back online
+          if it was running before. If no update is available then there should
+          be no effect from calling this.
       args:
         - check:
             long: check
             short: c
-            about: Check for a server update, exiting with 0 if one is available
+            about: >
+                Check for a server update, exiting with 0 if one is available
+                and 1 if the server is up to date.
             conflicts_with:
                 - force
         - force:
             long: force
             short: f
-            about: Force an update attempt, even if no update is detected
+            about: Force an update attempt, even if no update is detected.
             conflicts_with:
                 - check
   - notify:

@@ -1,11 +1,12 @@
 use clap::ArgMatches;
 use log::{debug, error, info};
 
-use std::{fs, io::ErrorKind, path::Path, process::exit};
+use std::process::exit;
 
-use crate::{
-  constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
-};
+use crate::server;
+
+const EXIT_NO_UPDATE_AVAILABLE: i32 = 0;
+const EXIT_UPDATE_AVAILABLE: i32 = 1;
 
 enum Action {
   Check,
@@ -28,7 +29,10 @@ pub fn invoke(args: &ArgMatches) {
   info!("Checking for updates");
 
   if !server::is_installed() {
-    error!("Failed to find server executable. Can't update!");
+    error!(
+      "Failed to find server executable. Can't update! If the server isn't installed yet then you \
+        likely need to run `odin install`."
+    );
     exit(1);
   }
 
@@ -37,7 +41,7 @@ pub fn invoke(args: &ArgMatches) {
   let force = args.is_present("force");
 
   let server_running = server::is_running();
-  let update_available = update_is_available();
+  let update_available = server::update_is_available();
   if update_available {
     info!("A server update is available!");
   } else {
@@ -52,18 +56,16 @@ pub fn invoke(args: &ArgMatches) {
       (true, false) => {
         info!("Dry run: No update is available. This would exit with 1 to indicate this.")
       }
-      // 0 indicates that an update is available
-      (false, true) => exit(0),
+      (false, true) => exit(EXIT_NO_UPDATE_AVAILABLE),
       // TODO: should we do a value other than 1 here, and if we do then what value?
-      // 1 indicates the server is up to date
-      (false, false) => exit(1),
+      (false, false) => exit(EXIT_UPDATE_AVAILABLE),
     },
     Action::Force => match (dry_run, server_running) {
       (true, true) => info!("Dry run: Server would be shutdown, updated, and brought back online"),
       (true, false) => info!("Dry run: The server is offline and would be updated"),
       _ => {
         debug!("Force updating!");
-        update_server();
+        server::update_server();
       }
     },
     Action::Regular => {
@@ -81,156 +83,8 @@ pub fn invoke(args: &ArgMatches) {
         }
       } else if update_available {
         debug!("Updating the installation!");
-        update_server()
+        server::update_server()
       }
     }
-  }
-}
-
-fn update_server() {
-  // Shutdown the server if it's running
-  let server_was_running = server::is_running();
-  if server_was_running {
-    server::send_shutdown();
-    server::wait_for_exit();
-  }
-
-  // Update the installation
-  if let Err(e) = server::install(constants::GAME_ID) {
-    error!("Failed to install server: {}", e);
-    exit(1);
-  }
-
-  // Bring the server up if it was running before
-  if server_was_running {
-    let config = load_config();
-    match server::start_daemonized(config) {
-      Ok(_) => info!("Server daemon started"),
-      Err(e) => {
-        error!("Error daemonizing: {}", e);
-        exit(1);
-      }
-    }
-  }
-}
-
-fn update_is_available() -> bool {
-  let latest_buildid = get_latest_buildid();
-  let current_buildid = get_current_buildid();
-  debug!(
-    "latest buildid: {}, current buildid: {}",
-    latest_buildid, current_buildid
-  );
-
-  latest_buildid != current_buildid
-}
-
-fn get_current_buildid() -> String {
-  let manifest_path = Path::new(&get_working_dir())
-    .join("steamapps")
-    .join("appmanifest_896660.acf");
-  let manifest_data = fs::read_to_string(manifest_path).expect("Failed to read manifest file");
-  extract_buildid_from_manifest(&manifest_data).to_string()
-}
-
-fn get_latest_buildid() -> String {
-  // Remove the cached file to force an updated response. This is done because `steamcmd` seems to
-  // refuse to update information before querying the app_info even with `+app_info_update 1` or
-  // `+@bCSForceNoCache 1`
-  let appinfo_file = Path::new("/home/steam/Steam/appcache/appinfo.vdf");
-  fs::remove_file(appinfo_file).unwrap_or_else(|e| match e.kind() {
-    // AOK if it doesn't exist
-    ErrorKind::NotFound => {}
-    err_kind => {
-      error!("Failed to remove appinfo file! Error: {:?}", err_kind);
-      exit(1);
-    }
-  });
-
-  // Now pull the latest app info
-  let args = &[
-    "+@ShutdownOnFailedCommand 1",
-    "+login anonymous",
-    &format!("+app_info_print {}", constants::GAME_ID),
-    "+quit",
-  ];
-  let mut steamcmd = steamcmd_command();
-  let app_info_output = steamcmd
-    .args(args)
-    .output()
-    .expect("Failed to run steamcmd");
-  assert!(app_info_output.status.success());
-
-  let stdout = String::from_utf8(app_info_output.stdout).expect("steamcmd returned invalid UTF-8");
-  extract_buildid_from_app_info(&stdout).to_string()
-}
-
-fn extract_buildid_from_manifest(manifest: &str) -> &str {
-  let mut lines = manifest.lines();
-  let build_id_line = loop {
-    let line = lines.next().unwrap().trim();
-
-    if line.starts_with("\"buildid\"") {
-      break line;
-    }
-  };
-
-  split_vdf_key_val(build_id_line).1
-}
-
-fn extract_buildid_from_app_info(app_info: &str) -> &str {
-  let mut lines = app_info.lines();
-  while let Some(line) = lines.next() {
-    if line.trim() == "\"public\"" {
-      break;
-    }
-  }
-
-  assert_eq!(lines.next().map(|line| line.trim()), Some("{"));
-  let build_id_line = lines.next().unwrap().trim();
-  assert!(build_id_line.starts_with("\"buildid\""));
-
-  split_vdf_key_val(build_id_line).1
-}
-
-// Note: This is super brittle and will fail if there is whitespace within the key or value _or_ if
-// there are escaped " at the end of the key or value
-fn split_vdf_key_val(vdf_pair: &str) -> (&str, &str) {
-  let mut pieces = vdf_pair.trim().split_whitespace();
-  let key = pieces.next().expect("Missing vdf key").trim_matches('"');
-  let val = pieces.next().expect("Missing vdf val").trim_matches('"');
-
-  (key, val)
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  use once_cell::sync::Lazy;
-
-  use std::path::PathBuf;
-
-  static TEST_ASSET_DIR: Lazy<PathBuf> = Lazy::new(|| {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-      .join("tests")
-      .join("assets")
-  });
-
-  #[test]
-  fn extracting_buildid_from_manifest() {
-    let sample_file = TEST_ASSET_DIR.join("example_app_manifest.txt");
-    let manifest_data = fs::read_to_string(sample_file).expect("Sample manifest file missing");
-
-    assert_eq!(extract_buildid_from_manifest(&manifest_data), "6246034");
-  }
-
-  #[test]
-  fn extracting_buildid_from_app_info() {
-    let sample_file = TEST_ASSET_DIR.join("example_steamcmd_app_info.txt");
-    let app_info_output =
-      fs::read_to_string(sample_file).expect("Sample app info output file missing");
-
-    assert_eq!(extract_buildid_from_app_info(&app_info_output), "6246034");
   }
 }

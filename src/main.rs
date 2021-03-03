@@ -4,6 +4,7 @@ use log::{debug, info, LevelFilter, SetLoggerError};
 use crate::executable::handle_exit_status;
 use crate::logger::OdinLogger;
 use crate::utils::fetch_env;
+
 mod commands;
 mod constants;
 mod errors;
@@ -11,6 +12,7 @@ mod executable;
 mod files;
 mod logger;
 mod messages;
+mod mods;
 mod notifications;
 mod server;
 mod steamcmd;

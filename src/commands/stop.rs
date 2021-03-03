@@ -15,7 +15,6 @@ pub fn invoke(args: &ArgMatches) {
       error!("Failed to find server executable!");
       exit(1);
     }
-    server::send_shutdown();
-    server::wait_for_exit();
+    server::blocking_shutdown();
   }
 }
