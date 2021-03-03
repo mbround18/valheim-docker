@@ -1,6 +1,6 @@
 [package]
 name = "odin"
-version = "1.2.0"
+version = "1.3.0"
 authors = ["mbround18 <12646562+mbround18@users.noreply.github.com>"]
 edition = "2018"
 
@@ -20,10 +20,10 @@ inflections = "1.1.1"
 reqwest = { version = "0.11.1", features = ["blocking", "json"] }
 chrono = "0.4"
 
-
 [dev-dependencies]
 once_cell = "1.7"
 rand = "0.8.3"
+serial_test = "0.5.1"
 
 [dev-dependencies.cargo-husky]
 version = "1"

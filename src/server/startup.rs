@@ -9,7 +9,7 @@ use crate::{
   files::{create_file, ValheimArguments},
   messages,
   mods::bepinex,
-  utils::{fetch_env, get_working_dir},
+  utils::{environment, get_working_dir},
 };
 
 type CommandResult = io::Result<Child>;
@@ -39,10 +39,9 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
 pub fn start(config: &ValheimArguments) -> CommandResult {
   let mut command = create_execution(&config.command);
   info!("--------------------------------------------------------------------------------------------------------------");
-  let ld_library_path_value = fetch_env(
+  let ld_library_path_value = environment::fetch_multiple_var(
     constants::LD_LIBRARY_PATH_VAR,
     format!("{}/linux64", get_working_dir()).as_str(),
-    true,
   );
   debug!("Setting up base command");
   let base_command = command
@@ -60,7 +59,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
       "-public",
       &config.public.as_str(),
     ])
-    .env("SteamAppId", fetch_env("APPID", "892970", false))
+    .env("SteamAppId", environment::fetch_var("APPID", "892970"))
     .current_dir(get_working_dir());
   info!("Executable: {}", &config.command);
   info!("Launching Command...");

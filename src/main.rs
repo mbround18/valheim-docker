@@ -3,8 +3,7 @@ use log::{debug, info, LevelFilter, SetLoggerError};
 
 use crate::executable::handle_exit_status;
 use crate::logger::OdinLogger;
-use crate::utils::fetch_env;
-
+use crate::utils::environment;
 mod commands;
 mod constants;
 mod errors;
@@ -39,7 +38,7 @@ fn main() {
   let yaml = load_yaml!("cli.yaml");
   let app = App::from(yaml).version(constants::VERSION);
   let matches = app.get_matches();
-  let debug_mode = matches.is_present("debug") || fetch_env("DEBUG_MODE", "0", false).eq("1");
+  let debug_mode = matches.is_present("debug") || environment::fetch_var("DEBUG_MODE", "0").eq("1");
   setup_logger(debug_mode).unwrap();
   if !debug_mode {
     info!("Run with DEBUG_MODE as 1 if you think there is an issue with Odin");
