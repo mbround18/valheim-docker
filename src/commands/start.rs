@@ -5,7 +5,7 @@ use crate::executable::create_execution;
 use crate::files::config::{config_file, read_config};
 use crate::files::{create_file, ValheimArguments};
 use crate::messages::modding_disclaimer;
-use crate::utils::{fetch_env, get_working_dir};
+use crate::utils::{environment, get_working_dir};
 use clap::ArgMatches;
 use daemonize::Daemonize;
 use log::{debug, error, info};
@@ -27,10 +27,9 @@ fn exit_action() {
 fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
   let mut command = create_execution(&config.command);
   info!("--------------------------------------------------------------------------------------------------------------");
-  let ld_library_path_value = fetch_env(
+  let ld_library_path_value = environment::fetch_multiple_var(
     LD_LIBRARY_PATH_VAR,
     format!("{}/linux64", get_working_dir()).as_str(),
-    true,
   );
   debug!("Setting up base command");
   let base_command = command
@@ -48,7 +47,7 @@ fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
       "-public",
       &config.public.as_str(),
     ])
-    .env("SteamAppId", fetch_env("APPID", "892970", false))
+    .env("SteamAppId", environment::fetch_var("APPID", "892970"))
     .current_dir(get_working_dir());
   info!("Executable: {}", &config.command);
   info!("Launching Command...");
