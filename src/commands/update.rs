@@ -79,7 +79,7 @@ pub fn invoke(args: &ArgMatches) {
     exit(1);
   }
 
-  let dry_run = if args.is_present("dry_run") {
+  let run_action = if args.is_present("dry_run") {
     RunAction::Dry
   } else {
     RunAction::Real
@@ -95,14 +95,14 @@ pub fn invoke(args: &ArgMatches) {
   }
 
   match UpdateAction::new(check, force) {
-    UpdateAction::Check => update_check(dry_run, update_state),
-    UpdateAction::Force => update_force(dry_run, server_state),
-    UpdateAction::Regular => update_regular(dry_run, server_state, update_state),
+    UpdateAction::Check => update_check(run_action, update_state),
+    UpdateAction::Force => update_force(run_action, server_state),
+    UpdateAction::Regular => update_regular(run_action, server_state, update_state),
   }
 }
 
-fn update_check(dry_run: RunAction, update_state: UpdateState) {
-  match (dry_run, update_state) {
+fn update_check(run_action: RunAction, update_state: UpdateState) {
+  match (run_action, update_state) {
     (RunAction::Dry, UpdateState::Pending) => {
       info!(
         "Dry run: An update is available. This would exit with {} to indicate this.",
@@ -119,8 +119,8 @@ fn update_check(dry_run: RunAction, update_state: UpdateState) {
   }
 }
 
-fn update_force(dry_run: RunAction, server_state: ServerState) {
-  match (dry_run, server_state) {
+fn update_force(run_action: RunAction, server_state: ServerState) {
+  match (run_action, server_state) {
     (RunAction::Dry, ServerState::Running) => {
       info!("Dry run: Server would be shutdown, updated, and brought back online")
     }
@@ -134,8 +134,8 @@ fn update_force(dry_run: RunAction, server_state: ServerState) {
   }
 }
 
-fn update_regular(dry_run: RunAction, server_state: ServerState, update_state: UpdateState) {
-  match (dry_run, server_state, update_state) {
+fn update_regular(run_action: RunAction, server_state: ServerState, update_state: UpdateState) {
+  match (run_action, server_state, update_state) {
     (RunAction::Dry, ServerState::Running, UpdateState::Pending) => {
       info!(
         "Dry run: An update is available and the server is ONLINE. The server would be shutdown \
