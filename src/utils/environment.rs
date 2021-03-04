@@ -8,7 +8,7 @@ pub fn fetch_var(name: &str, default: &str) -> String {
       if value.is_empty() {
         String::from(default)
       } else {
-        value
+        String::from(value.trim_start_matches('"').trim_end_matches('"'))
       }
     }
     Err(_) => {

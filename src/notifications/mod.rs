@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::notifications::discord::{is_discord_webhook, DiscordWebHookBody};
 use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::notification_event::{EventType, NotificationEvent};
+use crate::utils::environment::fetch_var;
 use reqwest::Url;
 
 mod discord;
@@ -30,10 +31,14 @@ fn fetch_webhook_url() -> Result<String, VarError> {
 }
 
 fn is_webhook_enabled() -> bool {
-  match fetch_webhook_url() {
-    Ok(url) => !url.is_empty() && Url::parse(url.as_str()).is_ok(),
-    Err(_) => false,
+  let url = fetch_var(WEBHOOK_URL, "");
+  if !url.is_empty() {
+    debug!("Webhook Url found!: {}", url);
+    let is_valid = Url::parse(url.as_str()).is_ok();
+    debug!("Webhook is valid: {}", is_valid);
+    return is_valid;
   }
+  false
 }
 
 fn parse_webhook_env_var(event_type: EventType) -> String {
@@ -101,6 +106,7 @@ impl NotificationEvent {
     self.handle_request(req);
   }
   pub fn send_notification(&self) {
+    print!("HERE I AM !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     if is_webhook_enabled() {
       debug!("Webhook found! Starting notification process...");
       let event = self.create_notification_message();
