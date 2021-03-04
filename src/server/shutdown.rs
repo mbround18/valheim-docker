@@ -32,7 +32,7 @@ pub fn send_shutdown_signal() {
   }
 }
 
-pub fn wait_for_exit() {
+fn wait_for_exit() {
   info!("Waiting for server to completely shutdown...");
   let mut system = System::new();
   loop {

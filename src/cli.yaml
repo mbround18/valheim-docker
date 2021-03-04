@@ -95,7 +95,7 @@ subcommands:
             short: c
             about: >
                 Check for a server update, exiting with 0 if one is available
-                and 1 if the server is up to date.
+                and 10 if the server is up to date.
             conflicts_with:
                 - force
         - force:
