@@ -28,7 +28,7 @@ if odin update --check; then
     log "An update is available. Starting the update process..."
 
     # Store if the server is currently running
-    ! pidof valheim_server.x86_64
+    ! pidof valheim_server.x86_64 > /dev/null
     SERVER_RUNNING=$?
 
     # Stop the server if it's running
