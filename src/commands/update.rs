@@ -5,8 +5,8 @@ use std::process::exit;
 
 use crate::server;
 
-const EXIT_NO_UPDATE_AVAILABLE: i32 = 0;
-const EXIT_UPDATE_AVAILABLE: i32 = 1;
+const EXIT_NO_UPDATE_AVAILABLE: i32 = 10;
+const EXIT_UPDATE_AVAILABLE: i32 = 0;
 
 enum UpdateAction {
   Check,
