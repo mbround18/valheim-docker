@@ -30,6 +30,7 @@ enum RunAction {
   Dry,
 }
 
+#[derive(Clone, Copy)]
 enum UpdateState {
   Pending,
   UpToDate,
@@ -103,10 +104,16 @@ pub fn invoke(args: &ArgMatches) {
 fn update_check(dry_run: RunAction, update_state: UpdateState) {
   match (dry_run, update_state) {
     (RunAction::Dry, UpdateState::Pending) => {
-      info!("Dry run: An update is available. This would exit with 0 to indicate this.")
+      info!(
+        "Dry run: An update is available. This would exit with {} to indicate this.",
+        update_state.as_exit_code()
+      )
     }
     (RunAction::Dry, UpdateState::UpToDate) => {
-      info!("Dry run: No update is available. This would exit with 1 to indicate this.")
+      info!(
+        "Dry run: No update is available. This would exit with {} to indicate this.",
+        update_state.as_exit_code()
+      )
     }
     (_, update_state) => exit(update_state.as_exit_code()),
   }
