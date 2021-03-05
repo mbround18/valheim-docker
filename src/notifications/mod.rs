@@ -1,9 +1,8 @@
 use std::env;
-use std::env::VarError;
 
 use chrono::prelude::*;
 use inflections::case::{to_constant_case, to_title_case};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use reqwest::blocking::RequestBuilder;
 use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
@@ -11,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::notifications::discord::{is_discord_webhook, DiscordWebHookBody};
 use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::notification_event::{EventType, NotificationEvent};
+use crate::utils::environment::fetch_var;
 use reqwest::Url;
 
 mod discord;
@@ -25,15 +25,27 @@ pub struct NotificationMessage {
   timestamp: String,
 }
 
-fn fetch_webhook_url() -> Result<String, VarError> {
-  env::var(WEBHOOK_URL)
+fn fetch_webhook_url() -> String {
+  fetch_var(WEBHOOK_URL, "")
+    .trim_start_matches('"')
+    .trim_end_matches('"')
+    .to_string()
 }
 
 fn is_webhook_enabled() -> bool {
-  match fetch_webhook_url() {
-    Ok(url) => !url.is_empty() && Url::parse(url.as_str()).is_ok(),
-    Err(_) => false,
+  let url = fetch_webhook_url();
+  if !url.is_empty() {
+    debug!("Webhook Url found!: {}", url);
+    let is_valid = Url::parse(url.as_str()).is_ok();
+    if !is_valid {
+      warn!(
+        "Webhook provided but does not look valid!! Is this right? {}",
+        url
+      )
+    }
+    return is_valid;
   }
+  false
 }
 
 fn parse_webhook_env_var(event_type: EventType) -> String {
@@ -106,10 +118,7 @@ impl NotificationEvent {
       let event = self.create_notification_message();
       let env_var_name = parse_webhook_env_var(event.event_type);
       let notification_message = env::var(env_var_name).unwrap_or(event.event_message);
-      self.send_custom_notification(
-        fetch_webhook_url().unwrap().replace("\"", "").as_str(),
-        notification_message.as_str(),
-      );
+      self.send_custom_notification(fetch_webhook_url().as_str(), notification_message.as_str());
     } else {
       debug!("Skipping notification, no webhook supplied!");
     }
