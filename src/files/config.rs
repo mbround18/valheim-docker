@@ -67,7 +67,7 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
   let content_to_write = serde_json::to_string(content).unwrap();
   debug!(
     "Writing config content: \n{}",
-    serde_json::to_string(content).unwrap()
+    serde_json::to_string_pretty(content).unwrap()
   );
   config.write(content_to_write)
 }

@@ -55,6 +55,7 @@ fn main() {
   };
   if let Some(ref start_matches) = matches.subcommand_matches("start") {
     debug!("Launching start command...");
+    NotificationEvent::Start(EventStatus::Running).send_notification();
     commands::start::invoke(start_matches);
     NotificationEvent::Start(EventStatus::Successful).send_notification();
   };
