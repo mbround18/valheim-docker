@@ -129,7 +129,7 @@ if [ "${AUTO_UPDATE}" -eq 1 ]; then
     WORLD=$(cron_var_escape "${WORLD}") \
     PUBLIC=${PUBLIC} \
     PASSWORD=$(cron_var_escape "${PASSWORD}") \
-    WEBHOOK_URL=$(cron_var_escap "${WEBHOOK_URL}")"
+    WEBHOOK_URL=$(cron_var_escape "${WEBHOOK_URL}")"
 fi
 
 if [ "${AUTO_BACKUP}" -eq 1 ]; then
