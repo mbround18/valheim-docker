@@ -1,6 +1,6 @@
 use crate::notifications::EventStatus;
 use crate::notifications::NotificationMessage;
-use crate::utils::environment;
+use crate::utils::environment::fetch_var;
 use inflections::case::to_title_case;
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -46,7 +46,7 @@ pub struct DiscordWebHookBody {
 
 impl DiscordWebHookBody {
   pub fn new(event: &NotificationMessage) -> Self {
-    let server_name = environment::fetch_var("NAME", "Your Valheim Server");
+    let server_name = fetch_var("NAME", "Your Valheim Server");
     let status = &event.event_type.status;
     let event_status = EventStatus::from_str(status).unwrap_or(EventStatus::Failed);
     let color: i32 = Color::from(event_status) as i32;

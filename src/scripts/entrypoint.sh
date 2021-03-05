@@ -54,13 +54,12 @@ setup_cron() {
     CRON_NAME=$1
     SCRIPT_PATH="/home/steam/scripts/$2"
     CRON_SCHEDULE=$3
-    CRON_ENV="$4"
-    log "${CRON_ENV}"
+    CRON_ENV=$4
     LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
     rm $LOG_LOCATION > /dev/null
     printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}"  \
-    "ODIN_WORKING_DIR=${ODIN_WORKING_DIR} ${CRON_ENV:-""}"   \
+    "DEBUG_MODE=${DEBUG_MODE:-0} ODIN_WORKING_DIR=${ODIN_WORKING_DIR} WEBHOOK_URL=${WEBHOOK_URL:-""} ${CRON_ENV}"   \
     "${SCRIPT_PATH}"    \
     "${LOG_LOCATION}"   \
     >/etc/cron.d/${CRON_NAME}
