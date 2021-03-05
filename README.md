@@ -45,7 +45,7 @@
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
-| WEBHOOK_URL              | ``                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
+| WEBHOOK_URL              | ` `                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
 | UPDATE_ON_STARTUP        | `1`                    | FALSE    | Tries to update the server the container is started. |
 
 ### Docker Compose
@@ -64,12 +64,12 @@ services:
       - 2457:2457/udp
       - 2458:2458/udp
     environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - WORLD="Dedicated"
-      - PASSWORD="Banana Phone"
-      - TZ=America/Chicago
-      - PUBLIC=1
+      PORT: 2456
+      NAME: "Created With Valheim Docker"
+      WORLD: "Dedicated"
+      PASSWORD: "Banana Phone"
+      TZ: "America/Chicago"
+      PUBLIC: 1
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim
@@ -87,22 +87,22 @@ services:
       - 2457:2457/udp
       - 2458:2458/udp
     environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - WORLD="Dedicated"
-      - PASSWORD="Strong! Password @ Here"
-      - TZ=America/Chicago
-      - PUBLIC=1
-      - AUTO_UPDATE=1
-      - AUTO_UPDATE_SCHEDULE="0 1 * * *"
-      - AUTO_BACKUP=1
-      - AUTO_BACKUP_SCHEDULE="*/15 * * * *"
-      - AUTO_BACKUP_REMOVE_OLD=1
-      - AUTO_BACKUP_DAYS_TO_LIVE=3
-      - AUTO_BACKUP_ON_UPDATE=1
-      - AUTO_BACKUP_ON_SHUTDOWN=1
-      - WEBHOOK_URL="https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
-      - UPDATE_ON_STARTUP=0
+      PORT: 2456
+      NAME: "Created With Valheim Docker"
+      WORLD: "Dedicated"
+      PASSWORD: "Strong! Password @ Here"
+      TZ: "America/Chicago"
+      PUBLIC: 1
+      AUTO_UPDATE: 1
+      AUTO_UPDATE_SCHEDULE: "0 1 * * *"
+      AUTO_BACKUP: 1
+      AUTO_BACKUP_SCHEDULE: "*/15 * * * *"
+      AUTO_BACKUP_REMOVE_OLD: 1
+      AUTO_BACKUP_DAYS_TO_LIVE: 3
+      AUTO_BACKUP_ON_UPDATE: 1
+      AUTO_BACKUP_ON_SHUTDOWN: 1
+      WEBHOOK_URL: "https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
+      UPDATE_ON_STARTUP: 0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./valheim/server:/home/steam/valheim

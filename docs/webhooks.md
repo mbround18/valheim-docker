@@ -4,7 +4,8 @@
 
 | Variable                            | Default                            | Required | Description |
 |-------------------------------------|------------------------------------|----------|-------------|
-| WEBHOOK_URL                         | ``                                 | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| WEBHOOK_URL                         | ` `                                 | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+<!---
 | WEBHOOK_BROADCAST_MESSAGE           | CHANGE_ME                          | TRUE     | You set this. See `odin notify --help` |
 | WEBHOOK_UPDATING_MESSAGE            | `Server Status: Updating`          | FALSE    | Set the Updating message of your server |
 | WEBHOOK_UPDATE_SUCCESSFUL_MESSAGE   | `Server Status: Update Successful` | FALSE    | Set the Update Successful message of your server |
@@ -15,6 +16,7 @@
 | WEBHOOK_STOPPING_MESSAGE            | `Server Status: Stopping`          | FALSE    | Set the Stopping message of your server |
 | WEBHOOK_STOP_SUCCESSFUL_MESSAGE     | `Server Status: Stop Successful`   | FALSE    | Set the Stop Successful message of your server |
 | WEBHOOK_STOP_FAILED_MESSAGE         | `Server Status: Stop Failed`       | FALSE    | Set the Stop Failed message of your server |
+--->
 
 
 ## POST Body Example
