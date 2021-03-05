@@ -58,12 +58,6 @@ else
 fi
 cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
 
-
-# Setting up server
-log "Initializing Variables...."
-odin configure || exit 1
-
-
 # Setting up script traps
 trap 'cleanup' INT TERM
 

@@ -2,7 +2,6 @@ mod bepinex;
 
 use crate::commands::start::bepinex::{build_environment, is_bepinex_installed};
 use crate::executable::create_execution;
-use crate::files::config::{config_file, read_config};
 use crate::files::{create_file, ValheimArguments};
 use crate::messages::modding_disclaimer;
 use crate::utils::{environment, get_working_dir};
@@ -24,8 +23,8 @@ fn exit_action() {
   info!("(this indicates its online without any errors.)")
 }
 
-fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
-  let mut command = create_execution(&config.command);
+fn spawn_server(valheim_args: &ValheimArguments) -> std::io::Result<Child> {
+  let mut command = create_execution(&valheim_args.command);
   info!("--------------------------------------------------------------------------------------------------------------");
   let ld_library_path_value = environment::fetch_multiple_var(
     LD_LIBRARY_PATH_VAR,
@@ -37,19 +36,19 @@ fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
       "-nographics",
       "-batchmode",
       "-port",
-      &config.port.as_str(),
+      &valheim_args.port,
       "-name",
-      &config.name.as_str(),
+      &valheim_args.name,
       "-world",
-      &config.world.as_str(),
+      &valheim_args.world,
       "-password",
-      &config.password.as_str(),
+      &valheim_args.password,
       "-public",
-      &config.public.as_str(),
+      &valheim_args.public,
     ])
     .env("SteamAppId", environment::fetch_var("APPID", "892970"))
     .current_dir(get_working_dir());
-  info!("Executable: {}", &config.command);
+  info!("Executable: {}", &valheim_args.command);
   info!("Launching Command...");
 
   if is_bepinex_installed() {
@@ -65,12 +64,11 @@ fn spawn_server(config: &ValheimArguments) -> std::io::Result<Child> {
 }
 
 pub fn invoke(args: &ArgMatches) {
-  info!("Setting up start scripts...");
-  debug!("Loading config file...");
-  let config = config_file();
-  let config_content: ValheimArguments = read_config(config);
+  info!("Starting the server!");
+  debug!("Loading args from the environment...");
+  let valheim_args = ValheimArguments::from_env();
   debug!("Checking password compliance...");
-  if config_content.password.len() < 5 {
+  if valheim_args.password.len() < 5 {
     error!("The supplied password is too short! It much be 5 characters or greater!");
     exit(1)
   }
@@ -87,7 +85,7 @@ pub fn invoke(args: &ArgMatches) {
       .stdout(stdout)
       .stderr(stderr)
       .exit_action(exit_action)
-      .privileged_action(move || spawn_server(&config_content));
+      .privileged_action(move || spawn_server(&valheim_args));
 
     match daemonize.start() {
       Ok(_) => info!("Success, daemonized"),
@@ -96,12 +94,12 @@ pub fn invoke(args: &ArgMatches) {
   } else {
     info!(
       "This command would have launched\n{} -nographics -batchmode -port {} -name {} -world {} -password {} -public {}",
-      &config_content.command,
-      &config_content.port,
-      &config_content.name,
-      &config_content.world,
-      &config_content.password,
-      &config_content.public,
+      &valheim_args.command,
+      &valheim_args.port,
+      &valheim_args.name,
+      &valheim_args.world,
+      &valheim_args.password,
+      &valheim_args.public,
     )
   }
 }

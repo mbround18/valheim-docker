@@ -43,10 +43,7 @@ fn main() {
     info!("Run with DEBUG_MODE as 1 if you think there is an issue with Odin");
   }
   debug!("Debug mode enabled!");
-  if let Some(ref configure_matches) = matches.subcommand_matches("configure") {
-    debug!("Launching configure command...");
-    commands::configure::invoke(configure_matches);
-  };
+  debug!("Odin args: {:#?}", matches);
   if let Some(ref _match) = matches.subcommand_matches("install") {
     debug!("Launching install command...");
     let result = commands::install::invoke(GAME_ID);

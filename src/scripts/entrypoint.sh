@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 
-# Set up variables
-# shellcheck disable=SC2155
-export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
-export WORLD="$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")"
-export PASSWORD="$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")"
-
 # Set up timezone
 ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
 
@@ -22,6 +16,14 @@ log() {
 
 line() {
     log "###########################################################################"
+}
+
+# Escapes the value passed in for use as an env var in crontab
+# This involves both shell escaping and replacing % with \%
+function cron_var_escape () {
+    SHELL_ESCAPED="${1@Q}"
+    CRON_ESCAPED="$(echo "${SHELL_ESCAPED}" | sed 's/%/\\%/g')"
+    echo "${CRON_ESCAPED}"
 }
 
 check_version() {
@@ -53,11 +55,12 @@ setup_cron() {
     SCRIPT_PATH="/home/steam/scripts/$2"
     CRON_SCHEDULE=$3
     CRON_ENV="$4"
+    log "${CRON_ENV}"
     LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
     rm $LOG_LOCATION > /dev/null
     printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}"  \
-    "ODIN_CONFIG_FILE=${ODIN_CONFIG_FILE} ODIN_WORKING_DIR=${ODIN_WORKING_DIR} ${CRON_ENV:-""}"   \
+    "ODIN_WORKING_DIR=${ODIN_WORKING_DIR} ${CRON_ENV:-""}"   \
     "${SCRIPT_PATH}"    \
     "${LOG_LOCATION}"   \
     >/etc/cron.d/${CRON_NAME}
@@ -121,7 +124,13 @@ if [ "${AUTO_UPDATE}" -eq 1 ]; then
     "auto-update" \
     "auto_update.sh" \
     "${AUTO_UPDATE_SCHEDULE}" \
-    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0} WEBHOOK_URL=${WEBHOOK_URL}"
+    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0} \
+    PORT=${PORT} \
+    NAME=$(cron_var_escape "${NAME}") \
+    WORLD=$(cron_var_escape "${WORLD}") \
+    PUBLIC=${PUBLIC} \
+    PASSWORD=$(cron_var_escape "${PASSWORD}") \
+    WEBHOOK_URL=$(cron_var_escap "${WEBHOOK_URL}")"
 fi
 
 if [ "${AUTO_BACKUP}" -eq 1 ]; then

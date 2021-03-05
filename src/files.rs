@@ -1,23 +1,43 @@
-pub mod config;
-
-use crate::executable::create_execution;
-use crate::utils::get_working_dir;
 use log::{error, info};
-use serde::{Deserialize, Serialize};
+
 use std::fs;
 use std::fs::{remove_file, File};
 use std::io::Write;
 use std::path::Path;
 use std::process::exit;
 
-#[derive(Deserialize, Serialize)]
+use crate::executable::create_execution;
+use crate::utils::{environment::fetch_var, get_working_dir, VALHEIM_EXECUTABLE_NAME};
+
 pub struct ValheimArguments {
-  pub(crate) port: String,
-  pub(crate) name: String,
-  pub(crate) world: String,
-  pub(crate) public: String,
-  pub(crate) password: String,
-  pub(crate) command: String,
+  pub port: String,
+  pub name: String,
+  pub world: String,
+  pub public: String,
+  pub password: String,
+  pub command: String,
+}
+
+impl ValheimArguments {
+  pub fn from_env() -> Self {
+    let server_executable = &[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/");
+    let command = match fs::canonicalize(server_executable) {
+      std::result::Result::Ok(command_path) => command_path.to_str().unwrap().to_string(),
+      std::result::Result::Err(_) => {
+        error!("Failed to find server executable! Please run `odin install`");
+        exit(1)
+      }
+    };
+
+    Self {
+      port: fetch_var("PORT", "2456"),
+      name: fetch_var("NAME", "Valheim Docker"),
+      world: fetch_var("WORLD", "Dedicated"),
+      public: fetch_var("PUBLIC", "1"),
+      password: fetch_var("PASSWORD", "12345"),
+      command,
+    }
+  }
 }
 
 pub fn create_file(path: &str) -> File {
