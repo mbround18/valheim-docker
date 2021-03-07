@@ -1,0 +1,166 @@
+WARNING: setlocale('en_US.UTF-8') failed, using locale: 'C'. International characters may not work.
+Redirecting stderr to '/home/steam/Steam/logs/stderr.txt'
+[  0%] Checking for available updates...
+[----] Verifying installation...
+Steam Console Client (c) Valve Corporation
+-- type 'quit' to exit --
+Loading Steam API...OK.
+"@ShutdownOnFailedCommand" = "1"
+
+Connecting anonymously to Steam Public...Logged in OK
+Waiting for user info...OK
+AppID : 896660, change number : 10865381/10865381, last change : Wed Mar  3 00:41:58 2021
+"896660"
+{
+	"common"
+	{
+		"name"		"Valheim Dedicated Server"
+		"type"		"Tool"
+		"parent"		"892970"
+		"oslist"		"windows,linux"
+		"osarch"		""
+		"icon"		"1aab0586723c8578c7990ced7d443568649d0df2"
+		"logo"		"233d73a1c963515ee4a9b59507bc093d85a4e2dc"
+		"logo_small"		"233d73a1c963515ee4a9b59507bc093d85a4e2dc_thumb"
+		"clienticon"		"c55a6b50b170ac6ed56cf90521273c30dccb5f12"
+		"clienttga"		"35e067b9efc8d03a9f1cdfb087fac4b970a48daf"
+		"ReleaseState"		"released"
+		"associations"
+		{
+		}
+		"gameid"		"896660"
+	}
+	"config"
+	{
+		"installdir"		"Valheim dedicated server"
+		"launch"
+		{
+			"0"
+			{
+				"executable"		"start_server_xterm.sh"
+				"type"		"server"
+				"config"
+				{
+					"oslist"		"linux"
+				}
+			}
+			"1"
+			{
+				"executable"		"start_headless_server.bat"
+				"type"		"server"
+				"config"
+				{
+					"oslist"		"windows"
+				}
+			}
+		}
+	}
+	"depots"
+	{
+		"1004"
+		{
+			"name"		"Steamworks SDK Redist (WIN32)"
+			"config"
+			{
+				"oslist"		"windows"
+			}
+			"manifests"
+			{
+				"public"		"6473168357831043306"
+			}
+			"maxsize"		"39546856"
+			"depotfromapp"		"1007"
+		}
+		"1005"
+		{
+			"name"		"Steamworks SDK Redist (OSX32)"
+			"config"
+			{
+				"oslist"		"macos"
+			}
+			"manifests"
+			{
+				"public"		"2135359612286175146"
+			}
+			"depotfromapp"		"1007"
+		}
+		"1006"
+		{
+			"name"		"Steamworks SDK Redist (LINUX32)"
+			"config"
+			{
+				"oslist"		"linux"
+			}
+			"manifests"
+			{
+				"public"		"6688153055340488873"
+			}
+			"maxsize"		"59862244"
+			"depotfromapp"		"1007"
+		}
+		"896661"
+		{
+			"name"		"Valheim dedicated server Linux"
+			"config"
+			{
+				"oslist"		"linux"
+			}
+			"manifests"
+			{
+				"public"		"6588021550109601388"
+			}
+			"maxsize"		"991737299"
+			"encryptedmanifests"
+			{
+				"experimental"
+				{
+					"encrypted_gid_2"		"91B9C2C233637DEDCA25AE056AAD25FA"
+					"encrypted_size_2"		"652E81496E51312FC0F04B49B67718E8"
+				}
+			}
+		}
+		"896662"
+		{
+			"name"		"Valheim dedicated server Windows"
+			"config"
+			{
+				"oslist"		"windows"
+			}
+			"manifests"
+			{
+				"public"		"415644664754619686"
+			}
+			"maxsize"		"984116773"
+			"encryptedmanifests"
+			{
+				"experimental"
+				{
+					"encrypted_gid_2"		"E7E59A011C08BFE6CA0FD3A704DA1C8D"
+					"encrypted_size_2"		"1578D11B163520DC211016502F4A37F2"
+				}
+			}
+		}
+		"branches"
+		{
+			"public"
+			{
+				"buildid"		"6315977"
+				"timeupdated"		"1614679211"
+			}
+			"experimental"
+			{
+				"buildid"		"6306893"
+				"description"		"Experimental version of Valheim"
+				"pwdrequired"		"1"
+				"timeupdated"		"1614510566"
+			}
+			"unstable"
+			{
+				"buildid"		"6315977"
+				"description"		"Unstable test version of valheim"
+				"pwdrequired"		"1"
+				"timeupdated"		"1614676060"
+			}
+		}
+	}
+}

@@ -1,7 +1,8 @@
+use crate::constants;
 use crate::files::ValheimArguments;
 use crate::files::{FileManager, ManagedFile};
 use crate::utils::environment::fetch_var;
-use crate::utils::{get_variable, get_working_dir, VALHEIM_EXECUTABLE_NAME};
+use crate::utils::{get_variable, get_working_dir};
 use clap::ArgMatches;
 use log::{debug, error};
 use std::fs;
@@ -9,6 +10,19 @@ use std::path::PathBuf;
 use std::process::exit;
 
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
+
+pub fn load_config() -> ValheimArguments {
+  let file = config_file();
+  let config = read_config(file);
+
+  debug!("Checking password compliance...");
+  if config.password.len() < 5 {
+    error!("The supplied password is too short! It must be 5 characters or greater!");
+    exit(1);
+  }
+
+  config
+}
 
 pub fn config_file() -> ManagedFile {
   let name = fetch_var(ODIN_CONFIG_FILE_VAR, "config.json");
@@ -25,7 +39,11 @@ pub fn read_config(config: ManagedFile) -> ValheimArguments {
 }
 
 pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
-  let server_executable: &str = &[get_working_dir(), VALHEIM_EXECUTABLE_NAME.to_string()].join("/");
+  let server_executable: &str = &[
+    get_working_dir(),
+    constants::VALHEIM_EXECUTABLE_NAME.to_string(),
+  ]
+  .join("/");
   let command = match fs::canonicalize(PathBuf::from(get_variable(
     args,
     "server_executable",
