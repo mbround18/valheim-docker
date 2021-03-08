@@ -45,7 +45,11 @@ ENV PUID=1000                           \
     AUTO_BACKUP_DAYS_TO_LIVE="3"        \
     AUTO_BACKUP_ON_UPDATE="0"           \
     AUTO_BACKUP_ON_SHUTDOWN="0"         \
-    UPDATE_ON_STARTUP="1"
+    UPDATE_ON_STARTUP="1"               \
+    SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim" \
+    MODS_LOCATION="/home/steam/staging/mods"                     \
+    GAME_LOCATION="/home/steam/valheim"                          \
+    BACKUP_LOCATION="/home/steam/backups"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
