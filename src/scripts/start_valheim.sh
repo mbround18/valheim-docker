@@ -88,9 +88,9 @@ elif \
     BEPINEX_URL="https://cdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-5.4.800.zip"
     log "Pulling BepInEx from ${BEPINEX_URL}"
     odin installmod "${BEPINEX_URL}"
-else
-  log "Running with Vanilla Valheim <3"
 fi
+
+log "Running with ${TYPE} Valheim <3"
 
 if [ "${TYPE}" = "valheimplus" ] || [ "${TYPE}" = "bepinex" ]; then
   SAVE_IFS=$IFS   # Save current IFS
