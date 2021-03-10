@@ -9,7 +9,7 @@ use glob::MatchOptions;
 use log::{debug, error, info};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
-use std::fs::{create_dir_all, remove_file, File};
+use std::fs::{create_dir_all, File};
 use std::io::Write;
 use std::path::Path;
 use zip::result::ZipError;
@@ -126,7 +126,6 @@ impl ValheimMod {
     }
   }
   fn stage_plugin(&mut self, archive: &mut ZipArchive<File>) {
-    let zip_file = String::from(&self.staging_location);
     let mut staging_output = String::from(
       Path::new(&self.staging_location)
         .file_stem()
@@ -140,9 +139,6 @@ impl ValheimMod {
       staging_output
     );
     archive.extract(&staging_output).unwrap();
-    if Path::new(&zip_file).exists() {
-      remove_file(&zip_file).unwrap();
-    }
     self.staging_location = String::from(&staging_output);
     self.staged = true;
   }
@@ -195,7 +191,6 @@ impl ValheimMod {
   pub fn download(&mut self) -> Result<String, String> {
     debug!("Initializing mod download...");
     let download_url = String::from(&self.url);
-
     if !Path::new(&self.staging_location).exists() {
       error!("Failed to download file to staging location!");
       return Err(format!(
@@ -203,21 +198,24 @@ impl ValheimMod {
         &self.staging_location
       ));
     }
-
     if let Ok(parsed_url) = Url::parse(&download_url) {
-      let file_name = parse_file_name(
-        &parsed_url,
-        format!("{}.zip", create_hash(&download_url)).as_str(),
-      );
-      self.staging_location = format!("{}/{}", &self.staging_location, file_name);
-      debug!("Downloading to: {}", &self.staging_location);
       match reqwest::blocking::get(parsed_url) {
         Ok(response) => {
+          if !&self.url.ends_with(".zip") {
+            debug!("Using url (in case of redirect): {}", &self.url);
+            self.url = response.url().to_string();
+          }
+          let file_name = parse_file_name(
+            &Url::parse(&self.url).unwrap(),
+            format!("{}.zip", create_hash(&download_url)).as_str(),
+          );
+          self.staging_location = format!("{}/{}", &self.staging_location, file_name);
+          debug!("Downloading to: {}", &self.staging_location);
           let file_contents = response.bytes().unwrap();
           let mut file = File::create(&self.staging_location).unwrap();
           file.write_all(&file_contents.to_vec()).unwrap();
           self.downloaded = true;
-          debug!("Download Complete!: {}", download_url);
+          debug!("Download Complete!: {}", &self.url);
           debug!("Download Output: {}", &self.staging_location);
           Ok(String::from("Successful"))
         }
