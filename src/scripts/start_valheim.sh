@@ -85,7 +85,7 @@ elif \
   # BepInEx with update on startup or force install
   { [ "${TYPE}" = "bepinex" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; } ; }; then
     log "Installing BepInEx"
-    BEPINEX_URL="https://cdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-5.4.800.zip"
+    BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/ | jq -r '.latest.download_url')"
     log "Pulling BepInEx from ${BEPINEX_URL}"
     odin installmod "${BEPINEX_URL}"
 fi
