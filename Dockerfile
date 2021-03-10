@@ -49,7 +49,8 @@ ENV PUID=1000                           \
     SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim" \
     MODS_LOCATION="/home/steam/staging/mods"                     \
     GAME_LOCATION="/home/steam/valheim"                          \
-    BACKUP_LOCATION="/home/steam/backups"
+    BACKUP_LOCATION="/home/steam/backups"                        \
+    TYPE="Vanilla"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh

@@ -66,7 +66,7 @@ fn main() {
     Some(("backup", sub_m)) => commands::backup::invoke(sub_m),
     Some(("notify", sub_m)) => commands::notify::invoke(sub_m),
     Some(("update", sub_m)) => commands::update::invoke(sub_m),
-    Some(("installmod", sub_m)) => commands::update::invoke(sub_m),
+    Some(("installmod", sub_m)) => commands::install_mod::invoke(sub_m),
     _ => {
       warn!("No Command Launched!");
     } // Either no subcommand or one not tested for...

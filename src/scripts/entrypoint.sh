@@ -152,8 +152,8 @@ log "$(usermod -u ${PUID} steam)"
 log "$(groupmod -g ${PGID} steam)"
 
 # Configure Cron
-AUTO_UPDATE="${AUTO_UPDATE:-0}"
-AUTO_BACKUP="${AUTO_BACKUP:-0}"
+AUTO_UPDATE="${AUTO_UPDATE:=0}"
+AUTO_BACKUP="${AUTO_BACKUP:=0}"
 
 if [ "${AUTO_UPDATE}" -eq 1 ]; then
   log "Auto Update Enabled..."
@@ -163,7 +163,7 @@ if [ "${AUTO_UPDATE}" -eq 1 ]; then
     "auto-update" \
     "auto_update.sh" \
     "${AUTO_UPDATE_SCHEDULE}" \
-    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:-0}"
+    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:=0}"
 fi
 
 if [ "${AUTO_BACKUP}" -eq 1 ]; then

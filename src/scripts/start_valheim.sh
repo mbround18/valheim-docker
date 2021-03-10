@@ -63,6 +63,47 @@ cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
 log "Initializing Variables...."
 odin configure || exit 1
 
+log "Checking for TYPE flag"
+export TYPE="${TYPE:="vanilla"}"
+log "Found Type ${TYPE}"
+export TYPE="${TYPE,,}"
+export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
+
+
+if \
+  # ValheimPlus not yet installed
+  { [ "${TYPE}" = "valheimplus" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ]; } || \
+  # ValheimPlus with update on startup or force install
+  { [ "${TYPE}" = "valheimplus" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; } ; }; then
+    log "Installing ValheimPlus"
+    VALHEIM_PLUS_URL="$(curl https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
+    log "Pulling ValheimPlus from ${VALHEIM_PLUS_URL}"
+    odin installmod "${VALHEIM_PLUS_URL}"
+elif \
+  # BepInEx not yet installed
+  { [ "${TYPE}" = "bepinex" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } || \
+  # BepInEx with update on startup or force install
+  { [ "${TYPE}" = "bepinex" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; } ; }; then
+    log "Installing BepInEx"
+    BEPINEX_URL="https://cdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-5.4.800.zip"
+    log "Pulling BepInEx from ${BEPINEX_URL}"
+    odin installmod "${BEPINEX_URL}"
+else
+  log "Running with Vanilla Valheim <3"
+fi
+
+if [ "${TYPE}" = "valheimplus" ] || [ "${TYPE}" = "bepinex" ]; then
+  SAVE_IFS=$IFS   # Save current IFS
+  IFS=$',\n'      # Change IFS to new line
+  MODS=(${MODS:=""}) # split to array $names
+  IFS=$SAVE_IFS   # Restore IFS
+
+  for (( i=0; i<${#MODS[@]}; i++ ))
+  do
+    log "Installing Mod ${MODS[$i]}"
+    odin installmod "${MODS[$i]}"
+  done
+fi
 
 # Setting up script traps
 trap 'cleanup' INT TERM

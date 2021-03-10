@@ -37,6 +37,8 @@
 | WORLD                    | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
 | PUBLIC                   | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
 | PASSWORD                 | `12345`                | TRUE     | Set this to something unique! |
+| TYPE                     | `Vanilla`              | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, or `Vanilla` |
+| MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. |
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |

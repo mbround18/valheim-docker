@@ -3,6 +3,7 @@ use log::{debug, info};
 
 use std::{io, process::Child};
 
+use crate::utils::common_paths::saves_directory;
 use crate::{
   constants,
   executable::create_execution,
@@ -58,6 +59,8 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
       &config.password.as_str(),
       "-public",
       &config.public.as_str(),
+      "-savedir",
+      &saves_directory(),
     ])
     .env("SteamAppId", environment::fetch_var("APPID", "892970"))
     .current_dir(get_working_dir());

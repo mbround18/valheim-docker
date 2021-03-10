@@ -1,3 +1,4 @@
+pub mod common_paths;
 pub mod environment;
 
 use clap::ArgMatches;
