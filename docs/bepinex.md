@@ -21,15 +21,13 @@
 3. Download BepInEx
 
   ```shell
-  wget -O /home/steam/tmp/bepinex.zip https://github.com/valheimPlus/ValheimPlus/releases/download/0.9/UnixServer.zip
+  wget -O /home/steam/tmp/bepinex.zip https://github.com/valheimPlus/ValheimPlus/releases/download/0.9.4/UnixServer.zip
   ```
 
 4. Extract the BepInEx zip file
 
-  > Overwrite files with `A`
-
   ```shell
-  unzip /home/steam/tmp/bepinex.zip -d /home/steam/valheim
+  unzip -o /home/steam/tmp/bepinex.zip -d /home/steam/valheim
   
   ```
 
