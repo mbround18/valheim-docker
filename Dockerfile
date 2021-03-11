@@ -10,6 +10,7 @@ FROM mbround18/valheim-odin:${ODIN_IMAGE_VERSION} as runtime
 FROM cm2network/steamcmd:root
 
 RUN apt-get update                     \
+    && apt-get upgrade -y              \
     && apt-get install -y              \
     htop net-tools nano gcc g++ gdb    \
     netcat curl wget zip unzip         \

@@ -3,13 +3,13 @@ use log::{debug, info};
 
 use std::{io, process::Child};
 
+use crate::mods::bepinex::BepInExEnvironment;
 use crate::utils::common_paths::saves_directory;
 use crate::{
   constants,
   executable::create_execution,
   files::{create_file, ValheimArguments},
   messages,
-  mods::bepinex,
   utils::{environment, get_working_dir},
 };
 
@@ -25,9 +25,11 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
     .stdout(stdout)
     .stderr(stderr)
     .exit_action(|| {
-      if bepinex::is_bepinex_installed() {
+      let bepinex_env = BepInExEnvironment::new();
+      if bepinex_env.is_installed() {
         info!("Server has been started with BepInEx! Keep in mind this may cause errors!!");
-        messages::modding_disclaimer()
+        messages::modding_disclaimer();
+        debug!("{}", serde_json::to_string_pretty(&bepinex_env).unwrap());
       }
       info!("Server has been started and Daemonized. It should be online shortly!");
       info!("Keep an eye out for 'Game server connected' in the log!");
@@ -66,11 +68,14 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     .current_dir(get_working_dir());
   info!("Executable: {}", &config.command);
   info!("Launching Command...");
-
-  if bepinex::is_bepinex_installed() {
+  let bepinex_env = BepInExEnvironment::new();
+  if bepinex_env.is_installed() {
     info!("BepInEx detected! Switching to run with BepInEx...");
-    let bepinex_env = bepinex::build_environment();
-    bepinex::invoke(base_command, &bepinex_env)
+    debug!(
+      "BepInEx Environment: \n{}",
+      serde_json::to_string_pretty(&bepinex_env).unwrap()
+    );
+    bepinex_env.launch(base_command)
   } else {
     info!("Everything looks good! Running normally!");
     base_command

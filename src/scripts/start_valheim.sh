@@ -88,11 +88,20 @@ elif \
     BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/ | jq -r '.latest.download_url')"
     log "Pulling BepInEx from ${BEPINEX_URL}"
     odin installmod "${BEPINEX_URL}"
+elif \
+  # BepInEx not yet installed
+  { [ "${TYPE}" = "bepinexfull" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } || \
+  # BepInEx with update on startup or force install
+  { [ "${TYPE}" = "bepinexfull" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; } ; }; then
+    log "Installing BepInEx Full"
+    BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/1F31A/BepInEx_Valheim_Full/ | jq -r '.latest.download_url')"
+    log "Pulling BepInEx Full from ${BEPINEX_URL}"
+    odin installmod "${BEPINEX_URL}"
 fi
 
 log "Running with ${TYPE} Valheim <3"
 
-if [ "${TYPE}" = "valheimplus" ] || [ "${TYPE}" = "bepinex" ]; then
+if [ "${TYPE}" = "valheimplus" ] || [ "${TYPE}" = "bepinex" ]  || [ "${TYPE}" = "bepinexfull" ]; then
   SAVE_IFS=$IFS   # Save current IFS
   IFS=$',\n'      # Change IFS to new line
   MODS=(${MODS:=""}) # split to array $names

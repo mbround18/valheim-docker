@@ -2,10 +2,7 @@ pub mod bepinex;
 
 use crate::utils::common_paths::{bepinex_plugin_directory, game_directory};
 use crate::utils::{common_paths, create_hash, parse_file_name, path_exists};
-use fs_extra::error::Error;
-use fs_extra::{dir, file};
-use glob::glob_with;
-use glob::MatchOptions;
+use fs_extra::dir;
 use log::{debug, error, info};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -26,47 +23,6 @@ pub struct ValheimMod {
 #[derive(Serialize, Deserialize)]
 struct Manifest {
   name: String,
-}
-
-fn handle_copy(copy: Result<u64, Error>) {
-  match copy {
-    Ok(_) => {
-      // Nom, tasty results
-    }
-    Err(msg) => error!("Failed to copy!: {}", msg),
-  }
-}
-
-fn copy_staged_contents(
-  source: &str,
-  destination: &str,
-  dir_opts: &dir::CopyOptions,
-  file_opts: &file::CopyOptions,
-) -> Result<i32, i32> {
-  let glob_options = MatchOptions::new();
-  for entry in glob_with(format!("{}/*", &source).as_str(), glob_options).unwrap() {
-    if !Path::new(&destination).exists() {
-      error!(
-        "Failed to extract zip contented! Destination not found!: {}",
-        &destination
-      );
-      return Err(1);
-    }
-    if let Ok(path) = entry {
-      let source = format!("{:?}", path.display()).replace('"', "");
-      if path.is_dir() {
-        handle_copy(dir::copy(source, &destination, &dir_opts));
-      } else {
-        let file_name = path.file_name().unwrap().to_str().unwrap();
-        handle_copy(file::copy(
-          source,
-          format!("{}/{}", &destination, file_name),
-          &file_opts,
-        ));
-      }
-    }
-  }
-  Ok(0)
 }
 
 impl ValheimMod {
@@ -97,10 +53,10 @@ impl ValheimMod {
     debug!("Manifest suggests sub directory: {}", sub_dir);
     let mut dir_copy_options = dir::CopyOptions::new();
     dir_copy_options.overwrite = true;
-    let mut file_copy_options = file::CopyOptions::new();
-    file_copy_options.overwrite = true;
     let mut copy_destination = bepinex_plugin_directory();
-    if path_exists(&sub_dir) && manifest.name.eq("BepInExPack_Valheim") {
+    if path_exists(&sub_dir)
+      && (manifest.name.eq("BepInExPack_Valheim") || manifest.name.eq("BepInEx_Valheim_Full"))
+    {
       staging_output = format!("{}/{}", &staging_output, &manifest.name);
       copy_destination = String::from(&working_directory);
     } else {
@@ -115,12 +71,11 @@ impl ValheimMod {
       "Copying contents from: \n{}\nInto Directory:\n{}",
       &staging_output, &working_directory
     );
-    match copy_staged_contents(
-      &staging_output,
-      &copy_destination,
-      &dir_copy_options,
-      &file_copy_options,
-    ) {
+    let source_contents: Vec<_> = std::fs::read_dir(&staging_output)
+      .unwrap()
+      .map(|entry| entry.unwrap().path())
+      .collect();
+    match fs_extra::copy_items(&source_contents, &copy_destination, &dir_copy_options) {
       Ok(_) => info!("Successfully installed {}", &self.url),
       Err(_) => error!("Failed to install {}", &self.url),
     }

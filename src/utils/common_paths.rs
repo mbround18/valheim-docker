@@ -6,8 +6,12 @@ pub fn game_directory() -> String {
   env::var(GAME_LOCATION).unwrap_or_else(|_| get_working_dir())
 }
 
+pub fn bepinex_directory() -> String {
+  format!("{}/BepInEx", game_directory())
+}
+
 pub fn bepinex_plugin_directory() -> String {
-  format!("{}/BepInEx/plugins", game_directory())
+  format!("{}/plugins", bepinex_directory())
 }
 
 pub fn mods_directory() -> String {
