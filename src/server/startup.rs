@@ -29,7 +29,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
       if bepinex_env.is_installed() {
         info!("Server has been started with BepInEx! Keep in mind this may cause errors!!");
         messages::modding_disclaimer();
-        debug!("{}", serde_json::to_string_pretty(&bepinex_env).unwrap());
+        debug!("{:#?}", bepinex_env);
       }
       info!("Server has been started and Daemonized. It should be online shortly!");
       info!("Keep an eye out for 'Game server connected' in the log!");
@@ -71,10 +71,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
   let bepinex_env = BepInExEnvironment::new();
   if bepinex_env.is_installed() {
     info!("BepInEx detected! Switching to run with BepInEx...");
-    debug!(
-      "BepInEx Environment: \n{}",
-      serde_json::to_string_pretty(&bepinex_env).unwrap()
-    );
+    debug!("BepInEx Environment: \n{:#?}", bepinex_env);
     bepinex_env.launch(base_command)
   } else {
     info!("Everything looks good! Running normally!");

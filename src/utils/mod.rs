@@ -54,7 +54,7 @@ pub fn parse_file_name(url: &Url, default: &str) -> String {
   )
 }
 
-pub fn create_hash(context: &str) -> String {
+pub fn get_md5_hash(context: &str) -> String {
   format!("{:x}", md5::compute(context.as_bytes()))
 }
 
@@ -65,7 +65,7 @@ mod tests {
   #[test]
   fn hash_str() {
     assert_eq!(
-      create_hash("abcdefghijklmnopqrstuvwxyz"),
+      get_md5_hash("abcdefghijklmnopqrstuvwxyz"),
       "c3fcd3d76192e4007dfb496cca67e13b"
     );
   }

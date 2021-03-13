@@ -1,5 +1,5 @@
-use clap::{load_yaml, App};
-use log::{debug, info, warn, LevelFilter, SetLoggerError};
+use clap::{load_yaml, App, AppSettings};
+use log::{debug, info, LevelFilter, SetLoggerError};
 
 use crate::executable::handle_exit_status;
 use crate::logger::OdinLogger;
@@ -36,7 +36,9 @@ fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
 fn main() {
   // The YAML file is found relative to the current file, similar to how modules are found
   let yaml = load_yaml!("cli.yaml");
-  let app = App::from(yaml).version(constants::VERSION);
+  let app = App::from(yaml)
+    .version(constants::VERSION)
+    .setting(AppSettings::SubcommandRequired);
   let matches = app.get_matches();
   let debug_mode = matches.is_present("debug") || environment::fetch_var("DEBUG_MODE", "0").eq("1");
   setup_logger(debug_mode).unwrap();
@@ -47,28 +49,28 @@ fn main() {
   if let Some((command_name, _)) = matches.subcommand() {
     debug!("Launching {} command...", command_name);
   };
-  match matches.subcommand() {
-    Some(("configure", sub_m)) => commands::configure::invoke(sub_m),
-    Some(("install", _)) => {
+  match matches.subcommand().expect("Subcommand is required") {
+    ("configure", sub_m) => commands::configure::invoke(sub_m),
+    ("install", _) => {
       let result = commands::install::invoke(constants::GAME_ID);
       handle_exit_status(result, "Successfully installed Valheim!".to_string())
     }
-    Some(("start", sub_m)) => {
+    ("start", sub_m) => {
       NotificationEvent::Start(EventStatus::Running).send_notification();
       commands::start::invoke(sub_m);
       NotificationEvent::Start(EventStatus::Successful).send_notification();
     }
-    Some(("stop", sub_m)) => {
+    ("stop", sub_m) => {
       NotificationEvent::Stop(EventStatus::Running).send_notification();
       commands::stop::invoke(sub_m);
       NotificationEvent::Stop(EventStatus::Successful).send_notification();
     }
-    Some(("backup", sub_m)) => commands::backup::invoke(sub_m),
-    Some(("notify", sub_m)) => commands::notify::invoke(sub_m),
-    Some(("update", sub_m)) => commands::update::invoke(sub_m),
-    Some(("installmod", sub_m)) => commands::install_mod::invoke(sub_m),
+    ("backup", sub_m) => commands::backup::invoke(sub_m),
+    ("notify", sub_m) => commands::notify::invoke(sub_m),
+    ("update", sub_m) => commands::update::invoke(sub_m),
+    ("mod:install", sub_m) => commands::install_mod::invoke(sub_m),
     _ => {
-      warn!("No Command Launched!");
+      panic!("No Command Launched!");
     } // Either no subcommand or one not tested for...
   }
 }

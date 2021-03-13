@@ -69,8 +69,10 @@ log "Found Type ${TYPE}"
 export TYPE="${TYPE,,}"
 export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
 
-
-if \
+if [ "${TYPE}" = "vanilla" ] && [ -n "${MODS:=""}" ]; then
+  log "Mods supplied but you are running with Vanilla!!!"
+  log "Mods will NOT be installed!."
+elif \
   # ValheimPlus not yet installed
   { [ "${TYPE}" = "valheimplus" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ]; } || \
   # ValheimPlus with update on startup or force install
@@ -78,7 +80,7 @@ if \
     log "Installing ValheimPlus"
     VALHEIM_PLUS_URL="$(curl https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
     log "Pulling ValheimPlus from ${VALHEIM_PLUS_URL}"
-    odin installmod "${VALHEIM_PLUS_URL}"
+    odin mod:install "${VALHEIM_PLUS_URL}"
 elif \
   # BepInEx not yet installed
   { [ "${TYPE}" = "bepinex" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } || \
@@ -87,7 +89,7 @@ elif \
     log "Installing BepInEx"
     BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/ | jq -r '.latest.download_url')"
     log "Pulling BepInEx from ${BEPINEX_URL}"
-    odin installmod "${BEPINEX_URL}"
+    odin mod:install "${BEPINEX_URL}"
 elif \
   # BepInEx not yet installed
   { [ "${TYPE}" = "bepinexfull" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } || \
@@ -96,21 +98,21 @@ elif \
     log "Installing BepInEx Full"
     BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/1F31A/BepInEx_Valheim_Full/ | jq -r '.latest.download_url')"
     log "Pulling BepInEx Full from ${BEPINEX_URL}"
-    odin installmod "${BEPINEX_URL}"
+    odin mod:install "${BEPINEX_URL}"
 fi
 
 log "Running with ${TYPE} Valheim <3"
 
-if [ "${TYPE}" = "valheimplus" ] || [ "${TYPE}" = "bepinex" ]  || [ "${TYPE}" = "bepinexfull" ]; then
+if [ ! "${TYPE}" = "vanilla" ]; then
   SAVE_IFS=$IFS   # Save current IFS
   IFS=$',\n'      # Change IFS to new line
+  # shellcheck disable=SC2206
   MODS=(${MODS:=""}) # split to array $names
   IFS=$SAVE_IFS   # Restore IFS
 
-  for (( i=0; i<${#MODS[@]}; i++ ))
-  do
-    log "Installing Mod ${MODS[$i]}"
-    odin installmod "${MODS[$i]}"
+  for mod in "${MODS[@]}"; do
+    log "Installing Mod ${mod}"
+    odin mod:install "${mod}"
   done
 fi
 

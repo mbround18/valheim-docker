@@ -2,7 +2,6 @@ use crate::constants;
 use crate::utils::common_paths::{bepinex_directory, game_directory};
 use crate::utils::{environment, path_exists};
 use log::{debug, info};
-use serde::{Deserialize, Serialize};
 use std::ops::Add;
 use std::process::{Child, Command};
 
@@ -23,7 +22,7 @@ fn parse_path(env_var: &str, default: String, alt: String) -> String {
   }
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug)]
 pub struct BepInExEnvironment {
   ld_preload: String,
   ld_library_path: String,
