@@ -100,7 +100,7 @@ impl ValheimMod {
       staging_output
     );
     archive.extract(&staging_output).unwrap();
-    self.staging_location = String::from(&staging_output);
+    self.staging_location = staging_output;
     self.staged = true;
   }
   fn extract_plugin(&self, archive: &mut ZipArchive<File>) {
