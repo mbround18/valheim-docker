@@ -66,7 +66,7 @@
 
 #### Simple
 
-> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables description notes!
+> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables' description notes!
 
 ```yaml
 version: "3"

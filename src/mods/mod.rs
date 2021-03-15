@@ -52,6 +52,7 @@ impl ValheimMod {
   fn copy_staged_plugin(&mut self, manifest: &Manifest) {
     if !&self.staged {
       error!("Zip file not extracted to staging location!!");
+      // TODO: Remove Exit Code and provide an Ok or Err.
       exit(1);
     }
     let working_directory = game_directory();
@@ -73,6 +74,7 @@ impl ValheimMod {
         Ok(_) => info!("Created mod directory: {}", &copy_destination),
         Err(_) => {
           error!("Failed to create mod directory! {}", &copy_destination);
+          // TODO: Remove Exit Code and provide an Ok or Err.
           exit(1);
         }
       };
@@ -89,6 +91,7 @@ impl ValheimMod {
       Ok(_) => info!("Successfully installed {}", &self.url),
       Err(_) => {
         error!("Failed to install {}", &self.url);
+        // TODO: Remove Exit Code and provide an Ok or Err.
         exit(1);
       }
     }
@@ -104,6 +107,7 @@ impl ValheimMod {
           "File failed to copy from: \n{}To Destination:{}",
           &from, &to
         );
+        // TODO: Remove Exit Code and provide an Ok or Err.
         exit(1);
       }
     };
@@ -145,6 +149,7 @@ impl ValheimMod {
           &self.staging_location,
           msg.to_string()
         );
+        // TODO: Remove Exit Code and provide an Ok or Err.
         exit(1);
       }
     };
@@ -155,6 +160,7 @@ impl ValheimMod {
         "Failed to install mod! Staging location is a directory! {}",
         &self.staging_location
       );
+      // TODO: Remove Exit Code and provide an Ok or Err.
       exit(1)
     }
     if self.file_type.eq("dll") {
@@ -163,7 +169,17 @@ impl ValheimMod {
       self.copy_single_file(&self.staging_location, bepinex_config_directory());
     } else {
       let zip_file = std::fs::File::open(&self.staging_location).unwrap();
-      let mut archive = zip::ZipArchive::new(zip_file).unwrap();
+      let mut archive = match zip::ZipArchive::new(zip_file) {
+        Ok(file_archive) => {
+          debug!("Successfully parsed zip file {}", &self.staging_location);
+          file_archive
+        }
+        Err(_) => {
+          error!("Failed to parse zip file {}", &self.staging_location);
+          // TODO: Remove Exit Code and provide an Ok or Err.
+          exit(1);
+        }
+      };
       match self.try_parse_manifest(&mut archive) {
         Ok(manifest) => {
           debug!("Manifest has name: {}", manifest.name);
