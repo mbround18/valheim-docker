@@ -1,5 +1,7 @@
+.github/
 .idea/
+.run/
 target/
 tmp/
 docs/
-.github/
+

@@ -12,15 +12,6 @@ line () {
 
 line
 log "Valheim Server - $(date)"
-log "Starting auto update..."
-log "
-Port: ${PORT}
-Name: ${NAME}
-World: ${WORLD}
-Public: ${PUBLIC}
-Password: (REDACTED)
-"
-line
 
 cd /home/steam/valheim || exit 1
 

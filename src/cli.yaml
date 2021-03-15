@@ -83,6 +83,8 @@ subcommands:
             required: true
             index: 2
   - update:
+      version: "1.0"
+      author: LovecraftianHorror
       about: >
           Attempts to update an existing Valheim server installation. By
           default this involves checking for an update, if an update is
@@ -118,3 +120,14 @@ subcommands:
             value_name: WEBHOOK_URL
             about: Sets the webhook to send a notification to, (Can be set with ENV variable WEBHOOK_URL)
             takes_value: true
+  - mod:install:
+      about: >
+        Installs a mod from a given source by downloading the zip file and then extracting it.
+        Supported platforms are Nexus (with premium account and API key), GitHub, and any other direct download source.
+      version: "1.0"
+      author: mbround18
+      args:
+        - URL:
+            about: Url of the mod to download and install
+            required: true
+            index: 1
