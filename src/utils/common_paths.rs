@@ -14,6 +14,10 @@ pub fn bepinex_plugin_directory() -> String {
   format!("{}/plugins", bepinex_directory())
 }
 
+pub fn bepinex_config_directory() -> String {
+  format!("{}/config", bepinex_directory())
+}
+
 pub fn mods_directory() -> String {
   env::var(MODS_LOCATION).unwrap_or_else(|_| format!("{}/mods", get_working_dir()))
 }

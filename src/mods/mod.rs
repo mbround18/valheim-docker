@@ -1,8 +1,12 @@
 pub mod bepinex;
 
-use crate::utils::common_paths::{bepinex_plugin_directory, game_directory};
-use crate::utils::{common_paths, get_md5_hash, parse_file_name, path_exists};
+use crate::constants::SUPPORTED_FILE_TYPES;
+use crate::utils::common_paths::{
+  bepinex_config_directory, bepinex_plugin_directory, game_directory,
+};
+use crate::utils::{common_paths, get_md5_hash, parse_file_name, path_exists, url_parse_file_type};
 use fs_extra::dir;
+use fs_extra::dir::CopyOptions;
 use log::{debug, error, info};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -14,6 +18,7 @@ use zip::ZipArchive;
 
 pub struct ValheimMod {
   pub(crate) url: String,
+  pub(crate) file_type: String,
   pub(crate) staging_location: String,
   pub(crate) installed: bool,
   pub(crate) downloaded: bool,
@@ -27,8 +32,10 @@ struct Manifest {
 
 impl ValheimMod {
   pub fn new(url: &str) -> ValheimMod {
+    let file_type = url_parse_file_type(url);
     ValheimMod {
       url: String::from(url),
+      file_type,
       staging_location: common_paths::mods_directory(),
       installed: false,
       downloaded: false,
@@ -86,6 +93,21 @@ impl ValheimMod {
       }
     }
   }
+  fn copy_single_file(&self, from: &str, to: String) {
+    let mut dir_options = CopyOptions::new();
+    dir_options.overwrite = true;
+    match fs_extra::copy_items(&[&from], &to, &dir_options) {
+      Ok(_) => debug!("Successfully copied {} to {}", &from, &to),
+      Err(_) => {
+        error!("Failed to install {}", self.url);
+        error!(
+          "File failed to copy from: \n{}To Destination:{}",
+          &from, &to
+        );
+        exit(1);
+      }
+    };
+  }
   fn stage_plugin(&mut self, archive: &mut ZipArchive<File>) {
     let mut staging_output = String::from(
       Path::new(&self.staging_location)
@@ -135,17 +157,22 @@ impl ValheimMod {
       );
       exit(1)
     }
-    let zip_file = std::fs::File::open(&self.staging_location).unwrap();
-    let mut archive = zip::ZipArchive::new(zip_file).unwrap();
-
-    match self.try_parse_manifest(&mut archive) {
-      Ok(manifest) => {
-        debug!("Manifest has name: {}", manifest.name);
-        self.stage_plugin(&mut archive);
-        self.copy_staged_plugin(&manifest);
-      }
-      Err(_) => {
-        self.extract_plugin(&mut archive);
+    if self.file_type.eq("dll") {
+      self.copy_single_file(&self.staging_location, bepinex_plugin_directory());
+    } else if self.file_type.eq("cfg") {
+      self.copy_single_file(&self.staging_location, bepinex_config_directory());
+    } else {
+      let zip_file = std::fs::File::open(&self.staging_location).unwrap();
+      let mut archive = zip::ZipArchive::new(zip_file).unwrap();
+      match self.try_parse_manifest(&mut archive) {
+        Ok(manifest) => {
+          debug!("Manifest has name: {}", manifest.name);
+          self.stage_plugin(&mut archive);
+          self.copy_staged_plugin(&manifest);
+        }
+        Err(_) => {
+          self.extract_plugin(&mut archive);
+        }
       }
     }
     self.installed = true
@@ -164,13 +191,15 @@ impl ValheimMod {
     if let Ok(parsed_url) = Url::parse(&download_url) {
       match reqwest::blocking::get(parsed_url) {
         Ok(mut response) => {
-          if !&self.url.ends_with(".zip") {
+          let file_type = url_parse_file_type(&self.url);
+          if !SUPPORTED_FILE_TYPES.contains(&file_type.as_str()) {
             debug!("Using url (in case of redirect): {}", &self.url);
             self.url = response.url().to_string();
+            self.file_type = url_parse_file_type(&response.url().to_string())
           }
           let file_name = parse_file_name(
             &Url::parse(&self.url).unwrap(),
-            format!("{}.zip", get_md5_hash(&download_url)).as_str(),
+            format!("{}.{}", get_md5_hash(&download_url), &self.file_type).as_str(),
           );
           self.staging_location = format!("{}/{}", &self.staging_location, file_name);
           debug!("Downloading to: {}", &self.staging_location);

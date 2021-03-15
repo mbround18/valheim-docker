@@ -70,3 +70,7 @@ mod tests {
     );
   }
 }
+
+pub fn url_parse_file_type(url: &str) -> String {
+  url.split('.').last().unwrap().to_string()
+}

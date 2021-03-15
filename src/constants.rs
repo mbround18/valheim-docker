@@ -13,3 +13,6 @@ pub const GAME_ID: i64 = 896660;
 // BePinEx
 pub const LD_LIBRARY_PATH_VAR: &str = "LD_LIBRARY_PATH";
 pub const LD_PRELOAD_VAR: &str = "LD_PRELOAD";
+
+// Mods
+pub const SUPPORTED_FILE_TYPES: &[&str] = &["zip", "dll", "cfg"];

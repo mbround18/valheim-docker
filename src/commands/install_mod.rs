@@ -1,6 +1,7 @@
 use crate::mods::ValheimMod;
 use clap::ArgMatches;
 use log::{debug, error, info};
+use std::process::exit;
 
 pub fn invoke(args: &ArgMatches) {
   let mut valheim_mod = ValheimMod::new(args.value_of("URL").unwrap());
@@ -11,6 +12,7 @@ pub fn invoke(args: &ArgMatches) {
     Ok(_) => valheim_mod.install(),
     Err(message) => {
       error!("{}", message);
+      exit(1);
     }
   };
 }
