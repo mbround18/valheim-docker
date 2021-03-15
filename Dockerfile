@@ -10,6 +10,7 @@ FROM mbround18/valheim-odin:${ODIN_IMAGE_VERSION} as runtime
 FROM cm2network/steamcmd:root
 
 RUN apt-get update                     \
+    && apt-get upgrade -y              \
     && apt-get install -y              \
     htop net-tools nano gcc g++ gdb    \
     netcat curl wget zip unzip         \
@@ -45,7 +46,12 @@ ENV PUID=1000                           \
     AUTO_BACKUP_DAYS_TO_LIVE="3"        \
     AUTO_BACKUP_ON_UPDATE="0"           \
     AUTO_BACKUP_ON_SHUTDOWN="0"         \
-    UPDATE_ON_STARTUP="1"
+    UPDATE_ON_STARTUP="1"               \
+    SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim" \
+    MODS_LOCATION="/home/steam/staging/mods"                     \
+    GAME_LOCATION="/home/steam/valheim"                          \
+    BACKUP_LOCATION="/home/steam/backups"                        \
+    TYPE="Vanilla"
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh

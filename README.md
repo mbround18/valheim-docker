@@ -23,6 +23,18 @@
 > Modding is not supported by the Valheim developers officially yet; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
 > See [Getting started with mods]
 
+### Download Locations
+
+#### DockerHub
+
+<a href="https://hub.docker.com/r/mbround18/valheim"><img alt="DockerHub Valheim" src="https://img.shields.io/badge/DockerHub-Valheim-blue?style=for-the-badge"></a>
+<a href="https://hub.docker.com/r/mbround18/valheim-odin"><img alt="DockerHub Odin" src="https://img.shields.io/badge/DockerHub-Odin-blue?style=for-the-badge"></a>
+
+#### GitHub Container Registry
+
+<a href="https://github.com/users/mbround18/packages/container/package/valheim"><img alt="GHCR Valheim" src="https://img.shields.io/badge/GHCR-Valheim-blue?style=for-the-badge"></a>
+<a href="https://github.com/users/mbround18/packages/container/package/valheim-odin"><img alt="GHCR Odin" src="https://img.shields.io/badge/GHCR-Odin-blue?style=for-the-badge"></a>
+
 ### Environment Variables
 
 > See further on down for advanced environment variables. 
@@ -37,6 +49,8 @@
 | WORLD                    | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
 | PUBLIC                   | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
 | PASSWORD                 | `12345`                | TRUE     | Set this to something unique! |
+| TYPE                     | `Vanilla`              | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla` |
+| MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |
@@ -52,7 +66,7 @@
 
 #### Simple
 
-> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables description notes!
+> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables' description notes!
 
 ```yaml
 version: "3"
@@ -156,7 +170,9 @@ If you would like to have release notifications tied into your Discord server, c
 - latest (Stable):
   - [#100] Added backup feature to run based on cronjob.
   - [#148] Added Mod support
-  - Added webhook configuration and documentation updates [#158]
+  - [#158] Added webhook configuration and documentation updates
+  - [#236] Now [publish to github registry as well](https://github.com/users/mbround18/packages/container/package/valheim)
+  - [#276] Advanced mod support with auto installer 
 - 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
@@ -183,6 +199,8 @@ If you would like to have release notifications tied into your Discord server, c
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#276]: https://github.com/mbround18/valheim-docker/pull/276
+[#236]: https://github.com/mbround18/valheim-docker/pull/236
 [#158]: https://github.com/mbround18/valheim-docker/pull/158
 [#148]: https://github.com/mbround18/valheim-docker/pull/148
 [#100]: https://github.com/mbround18/valheim-docker/pull/100
