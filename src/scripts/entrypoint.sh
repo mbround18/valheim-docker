@@ -74,7 +74,7 @@ setup_cron() {
   CRON_ENV="${PRESET_ENV} ${4}"
   CRON_ENV="$(echo "${CRON_ENV}" | tr '\n' " " )"
   LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
-  rm $LOG_LOCATION >/dev/null
+  [ -f "$LOG_LOCATION" ] && rm $LOG_LOCATION
   printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}" \
     "${CRON_ENV}" \
@@ -175,6 +175,8 @@ fi
 setup_filesystem
 
 # Launch as steam user :)
-log "Launching as steam..."
+log "Navigating to steam home..."
 cd /home/steam/valheim || exit 1
+
+log "Launching as steam..."
 exec gosu steam "$@"

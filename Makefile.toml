@@ -1,0 +1,57 @@
+[tasks.setup]
+script = '''
+if [ ! -f "$PWD/docker-compose.dev.yml" ]; then
+  echo "Creating docker-compose.dev.yml for development"
+  cp "$PWD/docker-compose.yml" "$PWD/docker-compose.dev.yml"
+fi
+'''
+
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.clippy]
+install_crate = "clippy"
+command = "cargo"
+args = ["clippy"]
+
+[tasks.build-status]
+command = "cargo"
+args = ["build", "--features", "odin-http-binary", "--bin", "odin-http-server"]
+
+[tasks.build]
+command = "cargo"
+args = ["build", "--bin", "odin", "--no-default-features"]
+dependencies = ["build-status"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+dependencies = ["clean"]
+
+[tasks.default]
+dependencies = [
+  "format",
+  "clippy"
+]
+
+[tasks.start-dev]
+command = "docker-compose"
+args = ["-f", "./docker-compose.dev.yml", "up", "--build"]
+dependencies = [
+  "setup",
+  "format",
+  "clippy"
+]
+
+[tasks.release-status]
+condition = { profiles = ["production"] }
+command = "cargo"
+args = ["build", "--release", "--features", "odin-http-binary", "--bin", "odin-http-server", "--no-default-features"]
+
+[tasks.release]
+condition = { profiles = ["production"] }
+command = "cargo"
+args = ["build", "--release","--bin", "odin", "--no-default-features"]
+dependencies = ["release-status"]

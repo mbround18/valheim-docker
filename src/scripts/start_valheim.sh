@@ -7,6 +7,7 @@ log() {
   PREFIX="[Valheim][steam]"
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
+
 line () {
   log "###########################################################################"
 }
@@ -38,6 +39,8 @@ log "Name: ${NAME}"
 log "World: ${WORLD}"
 log "Public: ${PUBLIC}"
 log "Password: (REDACTED)"
+echo "Loading........."
+
 export SteamAppId=${APPID:-892970}
 
 # Setting up server
