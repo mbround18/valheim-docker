@@ -23,6 +23,18 @@
 > Modding is not supported by the Valheim developers officially yet; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
 > See [Getting started with mods]
 
+### Download Locations
+
+#### DockerHub
+
+<a href="https://hub.docker.com/r/mbround18/valheim"><img alt="DockerHub Valheim" src="https://img.shields.io/badge/DockerHub-Valheim-blue?style=for-the-badge"></a>
+<a href="https://hub.docker.com/r/mbround18/valheim-odin"><img alt="DockerHub Odin" src="https://img.shields.io/badge/DockerHub-Odin-blue?style=for-the-badge"></a>
+
+#### GitHub Container Registry
+
+<a href="https://github.com/users/mbround18/packages/container/package/valheim"><img alt="GHCR Valheim" src="https://img.shields.io/badge/GHCR-Valheim-blue?style=for-the-badge"></a>
+<a href="https://github.com/users/mbround18/packages/container/package/valheim-odin"><img alt="GHCR Odin" src="https://img.shields.io/badge/GHCR-Odin-blue?style=for-the-badge"></a>
+
 ### Environment Variables
 
 > See further on down for advanced environment variables. 
@@ -38,7 +50,9 @@
 | WORLD                    | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
 | PUBLIC                   | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
 | PASSWORD                 | `12345`                | TRUE     | Set this to something unique! |
-| AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at 1 am it will update, stop, and then restart your server. |
+| TYPE                     | `Vanilla`              | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla` |
+| MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
+| AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |
 | AUTO_BACKUP_SCHEDULE     | `*/15 * * * *`         | FALSE    | Change to set how frequently you would like the server to backup. [If you need help figuring out a cron schedule click here].
@@ -46,14 +60,14 @@
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
-| WEBHOOK_URL              | ``                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
+| WEBHOOK_URL              | ` `                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
 | UPDATE_ON_STARTUP        | `1`                    | FALSE    | Tries to update the server the container is started. |
 
 ### Docker Compose
 
 #### Simple
 
-> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables description notes!
+> This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables' description notes!
 
 ```yaml
 version: "3"
@@ -65,12 +79,12 @@ services:
       - 2457:2457/udp
       - 2458:2458/udp
     environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - WORLD="Dedicated"
-      - PASSWORD="Banana Phone"
-      - TZ=America/Chicago
-      - PUBLIC=1
+      PORT: 2456
+      NAME: "Created With Valheim Docker"
+      WORLD: "Dedicated"
+      PASSWORD: "Banana Phone"
+      TZ: "America/Chicago"
+      PUBLIC: 1
     volumes:
     - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
     - ./valheim/server:/home/steam/valheim
@@ -88,22 +102,22 @@ services:
       - 2457:2457/udp
       - 2458:2458/udp
     environment:
-      - PORT=2456
-      - NAME="Created With Valheim Docker"
-      - WORLD="Dedicated"
-      - PASSWORD="Strong! Password @ Here"
-      - TZ=America/Chicago
-      - PUBLIC=1
-      - AUTO_UPDATE=1
-      - AUTO_UPDATE_SCHEDULE="0 1 * * *"
-      - AUTO_BACKUP=1
-      - AUTO_BACKUP_SCHEDULE="*/15 * * * *"
-      - AUTO_BACKUP_REMOVE_OLD=1
-      - AUTO_BACKUP_DAYS_TO_LIVE=3
-      - AUTO_BACKUP_ON_UPDATE=1
-      - AUTO_BACKUP_ON_SHUTDOWN=1
-      - WEBHOOK_URL="https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
-      - UPDATE_ON_STARTUP=0
+      PORT: 2456
+      NAME: "Created With Valheim Docker"
+      WORLD: "Dedicated"
+      PASSWORD: "Strong! Password @ Here"
+      TZ: "America/Chicago"
+      PUBLIC: 1
+      AUTO_UPDATE: 1
+      AUTO_UPDATE_SCHEDULE: "0 1 * * *"
+      AUTO_BACKUP: 1
+      AUTO_BACKUP_SCHEDULE: "*/15 * * * *"
+      AUTO_BACKUP_REMOVE_OLD: 1
+      AUTO_BACKUP_DAYS_TO_LIVE: 3
+      AUTO_BACKUP_ON_UPDATE: 1
+      AUTO_BACKUP_ON_SHUTDOWN: 1
+      WEBHOOK_URL: "https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
+      UPDATE_ON_STARTUP: 0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./valheim/server:/home/steam/valheim
@@ -138,6 +152,8 @@ Only use the documentation link below if you want advanced settings!
   <img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4" />
 </a>
 <a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/13275296?s=460&v=4" /></a>
+<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50 /></a>
+
 
 ## Release Notifications
 
@@ -155,7 +171,9 @@ If you would like to have release notifications tied into your Discord server, c
 - latest (Stable):
   - [#100] Added backup feature to run based on cronjob.
   - [#148] Added Mod support
-  - Added webhook configuration and documentation updates [#158]
+  - [#158] Added webhook configuration and documentation updates
+  - [#236] Now [publish to github registry as well](https://github.com/users/mbround18/packages/container/package/valheim)
+  - [#276] Advanced mod support with auto installer 
 - 1.2.0 (Stable):
   - Readme update to include the versions section and environment variables section.
   - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
@@ -182,6 +200,8 @@ If you would like to have release notifications tied into your Discord server, c
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3]. 
 
 [//]: <> (Github Issues below...........)
+[#276]: https://github.com/mbround18/valheim-docker/pull/276
+[#236]: https://github.com/mbround18/valheim-docker/pull/236
 [#158]: https://github.com/mbround18/valheim-docker/pull/158
 [#148]: https://github.com/mbround18/valheim-docker/pull/148
 [#100]: https://github.com/mbround18/valheim-docker/pull/100

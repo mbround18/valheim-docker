@@ -28,7 +28,7 @@ RUN cargo build --release --bin odin
 # ------------------ #
 # -- Odin Runtime -- #
 # ------------------ #
-FROM rust as runtime
+FROM debian:buster-slim as runtime
 WORKDIR /data/odin
 COPY --from=builder /data/odin/target/release/odin /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/odin"]

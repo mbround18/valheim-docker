@@ -57,7 +57,7 @@ jobs:
 
       - name: Log into registry
         run: |
-          echo "${{ github.token }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "${{ secrets.DOCKER_TOKEN }}" | docker login registry.hub.docker.com -u mbround18 --password-stdin
 
       - name: Build image
@@ -66,13 +66,13 @@ jobs:
           --file Dockerfile.odin \
           --tag "${DOCKER_IMAGE_NAME}-odin"
 
-      - name: Push Image to DockerHub
+      - name: Push Image
         run: |
           # Gather Utils
           . ./.github/scripts/utils.sh
 
           # Parse variables
-          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME-odin
+          IMAGE_ID=$DOCKER_IMAGE_NAME-odin
 
           # Change all uppercase to lowercase
           IMAGE_ID="${IMAGE_ID,,}"
@@ -83,9 +83,11 @@ jobs:
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
-
-          docker tag "${DOCKER_IMAGE_NAME}-odin" $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+          
+          docker tag "${DOCKER_IMAGE_NAME}-odin" registry.hub.docker.com/$IMAGE_ID:$VERSION
+          docker tag "${DOCKER_IMAGE_NAME}-odin" ghcr.io/$IMAGE_ID:$VERSION
+          docker push registry.hub.docker.com/$IMAGE_ID:$VERSION
+          docker push ghcr.io/$IMAGE_ID:$VERSION
           
   push_valheim:
     # Ensure test job passes before pushing image.
@@ -99,7 +101,7 @@ jobs:
 
       - name: Log into registry
         run: |
-          echo "${{ github.token }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+          echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           echo "${{ secrets.DOCKER_TOKEN }}" | docker login registry.hub.docker.com -u mbround18 --password-stdin
 
       - name: Build image
@@ -117,7 +119,7 @@ jobs:
           . ./.github/scripts/utils.sh
 
           # Parse variables
-          IMAGE_ID=registry.hub.docker.com/$DOCKER_IMAGE_NAME
+          IMAGE_ID=$DOCKER_IMAGE_NAME
 
           # Change all uppercase to lowercase
           IMAGE_ID="${IMAGE_ID,,}"
@@ -129,9 +131,11 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag $DOCKER_IMAGE_NAME $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
-          
+          docker tag $DOCKER_IMAGE_NAME registry.hub.docker.com/$IMAGE_ID:$VERSION
+          docker tag $DOCKER_IMAGE_NAME ghcr.io/$IMAGE_ID:$VERSION
+          docker push registry.hub.docker.com/$IMAGE_ID:$VERSION
+          docker push ghcr.io/$IMAGE_ID:$VERSION
+
           # Send release notification
           docker run --rm \
           -e NAME="New Version: ${DOCKER_IMAGE_NAME}:${VERSION}" \

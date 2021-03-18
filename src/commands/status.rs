@@ -1,5 +1,6 @@
-use crate::commands::start::bepinex::{fetch_bepinex_mod_list, is_bepinex_installed};
-use crate::utils::{fetch_env, parse_arg_variable};
+use crate::mods::bepinex::BepInExEnvironment;
+use crate::utils::environment::fetch_var;
+use crate::utils::parse_arg_variable;
 use a2s::errors::Error;
 use a2s::info::Info;
 use a2s::A2SClient;
@@ -17,9 +18,10 @@ struct BepInExStatus {
 
 impl BepInExStatus {
   fn new() -> BepInExStatus {
+    let bepinex_env = BepInExEnvironment::new();
     BepInExStatus {
-      installed: is_bepinex_installed(),
-      mods: fetch_bepinex_mod_list(),
+      installed: bepinex_env.is_installed(),
+      mods: vec![],
     }
   }
 }
@@ -82,7 +84,7 @@ pub fn invoke(args: &ArgMatches) {
         .text()
         .unwrap()
     });
-    let current_port: u16 = fetch_env("PORT", "2456", false).parse().unwrap();
+    let current_port: u16 = fetch_var("PORT", "2456").parse().unwrap();
     format!("{:?}:{:?}", current_ip, current_port + 1)
   }
   .replace("\"", "")
