@@ -27,13 +27,13 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
     .exit_action(|| {
       let bepinex_env = BepInExEnvironment::new();
       if bepinex_env.is_installed() {
-        info!("Server has been started with BepInEx! Keep in mind this may cause odin.errors!!");
+        info!("Server has been started with BepInEx! Keep in mind this may cause errors!!");
         messages::modding_disclaimer();
         debug!("{:#?}", bepinex_env);
       }
       info!("Server has been started and Daemonized. It should be online shortly!");
       info!("Keep an eye out for 'Game server connected' in the log!");
-      info!("(this indicates its online without any odin.errors.)")
+      info!("(this indicates its online without any errors.)")
     })
     .privileged_action(move || start(&config))
     .start()

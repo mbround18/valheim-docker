@@ -31,7 +31,7 @@
   
   ```
 
-5. Cleanup odin.files
+5. Cleanup files
 
   ```shell
   cd /home/steam/valheim && rm -rf /home/steam/tmp
@@ -54,7 +54,7 @@
 | DOORSTOP_LIB                  | `libdoorstop_x64.so`                                     | TRUE     | Which doorstop lib to load | 
 | DOORSTOP_LIBS                 | `/home/steam/valheim/doorstop_libs`                      | TRUE     | Where to look for doorstop libs. | 
 | DOORSTOP_INVOKE_DLL_PATH      | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload dll to load. |
-| DOORSTOP_CORLIB_OVERRIDE_PATH | `/home/steam/valheim/unstripped_corlib`                  | TRUE     | Sets where the decompiled libraries containing base mono odin.files are located at |              
+| DOORSTOP_CORLIB_OVERRIDE_PATH | `/home/steam/valheim/unstripped_corlib`                  | TRUE     | Sets where the decompiled libraries containing base mono files are located at |              
 | DYLD_LIBRARY_PATH             | `"/home/steam/valheim/doorstop_libs"`                    | TRUE     | Sets the library paths. NOTE: This variable is weird and MUST have quotes around it! |
 | DYLD_INSERT_LIBRARIES         | `/home/steam/valheim/doorstop_libs/libdoorstop_x64.so`   | TRUE     | Sets which library to load. |
 

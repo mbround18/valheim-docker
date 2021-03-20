@@ -245,7 +245,7 @@ You can get use the make file by installing cargo make via `cargo install cargo-
 [//]: <> (Links below...................)
 [Odin]: ./docs/odin.md
 [Valheim]: https://www.valheimgame.com/
-[Getting started with odin.mods]: ./docs/getting_started_with_mods.md
+[Getting started with mods]: ./docs/getting_started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1_*_*_*
 
-[//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/odin.tests.assets/name.png?raw=true)
+[//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)

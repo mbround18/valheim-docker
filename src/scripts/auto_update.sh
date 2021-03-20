@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cron uses blank env and does not pick up /usr/local/bin odin.files.
+# Cron uses blank env and does not pick up /usr/local/bin files.
 export PATH="/usr/local/bin:$PATH"
 
 log() {

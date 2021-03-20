@@ -13,7 +13,7 @@ args:
       short: r
       global: true
       long: dry-run
-      about: Will output the odin.commands that it intends to run.
+      about: Will output the commands that it intends to run.
 
 subcommands:
   - configure:

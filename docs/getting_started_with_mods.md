@@ -13,7 +13,7 @@
   | BepInExFull | This will install [BepInEx Full from this package](https://valheim.thunderstore.io/package/1F31A/BepInEx_Valheim_Full/) and contains a modern set of components with some extras for expanded mod compatibility. |
   | ValheimPlus | This will install [Valheim Plus from this repository](https://github.com/valheimPlus/ValheimPlus) and included BepInEx as a basic version with the most common set of components |
 
-2. If you wish do not with to use additional odin.mods, you can skip this step. Otherwise, in order to install additional odin.mods you can use the `MODS` variable.
+2. If you wish do not with to use additional mods, you can skip this step. Otherwise, in order to install additional mods you can use the `MODS` variable.
   
   Example of MODS, this example is slimmed down to go over the `TYPE` and `MODS` variable. 
   
@@ -37,14 +37,14 @@
 
 > Odin automatically detects if you are running with BepInEx and adds the environment variables appropriately.
 > 
-> DISCLAIMER! Modding your server can cause a lot of odin.errors.
+> DISCLAIMER! Modding your server can cause a lot of errors.
 > Please do NOT post an issue on the valheim-docker repo based on mod issues.
-> By installing odin.mods, you agree that you will do a root cause analysis to why your server is failing before you make a post.
+> By installing mods, you agree that you will do a root cause analysis to why your server is failing before you make a post.
 > Modding is currently unsupported by the Valheim developers and limited support by the valheim-docker repo.
 > If you have issues please contact the MOD developer FIRST based on the output logs.
 
 ## Valheim Updated Help!!!!
 
-Mod development is slow, and the more odin.mods you have the more complicated it will be to keep everything up to date. 
-It is a suggestion that you turn off the AUTO_UPDATE variable when you are using odin.mods and refrain from updating your local client until all your odin.mods have been updated.
+Mod development is slow, and the more mods you have the more complicated it will be to keep everything up to date. 
+It is a suggestion that you turn off the AUTO_UPDATE variable when you are using mods and refrain from updating your local client until all your mods have been updated.
 Some odin.mods break on new updates of Valheim while others do not. Be on the look out for mod issues if you update your server. 

@@ -11,7 +11,7 @@ Odin is a CLI tool utilized for installing, starting, and stopping [Valheim] ser
 |--------------------------|------------------------|----------|-------------|
 | DEBUG_MODE               | `0`                    | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing.
 | ODIN_CONFIG_FILE         | `config.json`          | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host |
-| ODIN_WORKING_DIR         | `$PWD`                 | FALSE    | Sets the directory you wish to run `odin` odin.commands in and can be used to set where valheim is managed from. |
+| ODIN_WORKING_DIR         | `$PWD`                 | FALSE    | Sets the directory you wish to run `odin` commands in and can be used to set where valheim is managed from. |
 
 ## Gotchas
 
@@ -30,7 +30,7 @@ cargo install --git https://github.com/mbround18/valheim-docker.git --branch mai
 
 ## Usage
 
-![Main Menu](./odin.tests.assets/main-menu.png)
+![Main Menu](./assets/main-menu.png)
 
 #### Install Valheim
 
@@ -38,7 +38,7 @@ cargo install --git https://github.com/mbround18/valheim-docker.git --branch mai
 odin install
 ```
 
-![Install Menu](./odin.tests.assets/install-menu.png)
+![Install Menu](./assets/install-menu.png)
 
 ### Start Valheim
 
@@ -46,7 +46,7 @@ odin install
 odin start
 ```
 
-![Start Menu](./odin.tests.assets/start-menu.png)
+![Start Menu](./assets/start-menu.png)
 
 ### Stop Valheim
 
@@ -54,7 +54,7 @@ odin start
 odin stop
 ```
 
-![Install Menu](./odin.tests.assets/stop-menu.png)
+![Install Menu](./assets/stop-menu.png)
 
 
 ### Status
@@ -71,26 +71,4 @@ Replace the `xx.xx.xx.xx` with your server IP and `query-port` with the `PORT` v
 
 ```shell
 odin http-server --address "xx.xx.xx.xx:query-port"
-```
-
-#### As JSON information 
-
-If run with `--json`
-
-**NOTE**: `BepInEx` information will be as described below unless you call status inside the container. 
-
-```json
-{
-  "server": {
-    "name": "Valheim WooHoo PC Gaming",
-    "version": "1.0.0.0",
-    "players": 0,
-    "max_players": 64,
-    "map": "Valheim WooHoo PC Gaming"
-  },
-  "bepinex": {
-    "installed": false,
-    "odin.mods": []
-  }
-}
 ```
