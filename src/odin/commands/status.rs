@@ -29,6 +29,12 @@ fn pretty_print(status: ServerInfo) {
   info!("Name: {}", status.name);
   info!("Players: {}/{}", status.players, status.max_players);
   info!("Map: {}", status.map);
+  let bepinex = status.bepinex;
+  info!("BepInEx Enabled: {}", bepinex.enabled);
+  if bepinex.enabled {
+    let mods: Vec<String> = bepinex.mods.iter().map(|m| String::from(&m.name)).collect();
+    info!("BepInEx Mods: {}", mods.join(", "))
+  }
 }
 
 pub fn invoke(args: &ArgMatches) {

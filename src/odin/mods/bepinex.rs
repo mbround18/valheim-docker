@@ -25,7 +25,7 @@ fn parse_path(env_var: &str, default: String, alt: String) -> String {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ModInfo {
-  name: String,
+  pub(crate) name: String,
   location: String,
 }
 
