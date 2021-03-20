@@ -1,10 +1,9 @@
 use clap::{load_yaml, App, AppSettings};
-use log::{debug, LevelFilter, SetLoggerError};
+use log::debug;
 
 use crate::executable::handle_exit_status;
-use crate::logger::OdinLogger;
 use crate::utils::environment;
-mod commands;
+pub mod commands;
 mod constants;
 mod errors;
 mod executable;
@@ -13,25 +12,12 @@ mod logger;
 mod messages;
 mod mods;
 mod notifications;
-mod server;
+pub mod server;
 mod steamcmd;
-mod utils;
+pub mod utils;
 
 use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::notification_event::NotificationEvent;
-
-static LOGGER: OdinLogger = OdinLogger;
-
-fn setup_logger(debug: bool) -> Result<(), SetLoggerError> {
-  let level = if debug {
-    LevelFilter::Debug
-  } else {
-    LevelFilter::Info
-  };
-  let result = log::set_logger(&LOGGER).map(|_| log::set_max_level(level));
-  debug!("Debugging set to {}", debug.to_string());
-  result
-}
 
 fn main() {
   // The YAML file is found relative to the current file, similar to how modules are found
@@ -41,7 +27,7 @@ fn main() {
     .setting(AppSettings::SubcommandRequired);
   let matches = app.get_matches();
   let debug_mode = matches.is_present("debug") || environment::fetch_var("DEBUG_MODE", "0").eq("1");
-  setup_logger(debug_mode).unwrap();
+  logger::initialize_logger(debug_mode).unwrap();
   debug!("Debug mode enabled!");
   if let Some((command_name, _)) = matches.subcommand() {
     debug!("Launching {} command...", command_name);

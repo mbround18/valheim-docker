@@ -13,7 +13,7 @@ args:
       short: r
       global: true
       long: dry-run
-      about: Will output the commands that it intends to run.
+      about: Will output the odin.commands that it intends to run.
 
 subcommands:
   - configure:
@@ -132,7 +132,7 @@ subcommands:
             required: true
             index: 1
   - status:
-      about: Print out of your server status
+      about: Print out of your server http-server
       version: "1.0"
       author: mbround18
       args:

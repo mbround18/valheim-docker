@@ -19,7 +19,7 @@ pub fn bepinex_config_directory() -> String {
 }
 
 pub fn mods_directory() -> String {
-  env::var(MODS_LOCATION).unwrap_or_else(|_| format!("{}/mods", get_working_dir()))
+  env::var(MODS_LOCATION).unwrap_or_else(|_| format!("{}/odin.mods", get_working_dir()))
 }
 
 // pub fn backup_directory() -> String {

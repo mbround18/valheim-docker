@@ -1,4 +1,4 @@
-<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto">
+<img src="./docs/odin.tests.assets/valheim-docker-logo.png" width="500" height="auto">
 
 # [Valheim]
 <a href="https://hub.docker.com/r/mbround18/valheim">
@@ -20,8 +20,8 @@
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 > 
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
-> Modding is not supported by the Valheim developers officially yet; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
-> See [Getting started with mods]
+> Modding is not supported by the Valheim developers officially yet; Which means you WILL run into odin.errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
+> See [Getting started with odin.mods]
 
 ### Download Locations
 
@@ -51,7 +51,7 @@
 | PUBLIC                   | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
 | PASSWORD                 | `12345`                | TRUE     | Set this to something unique! |
 | TYPE                     | `Vanilla`              | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla` |
-| MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
+| MODS                     | ` `                    | FALSE    | This is an array of odin.mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported odin.files are `zip`, `dll`, and `cfg`. |
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |
@@ -60,7 +60,8 @@
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
-| WEBHOOK_URL              | ` `                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
+| AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS | `0`           | FALSE    | Will skip creating a backup if there are no players |
+| WEBHOOK_URL              | ` `                    | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
 | UPDATE_ON_STARTUP        | `1`                    | FALSE    | Tries to update the server the container is started. |
 
 ### Docker Compose
@@ -140,7 +141,7 @@ However, you have to install it manually in the container due to the fact that t
 
 ### [Webhook Support](./docs/webhooks.md)
 
-This repo can automatically send notifications to discord via the WEBHOOK_URL variable. 
+This repo can automatically send odin.notifications to discord via the WEBHOOK_URL variable. 
 Only use the documentation link below if you want advanced settings!
 
 [Click Here to view documentation on Webhook Support](./docs/webhooks.md)
@@ -157,14 +158,38 @@ Only use the documentation link below if you want advanced settings!
 
 ## Release Notifications
 
-If you would like to have release notifications tied into your Discord server, click here: 
+If you would like to have release odin.notifications tied into your Discord server, click here: 
 
 <a href="https://discord.gg/3kTNUZz276">
   <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"  />
 </a>
 
-**Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled. 
+**Note**: The discord is PURELY for release odin.notifications and any + all permissions involving sending chat odin.messages has been disabled. 
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
+
+
+## Contributors
+
+### Cargo Make
+
+This package includes a make file for easy development.
+You can get use the make file by installing cargo make via `cargo install cargo-make`
+
+
+#### Commands
+
+| Command             | What it does |
+|---------------------|--------------|
+| makers format       | Formats the `http-server` and `odin` |
+| makers clippy       | Builds and runs clippy on `http-server` and `odin` |
+| makers build        | Builds the two projects |
+| makers start:dev    | Formats, Clippy, docker-compose build, and docker-compose up |
+| makers docker:build | Runs docker-compose build for the file `docker-compose.dev.yml` |
+| makers docker:up    | Runs docker-compose up for `docker-compose.dev.yml` | 
+| makers access       | Runs `docker-compose -f docker-compose.dev.yml exec --user steam valheim bash` |
+| makers access:admin | Runs `docker-compose -f docker-compose.dev.yml exec valheim bash` |
+| makers release      | Builds a release binary for `odin` and `http-server` |
+
 
 ## Versions: 
 
@@ -191,7 +216,7 @@ If you would like to have release notifications tied into your Discord server, c
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 
   - Includes a fix for [#3] and [#8].
-  - Improves the script interface and separation of concerns, files now have a respective code file that supports interactions for cleaner development experience.
+  - Improves the script interface and separation of concerns, odin.files now have a respective code file that supports interactions for cleaner development experience.
   - Docker image is cleaned up to provide a better usage experience. There is now an `AUTO_UPDATE` feature.
   - Has a bug where the script has two entries for the world argument.
 - 1.0.0 (Stable):
@@ -220,7 +245,7 @@ If you would like to have release notifications tied into your Discord server, c
 [//]: <> (Links below...................)
 [Odin]: ./docs/odin.md
 [Valheim]: https://www.valheimgame.com/
-[Getting started with mods]: ./docs/getting_started_with_mods.md
+[Getting started with odin.mods]: ./docs/getting_started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1_*_*_*
 
-[//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)
+[//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/odin.tests.assets/name.png?raw=true)
