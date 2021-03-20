@@ -47,4 +47,4 @@
 
 Mod development is slow, and the more mods you have the more complicated it will be to keep everything up to date. 
 It is a suggestion that you turn off the AUTO_UPDATE variable when you are using mods and refrain from updating your local client until all your mods have been updated.
-Some odin.mods break on new updates of Valheim while others do not. Be on the look out for mod issues if you update your server. 
+Some mods break on new updates of Valheim while others do not. Be on the look out for mod issues if you update your server. 

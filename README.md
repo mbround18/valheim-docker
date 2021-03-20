@@ -1,16 +1,16 @@
-<img src="./docs/odin.tests.assets/valheim-docker-logo.png" width="500" height="auto">
+<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
 
 # [Valheim]
 <a href="https://hub.docker.com/r/mbround18/valheim">
-    <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge">
+    <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt="">
 </a>
 
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge">
+    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt="">
 </a>
 
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge">
+    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt="">
 </a>
 
 
@@ -20,8 +20,8 @@
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 > 
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
-> Modding is not supported by the Valheim developers officially yet; Which means you WILL run into odin.errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
-> See [Getting started with odin.mods]
+> Modding is not supported by the Valheim developers officially yet; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
+> See [Getting started with mods]
 
 ### Download Locations
 
@@ -51,7 +51,7 @@
 | PUBLIC                   | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
 | PASSWORD                 | `12345`                | TRUE     | Set this to something unique! |
 | TYPE                     | `Vanilla`              | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla` |
-| MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported odin.files are `zip`, `dll`, and `cfg`. |
+| MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |
@@ -141,7 +141,7 @@ However, you have to install it manually in the container due to the fact that t
 
 ### [Webhook Support](./docs/webhooks.md)
 
-This repo can automatically send odin.notifications to discord via the WEBHOOK_URL variable. 
+This repo can automatically send notifications to discord via the WEBHOOK_URL variable. 
 Only use the documentation link below if you want advanced settings!
 
 [Click Here to view documentation on Webhook Support](./docs/webhooks.md)
@@ -158,13 +158,13 @@ Only use the documentation link below if you want advanced settings!
 
 ## Release Notifications
 
-If you would like to have release odin.notifications tied into your Discord server, click here: 
+If you would like to have release notifications tied into your Discord server, click here: 
 
 <a href="https://discord.gg/3kTNUZz276">
   <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"  />
 </a>
 
-**Note**: The discord is PURELY for release odin.notifications and any + all permissions involving sending chat odin.messages has been disabled. 
+**Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled. 
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
 
@@ -216,7 +216,7 @@ You can get use the make file by installing cargo make via `cargo install cargo-
   - Includes PR [#10] to fix the double world argument. 
 - 1.1.0 (Stable): 
   - Includes a fix for [#3] and [#8].
-  - Improves the script interface and separation of concerns, odin.files now have a respective code file that supports interactions for cleaner development experience.
+  - Improves the script interface and separation of concerns, files now have a respective code file that supports interactions for cleaner development experience.
   - Docker image is cleaned up to provide a better usage experience. There is now an `AUTO_UPDATE` feature.
   - Has a bug where the script has two entries for the world argument.
 - 1.0.0 (Stable):

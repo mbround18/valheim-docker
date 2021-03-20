@@ -85,7 +85,7 @@ elif
     { [ "${TYPE}" = "valheimplus" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
 then
   log "Installing ValheimPlus"
-  VALHEIM_PLUS_URL="$(curl https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest | jq -r '.odin.tests.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
+  VALHEIM_PLUS_URL="$(curl https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
   log "Pulling ValheimPlus from ${VALHEIM_PLUS_URL}"
   odin mod:install "${VALHEIM_PLUS_URL}"
 elif
