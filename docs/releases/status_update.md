@@ -58,3 +58,68 @@ Setting the `HTTP_PORT` variable to any number will spin up a small http server 
 
 You can access it via `http://127.0.0.1:HTTP_PORT/status`.
 You are responsible for putting your status endpoint behind SSL or authentication if you desire.
+
+
+### When server is found
+
+```json
+{
+  "name":"Creative Update",
+  "version":"0.147.3@0.9.5.5",
+  "players":0,
+  "max_players":10,
+  "map":"Creative Update",
+  "online":true,
+  "bepinex":{
+    "enabled":true,
+    "mods":[
+      {
+        "name":"BetterUI.dll",
+        "location":"/home/steam/valheim/BepInEx/plugins/BetterUI/plugins/BetterUI/BetterUI.dll"
+      },
+      {
+        "name":"ValheimPlus.dll",
+        "location":"/home/steam/valheim/BepInEx/plugins/ValheimPlus.dll"
+      }
+    ]
+  },
+  "jobs":[
+    {
+      "name":"AUTO_UPDATE",
+      "enabled":false,
+      "schedule":"*/5 * * * *"
+    },
+    {
+      "name":"AUTO_BACKUP",
+      "enabled":true,
+      "schedule":"*/5 * * * *"
+    }
+  ]
+}
+```
+
+### When server NOT found
+
+```shell
+[ODIN][ERROR] - Failed to request server information!
+```
+
+```json
+{
+  "name":"Unknown",
+  "version":"Unknown",
+  "players":0,
+  "max_players":0,
+  "map":"Unknown",
+  "online":false,
+  "bepinex":{
+    "enabled":false,
+    "mods":[
+
+    ]
+  },
+  "jobs":[
+
+  ]
+}
+```
