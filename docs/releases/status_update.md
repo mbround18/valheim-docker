@@ -14,6 +14,8 @@ Without `--json`
 [ODIN][INFO]  - Name: Creative Update
 [ODIN][INFO]  - Players: 0/10
 [ODIN][INFO]  - Map: Creative Update
+[ODIN][INFO]  - BepInEx Enabled: true
+[ODIN][INFO]  - BepInEx Mods: ValheimPlus.dll
 ```
 
 With `--json`
