@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BepInExInfo {
-  pub(crate) enabled: bool,
+  pub enabled: bool,
   pub(crate) mods: Vec<ModInfo>,
 }
 

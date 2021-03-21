@@ -2,6 +2,7 @@ mod bepinex_info;
 mod jobs_info;
 
 use crate::constants::{AUTO_BACKUP_JOB, AUTO_UPDATE_JOB};
+use crate::utils::environment::fetch_var;
 use a2s::info::Info;
 use a2s::A2SClient;
 use bepinex_info::BepInExInfo;
@@ -65,11 +66,11 @@ impl Default for ServerInfo {
   fn default() -> ServerInfo {
     let unknown = String::from("Unknown");
     ServerInfo {
-      name: unknown.clone(),
+      name: fetch_var("NAME", &unknown),
       version: unknown.clone(),
       players: 0,
       max_players: 0,
-      map: unknown,
+      map: fetch_var("NAME", &unknown),
       online: false,
       bepinex: BepInExInfo::default(),
       jobs: vec![],

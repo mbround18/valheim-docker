@@ -29,6 +29,13 @@ command = "docker-compose"
 args = ["-f", "./docker-compose.dev.yml", "up"]
 dependencies = ["setup"]
 
+# Launch Docker
+[tasks."docker:push"]
+workspace = false
+command = "docker-compose"
+args = ["-f", "./docker-compose.dev.yml", "push"]
+dependencies = ["setup"]
+
 # Start Development Workflow
 [tasks."start"]
 workspace = false

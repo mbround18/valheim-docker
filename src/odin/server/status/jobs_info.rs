@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JobInfo {
-  name: String,
-  enabled: bool,
-  schedule: String,
+  pub name: String,
+  pub enabled: bool,
+  pub schedule: String,
 }
 
 impl From<&str> for JobInfo {
