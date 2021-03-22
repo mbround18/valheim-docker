@@ -7,9 +7,10 @@ use a2s::info::Info;
 use a2s::A2SClient;
 use bepinex_info::BepInExInfo;
 use jobs_info::JobInfo;
-use log::{debug, error};
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use std::net::SocketAddrV4;
 use std::str::FromStr;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -25,11 +26,9 @@ pub struct ServerInfo {
 }
 
 impl ServerInfo {
-  pub fn new(address: &str) -> ServerInfo {
-    let parsed_address = address.replace('"', "");
-    debug!("Game IP {}", &parsed_address);
+  pub fn new(address: SocketAddrV4) -> ServerInfo {
     let query_client = A2SClient::new().unwrap();
-    match query_client.info(&parsed_address) {
+    match query_client.info(address) {
       Ok(a2s_info) => ServerInfo::from(a2s_info),
       Err(_err) => {
         error!("Failed to request server information!");
@@ -52,9 +51,9 @@ impl ServerInfo {
   }
 }
 
-impl From<String> for ServerInfo {
-  fn from(address: String) -> ServerInfo {
-    ServerInfo::new(&address)
+impl From<SocketAddrV4> for ServerInfo {
+  fn from(address: SocketAddrV4) -> ServerInfo {
+    ServerInfo::new(address)
   }
 }
 

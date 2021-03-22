@@ -10,9 +10,9 @@ pub struct JobInfo {
 }
 
 impl FromStr for JobInfo {
-  type Err = ();
+  type Err = std::convert::Infallible;
 
-  fn from_str(job_name: &str) -> Result<JobInfo, ()> {
+  fn from_str(job_name: &str) -> Result<JobInfo, std::convert::Infallible> {
     let sanitized_name = job_name.to_uppercase();
     let enabled: bool = fetch_var(&sanitized_name, "0").eq_ignore_ascii_case("1");
     let schedule = fetch_var(&format!("{}_SCHEDULE", &sanitized_name), "never").replace('"', "");

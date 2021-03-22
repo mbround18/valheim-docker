@@ -2,12 +2,14 @@ mod routes;
 
 use log::info;
 use odin::{logger::initialize_logger, server::ServerInfo, utils::environment::fetch_var};
+use std::net::SocketAddrV4;
+use std::str::FromStr;
 use warp::Filter;
 
 fn fetch_info() -> ServerInfo {
   let port: u16 = fetch_var("PORT", "2457").parse().unwrap();
   let address = fetch_var("ADDRESS", format!("127.0.0.1:{}", port + 1).as_str());
-  ServerInfo::from(address)
+  ServerInfo::from(SocketAddrV4::from_str(&address).unwrap())
 }
 
 #[tokio::main]

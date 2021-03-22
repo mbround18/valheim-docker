@@ -30,14 +30,11 @@ fn parse_address(args: &ArgMatches) -> Result<SocketAddrV4, AddrParseError> {
 
 pub fn invoke(args: &ArgMatches) {
   let output_json = args.is_present("json");
-  let address = match parse_address(&args) {
-    Ok(addr) => addr.to_string(),
-    Err(_) => {
-      let addr = fetch_var("ADDRESS", args.value_of("address").unwrap());
-      error!("Failed to parse supplied address! {}", addr);
-      exit(1)
-    }
-  };
+  let address = parse_address(&args).unwrap_or_else(|_| {
+    let addr = fetch_var("ADDRESS", args.value_of("address").unwrap());
+    error!("Failed to parse supplied address! {}", addr);
+    exit(1)
+  });
   let server_info = ServerInfo::from(address);
   if output_json {
     println!("{}", serde_json::to_string_pretty(&server_info).unwrap());

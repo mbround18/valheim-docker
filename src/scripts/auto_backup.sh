@@ -7,15 +7,20 @@ log() {
   PREFIX="[Valheim][steam]"
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
-
-if [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
-  export ADDRESS=${ADDRESS:="127.0.0.1:2457"}
-  NUMBER_OF_PLAYERS=$(DEBUG_MODE=false odin status --address="${ADDRESS}" --json | jq -r '.players')
-  if [ "${NUMBER_OF_PLAYERS}" -eq 0 ]; then
-    log "Skipping backup, no players are online."
-    exit 0
+if [ "${PUBLIC:=0}" -eq 0 ] && [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
+  log "Woah, cannot pause backup process on a server with PUBLIC=0"
+  log "This is because we cannot query your server via the Steam API"
+else
+  if [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
+    export ADDRESS=${ADDRESS:="127.0.0.1:2457"}
+    NUMBER_OF_PLAYERS=$(DEBUG_MODE=false odin status --address="${ADDRESS}" --json | jq -r '.players')
+    if [ "${NUMBER_OF_PLAYERS}" -eq 0 ]; then
+      log "Skipping backup, no players are online."
+      exit 0
+    fi
   fi
 fi
+
 
 log "Starting auto backup process..."
 
