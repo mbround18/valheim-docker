@@ -153,6 +153,7 @@ subcommands:
   - status:
       about: >
         Prints out the status of your server with information about current players, mod support, and a few other details.
+        Note: If your server has PUBLIC set to 0 it will not be able to be queried!
 
       version: "1.0"
       author: mbround18
