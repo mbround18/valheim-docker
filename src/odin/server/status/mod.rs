@@ -9,6 +9,8 @@ use bepinex_info::BepInExInfo;
 use jobs_info::JobInfo;
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ServerInfo {
@@ -31,8 +33,21 @@ impl ServerInfo {
       Ok(a2s_info) => ServerInfo::from(a2s_info),
       Err(_err) => {
         error!("Failed to request server information!");
-        ServerInfo::default()
+        ServerInfo::offline()
       }
+    }
+  }
+  pub fn offline() -> ServerInfo {
+    let unknown = String::from("Unknown");
+    ServerInfo {
+      name: fetch_var("NAME", &unknown),
+      version: unknown.clone(),
+      players: 0,
+      max_players: 0,
+      map: fetch_var("NAME", &unknown),
+      online: false,
+      bepinex: BepInExInfo::disabled(),
+      jobs: vec![],
     }
   }
 }
@@ -55,25 +70,26 @@ impl From<Info> for ServerInfo {
       online: true,
       bepinex: BepInExInfo::new(),
       jobs: vec![
-        JobInfo::from(AUTO_UPDATE_JOB),
-        JobInfo::from(AUTO_BACKUP_JOB),
+        JobInfo::from_str(AUTO_UPDATE_JOB).unwrap(),
+        JobInfo::from_str(AUTO_BACKUP_JOB).unwrap(),
       ],
     }
   }
 }
 
-impl Default for ServerInfo {
-  fn default() -> ServerInfo {
-    let unknown = String::from("Unknown");
-    ServerInfo {
-      name: fetch_var("NAME", &unknown),
-      version: unknown.clone(),
-      players: 0,
-      max_players: 0,
-      map: fetch_var("NAME", &unknown),
-      online: false,
-      bepinex: BepInExInfo::default(),
-      jobs: vec![],
+impl Display for ServerInfo {
+  fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    let bepinex = &self.bepinex;
+    let mut server_info = vec![
+      format!("Name: {}", &self.name),
+      format!("Players: {}/{}", &self.players, &self.max_players),
+      format!("Map: {}", &self.map),
+      format!("BepInEx Enabled: {}", bepinex.enabled),
+    ];
+    if bepinex.enabled {
+      let mods: Vec<String> = bepinex.mods.iter().map(|m| String::from(&m.name)).collect();
+      server_info.push(format!("BepInEx Mods: {}", mods.join(", ")))
     }
+    write!(f, "{}", server_info.join("\n"))
   }
 }

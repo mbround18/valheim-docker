@@ -42,7 +42,6 @@ log "Name: ${NAME}"
 log "World: ${WORLD}"
 log "Public: ${PUBLIC}"
 log "Password: (REDACTED)"
-echo "Loading........."
 
 export SteamAppId=${APPID:-892970}
 

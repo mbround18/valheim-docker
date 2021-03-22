@@ -26,7 +26,7 @@ async fn main() {
   let http_port: u16 = fetch_var("HTTP_PORT", "3000").parse().unwrap();
 
   // Start server
-  info!("Starting web server on http://127.0.0.1:{}", http_port);
+  info!("Starting web server....");
   info!(
     "Navigate to http://127.0.0.1:{}/status to view the server status.",
     http_port

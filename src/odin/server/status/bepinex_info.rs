@@ -15,10 +15,7 @@ impl BepInExInfo {
       mods: env.list_mods(),
     }
   }
-}
-
-impl Default for BepInExInfo {
-  fn default() -> BepInExInfo {
+  pub fn disabled() -> BepInExInfo {
     BepInExInfo {
       enabled: false,
       mods: vec![],
