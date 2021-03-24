@@ -1,11 +1,6 @@
 pub mod bepinex;
 
-use crate::constants::SUPPORTED_FILE_TYPES;
-use crate::utils::common_paths::{
-  bepinex_config_directory, bepinex_plugin_directory, game_directory,
-};
 use crate::utils::{common_paths, get_md5_hash, parse_file_name, url_parse_file_type};
-use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info};
 use reqwest::Url;
@@ -14,8 +9,55 @@ use std::fs::{self, create_dir_all, File};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::exit;
-use zip::result::ZipError;
-use zip::ZipArchive;
+use zip::{
+  result::{ZipError, ZipResult},
+  ZipArchive,
+};
+
+trait ZipExt {
+  fn extract_sub_dir<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()>;
+}
+
+impl ZipExt for ZipArchive<File> {
+  fn extract_sub_dir<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()> {
+    for i in 0..self.len() {
+      let mut file = self.by_index(i)?;
+      let filepath = match file
+        .enclosed_name()
+        .ok_or(ZipError::InvalidArchive("Invalid file path"))?
+        .strip_prefix(sub_dir)
+      {
+        Ok(path) => path,
+        Err(_) => continue,
+      };
+
+      let outpath = dst_dir.as_ref().join(filepath);
+
+      if file.name().ends_with('/') {
+        fs::create_dir_all(&outpath)?;
+      } else {
+        if let Some(p) = outpath.parent() {
+          if !p.exists() {
+            fs::create_dir_all(&p)?;
+          }
+        }
+        let mut outfile = fs::File::create(&outpath)?;
+        io::copy(&mut file, &mut outfile)?;
+      }
+
+      // Get and Set permissions
+      #[cfg(unix)]
+      {
+        use std::os::unix::fs::PermissionsExt;
+        if let Some(mode) = file.unix_mode() {
+          fs::set_permissions(&outpath, fs::Permissions::from_mode(mode))?;
+        }
+      }
+    }
+
+    Ok(())
+  }
+}
 
 pub struct ValheimMod {
   pub(crate) url: String,
@@ -23,7 +65,6 @@ pub struct ValheimMod {
   pub(crate) staging_location: PathBuf,
   pub(crate) installed: bool,
   pub(crate) downloaded: bool,
-  pub(crate) staged: bool,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -40,64 +81,13 @@ impl ValheimMod {
       staging_location: common_paths::mods_directory().into(),
       installed: false,
       downloaded: false,
-      staged: false,
     }
   }
-  // fn uninstall(&self) {}
+
   fn try_parse_manifest(&self, archive: &mut ZipArchive<File>) -> Result<Manifest, ZipError> {
     debug!("Parsing manifest...");
     let manifest = archive.by_name("manifest.json")?;
     Ok(serde_json::from_reader(manifest).expect("Failed deserializing manifest"))
-  }
-
-  fn copy_staged_plugin(&mut self, manifest: &Manifest) {
-    if !&self.staged {
-      error!("Zip file not extracted to staging location!!");
-      // TODO: Remove Exit Code and provide an Ok or Err.
-      exit(1);
-    }
-
-    let working_directory = game_directory();
-    let mut staging_output = self.staging_location.clone();
-    let sub_dir = &staging_output.join(&manifest.name);
-    debug!("Manifest suggests sub directory: {}", sub_dir.display());
-    let mut dir_copy_options = dir::CopyOptions::new();
-    dir_copy_options.overwrite = true;
-    let mut copy_destination = bepinex_plugin_directory();
-    if sub_dir.exists()
-      && (manifest.name.eq("BepInExPack_Valheim") || manifest.name.eq("BepInEx_Valheim_Full"))
-    {
-      staging_output = staging_output.join(&manifest.name);
-      copy_destination = String::from(&working_directory);
-    } else {
-      copy_destination = format!("{}/{}", &copy_destination, &manifest.name);
-      debug!("Creating mod directory: {}", &copy_destination);
-      match create_dir_all(&copy_destination) {
-        Ok(_) => info!("Created mod directory: {}", &copy_destination),
-        Err(_) => {
-          error!("Failed to create mod directory! {}", &copy_destination);
-          // TODO: Remove Exit Code and provide an Ok or Err.
-          exit(1);
-        }
-      };
-    }
-    debug!(
-      "Copying contents from: \n{}\nInto Directory:\n{}",
-      &staging_output.display(),
-      &working_directory
-    );
-    let source_contents: Vec<_> = std::fs::read_dir(&staging_output)
-      .unwrap()
-      .map(|entry| entry.unwrap().path())
-      .collect();
-    match fs_extra::copy_items(&source_contents, &copy_destination, &dir_copy_options) {
-      Ok(_) => info!("Successfully installed {}", &self.url),
-      Err(_) => {
-        error!("Failed to install {}", &self.url);
-        // TODO: Remove Exit Code and provide an Ok or Err.
-        exit(1);
-      }
-    }
   }
 
   fn copy_single_file<P1, P2>(&self, from: P1, to: P2)
@@ -116,7 +106,7 @@ impl ValheimMod {
         error!("Failed to install {}", self.url);
         error!(
           "File failed to copy from: \n{:?}To Destination:{:?}",
-          &from, &to
+          from, to
         );
         // TODO: Remove Exit Code and provide an Ok or Err.
         exit(1);
@@ -124,30 +114,57 @@ impl ValheimMod {
     };
   }
 
-  fn stage_plugin(&mut self, archive: &mut ZipArchive<File>) {
-    let file_stem = Path::new(&self.staging_location).file_stem().unwrap();
-    let staging_output = Path::new(&common_paths::mods_directory()).join(&file_stem);
-    debug!(
-      "Extracting contents to staging directory: {:?}",
-      staging_output
-    );
-    archive.extract(&staging_output).unwrap();
-    self.staging_location = staging_output;
-    self.staged = true;
+  fn is_mod_framework(&self, archive: &mut ZipArchive<File>) -> bool {
+    let maybe_manifest = self.try_parse_manifest(archive).ok();
+    match maybe_manifest {
+      Some(Manifest { name }) => {
+        let mod_dir = format!("{}/", name);
+        let mod_dir_exists = archive.file_names().any(|file_name| file_name == mod_dir);
+
+        // It's a mod framework based on a specific name and if it has a matching directory in the
+        // archive
+        mod_dir_exists && (name == "BepInExPack_Valheim" || name == "BepInEx_Valheim_Full")
+      }
+      None => archive
+        // If there is no manifest, fall back to checking for winhttp.dll as a heuristic
+        .file_names()
+        .any(|file_name| file_name.eq_ignore_ascii_case("winhttp.dll")),
+    }
   }
 
   fn extract_plugin(&self, archive: &mut ZipArchive<File>) {
-    let output_path = if archive
-      .file_names()
-      .any(|file_name| file_name.eq_ignore_ascii_case("winhttp.dll"))
-    {
-      info!("Installing BepInEx...");
-      common_paths::game_directory()
+    // The output location to extract into and the directory to extract from the archive depends on
+    // if we're installing just a mod or a full framework, and if it is being downloaded from
+    // thunderstore where a manifest is provided, or not.
+    let (output_dir, archive_dir) = if self.is_mod_framework(archive) {
+      info!("Installing Framework...");
+      let output_dir = PathBuf::from(&common_paths::game_directory());
+
+      // All frameworks from thunderstore just need the directory matching the name extracted
+      let sub_dir = if let Ok(Manifest { name }) = self.try_parse_manifest(archive) {
+        format!("{}/", name)
+      } else {
+        String::new()
+      };
+
+      (output_dir, sub_dir)
     } else {
       info!("Installing Mod...");
-      common_paths::bepinex_plugin_directory()
+      // thunderstore mods are extracted into a subfolder in the plugin directory
+      let mut output_dir = PathBuf::from(&common_paths::bepinex_plugin_directory());
+      if let Ok(Manifest { name }) = self.try_parse_manifest(archive) {
+        output_dir.push(name);
+      }
+      create_dir_all(&output_dir).unwrap_or_else(|_| {
+        error!("Failed to create mod directory! {:?}", output_dir);
+        // TODO: Remove Exit Code and provide an Ok or Err.
+        exit(1);
+      });
+
+      (output_dir, "".to_string())
     };
-    match archive.extract(output_path) {
+
+    match archive.extract_sub_dir(output_dir, &archive_dir) {
       Ok(_) => info!("Successfully installed {}", &self.url),
       Err(msg) => {
         error!(
@@ -162,28 +179,6 @@ impl ValheimMod {
     };
   }
 
-  fn _extract_plugin<P: AsRef<Path>>(&self, directory: P, archive: &mut ZipArchive<File>) {
-    for i in 0..archive.len() {
-      let mut file = archive.by_index(i).unwrap();
-      let filepath = file.enclosed_name().unwrap();
-
-      let outpath = directory.as_ref().join(filepath);
-
-      if file.name().ends_with('/') {
-        fs::create_dir_all(&outpath).unwrap();
-      } else {
-        if let Some(p) = outpath.parent() {
-          if !p.exists() {
-            fs::create_dir_all(&p).unwrap();
-          }
-        }
-        // TODO: check in here for existing config file
-        let mut outfile = fs::File::create(&outpath).unwrap();
-        io::copy(&mut file, &mut outfile).unwrap();
-      }
-    }
-  }
-
   pub fn install(&mut self) {
     if Path::new(&self.staging_location).is_dir() {
       error!(
@@ -195,24 +190,26 @@ impl ValheimMod {
     }
 
     if self.file_type.eq("dll") {
-      self.copy_single_file(&self.staging_location, &bepinex_plugin_directory());
+      self.copy_single_file(
+        &self.staging_location,
+        &common_paths::bepinex_plugin_directory(),
+      );
     } else if self.file_type.eq("cfg") {
-      // If the config file already exists, move the new one next to it and append .new
-      let filepath = Path::new(&self.staging_location);
-      let filename = filepath.file_name().unwrap();
-      if !Path::new(&bepinex_config_directory())
-        .join(filename)
-        .exists()
-      {
-        self.copy_single_file(&self.staging_location, &bepinex_config_directory());
-      } else {
-        // TODO: change here
-        // let duplicate = format!("{}.new", self.staging_location);
-        self.copy_single_file(&self.staging_location, &bepinex_config_directory());
+      info!("Copying single cfg into config directory");
+      let src_file_path = &self.staging_location;
+      let cfg_file_name = self.staging_location.file_name().unwrap();
+
+      // If the cfg already exists in the output directory then append a ".new"
+      let mut dst_file_path =
+        Path::new(&common_paths::bepinex_config_directory()).join(cfg_file_name);
+      if dst_file_path.exists() {
+        dst_file_path = dst_file_path.with_extension("cfg.new");
       }
+
+      fs::rename(src_file_path, dst_file_path).unwrap();
     } else {
-      let zip_file = std::fs::File::open(&self.staging_location).unwrap();
-      let mut archive = match zip::ZipArchive::new(zip_file) {
+      let zip_file = File::open(&self.staging_location).unwrap();
+      let mut archive = match ZipArchive::new(zip_file) {
         Ok(file_archive) => {
           debug!("Successfully parsed zip file {:?}", self.staging_location);
           file_archive
@@ -223,16 +220,7 @@ impl ValheimMod {
           exit(1);
         }
       };
-      match self.try_parse_manifest(&mut archive) {
-        Ok(manifest) => {
-          debug!("Manifest has name: {}", manifest.name);
-          self.stage_plugin(&mut archive);
-          self.copy_staged_plugin(&manifest);
-        }
-        Err(_) => {
-          self.extract_plugin(&mut archive);
-        }
-      }
+      self.extract_plugin(&mut archive);
     }
     self.installed = true
   }
@@ -250,12 +238,10 @@ impl ValheimMod {
     if let Ok(parsed_url) = Url::parse(&download_url) {
       match reqwest::blocking::get(parsed_url) {
         Ok(mut response) => {
-          let file_type = url_parse_file_type(&self.url);
-          if !SUPPORTED_FILE_TYPES.contains(&file_type.as_str()) {
-            debug!("Using url (in case of redirect): {}", &self.url);
-            self.url = response.url().to_string();
-            self.file_type = url_parse_file_type(&response.url().to_string())
-          }
+          debug!("Using url (in case of redirect): {}", &self.url);
+          self.url = response.url().to_string();
+          self.file_type = url_parse_file_type(&response.url().to_string());
+
           let file_name = parse_file_name(
             &Url::parse(&self.url).unwrap(),
             format!("{}.{}", get_md5_hash(&download_url), &self.file_type).as_str(),
