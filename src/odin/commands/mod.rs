@@ -4,5 +4,6 @@ pub mod install;
 pub mod install_mod;
 pub mod notify;
 pub mod start;
+pub mod status;
 pub mod stop;
 pub mod update;

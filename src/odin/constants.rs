@@ -16,3 +16,7 @@ pub const LD_PRELOAD_VAR: &str = "LD_PRELOAD";
 
 // Mods
 pub const SUPPORTED_FILE_TYPES: &[&str] = &["zip", "dll", "cfg"];
+
+// Job Names
+pub const AUTO_UPDATE_JOB: &str = "AUTO_UPDATE";
+pub const AUTO_BACKUP_JOB: &str = "AUTO_BACKUP";

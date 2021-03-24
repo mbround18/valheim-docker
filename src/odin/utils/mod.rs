@@ -16,7 +16,7 @@ pub fn get_working_dir() -> String {
   )
 }
 
-pub fn get_variable(args: &ArgMatches, name: &str, default: String) -> String {
+pub fn parse_arg_variable(args: &ArgMatches, name: &str, default: String) -> String {
   debug!("Checking env for {}", name);
   if let Ok(env_val) = env::var(name.to_uppercase()) {
     if !env_val.is_empty() {

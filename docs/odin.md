@@ -55,3 +55,20 @@ odin stop
 ```
 
 ![Install Menu](./assets/stop-menu.png)
+
+
+### Status
+
+#### Local Server
+
+```sh
+odin http-server
+```
+
+#### Remote Server
+
+Replace the `xx.xx.xx.xx` with your server IP and `query-port` with the `PORT` variable +1 (ex: if `2456` use `2457` which is the steam query port.)
+
+```shell
+odin http-server --address "xx.xx.xx.xx:query-port"
+```

@@ -1,7 +1,8 @@
 use crate::constants;
-use crate::utils::common_paths::{bepinex_directory, game_directory};
+use crate::utils::common_paths::{bepinex_directory, bepinex_plugin_directory, game_directory};
 use crate::utils::{environment, path_exists};
 use log::{debug, info};
+use serde::{Deserialize, Serialize};
 use std::ops::Add;
 use std::process::{Child, Command};
 
@@ -22,6 +23,12 @@ fn parse_path(env_var: &str, default: String, alt: String) -> String {
   }
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ModInfo {
+  pub(crate) name: String,
+  location: String,
+}
+
 #[derive(Debug)]
 pub struct BepInExEnvironment {
   ld_preload: String,
@@ -31,6 +38,11 @@ pub struct BepInExEnvironment {
   doorstop_corlib_override_path: String,
   dyld_library_path: String,
   dyld_insert_libraries: String,
+}
+impl Default for BepInExEnvironment {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl BepInExEnvironment {
@@ -94,6 +106,28 @@ impl BepInExEnvironment {
       debug!("Uhh ohh!!! Looks like you are missing something.")
     }
     output
+  }
+
+  pub fn list_mods(&self) -> Vec<ModInfo> {
+    if self.is_installed() {
+      glob::glob(&format!("{}/**/*.dll", bepinex_plugin_directory()))
+        .unwrap()
+        .map(|file| {
+          let found_file = file.unwrap();
+          let location = found_file.as_path().to_str().unwrap().to_string();
+          let name = found_file
+            .as_path()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+          ModInfo { name, location }
+        })
+        .collect()
+    } else {
+      vec![]
+    }
   }
 
   pub fn launch(&self, command: &mut Command) -> std::io::Result<Child> {

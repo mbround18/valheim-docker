@@ -1,4 +1,4 @@
-use log::{Level, Metadata, Record};
+use log::{debug, Level, LevelFilter, Metadata, Record, SetLoggerError};
 
 pub struct OdinLogger;
 
@@ -23,4 +23,17 @@ impl log::Log for OdinLogger {
   }
 
   fn flush(&self) {}
+}
+
+static LOGGER: OdinLogger = OdinLogger;
+
+pub fn initialize_logger(debug: bool) -> Result<(), SetLoggerError> {
+  let level = if debug {
+    LevelFilter::Debug
+  } else {
+    LevelFilter::Info
+  };
+  let result = log::set_logger(&LOGGER).map(|_| log::set_max_level(level));
+  debug!("Debugging set to {}", debug.to_string());
+  result
 }

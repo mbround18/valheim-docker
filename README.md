@@ -1,16 +1,16 @@
-<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto">
+<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
 
 # [Valheim]
 <a href="https://hub.docker.com/r/mbround18/valheim">
-    <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge">
+    <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt="">
 </a>
 
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge">
+    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt="">
 </a>
 
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge">
+    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt="">
 </a>
 
 
@@ -44,6 +44,7 @@
 | TZ                       | `America/Los_Angeles`  | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
 | PUID                     | `1000`                 | FALSE    | Sets the User Id of the steam user. |
 | PGID                     | `1000`                 | FALSE    | Sets the Group Id of the steam user. |
+| ADDRESS                  | `Your Public IP`       | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
 | PORT                     | `2456`                 | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458) |
 | NAME                     | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
 | WORLD                    | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
@@ -59,7 +60,8 @@
 | AUTO_BACKUP_DAYS_TO_LIVE | `3`                    | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE    | `0`                    | FALSE    | Create a backup on right before updating and starting your server. |
 | AUTO_BACKUP_ON_SHUTDOWN  | `0`                    | FALSE    | Create a backup on shutdown. |
-| WEBHOOK_URL              | ` `                     | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
+| AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS | `0`           | FALSE    | Will skip creating a backup if there are no players. `PUBLIC` must be set to `1` for this to work! |
+| WEBHOOK_URL              | ` `                    | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) | 
 | UPDATE_ON_STARTUP        | `1`                    | FALSE    | Tries to update the server the container is started. |
 
 ### Docker Compose
@@ -164,6 +166,7 @@ If you would like to have release notifications tied into your Discord server, c
 
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled. 
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
+
 
 ## Versions: 
 

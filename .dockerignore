@@ -4,4 +4,6 @@
 target/
 tmp/
 docs/
+.github/
+.run
 

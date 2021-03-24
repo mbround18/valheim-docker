@@ -48,6 +48,12 @@ impl UpdateInfo {
   // }
 }
 
+impl Default for UpdateInfo {
+  fn default() -> Self {
+    Self::new()
+  }
+}
+
 pub fn update_is_available() -> bool {
   let info = UpdateInfo::new();
   debug!("{:#?}", info);

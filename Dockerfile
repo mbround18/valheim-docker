@@ -46,6 +46,7 @@ ENV PUID=1000                           \
     AUTO_BACKUP_DAYS_TO_LIVE="3"        \
     AUTO_BACKUP_ON_UPDATE="0"           \
     AUTO_BACKUP_ON_SHUTDOWN="0"         \
+    AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS="0"    \
     UPDATE_ON_STARTUP="1"               \
     SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim" \
     MODS_LOCATION="/home/steam/staging/mods"                     \
@@ -56,6 +57,7 @@ ENV PUID=1000                           \
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
 COPY --from=runtime /usr/local/bin/odin /usr/local/bin/odin
+COPY --from=runtime /usr/local/bin/odin-http-server /usr/local/bin/odin-http-server
 COPY ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \
