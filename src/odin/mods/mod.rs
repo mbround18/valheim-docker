@@ -15,11 +15,11 @@ use zip::{
 };
 
 trait ZipExt {
-  fn extract_sub_dir<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()>;
+  fn extract_sub_dir_custom<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()>;
 }
 
 impl ZipExt for ZipArchive<File> {
-  fn extract_sub_dir<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()> {
+  fn extract_sub_dir_custom<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()> {
     for i in 0..self.len() {
       let mut file = self.by_index(i)?;
       let filepath = match file
@@ -31,7 +31,7 @@ impl ZipExt for ZipArchive<File> {
         Err(_) => continue,
       };
 
-      let outpath = dst_dir.as_ref().join(filepath);
+      let mut outpath = dst_dir.as_ref().join(filepath);
 
       if file.name().ends_with('/') {
         fs::create_dir_all(&outpath)?;
@@ -41,7 +41,13 @@ impl ZipExt for ZipArchive<File> {
             fs::create_dir_all(&p)?;
           }
         }
-        let mut outfile = fs::File::create(&outpath)?;
+
+        // Don't overwrite old cfg files
+        if outpath.extension().unwrap() == "cfg" && outpath.exists() {
+          outpath = outpath.with_extension("cfg.new");
+        }
+        let mut outfile = File::create(&outpath)?;
+
         io::copy(&mut file, &mut outfile)?;
       }
 
@@ -164,7 +170,7 @@ impl ValheimMod {
       (output_dir, "".to_string())
     };
 
-    match archive.extract_sub_dir(output_dir, &archive_dir) {
+    match archive.extract_sub_dir_custom(output_dir, &archive_dir) {
       Ok(_) => info!("Successfully installed {}", &self.url),
       Err(msg) => {
         error!(
