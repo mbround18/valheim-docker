@@ -1,6 +1,9 @@
 pub mod bepinex;
 
-use crate::utils::{common_paths, get_md5_hash, parse_file_name, url_parse_file_type};
+use crate::{
+  constants::SUPPORTED_FILE_TYPES,
+  utils::{common_paths, get_md5_hash, parse_file_name, url_parse_file_type},
+};
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info};
 use reqwest::Url;
@@ -244,9 +247,11 @@ impl ValheimMod {
     if let Ok(parsed_url) = Url::parse(&download_url) {
       match reqwest::blocking::get(parsed_url) {
         Ok(mut response) => {
-          debug!("Using url (in case of redirect): {}", &self.url);
-          self.url = response.url().to_string();
-          self.file_type = url_parse_file_type(&response.url().to_string());
+          if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
+            debug!("Using url (in case of redirect): {}", &self.url);
+            self.url = response.url().to_string();
+            self.file_type = url_parse_file_type(&response.url().to_string());
+          }
 
           let file_name = parse_file_name(
             &Url::parse(&self.url).unwrap(),
