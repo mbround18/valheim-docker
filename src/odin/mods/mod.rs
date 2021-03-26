@@ -46,7 +46,7 @@ impl ZipExt for ZipArchive<File> {
         }
 
         // Don't overwrite old cfg files
-        if outpath.extension().unwrap() == "cfg" && outpath.exists() {
+        if outpath.extension().unwrap_or_default() == "cfg" && outpath.exists() {
           outpath = outpath.with_extension("cfg.new");
         }
         let mut outfile = File::create(&outpath)?;
