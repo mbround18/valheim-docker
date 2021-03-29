@@ -54,6 +54,7 @@
 | MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE     | `0 1 * * *`            | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]
+| AUTO_UPDATE_PAUSE_WITH_PLAYERS | `0`              | FALSE    | Does not process an update for the server if there are players online. |
 | AUTO_BACKUP              | `0`                    | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory. |
 | AUTO_BACKUP_SCHEDULE     | `*/15 * * * *`         | FALSE    | Change to set how frequently you would like the server to backup. [If you need help figuring out a cron schedule click here].
 | AUTO_BACKUP_REMOVE_OLD   | `1`                    | FALSE    | Set to `0` to keep all backups or manually manage them. |
