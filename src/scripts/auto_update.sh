@@ -19,7 +19,7 @@ cd /home/steam/valheim || exit 1
 
 if odin update --check; then
     if [ "${PUBLIC:=0}" -eq 0 ] && [ "${AUTO_UPDATE_PAUSE_WITH_PLAYERS:=0}" -eq 1 ]; then
-      log "Woah, cannot pause auto update on your server with PUBLIC=0"
+      log "Woah, cannot pause auto update using AUTO_UPDATE_PAUSE_WITH_PLAYERS on your server with PUBLIC=0"
       log "This is because we cannot query your server via the Steam API"
     else
       if [ "${AUTO_UPDATE_PAUSE_WITH_PLAYERS:=0}" -eq 1 ]; then
