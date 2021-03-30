@@ -7,6 +7,8 @@ log() {
   PREFIX="[Valheim][steam]"
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
+
+
 if [ "${PUBLIC:=0}" -eq 0 ] && [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
   log "Woah, cannot pause backup process on a server with PUBLIC=0"
   log "This is because we cannot query your server via the Steam API"

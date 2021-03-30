@@ -12,11 +12,27 @@ line () {
 
 line
 log "Valheim Server - $(date)"
-
 cd /home/steam/valheim || exit 1
 
+
+
+
 if odin update --check; then
-    log "An update is available. Starting the update process..."
+    if [ "${PUBLIC:=0}" -eq 0 ] && [ "${AUTO_UPDATE_PAUSE_WITH_PLAYERS:=0}" -eq 1 ]; then
+      log "Woah, cannot pause auto update using AUTO_UPDATE_PAUSE_WITH_PLAYERS on your server with PUBLIC=0"
+      log "This is because we cannot query your server via the Steam API"
+    else
+      if [ "${AUTO_UPDATE_PAUSE_WITH_PLAYERS:=0}" -eq 1 ]; then
+        export ADDRESS=${ADDRESS:="127.0.0.1:2457"}
+        NUMBER_OF_PLAYERS=$(DEBUG_MODE=false odin status --address="${ADDRESS}" --json | jq -r '.players')
+        if [ "${NUMBER_OF_PLAYERS}" -gt 0 ]; then
+          log "An update is available. Skipping update, while ${NUMBER_OF_PLAYERS} players online...."
+          exit 0
+        fi
+      fi
+    fi
+
+    log "An update is available! Beginning update process..."
 
     # Store if the server is currently running
     ! pidof valheim_server.x86_64 > /dev/null
