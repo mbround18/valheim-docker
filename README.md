@@ -49,7 +49,7 @@
 | NAME                     | `Valheim Docker`       | TRUE     | The name of your server! Make it fun and unique! |
 | WORLD                    | `Dedicated`            | TRUE     | This is used to generate the name of your world. |
 | PUBLIC                   | `1`                    | FALSE    | Sets whether or not your server is public on the server list. |
-| PASSWORD                 | `12345`                | TRUE     | Set this to something unique! |
+| PASSWORD                 | ` `                    | TRUE     | Set this to something unique! |
 | TYPE                     | `Vanilla`              | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla` |
 | MODS                     | ` `                    | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
 | AUTO_UPDATE              | `0`                    | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |

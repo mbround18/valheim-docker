@@ -1,25 +1,27 @@
 use daemonize::{Daemonize, DaemonizeError};
-use log::{debug, info};
+use log::{debug, error, info};
 
 use std::{io, process::Child};
 
 use crate::mods::bepinex::BepInExEnvironment;
-use crate::utils::common_paths::saves_directory;
+use crate::utils::common_paths::{game_directory, saves_directory};
+use crate::utils::environment::fetch_var;
 use crate::{
   constants,
   executable::create_execution,
   files::{create_file, ValheimArguments},
   messages,
-  utils::{environment, get_working_dir},
+  utils::environment,
 };
+use std::process::exit;
 
 type CommandResult = io::Result<Child>;
 
 pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, DaemonizeError> {
-  let stdout = create_file(format!("{}/logs/valheim_server.log", get_working_dir()).as_str());
-  let stderr = create_file(format!("{}/logs/valheim_server.err", get_working_dir()).as_str());
+  let stdout = create_file(format!("{}/logs/valheim_server.log", game_directory()).as_str());
+  let stderr = create_file(format!("{}/logs/valheim_server.err", game_directory()).as_str());
   Daemonize::new()
-    .working_directory(get_working_dir())
+    .working_directory(game_directory())
     .user("steam")
     .group("steam")
     .stdout(stdout)
@@ -44,28 +46,47 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
   info!("--------------------------------------------------------------------------------------------------------------");
   let ld_library_path_value = environment::fetch_multiple_var(
     constants::LD_LIBRARY_PATH_VAR,
-    format!("{}/linux64", get_working_dir()).as_str(),
+    format!("{}/linux64", game_directory()).as_str(),
   );
   debug!("Setting up base command");
-  let base_command = command
+  let mut base_command = command
+    // Extra launch arguments
+    .arg(fetch_var(
+      "SERVER_EXTRA_LAUNCH_ARGS",
+      "-nographics -batchmode",
+    ))
+    // Required vars
     .args(&[
-      "-nographics",
-      "-batchmode",
       "-port",
       &config.port.as_str(),
       "-name",
       &config.name.as_str(),
       "-world",
       &config.world.as_str(),
-      "-password",
-      &config.password.as_str(),
       "-public",
       &config.public.as_str(),
-      "-savedir",
-      &saves_directory(),
     ])
     .env("SteamAppId", environment::fetch_var("APPID", "892970"))
-    .current_dir(get_working_dir());
+    .current_dir(game_directory());
+
+  let is_public = config.public.eq("1");
+  let is_vanilla = fetch_var("TYPE", "vanilla").eq_ignore_ascii_case("vanilla");
+  let no_password = config.password.is_empty();
+
+  // If no password env variable
+  if !is_public && !is_vanilla && no_password {
+    debug!("No password found, skipping password flag.")
+  } else if no_password && (is_public || is_vanilla) {
+    error!("Cannot run you server with no password! PUBLIC must be 0 and cannot be a Vanilla type server.");
+    exit(1)
+  } else {
+    debug!("Password found, adding password flag.");
+    base_command = base_command.args(&["-password", &config.password.as_str()]);
+  }
+
+  // Tack on save dir at the end.
+  base_command = base_command.args(&["-savedir", &saves_directory()]);
+
   info!("Executable: {}", &config.command);
   info!("Launching Command...");
   let bepinex_env = BepInExEnvironment::new();
