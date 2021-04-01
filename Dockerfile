@@ -35,7 +35,7 @@ ENV PUID=1000                           \
     NAME="Valheim Docker"               \
     WORLD="Dedicated"                   \
     PUBLIC="1"                          \
-    PASSWORD="12345"                    \
+    PASSWORD=""                         \
     # Auto Update Configs
     AUTO_UPDATE="0"                     \
     AUTO_UPDATE_SCHEDULE="0 1 * * *"    \

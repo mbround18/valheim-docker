@@ -22,7 +22,7 @@ pub fn fetch_public_address() -> Result<SocketAddrV4, AddrParseError> {
 fn parse_address(args: &ArgMatches) -> Result<SocketAddrV4, AddrParseError> {
   let has_address = args.is_present("address");
   if has_address {
-    SocketAddrV4::from_str(&parse_arg_variable(args, "address", "".to_string()))
+    SocketAddrV4::from_str(&parse_arg_variable(args, "address", ""))
   } else {
     fetch_public_address()
   }

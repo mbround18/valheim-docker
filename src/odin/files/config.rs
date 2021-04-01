@@ -16,11 +16,10 @@ pub fn load_config() -> ValheimArguments {
   let config = read_config(file);
 
   debug!("Checking password compliance...");
-  if config.password.len() < 5 {
+  if config.password.len() < 5 && !config.password.is_empty() {
     error!("The supplied password is too short! It must be 5 characters or greater!");
     exit(1);
   }
-
   config
 }
 
@@ -47,7 +46,7 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
   let command = match fs::canonicalize(PathBuf::from(parse_arg_variable(
     args,
     "server_executable",
-    server_executable.to_string(),
+    server_executable,
   ))) {
     Ok(command_path) => command_path.to_str().unwrap().to_string(),
     Err(_) => {
@@ -57,11 +56,11 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
   };
 
   let content = &ValheimArguments {
-    port: parse_arg_variable(args, "port", "2456".to_string()),
-    name: parse_arg_variable(args, "name", "Valheim powered by Odin".to_string()),
-    world: parse_arg_variable(args, "world", "Dedicated".to_string()),
-    public: parse_arg_variable(args, "public", "1".to_string()),
-    password: parse_arg_variable(args, "password", "12345".to_string()),
+    port: parse_arg_variable(args, "port", "2456"),
+    name: parse_arg_variable(args, "name", "Valheim powered by Odin"),
+    world: parse_arg_variable(args, "world", "Dedicated"),
+    public: parse_arg_variable(args, "public", "1"),
+    password: parse_arg_variable(args, "password", ""),
     command,
   };
   let content_to_write = serde_json::to_string(content).unwrap();
