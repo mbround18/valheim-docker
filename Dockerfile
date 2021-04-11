@@ -71,7 +71,7 @@ RUN usermod -u ${PUID} steam                            \
 
 
 HEALTHCHECK --interval=1m --timeout=3s \
-  CMD pidof valheim_server.x86_64 || exit 1
+    CMD pidof valheim_server.x86_64 || exit 1
 
 ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
 CMD ["/bin/bash", "/home/steam/scripts/start_valheim.sh"]

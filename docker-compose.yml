@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: ./Dockerfile.odin
     volumes:
-    - odin-output:/data/odin/target/release
+      - odin-output:/data/odin/target/release
   valheim:
     depends_on:
       - odin
@@ -26,10 +26,10 @@ services:
       - "2457:2457/udp"
       - "2458:2458/udp"
     volumes:
-    - ./tmp/saves:/home/steam/.config/unity3d/IronGate/Valheim
-    - ./tmp/server:/home/steam/valheim
-    - ./tmp/backups:/home/steam/backups
-    - odin-output:/home/steam/.odin
+      - ./tmp/saves:/home/steam/.config/unity3d/IronGate/Valheim
+      - ./tmp/server:/home/steam/valheim
+      - ./tmp/backups:/home/steam/backups
+      - odin-output:/home/steam/.odin
 
 volumes:
   odin-output:
