@@ -38,9 +38,13 @@ docker-compose exec valheim bash
 2. Stop the valheim server on both machines, `odin stop`
 3. Cd into your saves dir with `cd /home/steam/.config/unity3d/IronGate/Valheim` on both container A and container B.
 4. With croc already installed, run `croc send ./*` on container A.
+
    ![croc send command](../assets/transfer-file-demo/send-croc.png)
+
 5. Once it spits out the transfer key, copy the transfer key to container B and hit the enter key.
+
    ![croc send command success](../assets/transfer-file-demo/send-croc-success.png)
+
 6. You can now safely shutdown container A and restart container B.
 
 [schollz/croc]: https://github.com/schollz/croc
