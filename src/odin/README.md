@@ -30,7 +30,7 @@ cargo install --git https://github.com/mbround18/valheim-docker.git --branch mai
 
 ## Usage
 
-![Main Menu](./assets/main-menu.png)
+![Main Menu](../../docs/assets/main-menu.png)
 
 ### Install Valheim
 
@@ -38,7 +38,7 @@ cargo install --git https://github.com/mbround18/valheim-docker.git --branch mai
 odin install
 ```
 
-![Install Menu](./assets/install-menu.png)
+![Install Menu](../../docs/assets/install-menu.png)
 
 ### Start Valheim
 
@@ -46,7 +46,7 @@ odin install
 odin start
 ```
 
-![Start Menu](./assets/start-menu.png)
+![Start Menu](../../docs/assets/start-menu.png)
 
 ### Stop Valheim
 
@@ -54,7 +54,7 @@ odin start
 odin stop
 ```
 
-![Install Menu](./assets/stop-menu.png)
+![Install Menu](../../docs/assets/stop-menu.png)
 
 ### Status
 

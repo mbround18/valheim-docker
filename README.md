@@ -160,7 +160,7 @@ services:
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
 
-[Click here to see advanced environment variables for Odin](./docs/odin.md)
+[Click here to see advanced environment variables for Odin](src/odin/README.md)
 
 ### [BepInEx Support](./docs/bepinex.md)
 
@@ -252,7 +252,7 @@ If you would like to have release notifications tied into your Discord server, c
 [#3]: https://github.com/mbround18/valheim-docker/issues/3
 
 [//]: <> (Links below...................)
-[Odin]: ./docs/odin.md
+[Odin]: src/odin/README.md
 [Valheim]: https://www.valheimgame.com/
 [Getting started with mods]: ./docs/getting*started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1*\_\_\_\_\*
