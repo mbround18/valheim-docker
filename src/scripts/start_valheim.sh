@@ -123,7 +123,7 @@ if [ ! "${TYPE}" = "vanilla" ]; then
 fi
 
 if [ -n "${HTTP_PORT}" ]; then
-  odin-http-server &
+  huginn &
   export ODIN_HTTP_SERVER_PID=$!
 fi
 

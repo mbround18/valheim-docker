@@ -1,11 +1,21 @@
 [package]
-name = "odin-http-server"
+name = "huginn"
 version = "0.1.0"
 authors = ["mbround18"]
 edition = "2018"
+license = "BSD-3-Clause License"
+description = "Valheim http status"
+readme = "README.md"
+homepage = "https://github.com/mbround18/valheim-docker"
+repository = "https://github.com/mbround18/valheim-docker"
+include = [
+  "**/*.rs",
+  "**/*.yaml",
+  "Cargo.toml",
+]
 
 [[bin]]
-name = "odin-http-server"
+name = "huginn"
 path = "main.rs"
 
 [dependencies]
