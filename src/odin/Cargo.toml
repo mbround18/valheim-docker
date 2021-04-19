@@ -10,6 +10,11 @@ homepage = "https://github.com/mbround18/valheim-docker"
 repository = "https://github.com/mbround18/valheim-docker"
 keywords = ["cli", "valheim", "gameserver"]
 categories = ["command-line-utilities"]
+include = [
+  "**/*.rs",
+  "**/*.yaml",
+  "Cargo.toml",
+]
 
 
 [[bin]]
