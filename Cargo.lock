@@ -523,6 +523,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "494b4d60369511e7dea41cf646832512a94e542f68bb9c49e54518e0f468eb47"
 
 [[package]]
+name = "huginn"
+version = "0.1.0"
+dependencies = [
+ "cargo-husky",
+ "log",
+ "odin",
+ "tokio",
+ "warp",
+]
+
+[[package]]
 name = "hyper"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -809,17 +820,6 @@ dependencies = [
  "tar",
  "which",
  "zip",
-]
-
-[[package]]
-name = "odin-http-server"
-version = "0.1.0"
-dependencies = [
- "cargo-husky",
- "log",
- "odin",
- "tokio",
- "warp",
 ]
 
 [[package]]

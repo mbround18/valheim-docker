@@ -2,19 +2,26 @@
 
 # [Valheim]
 
-<a href="https://hub.docker.com/r/mbround18/valheim">
-    <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt="">
-</a>
+<a href="https://hub.docker.com/r/mbround18/valheim"><img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt=""></a>
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt=""></a>
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt=""></a>
 
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt="">
-</a>
+## Running on Linux Server
 
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt="">
-</a>
+This repo bundles its tools in a way that you can run them without having to install docker!
+If you purely want to run this on a Linux based system, without docker, take a look at the links below <3
 
-## Docker
+- [Installing & Using Odin](./src/odin/README.md)
+  The tool [Odin] runs the show and does almost all the heavy lifting in this repo. It starts, stops, and manages your Valheim server instance.
+  
+- [Installing & Using Huginn](./src/huginn/README.md)
+  Looking for a way to view the status of your server? Look no further than [Huginn]! 
+  The [Huginn] project is a http server built on the same source as [Odin] and uses these capabilities to expose a few http endpoints.
+  
+> Using the binaries to run on an Ubuntu Server, you will have to be more involved and configure a few things manually. 
+> If you want a managed, easy one-two punch to manage your server. Then look at the Docker section <3 
+
+## Running with Docker
 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 >
@@ -50,6 +57,7 @@
 | WEBHOOK_URL       | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
 | UPDATE_ON_STARTUP | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                          |
 
+
 #### Container Env Variables
 
 | Variable | Default               | Required | Description                                                                                                                                                                                           |
@@ -82,7 +90,7 @@ Auto update job, queries steam and compares it against your internal steam files
 
 Auto backup job produces an output of a `*.tar.gz` file which should average around 30mb for a world that has an average of 4 players consistently building on. You should be aware that if you place the server folder in your saves folder your backups could become astronomical in size. This is a common problem that others have observed, to avoid this please follow the guide for how volume mounts should be made in the `docker-compose.yml`.
 
-#### Http Server
+#### [Huginn] Http Server
 
 | Variable  | Default               | Required | Description                                                                                                                  |
 | --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -159,7 +167,7 @@ services:
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
 
-[Click here to see advanced environment variables for Odin](./docs/odin.md)
+[Click here to see advanced environment variables for Odin](src/odin/README.md)
 
 ### [BepInEx Support](./docs/bepinex.md)
 
@@ -183,19 +191,14 @@ This is a tutorial of a recommended path to transfering files. This can be done 
 
 ## Sponsors
 
-<a href="https://github.com/AtroposOrbis">
-  <img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4" />
-</a>
-<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/13275296?s=460&v=4" /></a>
-<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50 /></a>
+<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4"  alt="AtroposOrbis"/></a>
+<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
 
 ## Release Notifications
 
 If you would like to have release notifications tied into your Discord server, click here:
 
-<a href="https://discord.gg/3kTNUZz276">
-  <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"  />
-</a>
+<a href="https://discord.gg/3kTNUZz276"><img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"   alt="Discord Banner"/></a>
 
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
@@ -230,7 +233,7 @@ If you would like to have release notifications tied into your Discord server, c
   - Has a bug where the script has two entries for the world argument.
 - 1.0.0 (Stable):
   - It works! It will start your server and stop when you shut down.
-  - This supports passing in environment variables or arguments to `odin`
+  - These supports passing in environment variables or arguments to `odin`
   - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3].
 
 [//]: <> (Github Issues below...........)
@@ -251,7 +254,8 @@ If you would like to have release notifications tied into your Discord server, c
 [#3]: https://github.com/mbround18/valheim-docker/issues/3
 
 [//]: <> (Links below...................)
-[Odin]: ./docs/odin.md
+[Odin]: src/odin/README.md
+[Huginn]: src/huginn/README.md
 [Valheim]: https://www.valheimgame.com/
 [Getting started with mods]: ./docs/getting*started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1*\_\_\_\_\*

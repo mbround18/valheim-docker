@@ -3,6 +3,19 @@ name = "odin"
 version = "1.4.0"
 authors = ["mbround18"]
 edition = "2018"
+license = "BSD-3-Clause License"
+description = "Valheim server manager"
+readme = "README.md"
+homepage = "https://github.com/mbround18/valheim-docker"
+repository = "https://github.com/mbround18/valheim-docker"
+keywords = ["cli", "valheim", "gameserver"]
+categories = ["command-line-utilities"]
+include = [
+  "**/*.rs",
+  "**/*.yaml",
+  "Cargo.toml",
+]
+
 
 [[bin]]
 name = "odin"

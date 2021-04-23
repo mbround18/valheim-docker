@@ -71,12 +71,12 @@ condition = { profiles = ["production"] }
 command = "cargo"
 args = ["build", "--release", "--bin", "odin"]
 
-# Run http-server release
+# Run huginn release
 [tasks.release-http-server]
 workspace = false
 condition = { profiles = ["production"] }
 command = "cargo"
-args = ["build", "--release", "--bin", "odin-http-server"]
+args = ["build", "--release", "--bin", "huginn"]
 
 [tasks.release]
 workspace = false

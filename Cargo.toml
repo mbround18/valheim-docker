@@ -2,7 +2,7 @@
 
 members = [
   "src/odin",
-  "src/http-server"
+  "src/huginn"
 ]
 
 [profile.dev]
