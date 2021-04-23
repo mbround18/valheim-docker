@@ -13,13 +13,12 @@ If you purely want to run this on a Linux based system, without docker, take a l
 
 - [Installing & Using Odin](./src/odin/README.md)
   The tool [Odin] runs the show and does almost all the heavy lifting in this repo. It starts, stops, and manages your Valheim server instance.
-  
 - [Installing & Using Huginn](./src/huginn/README.md)
-  Looking for a way to view the status of your server? Look no further than [Huginn]! 
+  Looking for a way to view the status of your server? Look no further than [Huginn]!
   The [Huginn] project is a http server built on the same source as [Odin] and uses these capabilities to expose a few http endpoints.
-  
-> Using the binaries to run on an Ubuntu Server, you will have to be more involved and configure a few things manually. 
-> If you want a managed, easy one-two punch to manage your server. Then look at the Docker section <3 
+
+> Using the binaries to run on an Ubuntu Server, you will have to be more involved and configure a few things manually.
+> If you want a managed, easy one-two punch to manage your server. Then look at the Docker section <3
 
 ## Running with Docker
 
@@ -56,7 +55,6 @@ If you purely want to run this on a Linux based system, without docker, take a l
 | MODS              | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                       |
 | WEBHOOK_URL       | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
 | UPDATE_ON_STARTUP | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                          |
-
 
 #### Container Env Variables
 
@@ -202,6 +200,10 @@ If you would like to have release notifications tied into your Discord server, c
 
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
+
+# Contributions
+
+- @some_guy - design, doc
 
 ## Versions
 

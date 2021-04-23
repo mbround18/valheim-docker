@@ -1,0 +1,13 @@
+{
+  "name": "valheim",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:mbround18/valheim-docker.git",
+  "author": "mbround18 <12646562+mbround18@users.noreply.github.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@auto-it/all-contributors": "^10.25.1",
+    "@auto-it/git-tag": "^10.25.1",
+    "auto": "^10.25.1"
+  }
+}
