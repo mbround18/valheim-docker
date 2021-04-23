@@ -12,9 +12,6 @@ on:
   # Run tests for any PRs.
   pull_request:
 
-env:
-  DOCKER_IMAGE_BASE: mbround18
-
 jobs:
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
@@ -36,7 +33,7 @@ jobs:
         with:
           file: ./Dockerfile.${{ matrix.image }}
           push: false
-          tags: ${DOCKER_IMAGE_BASE}/${{ matrix.image }}:latest  
+          tags: mbround18/${{ matrix.image }}:latest  
           build-args: |
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
@@ -48,8 +45,10 @@ jobs:
     if: github.event_name == 'push'
     strategy:
       fail-fast: true
+      max-parallel: 0
       matrix: 
         image: [odin, valheim]
+
     steps:
       - uses: actions/checkout@v2
         
@@ -59,8 +58,8 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ${DOCKER_IMAGE_BASE}/${{ matrix.image }}
-            ghcr.io/${DOCKER_IMAGE_BASE}/${{ matrix.image }}
+            mbround18/${{ matrix.image }}
+            ghcr.io/mbround18/${{ matrix.image }}
 
           # generate Docker tags based on the following events/attributes
           tags: |
@@ -112,11 +111,11 @@ jobs:
           cmd: auto shipit
 
       - name: Send Release Notification
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && "${{  matrix.image }}" == "valheim"
         run: |
           # Send release notification
           docker run --rm \
-          -e NAME="New Version: ${DOCKER_IMAGE_BASE}:${VERSION}" \
-          mbround18/valheim-odin:$VERSION notify "New release of ${DOCKER_IMAGE_BASE}:${VERSION} !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
+          -e NAME="New Version: ${{ matrix.image }}:latest" \
+          mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
           --webhook "${{ secrets.RELEASE_WEBHOOK }}"
       
