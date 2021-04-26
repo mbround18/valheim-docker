@@ -20,7 +20,7 @@ services:
       AUTO_UPDATE_SCHEDULE: "0 1 * * *"
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.valheim
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"
