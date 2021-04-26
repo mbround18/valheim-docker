@@ -39,6 +39,11 @@ jobs:
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
+      
+      - name: Finalization
+        run: echo "Finalized"
+        
+    
 
   push:
     needs: test
