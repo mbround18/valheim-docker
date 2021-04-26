@@ -126,6 +126,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
+
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: install
@@ -133,5 +134,3 @@ jobs:
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: auto shipit
-
-
