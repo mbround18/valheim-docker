@@ -11,15 +11,18 @@ on:
 
   # Run tests for any PRs.
   pull_request:
+    
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
-      max-parallel: 0
+      max-parallel: 1
       matrix: 
         image: [odin, valheim]
     steps:
@@ -43,15 +46,13 @@ jobs:
       - name: Finalization
         run: echo "Finalized"
         
-    
-
   push:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     strategy:
       fail-fast: true
-      max-parallel: 0
+      max-parallel: 1
       matrix: 
         image: [odin, valheim]
 
