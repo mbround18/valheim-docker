@@ -126,9 +126,18 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v2
-      - uses: borales/actions-yarn@v2.0.0
+
+      - uses: actions/setup-node@v2
         with:
-          cmd: install
-      - uses: borales/actions-yarn@v2.0.0
+          node-version: '14'
+
+      - uses: actions/cache@v2
         with:
-          cmd: auto shipit
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }
+
+      - name: Yarn Install
+        run: yarn install
+
+      - name: Ship It!
+        run: yarn auto shipit
