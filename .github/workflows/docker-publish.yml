@@ -67,6 +67,8 @@ jobs:
           images: |
             mbround18/${{ matrix.image }}
             ghcr.io/mbround18/${{ matrix.image }}
+          flavor: |
+            latest=true
 
           # generate Docker tags based on the following events/attributes
           tags: |
@@ -109,35 +111,15 @@ jobs:
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
 
-      - name: Send Release Notification
-        if: github.event_name != 'pull_request' && "${{ matrix.image }}" == "valheim"
-        run: |
-          # Send release notification
-          docker run --rm \
-          -e NAME="New Version: ${{ matrix.image }}:latest" \
-          mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
-          --webhook "${{ secrets.RELEASE_WEBHOOK }}"
-
-  auto-shipit:
-    needs: build
-    env:
-      GH_TOKEN: "${{ secrets.GH_TOKEN }}"
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - uses: actions/cache@v2
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
-
-      - name: Yarn Install
-        run: yarn install
-
-      - name: Ship It!
-        run: yarn auto shipit
+#      - name: Send Release Notification
+#        if: github.event_name != 'pull_request' && "${{ matrix.image }}" == "valheim"
+#        run: |
+#          if [ "${{ matrix.image }}" != "valheim" ]; then
+#            exit 0
+#          fi
+#
+#          # Send release notification
+#          docker run --rm \
+#          -e NAME="New Version: mbround18/${{ matrix.image }}:latest" \
+#          mbround18/odin:latest notify "New release of mbround18/${{ matrix.image }}:latest !! Please use pull the latest mbround18/${{ matrix.image }}:latest. Then restart your server via your preferred method." \
+#          --webhook "${{ secrets.RELEASE_WEBHOOK }}"
