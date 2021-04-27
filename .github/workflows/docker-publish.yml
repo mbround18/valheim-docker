@@ -11,7 +11,7 @@ on:
 
   # Run tests for any PRs.
   pull_request:
-    
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -118,17 +118,17 @@ jobs:
           mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
           --webhook "${{ secrets.RELEASE_WEBHOOK }}"
 
-
   auto-shipit:
+    needs: build
     env:
       GH_TOKEN: "${{ secrets.GH_TOKEN }}"
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
+      - uses: actions/checkout@v2
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: install
-          
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: auto shipit
