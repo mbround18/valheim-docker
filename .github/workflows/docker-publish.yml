@@ -68,7 +68,7 @@ jobs:
             mbround18/${{ matrix.image }}
             ghcr.io/mbround18/${{ matrix.image }}
           flavor: |
-            latest=true
+            latest=false
 
           # generate Docker tags based on the following events/attributes
           tags: |
@@ -104,7 +104,7 @@ jobs:
           context: .
           file: ./Dockerfile.${{ matrix.image }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: mbround18/${{ matrix.image }}:latest,ghcr.io/mbround18/${{ matrix.image }}:latest,${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             "GITHUB_SHA=${GITHUB_SHA}"
