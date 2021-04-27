@@ -121,7 +121,7 @@ jobs:
           # Send release notification
           docker run --rm \
           -e NAME="New Version: mbround18/${{ matrix.image }}:latest" \
-          mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
+          mbround18/odin:latest notify "New release of mbround18/${{ matrix.image }}:latest !! Please use pull the latest mbround18/${{ matrix.image }}:latest. Then restart your server via your preferred method." \
           --webhook "${{ secrets.RELEASE_WEBHOOK }}"
 
   auto-shipit:
