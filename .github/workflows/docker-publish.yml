@@ -119,14 +119,12 @@ jobs:
           --webhook "${{ secrets.RELEASE_WEBHOOK }}"
 
 
-  release:
+  auto-shipit:
     env:
       GH_TOKEN: "${{ secrets.GH_TOKEN }}"
-    needs: build
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
-
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: install
