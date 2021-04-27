@@ -1,7 +1,7 @@
 version: "3"
 services:
   odin:
-    image: mbround18/valheim-odin:latest
+    image: mbround18/odin:latest
     build:
       context: .
       dockerfile: ./Dockerfile.odin
