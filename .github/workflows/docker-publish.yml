@@ -109,6 +109,22 @@ jobs:
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
 
+      - name: Send Release Notification
+        if: github.event_name != 'pull_request' && "${{ matrix.image }}" == "valheim"
+        run: |
+          # Send release notification
+          docker run --rm \
+          -e NAME="New Version: ${{ matrix.image }}:latest" \
+          mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
+          --webhook "${{ secrets.RELEASE_WEBHOOK }}"
+
+
+  auto-shipit:
+    env:
+      GH_TOKEN: "${{ secrets.GH_TOKEN }}"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: install
@@ -116,13 +132,3 @@ jobs:
       - uses: borales/actions-yarn@v2.0.0
         with:
           cmd: auto shipit
-
-      - name: Send Release Notification
-        if: github.event_name != 'pull_request' && "${{  matrix.image }}" == "valheim"
-        run: |
-          # Send release notification
-          docker run --rm \
-          -e NAME="New Version: ${{ matrix.image }}:latest" \
-          mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
-          --webhook "${{ secrets.RELEASE_WEBHOOK }}"
-      
