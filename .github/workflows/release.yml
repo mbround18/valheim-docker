@@ -27,5 +27,4 @@ jobs:
       - name: Create Release
         run: |
           yarn install --frozen-lockfile
-          yarn build
-          npx auto shipit
+          yarn auto shipit
