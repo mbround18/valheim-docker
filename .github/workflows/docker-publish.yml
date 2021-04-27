@@ -126,8 +126,7 @@ jobs:
 
   auto-shipit:
     needs: build
-    env:
-      GH_TOKEN: "${{ secrets.GH_TOKEN }}"
+
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
@@ -143,7 +142,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
 
       - name: Yarn Install
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
       - name: Ship It!
         run: yarn auto shipit
