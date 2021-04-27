@@ -67,6 +67,8 @@ jobs:
           images: |
             mbround18/${{ matrix.image }}
             ghcr.io/mbround18/${{ matrix.image }}
+          flavor: |
+            latest=true
 
           # generate Docker tags based on the following events/attributes
           tags: |
@@ -112,9 +114,13 @@ jobs:
       - name: Send Release Notification
         if: github.event_name != 'pull_request' && "${{ matrix.image }}" == "valheim"
         run: |
+          if [ "${{ matrix.image }}" != "valheim" ]; then
+            exit 0
+          fi
+
           # Send release notification
           docker run --rm \
-          -e NAME="New Version: ${{ matrix.image }}:latest" \
+          -e NAME="New Version: mbround18/${{ matrix.image }}:latest" \
           mbround18/odin:latest notify "New release of ${{ matrix.image }}:latest !! Please use pull the latest ${DOCKER_IMAGE_BASE}:${VERSION}. Then restart your server via your preferred method." \
           --webhook "${{ secrets.RELEASE_WEBHOOK }}"
 
