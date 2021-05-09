@@ -1,3 +1,29 @@
+# v1.3.3 (Sun May 09 2021)
+
+#### 🐛 Bug Fix
+
+- trying release [#357](https://github.com/mbround18/valheim-docker/pull/357) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
+# v1.3.2 (Sun May 09 2021)
+
+#### 🐛 Bug Fix
+
+- Update Rust crate sysinfo to 0.17.3 [#355](https://github.com/mbround18/valheim-docker/pull/355) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.3.1 (Sun May 09 2021)
 
 #### 🐛 Bug Fix
