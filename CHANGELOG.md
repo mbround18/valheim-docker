@@ -1,3 +1,29 @@
+# v1.3.4 (Sun May 09 2021)
+
+#### 🐛 Bug Fix
+
+- Fix for dependent image [#360](https://github.com/mbround18/valheim-docker/pull/360) ([@mbround18](https://github.com/mbround18))
+
+#### 📝 Documentation
+
+- [ImgBot] Optimize images [#329](https://github.com/mbround18/valheim-docker/pull/329) ([@ImgBotApp](https://github.com/ImgBotApp) [@mbround18](https://github.com/mbround18) [@imgbot[bot]](https://github.com/imgbot[bot]))
+
+#### 🔩 Dependency Updates
+
+- Update Rust crate which to 4.1.0 [#358](https://github.com/mbround18/valheim-docker/pull/358) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update yogevbd/enforce-label-action action to v2.2.2 [#359](https://github.com/mbround18/valheim-docker/pull/359) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Pin dependency @types/node to 15.0.2 [#354](https://github.com/mbround18/valheim-docker/pull/354) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 5
+
+- [@imgbot[bot]](https://github.com/imgbot[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Imgbot ([@ImgBotApp](https://github.com/ImgBotApp))
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.3.3 (Sun May 09 2021)
 
 #### 🐛 Bug Fix
