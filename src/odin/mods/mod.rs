@@ -36,6 +36,8 @@ impl ZipExt for ZipArchive<File> {
 
       let mut outpath = dst_dir.as_ref().join(filepath);
 
+      debug!("Extracting file: {:?}", outpath);
+
       if file.name().ends_with('/') {
         fs::create_dir_all(&outpath)?;
       } else {
@@ -47,11 +49,13 @@ impl ZipExt for ZipArchive<File> {
 
         // Don't overwrite old cfg files
         if outpath.extension().unwrap_or_default() == "cfg" && outpath.exists() {
+          debug!("File is config with already exiting destination! Adding '.new'");
           outpath = outpath.with_extension("cfg.new");
         }
-        let mut outfile = File::create(&outpath)?;
 
+        let mut outfile = File::create(&outpath)?;
         io::copy(&mut file, &mut outfile)?;
+        debug!("Extracted file {:?}", outpath);
       }
 
       // Get and Set permissions
@@ -94,7 +98,7 @@ impl ValheimMod {
   }
 
   fn try_parse_manifest(&self, archive: &mut ZipArchive<File>) -> Result<Manifest, ZipError> {
-    debug!("Parsing manifest...");
+    debug!("Parsing 'manifest.json' ...");
     let manifest = archive.by_name("manifest.json")?;
     Ok(serde_json::from_reader(manifest).expect("Failed deserializing manifest"))
   }
@@ -132,6 +136,7 @@ impl ValheimMod {
 
         // It's a mod framework based on a specific name and if it has a matching directory in the
         // archive
+        debug!("Validating if file is a framework");
         mod_dir_exists && (name == "BepInExPack_Valheim" || name == "BepInEx_Valheim_Full")
       }
       None => archive
@@ -147,6 +152,7 @@ impl ValheimMod {
     // thunderstore where a manifest is provided, or not.
     let (output_dir, archive_dir) = if self.is_mod_framework(archive) {
       info!("Installing Framework...");
+      debug!("Zip file is a framework, processing it in parts.");
       let output_dir = PathBuf::from(&common_paths::game_directory());
 
       // All frameworks from thunderstore just need the directory matching the name extracted
@@ -199,12 +205,13 @@ impl ValheimMod {
     }
 
     if self.file_type.eq("dll") {
+      debug!("Copying downloaded dll to BepInEx plugin directory...");
       self.copy_single_file(
         &self.staging_location,
         &common_paths::bepinex_plugin_directory(),
       );
     } else if self.file_type.eq("cfg") {
-      info!("Copying single cfg into config directory");
+      debug!("Copying single cfg into config directory");
       let src_file_path = &self.staging_location;
       let cfg_file_name = self.staging_location.file_name().unwrap();
 

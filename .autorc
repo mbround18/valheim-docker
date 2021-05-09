@@ -7,5 +7,5 @@
   "repo": "valheim-docker",
   "name": "mbround18",
   "email": "12646562+mbround18@users.noreply.github.com",
-  "onlyPublishWithReleaseLabel": true
+  "onlyPublishWithReleaseLabel": false
 }
