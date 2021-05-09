@@ -210,53 +210,12 @@ If you would like to have release notifications tied into your Discord server, c
 
 ## Versions
 
-- latest (Stable):
-  - [#100] Added backup feature to run based on cronjob.
-  - [#148] Added Mod support
-  - [#158] Added webhook configuration and documentation updates
-  - [#236] Now [publish to github registry as well](https://github.com/users/mbround18/packages/container/package/valheim)
-  - [#276] Advanced mod support with auto installer
-- 1.2.0 (Stable):
-  - Readme update to include the versions section and environment variables section.
-  - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
-  - [#18] Fixed issue with the timezone not persisting.
-  - To exec into the container you now have to include the `-u|--user` argument to access steam directly. Example `docker-compose exec --user steam valheim bash`
-  - There is now a `dry-run` command argument on `odin` to preview what the command would do.
-  - You can run with `-d|--debug` to get verbose logging of what `odin` is doing.
-  - [#11] Added check for length of password and fail on odin install or odin stop failures.
-  - [#24] Added public variable to dockerfile and odin
-  - [#35] Fix for the server to now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
-  - [#53] Formatted scripts to be more useful and added timezone scheduling.
-  - [#77] Fix auto update not acknowledging variables and added odin to system bin.
-  - [#89] Daemonized the server process by using rust specific bindings rather than dropping down to shell.
-- 1.1.1 (Stable):
-  - Includes PR [#10] to fix the double world argument.
-- 1.1.0 (Stable):
-  - Includes a fix for [#3] and [#8].
-  - Improves the script interface and separation of concerns, files now have a respective code file that supports interactions for cleaner development experience.
-  - Docker image is cleaned up to provide a better usage experience. There is now an `AUTO_UPDATE` feature.
-  - Has a bug where the script has two entries for the world argument.
-- 1.0.0 (Stable):
-  - It works! It will start your server and stop when you shut down.
-  - These supports passing in environment variables or arguments to `odin`
-  - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3].
-
-[//]: <> (Github Issues below...........)
-[#276]: https://github.com/mbround18/valheim-docker/pull/276
-[#236]: https://github.com/mbround18/valheim-docker/pull/236
-[#158]: https://github.com/mbround18/valheim-docker/pull/158
-[#148]: https://github.com/mbround18/valheim-docker/pull/148
-[#100]: https://github.com/mbround18/valheim-docker/pull/100
-[#89]: https://github.com/mbround18/valheim-docker/pull/89
-[#77]: https://github.com/mbround18/valheim-docker/pull/77
-[#53]: https://github.com/mbround18/valheim-docker/pull/53
-[#35]: https://github.com/mbround18/valheim-docker/issues/24
-[#24]: https://github.com/mbround18/valheim-docker/issues/24
-[#18]: https://github.com/mbround18/valheim-docker/pull/18
-[#11]: https://github.com/mbround18/valheim-docker/issues/11
-[#10]: https://github.com/mbround18/valheim-docker/pull/10
-[#8]: https://github.com/mbround18/valheim-docker/issues/8
-[#3]: https://github.com/mbround18/valheim-docker/issues/3
+- latest (Stable): Mod support! and cleaned up the code base.
+- 1.3.0 (Does Not Exist): The tag exists here in GitHub but this was a ghost release.
+- 1.2.0 (Stable): Added additional stop features and sig for stopping. 
+- 1.1.1 (Stable): Patch to fix arguments
+- 1.1.0 (Unstable): Cleaned up image and made it faster
+- 1.0.0 (Stable): It works! 
 
 [//]: <> (Links below...................)
 [Odin]: src/odin/README.md

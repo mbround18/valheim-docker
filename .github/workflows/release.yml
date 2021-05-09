@@ -1,9 +1,7 @@
 name: Release
 
-on:
-  push:
-    branches:
-      - main
+on: [push]
+
 env:
   GH_TOKEN: "${{ secrets.GH_TOKEN }}"
 
@@ -30,8 +28,8 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Temporarily disable "include administrators" branch protection
-        uses: benjefferies/branch-protection-bot@master
-        if: always()
+        uses: benjefferies/branch-protection-bot@1.0.5
+        if: ${{ always() && github.ref == 'refs/heads/main' }}
         with:
           branch: main
           access-token: ${{ secrets.GH_TOKEN }}
@@ -41,8 +39,9 @@ jobs:
           yarn auto shipit
 
       - name: Enable "include administrators" branch protection
-        uses: benjefferies/branch-protection-bot@master
-        if: always()  # Force to always run this step to ensure "include administrators" is always turned back on
+        uses: benjefferies/branch-protection-bot@1.0.5
+        # Force to always run this step to ensure "include administrators" is always turned back on
+        if: ${{ always() && github.ref == 'refs/heads/main' }}
         with:
           branch: main
           access-token: ${{ secrets.GH_TOKEN }}
