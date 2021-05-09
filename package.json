@@ -6,8 +6,8 @@
   "author": "mbround18 <12646562+mbround18@users.noreply.github.com>",
   "license": "MIT",
   "devDependencies": {
-    "@auto-it/all-contributors": "^10.25.1",
-    "@auto-it/git-tag": "^10.25.1",
-    "auto": "^10.25.1"
+    "@auto-it/all-contributors": "^10.27.0",
+    "@auto-it/git-tag": "^10.27.0",
+    "auto": "^10.27.0"
   }
 }
