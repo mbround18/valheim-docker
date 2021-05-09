@@ -1,5 +1,7 @@
 # BepInEx Support
 
+> [As of March 2021, this repo now has an env flag to run with BepInEx or ValheimPlus Click Here to find out more](tutorials/getting_started_with_mods.md)
+
 ## Installing BepInEx
 
 > Due to the fact that there are so many variants of installing and running BepInEx; we will be covering only the basics.
@@ -57,4 +59,4 @@
 | DYLD_LIBRARY_PATH             | `"/home/steam/valheim/doorstop_libs"`                    | TRUE     | Sets the library paths. NOTE: This variable is weird and MUST have quotes around it! |
 | DYLD_INSERT_LIBRARIES         | `/home/steam/valheim/doorstop_libs/libdoorstop_x64.so`   | TRUE     | Sets which library to load.                                                          |
 
-[odin]: ./odin.md
+[odin]: ../src/odin/README.md

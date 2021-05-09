@@ -1,20 +1,29 @@
 <img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 # [Valheim]
 
-<a href="https://hub.docker.com/r/mbround18/valheim">
-    <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt="">
-</a>
+<a href="https://hub.docker.com/r/mbround18/valheim"><img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt=""></a>
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt=""></a>
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt=""></a>
 
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt="">
-</a>
+## Running on Linux Server
 
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml">
-    <img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt="">
-</a>
+This repo bundles its tools in a way that you can run them without having to install docker!
+If you purely want to run this on a Linux based system, without docker, take a look at the links below <3
 
-## Docker
+- [Installing & Using Odin](./src/odin/README.md)
+  The tool [Odin] runs the show and does almost all the heavy lifting in this repo. It starts, stops, and manages your Valheim server instance.
+- [Installing & Using Huginn](./src/huginn/README.md)
+  Looking for a way to view the status of your server? Look no further than [Huginn]!
+  The [Huginn] project is a http server built on the same source as [Odin] and uses these capabilities to expose a few http endpoints.
+
+> Using the binaries to run on an Ubuntu Server, you will have to be more involved and configure a few things manually.
+> If you want a managed, easy one-two punch to manage your server. Then look at the Docker section <3
+
+## Running with Docker
 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 >
@@ -38,18 +47,17 @@
 
 > See further on down for advanced environment variables.
 
-| Variable | Default           | Required | Description                                                                                                                                                             |
-| -------- | ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PORT     | `2456`            | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458)                                                                    |
-| NAME     | `Valheim Docker`  | TRUE     | The name of your server! Make it fun and unique!                                                                                                                        |
-| WORLD    | `Dedicated`       | TRUE     | This is used to generate the name of your world.                                                                                                                        |
-| PUBLIC   | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                           |
-| PASSWORD | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                           |
-| TYPE     | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                 |
-| MODS     | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`. |
-
-| WEBHOOK_URL | `<nothing>` | FALSE | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
-| UPDATE_ON_STARTUP | `1` | FALSE | Tries to update the server the container is started. |
+| Variable          | Default           | Required | Description                                                                                                                                                                                                                                   |
+| ----------------- | ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PORT              | `2456`            | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458)                                                                                                                                          |
+| NAME              | `Valheim Docker`  | TRUE     | The name of your server! Make it fun and unique!                                                                                                                                                                                              |
+| WORLD             | `Dedicated`       | TRUE     | This is used to generate the name of your world.                                                                                                                                                                                              |
+| PUBLIC            | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                                                                                                 |
+| PASSWORD          | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                                                                                                 |
+| TYPE              | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                       |
+| MODS              | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                       |
+| WEBHOOK_URL       | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| UPDATE_ON_STARTUP | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                          |
 
 #### Container Env Variables
 
@@ -83,7 +91,7 @@ Auto update job, queries steam and compares it against your internal steam files
 
 Auto backup job produces an output of a `*.tar.gz` file which should average around 30mb for a world that has an average of 4 players consistently building on. You should be aware that if you place the server folder in your saves folder your backups could become astronomical in size. This is a common problem that others have observed, to avoid this please follow the guide for how volume mounts should be made in the `docker-compose.yml`.
 
-#### Http Server
+#### [Huginn] Http Server
 
 | Variable  | Default               | Required | Description                                                                                                                  |
 | --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -160,7 +168,7 @@ services:
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
 
-[Click here to see advanced environment variables for Odin](./docs/odin.md)
+[Click here to see advanced environment variables for Odin](src/odin/README.md)
 
 ### [BepInEx Support](./docs/bepinex.md)
 
@@ -184,77 +192,57 @@ This is a tutorial of a recommended path to transfering files. This can be done 
 
 ## Sponsors
 
-<a href="https://github.com/AtroposOrbis">
-  <img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4" />
-</a>
-<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/13275296?s=460&v=4" /></a>
-<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50 /></a>
+<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4"  alt="AtroposOrbis"/></a>
+<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
 
 ## Release Notifications
 
 If you would like to have release notifications tied into your Discord server, click here:
 
-<a href="https://discord.gg/3kTNUZz276">
-  <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"  />
-</a>
+<a href="https://discord.gg/3kTNUZz276"><img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge"   alt="Discord Banner"/></a>
 
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
+# Contributions
+
+- @some_guy - design, doc
+
 ## Versions
 
-- latest (Stable):
-  - [#100] Added backup feature to run based on cronjob.
-  - [#148] Added Mod support
-  - [#158] Added webhook configuration and documentation updates
-  - [#236] Now [publish to github registry as well](https://github.com/users/mbround18/packages/container/package/valheim)
-  - [#276] Advanced mod support with auto installer
-- 1.2.0 (Stable):
-  - Readme update to include the versions section and environment variables section.
-  - [#18] Changed to `root` as the default user to allow updated steams User+Group IDs.
-  - [#18] Fixed issue with the timezone not persisting.
-  - To exec into the container you now have to include the `-u|--user` argument to access steam directly. Example `docker-compose exec --user steam valheim bash`
-  - There is now a `dry-run` command argument on `odin` to preview what the command would do.
-  - You can run with `-d|--debug` to get verbose logging of what `odin` is doing.
-  - [#11] Added check for length of password and fail on odin install or odin stop failures.
-  - [#24] Added public variable to dockerfile and odin
-  - [#35] Fix for the server to now utilizing SIGINT `YOU WILL HAVE TO MANUALLY STOP YOUR SERVER;` use `pidof valheim_server.x86_64` to get the pid and then `kill -2 $pid` but replace pid with the pid from `pidof`
-  - [#53] Formatted scripts to be more useful and added timezone scheduling.
-  - [#77] Fix auto update not acknowledging variables and added odin to system bin.
-  - [#89] Daemonized the server process by using rust specific bindings rather than dropping down to shell.
-- 1.1.1 (Stable):
-  - Includes PR [#10] to fix the double world argument.
-- 1.1.0 (Stable):
-  - Includes a fix for [#3] and [#8].
-  - Improves the script interface and separation of concerns, files now have a respective code file that supports interactions for cleaner development experience.
-  - Docker image is cleaned up to provide a better usage experience. There is now an `AUTO_UPDATE` feature.
-  - Has a bug where the script has two entries for the world argument.
-- 1.0.0 (Stable):
-  - It works! It will start your server and stop when you shut down.
-  - This supports passing in environment variables or arguments to `odin`
-  - Has a bug in which it does not read passed in variables appropriately to Odin. Env variables are not impacted see [#3].
-
-[//]: <> (Github Issues below...........)
-[#276]: https://github.com/mbround18/valheim-docker/pull/276
-[#236]: https://github.com/mbround18/valheim-docker/pull/236
-[#158]: https://github.com/mbround18/valheim-docker/pull/158
-[#148]: https://github.com/mbround18/valheim-docker/pull/148
-[#100]: https://github.com/mbround18/valheim-docker/pull/100
-[#89]: https://github.com/mbround18/valheim-docker/pull/89
-[#77]: https://github.com/mbround18/valheim-docker/pull/77
-[#53]: https://github.com/mbround18/valheim-docker/pull/53
-[#35]: https://github.com/mbround18/valheim-docker/issues/24
-[#24]: https://github.com/mbround18/valheim-docker/issues/24
-[#18]: https://github.com/mbround18/valheim-docker/pull/18
-[#11]: https://github.com/mbround18/valheim-docker/issues/11
-[#10]: https://github.com/mbround18/valheim-docker/pull/10
-[#8]: https://github.com/mbround18/valheim-docker/issues/8
-[#3]: https://github.com/mbround18/valheim-docker/issues/3
+- latest (Stable): Mod support! and cleaned up the code base.
+- 1.3.0 (Does Not Exist): The tag exists here in GitHub but this was a ghost release.
+- 1.2.0 (Stable): Added additional stop features and sig for stopping. 
+- 1.1.1 (Stable): Patch to fix arguments
+- 1.1.0 (Unstable): Cleaned up image and made it faster
+- 1.0.0 (Stable): It works! 
 
 [//]: <> (Links below...................)
-[Odin]: ./docs/odin.md
+[Odin]: src/odin/README.md
+[Huginn]: src/huginn/README.md
 [Valheim]: https://www.valheimgame.com/
 [Getting started with mods]: ./docs/getting*started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1*\_\_\_\_\*
 
 [//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="http://arneman.me/"><img src="https://avatars.githubusercontent.com/u/3298808?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Mark</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=bearlikelion" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://m.bruno.fyi/"><img src="https://avatars.githubusercontent.com/u/12646562?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael</b></sub></a><br /><a href="#infra-mbround18" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!

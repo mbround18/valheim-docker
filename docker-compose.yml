@@ -1,7 +1,7 @@
 version: "3"
 services:
   odin:
-    image: mbround18/valheim-odin:latest
+    image: mbround18/odin:latest
     build:
       context: .
       dockerfile: ./Dockerfile.odin
@@ -18,9 +18,10 @@ services:
       TZ: "America/Los_Angeles"
       AUTO_UPDATE: 1
       AUTO_UPDATE_SCHEDULE: "0 1 * * *"
+      TYPE: Vanilla
     build:
       context: .
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.valheim
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"

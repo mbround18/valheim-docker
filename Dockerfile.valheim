@@ -57,7 +57,7 @@ ENV PUID=1000                           \
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
 COPY --from=runtime /usr/local/bin/odin /usr/local/bin/odin
-COPY --from=runtime /usr/local/bin/odin-http-server /usr/local/bin/odin-http-server
+COPY --from=runtime /usr/local/bin/huginn /usr/local/bin/huginn
 COPY ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \

@@ -1,0 +1,24 @@
+{
+  "name": "valheim",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:mbround18/valheim-docker.git",
+  "author": "mbround18 <12646562+mbround18@users.noreply.github.com>",
+  "license": "MIT",
+  "scripts": {
+    "prerelease": "git fetch --tags",
+    "release": "auto shipit"
+  },
+  "devDependencies": {
+    "@auto-it/all-contributors": "10.27.0",
+    "@auto-it/git-tag": "10.27.0",
+    "auto": "10.27.0",
+    "@types/node": "15.0.2"
+  },
+  "dependencies": {
+    "@auto-it/core": "^10.27.0",
+    "@types/semver": "^7.3.5",
+    "semver": "^7.3.5",
+    "typescript": "^4.2.4"
+  }
+}

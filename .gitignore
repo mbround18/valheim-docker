@@ -3,3 +3,5 @@ target/
 tmp/
 *.env*
 docker-compose.*.yml
+release
+node_modules/

@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    ".auto/plugins/release.ts",
+    "all-contributors"
+  ],
+  "owner": "mbround18",
+  "repo": "valheim-docker",
+  "name": "mbround18",
+  "email": "12646562+mbround18@users.noreply.github.com",
+  "onlyPublishWithReleaseLabel": true
+}

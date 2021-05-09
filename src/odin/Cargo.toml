@@ -3,6 +3,19 @@ name = "odin"
 version = "1.4.0"
 authors = ["mbround18"]
 edition = "2018"
+license = "BSD-3-Clause License"
+description = "Valheim server manager"
+readme = "README.md"
+homepage = "https://github.com/mbround18/valheim-docker"
+repository = "https://github.com/mbround18/valheim-docker"
+keywords = ["cli", "valheim", "gameserver"]
+categories = ["command-line-utilities"]
+include = [
+  "**/*.rs",
+  "**/*.yaml",
+  "Cargo.toml",
+]
+
 
 [[bin]]
 name = "odin"
@@ -18,14 +31,14 @@ log = "0.4.14"
 clap = { version = "3.0.0-beta.2", features = ["yaml"] }
 which = "4.0.2"
 serde = { version = "1.0", features = ["derive"], default_features = false  }
-sysinfo = { version = "0.16.1", default_features = false }
+sysinfo = { version = "0.17.3", default_features = false }
 serde_json = "1.0"
 daemonize = "0.4"
 tar = "0.4"
 flate2 = "1.0"
 inflections = "1.1.1"
 md5 = "0.7.0"
-reqwest = { version = "0.11.1", default_features = false, features = ["blocking", "json", "rustls-tls"] }
+reqwest = { version = "0.11.3", default_features = false, features = ["blocking", "json", "rustls-tls"] }
 chrono = "0.4"
 zip = { version = "0.5" }
 fs_extra = "1.2.0"

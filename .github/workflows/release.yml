@@ -1,0 +1,42 @@
+name: Release
+
+on: [push]
+
+env:
+  GH_TOKEN: "${{ secrets.GH_TOKEN }}"
+
+jobs:
+  release:
+    name: Release Train WooohWoooohh
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Yarn install
+        run: yarn install --frozen-lockfile
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_KEY }}
+          name: id_rsa # optional
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          if_key_exists: replace
+
+      - name: Create Release
+        run: |
+          yarn release
+
+
