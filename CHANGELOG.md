@@ -1,3 +1,15 @@
+# v1.3.3 (Sun May 09 2021)
+
+#### 🐛 Bug Fix
+
+- trying release [#357](https://github.com/mbround18/valheim-docker/pull/357) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v1.3.2 (Sun May 09 2021)
 
 #### 🐛 Bug Fix
