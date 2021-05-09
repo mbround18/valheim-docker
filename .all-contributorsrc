@@ -18,6 +18,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "mbround18",
+      "name": "Michael",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12646562?v=4",
+      "profile": "https://m.bruno.fyi/",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7
