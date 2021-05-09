@@ -1,6 +1,6 @@
 {
   "plugins": [
-    "git-tag",
+    ".auto/plugins/release.ts",
     "all-contributors"
   ],
   "owner": "mbround18",
