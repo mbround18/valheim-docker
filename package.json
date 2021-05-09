@@ -5,6 +5,10 @@
   "repository": "git@github.com:mbround18/valheim-docker.git",
   "author": "mbround18 <12646562+mbround18@users.noreply.github.com>",
   "license": "MIT",
+  "scripts": {
+    "prerelease": "git fetch --tags",
+    "release": "auto shipit"
+  },
   "devDependencies": {
     "@auto-it/all-contributors": "^10.27.0",
     "@auto-it/git-tag": "^10.27.0",
