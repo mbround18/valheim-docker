@@ -10,8 +10,8 @@
     "release": "auto shipit"
   },
   "devDependencies": {
-    "@auto-it/all-contributors": "^10.27.0",
-    "@auto-it/git-tag": "^10.27.0",
-    "auto": "^10.27.0"
+    "@auto-it/all-contributors": "10.27.0",
+    "@auto-it/git-tag": "10.27.0",
+    "auto": "10.27.0"
   }
 }
