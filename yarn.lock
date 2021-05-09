@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@auto-it/all-contributors@^10.27.0":
+"@auto-it/all-contributors@10.27.0":
   version "10.27.0"
   resolved "https://registry.yarnpkg.com/@auto-it/all-contributors/-/all-contributors-10.27.0.tgz#93306b20bdb75b21b01ffbcb9edf91adff541463"
   integrity sha512-D1HeMVbiMEp7zW97FvLGC/SX3eCPYheEj1ylweAmxYVudkidKdNOTdVOtCiOkk6axuIMn3SmlVABVHPir89LRw==
@@ -70,7 +70,7 @@
     typescript-memoize "^1.0.0-alpha.3"
     url-join "^4.0.0"
 
-"@auto-it/git-tag@^10.27.0":
+"@auto-it/git-tag@10.27.0":
   version "10.27.0"
   resolved "https://registry.yarnpkg.com/@auto-it/git-tag/-/git-tag-10.27.0.tgz#23d346449b5da495b88998b9d0d01534e36a7127"
   integrity sha512-8m65c7s0fNgfHN2JB7VETtOVgmY1F9+WN97uL5KPkb1llnkBftDc8hFHypP4PTYVF4sKlJntA3OMciFH0SacIQ==
@@ -417,7 +417,7 @@ author-regex@^1.0.0:
   resolved "https://registry.yarnpkg.com/author-regex/-/author-regex-1.0.0.tgz#d08885be6b9bbf9439fe087c76287245f0a81450"
   integrity sha1-0IiFvmubv5Q5/gh8dihyRfCoFFA=
 
-auto@^10.27.0:
+auto@10.27.0:
   version "10.27.0"
   resolved "https://registry.yarnpkg.com/auto/-/auto-10.27.0.tgz#48f1a58d355cf2a03dfd397538dc5f56ac751dd8"
   integrity sha512-38aMBY95TSGohSOkR74YVcR42QmD8QWt5Q2woHdpCn/SO2YpF2lEdwPyc4ew4VUHXU640NNh7Bx1zVx8zwv1Fw==
