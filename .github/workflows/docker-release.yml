@@ -7,7 +7,6 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     strategy:
       fail-fast: true
       max-parallel: 1
