@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: yogevbd/enforce-label-action@2.1.0
         with:
-          REQUIRED_LABELS_ANY: "major,minor,patch,internal,performance,question,release,tests,wontfix,documentation,bug,dependancies"
+          REQUIRED_LABELS_ANY: "major,minor,patch,internal,performance,question,release,tests,wontfix,documentation,bug,dependencies"
           REQUIRED_LABELS_ANY_DESCRIPTION: "Select at least one label ['major','minr','patch', 'documentation']"
           BANNED_LABELS: "banned"
