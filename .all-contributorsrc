@@ -9,6 +9,25 @@
   "imageSize": 100,
   "commit": true,
   "commitConvention": "eslint",
-  "contributors": [],
+  "contributors": [
+    {
+      "login": "bearlikelion",
+      "name": "Mark",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3298808?v=4",
+      "profile": "http://arneman.me/",
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "mbround18",
+      "name": "Michael",
+      "avatar_url": "https://avatars.githubusercontent.com/u/12646562?v=4",
+      "profile": "https://m.bruno.fyi/",
+      "contributions": [
+        "infra"
+      ]
+    }
+  ],
   "contributorsPerLine": 7
 }

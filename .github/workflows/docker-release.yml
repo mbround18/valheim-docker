@@ -1,11 +1,12 @@
+name: Docker Release
 
 on:
   push:
     tags:
-      - v*
+      - '*'
 
 jobs:
-  push:
+  publish:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
