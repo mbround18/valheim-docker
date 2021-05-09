@@ -1,7 +1,9 @@
 name: Release
 
-on: [push]
-
+on:
+  push:
+    branches:
+      - main
 env:
   GH_TOKEN: "${{ secrets.GH_TOKEN }}"
 
