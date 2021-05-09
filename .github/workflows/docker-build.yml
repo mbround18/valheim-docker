@@ -1,14 +1,6 @@
 name: Docker Build
 
 on:
-  push:
-    # Publish `main` as Docker `latest` image.
-    branches:
-      - main
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
-
   pull_request:
     branches:
       - main
