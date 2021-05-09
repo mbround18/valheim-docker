@@ -37,7 +37,7 @@ RUN cargo-make make -p production release
 # ------------------ #
 FROM debian:buster-slim as runtime
 WORKDIR /data/odin
-COPY --from=builder /data/odin/target/release/odin /usr/local/bin
-COPY --from=builder /data/odin/target/release/huginn /usr/local/bin
+COPY --from=builder /data/odin/target/release/odin /usr/local/bin/
+COPY --from=builder /data/odin/target/release/huginn /usr/local/bin/
 ENTRYPOINT ["/usr/local/bin/odin"]
 CMD ["--version"]
