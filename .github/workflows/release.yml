@@ -27,21 +27,16 @@ jobs:
       - name: Yarn install
         run: yarn install --frozen-lockfile
 
-      - name: Temporarily disable "include administrators" branch protection
-        uses: benjefferies/branch-protection-bot@1.0.5
-        if: ${{ always() && github.ref == 'refs/heads/main' }}
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
         with:
-          branch: main
-          access-token: ${{ secrets.GH_TOKEN }}
+          key: ${{ secrets.SSH_KEY }}
+          name: id_rsa # optional
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+          if_key_exists: replace
 
       - name: Create Release
         run: |
-          yarn auto shipit
+          yarn release
 
-      - name: Enable "include administrators" branch protection
-        uses: benjefferies/branch-protection-bot@1.0.5
-        # Force to always run this step to ensure "include administrators" is always turned back on
-        if: ${{ always() && github.ref == 'refs/heads/main' }}
-        with:
-          branch: main
-          access-token: ${{ secrets.GH_TOKEN }}
+
