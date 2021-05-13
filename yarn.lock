@@ -120,12 +120,12 @@
     typescript-memoize "^1.0.0-alpha.3"
     url-join "^4.0.0"
 
-"@auto-it/git-tag@10.27.0":
-  version "10.27.0"
-  resolved "https://registry.yarnpkg.com/@auto-it/git-tag/-/git-tag-10.27.0.tgz#23d346449b5da495b88998b9d0d01534e36a7127"
-  integrity sha512-8m65c7s0fNgfHN2JB7VETtOVgmY1F9+WN97uL5KPkb1llnkBftDc8hFHypP4PTYVF4sKlJntA3OMciFH0SacIQ==
+"@auto-it/git-tag@10.27.1":
+  version "10.27.1"
+  resolved "https://registry.yarnpkg.com/@auto-it/git-tag/-/git-tag-10.27.1.tgz#1ad9b8ff44ed73b289a81a91e5680e1944724298"
+  integrity sha512-kmdNp68zAXyoeYfnFIlGYhFUgaIVcFw/J3VdjMGtNXy+v/VBoFO0NOwgNvUxw3cyXUJ4akpflqlGlFBGEVwQxQ==
   dependencies:
-    "@auto-it/core" "10.27.0"
+    "@auto-it/core" "10.27.1"
     semver "^7.0.0"
     tslib "2.1.0"
 
