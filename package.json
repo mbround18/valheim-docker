@@ -12,8 +12,8 @@
   "devDependencies": {
     "@auto-it/all-contributors": "10.27.1",
     "@auto-it/git-tag": "10.27.1",
-    "auto": "10.29.0",
-    "@types/node": "15.3.0"
+    "@types/node": "15.3.0",
+    "auto": "10.29.0"
   },
   "dependencies": {
     "@auto-it/core": "^10.27.0",
