@@ -2,13 +2,13 @@
 # yarn lockfile v1
 
 
-"@auto-it/all-contributors@10.27.1":
-  version "10.27.1"
-  resolved "https://registry.yarnpkg.com/@auto-it/all-contributors/-/all-contributors-10.27.1.tgz#8f2ef6b800f15532c32096f90c9257e7812c4fb5"
-  integrity sha512-dyubLebXc46fO8a1iMhXjOAoYAteNIPy48VPCPiXyESko27F1EKsDYNzVaNnBNcVLNgb4OSJtx69CT/Q+i9lVw==
+"@auto-it/all-contributors@10.29.2":
+  version "10.29.2"
+  resolved "https://registry.yarnpkg.com/@auto-it/all-contributors/-/all-contributors-10.29.2.tgz#ae3adab190e0e56942df1d0ba6688d597337240c"
+  integrity sha512-8uX4k18OFI7dbO1N8MqNgBc15taskheJY5z0/aJkk0C7qMAjvIXkKs10Zyzpy7cwgCzc/TWZT9I7E9s+jS917Q==
   dependencies:
-    "@auto-it/bot-list" "10.27.1"
-    "@auto-it/core" "10.27.1"
+    "@auto-it/bot-list" "10.29.2"
+    "@auto-it/core" "10.29.2"
     "@octokit/rest" "^18.0.0"
     all-contributors-cli "6.19.0"
     anymatch "^3.1.1"
@@ -20,11 +20,6 @@
     io-ts "^2.1.2"
     tslib "2.1.0"
 
-"@auto-it/bot-list@10.27.1":
-  version "10.27.1"
-  resolved "https://registry.yarnpkg.com/@auto-it/bot-list/-/bot-list-10.27.1.tgz#50a37a417483f2398b258a292e349dbafc56f801"
-  integrity sha512-2k311ZFy8GMABLS7GRN5MnE9DCoGkCi8h7LWvvIy/B6BAhW892WgyV2Lxcql3aP6B5GhOv+5UjB5wgKarwaCQA==
-
 "@auto-it/bot-list@10.29.0":
   version "10.29.0"
   resolved "https://registry.yarnpkg.com/@auto-it/bot-list/-/bot-list-10.29.0.tgz#176db2073c76b13a11df605451b627ffdf870cba"
@@ -34,51 +29,6 @@
   version "10.29.2"
   resolved "https://registry.yarnpkg.com/@auto-it/bot-list/-/bot-list-10.29.2.tgz#a47c5ce59c2eff8edc3ce05859a400aee11d0694"
   integrity sha512-dkrzfeIxN1QBXHmV93DfMEMu2dXG9Op0fjUqKKWSgDp7JYCRHvC6Qp0GpDf5OQfS6JC50ClLq7+1feYlzVtbqg==
-
-"@auto-it/core@10.27.1":
-  version "10.27.1"
-  resolved "https://registry.yarnpkg.com/@auto-it/core/-/core-10.27.1.tgz#07ad7a81072441ab5ef0542abe89983fce45b053"
-  integrity sha512-cT9kCoz0Jnu4xtQTGUSH6b59Fwc41Pt/X5T/3/XRF8NimpsUGAIZRIs/UCQMAWCHzfZIUdlFQjvrPFF9rjjfiA==
-  dependencies:
-    "@auto-it/bot-list" "10.27.1"
-    "@endemolshinegroup/cosmiconfig-typescript-loader" "^3.0.2"
-    "@octokit/plugin-enterprise-compatibility" "^1.2.2"
-    "@octokit/plugin-retry" "^3.0.1"
-    "@octokit/plugin-throttling" "^3.2.0"
-    "@octokit/rest" "^18.0.0"
-    await-to-js "^3.0.0"
-    chalk "^4.0.0"
-    cosmiconfig "7.0.0"
-    deepmerge "^4.0.0"
-    dotenv "^8.0.0"
-    endent "^2.0.1"
-    enquirer "^2.3.4"
-    env-ci "^5.0.1"
-    fast-glob "^3.1.1"
-    fp-ts "^2.5.3"
-    fromentries "^1.2.0"
-    gitlog "^4.0.3"
-    https-proxy-agent "^5.0.0"
-    import-cwd "^3.0.0"
-    import-from "^3.0.0"
-    io-ts "^2.1.2"
-    lodash.chunk "^4.2.0"
-    log-symbols "^4.0.0"
-    node-fetch "2.6.1"
-    parse-author "^2.0.0"
-    parse-github-url "1.0.2"
-    pretty-ms "^7.0.0"
-    requireg "^0.2.2"
-    semver "^7.0.0"
-    signale "^1.4.0"
-    tapable "^2.0.0-beta.2"
-    terminal-link "^2.1.1"
-    tinycolor2 "^1.4.1"
-    ts-node "^9.1.1"
-    tslib "2.1.0"
-    type-fest "^0.21.1"
-    typescript-memoize "^1.0.0-alpha.3"
-    url-join "^4.0.0"
 
 "@auto-it/core@10.29.2":
   version "10.29.2"
@@ -1737,7 +1687,7 @@ table-layout@^1.0.1:
     typical "^5.2.0"
     wordwrapjs "^4.0.0"
 
-tapable@^2.0.0-beta.2, tapable@^2.2.0:
+tapable@^2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/tapable/-/tapable-2.2.0.tgz#5c373d281d9c672848213d0e037d1c4165ab426b"
   integrity sha512-FBk4IesMV1rBxX2tfiK8RAmogtWn53puLOQlvO8XuwlgxcYbP4mVPS9Ph4aeamSyyVjOl24aYWAuc8U5kCVwMw==
