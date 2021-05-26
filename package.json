@@ -10,7 +10,7 @@
     "release": "auto shipit"
   },
   "devDependencies": {
-    "@auto-it/all-contributors": "10.27.1",
+    "@auto-it/all-contributors": "10.29.2",
     "@auto-it/git-tag": "10.29.2",
     "@types/node": "15.3.0",
     "auto": "10.29.2"
