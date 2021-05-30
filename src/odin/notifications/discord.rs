@@ -101,7 +101,7 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
         debug!("Discord Notification Parsed: \n{}", value);
         value
       }
-      Err(msg) => panic!(msg.to_string()),
+      Err(msg) => panic!("{}", msg.to_string()),
     };
     serde_json::from_str(&rendered).unwrap()
   }
