@@ -27,7 +27,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
 
       - name: Yarn install
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
