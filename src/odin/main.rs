@@ -26,6 +26,11 @@ fn main() {
     .setting(AppSettings::SubcommandRequired);
   let matches = app.get_matches();
   let debug_mode = matches.is_present("debug") || environment::fetch_var("DEBUG_MODE", "0").eq("1");
+
+  if 0_u32 == users::get_current_uid() && !matches.is_present("run_as_root") {
+    panic!("\x1b[0;31m\n\nWoah! You cannot launch this program as root!\n\nIf this was intentional please rerun with --run-as-root\n\nYou might run into permission issues if you run this as root!\x1b[0m\n\n")
+  }
+
   logger::initialize_logger(debug_mode).unwrap();
   debug!("Debug mode enabled!");
   if let Some((command_name, _)) = matches.subcommand() {

@@ -3,6 +3,11 @@ version: "stub"
 author: mbround18
 about: Installs and Runs Valheim
 args:
+  - run_as_root:
+      long: run-as-root
+      global: true
+      help: Allows you to run a command as root.
+      takes_value: false
   - debug:
       short: d
       long: debug
