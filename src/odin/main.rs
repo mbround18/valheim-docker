@@ -1,4 +1,5 @@
 use clap::{load_yaml, App, AppSettings};
+use dotenv::dotenv;
 use log::debug;
 
 use crate::executable::handle_exit_status;
@@ -16,10 +17,8 @@ pub mod server;
 mod steamcmd;
 pub mod utils;
 
-use crate::notifications::enums::event_status::EventStatus;
-use crate::notifications::enums::notification_event::NotificationEvent;
-
 fn main() {
+  dotenv().ok();
   // The YAML file is found relative to the current file, similar to how modules are found
   let yaml = load_yaml!("cli.yaml");
   let app = App::from(yaml)
@@ -34,20 +33,12 @@ fn main() {
   };
   match matches.subcommand().expect("Subcommand is required") {
     ("configure", sub_m) => commands::configure::invoke(sub_m),
-    ("install", _) => {
-      let result = commands::install::invoke(constants::GAME_ID);
-      handle_exit_status(result, "Successfully installed Valheim!".to_string())
-    }
-    ("start", sub_m) => {
-      NotificationEvent::Start(EventStatus::Running).send_notification();
-      commands::start::invoke(sub_m);
-      NotificationEvent::Start(EventStatus::Successful).send_notification();
-    }
-    ("stop", sub_m) => {
-      NotificationEvent::Stop(EventStatus::Running).send_notification();
-      commands::stop::invoke(sub_m);
-      NotificationEvent::Stop(EventStatus::Successful).send_notification();
-    }
+    ("install", _) => handle_exit_status(
+      commands::install::invoke(constants::GAME_ID),
+      "Successfully installed Valheim!".to_string(),
+    ),
+    ("start", sub_m) => commands::start::invoke(sub_m),
+    ("stop", sub_m) => commands::stop::invoke(sub_m),
     ("backup", sub_m) => commands::backup::invoke(sub_m),
     ("notify", sub_m) => commands::notify::invoke(sub_m),
     ("update", sub_m) => commands::update::invoke(sub_m),

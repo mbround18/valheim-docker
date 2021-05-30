@@ -5,9 +5,11 @@
 export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
 export WORLD="$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")"
 export PASSWORD="$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")"
+export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
+export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
 
 # Set up timezone
-ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ >/etc/timezone
+ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime && echo "$TZ" >/etc/timezone
 
 # shellcheck disable=SC2039
 if [ "${EUID}" -ne 0 ]; then
@@ -41,7 +43,7 @@ check_version() {
 clean_up() {
   echo "Safely shutting down..." >>/home/steam/output.log
   if [[ -n $CRON_PID ]]; then
-    kill $CRON_PID
+    kill "$CRON_PID"
   fi
 }
 
@@ -56,6 +58,7 @@ setup_cron() {
   PRESET_ENV="
   DEBUG_MODE=${DEBUG_MODE:=0}
   ODIN_CONFIG_FILE=${ODIN_CONFIG_FILE}
+  ODIN_DISCORD_FILE=${ODIN_DISCORD_FILE}
   ODIN_WORKING_DIR=${ODIN_WORKING_DIR}
   SAVE_LOCATION=${SAVE_LOCATION}
   MODS_LOCATION=${MODS_LOCATION}
@@ -66,7 +69,10 @@ setup_cron() {
   PORT=${PORT}
   PUBLIC=${PUBLIC}
   UPDATE_ON_STARTUP=${UPDATE_ON_STARTUP}
+
   WEBHOOK_URL=${WEBHOOK_URL:-""}
+  WEBHOOK_STATUS_SUCCESSFUL=${WEBHOOK_STATUS_SUCCESSFUL:-"1"}
+  WEBHOOK_STATUS_FAILED=${WEBHOOK_STATUS_FAILED:-"1"}
 
   AUTO_UPDATE=${AUTO_UPDATE}
   AUTO_UPDATE_PAUSE_WITH_PLAYERS=${AUTO_UPDATE_PAUSE_WITH_PLAYERS}
@@ -81,16 +87,17 @@ setup_cron() {
   CRON_ENV="${PRESET_ENV} ${4}"
   CRON_ENV="$(echo "${CRON_ENV}" | tr '\n' " " )"
   LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
-  [ -f "$LOG_LOCATION" ] && rm $LOG_LOCATION
+  mkdir -p "/home/steam/valheim/logs"
+  [ -f "$LOG_LOCATION" ] && rm "$LOG_LOCATION"
   printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}" \
     "${CRON_ENV}" \
     "${SCRIPT_PATH}" \
     "${LOG_LOCATION}" \
-    >/etc/cron.d/${CRON_NAME}
-  echo "" >>/etc/cron.d/${CRON_NAME}
+    > "/etc/cron.d/${CRON_NAME}"
+  echo "" >> "/etc/cron.d/${CRON_NAME}"
   # Give execution rights on the cron job
-  chmod 0644 /etc/cron.d/${CRON_NAME}
+  chmod 0644 "/etc/cron.d/${CRON_NAME}"
   set +f
 }
 
@@ -100,18 +107,18 @@ setup_filesystem() {
   STEAM_GID=${PGID:=1000}
 
   # Save Files
-  mkdir -p ${SAVE_LOCATION}
+  mkdir -p "${SAVE_LOCATION}"
 
   # Mod staging location
-  mkdir -p ${MODS_LOCATION}
+  mkdir -p "${MODS_LOCATION}"
 
   # Backups
-  mkdir -p ${BACKUP_LOCATION}
+  mkdir -p "${BACKUP_LOCATION}"
 
   # Valheim Server
-  mkdir -p ${GAME_LOCATION}
-  mkdir -p ${GAME_LOCATION}/logs
-  chown -R ${STEAM_UID}:${STEAM_GID} ${GAME_LOCATION}
+  mkdir -p "${GAME_LOCATION}"
+  mkdir -p "${GAME_LOCATION}/logs"
+  chown -R ${STEAM_UID}:${STEAM_GID} "${GAME_LOCATION}"
   cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
 
 

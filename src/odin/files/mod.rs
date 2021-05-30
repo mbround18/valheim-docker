@@ -1,24 +1,14 @@
 pub mod config;
+pub mod discord;
 
 use crate::executable::create_execution;
 use crate::utils::get_working_dir;
-use log::{error, info};
-use serde::{Deserialize, Serialize};
+use log::{debug, error, info};
 use std::fs;
-use std::fs::{remove_file, File};
+use std::fs::{create_dir_all, remove_file, File};
 use std::io::Write;
 use std::path::Path;
 use std::process::exit;
-
-#[derive(Deserialize, Serialize)]
-pub struct ValheimArguments {
-  pub(crate) port: String,
-  pub(crate) name: String,
-  pub(crate) world: String,
-  pub(crate) public: String,
-  pub(crate) password: String,
-  pub(crate) command: String,
-}
 
 pub fn create_file(path: &str) -> File {
   let output_path = Path::new(path);
@@ -56,6 +46,8 @@ pub trait FileManager {
     }
   }
   fn write(&self, content: String) -> bool {
+    debug!("Writing file path: {}", self.path().as_str());
+    create_dir_all(Path::new(self.path().as_str()).parent().unwrap()).unwrap();
     let mut file = create_file(self.path().as_str());
     match file.write_all(content.as_bytes()) {
       Ok(_) => {
@@ -89,7 +81,8 @@ pub struct ManagedFile {
 impl FileManager for ManagedFile {
   fn path(&self) -> String {
     let supplied_path = Path::new(self.name.as_str());
-    if supplied_path.exists() {
+    debug!("Managed File: Path - {}", self.name.as_str());
+    if supplied_path.parent().unwrap().exists() {
       supplied_path.to_str().unwrap().to_string()
     } else {
       format!("{}/{}", get_working_dir(), self.name)

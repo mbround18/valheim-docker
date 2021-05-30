@@ -4,12 +4,14 @@ use log::{debug, error, info};
 use std::{io, process::Child};
 
 use crate::mods::bepinex::BepInExEnvironment;
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::NotificationEvent;
 use crate::utils::common_paths::{game_directory, saves_directory};
 use crate::utils::environment::fetch_var;
 use crate::{
   constants,
   executable::create_execution,
-  files::{create_file, ValheimArguments},
+  files::{config::ValheimArguments, create_file},
   messages,
   utils::environment,
 };
@@ -29,13 +31,14 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
     .exit_action(|| {
       let bepinex_env = BepInExEnvironment::new();
       if bepinex_env.is_installed() {
-        info!("Server has been started with BepInEx! Keep in mind this may cause errors!!");
+        info!(target: "server_startup","Server has been started with BepInEx! Keep in mind this may cause errors!!");
         messages::modding_disclaimer();
-        debug!("{:#?}", bepinex_env);
+        debug!(target: "server_startup","{:#?}", bepinex_env);
       }
-      info!("Server has been started and Daemonized. It should be online shortly!");
-      info!("Keep an eye out for 'Game server connected' in the log!");
-      info!("(this indicates its online without any errors.)")
+      info!(target: "server_startup","Server has been started and Daemonized. It should be online shortly!");
+      info!(target: "server_startup","Keep an eye out for 'Game server connected' in the log!");
+      NotificationEvent::Start(EventStatus::Successful).send_notification();
+      info!(target: "server_startup","(this indicates its online without any errors.)")
     })
     .privileged_action(move || start(&config))
     .start()
@@ -43,12 +46,12 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
 
 pub fn start(config: &ValheimArguments) -> CommandResult {
   let mut command = create_execution(&config.command);
-  info!("--------------------------------------------------------------------------------------------------------------");
+  info!(target: "server_startup","--------------------------------------------------------------------------------------------------------------");
   let ld_library_path_value = environment::fetch_multiple_var(
     constants::LD_LIBRARY_PATH_VAR,
     format!("{}/linux64", game_directory()).as_str(),
   );
-  debug!("Setting up base command");
+  debug!(target: "server_startup","Setting up base command");
   let mut base_command = command
     // Extra launch arguments
     .arg(fetch_var(
@@ -75,27 +78,27 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
 
   // If no password env variable
   if !is_public && !is_vanilla && no_password {
-    debug!("No password found, skipping password flag.")
+    debug!(target: "server_startup","No password found, skipping password flag.")
   } else if no_password && (is_public || is_vanilla) {
     error!("Cannot run you server with no password! PUBLIC must be 0 and cannot be a Vanilla type server.");
     exit(1)
   } else {
-    debug!("Password found, adding password flag.");
+    debug!(target: "server_startup","Password found, adding password flag.");
     base_command = base_command.args(&["-password", &config.password.as_str()]);
   }
 
   // Tack on save dir at the end.
   base_command = base_command.args(&["-savedir", &saves_directory()]);
 
-  info!("Executable: {}", &config.command);
-  info!("Launching Command...");
+  info!(target: "server_startup","Executable: {}", &config.command);
+  info!(target: "server_startup","Launching Command...");
   let bepinex_env = BepInExEnvironment::new();
   if bepinex_env.is_installed() {
-    info!("BepInEx detected! Switching to run with BepInEx...");
-    debug!("BepInEx Environment: \n{:#?}", bepinex_env);
+    info!(target: "server_startup","BepInEx detected! Switching to run with BepInEx...");
+    debug!(target: "server_startup","BepInEx Environment: \n{:#?}", bepinex_env);
     bepinex_env.launch(base_command)
   } else {
-    info!("Everything looks good! Running normally!");
+    info!(target: "server_startup","Everything looks good! Running normally!");
     base_command
       .env(constants::LD_LIBRARY_PATH_VAR, ld_library_path_value)
       .spawn()
