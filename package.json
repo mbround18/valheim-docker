@@ -14,7 +14,7 @@
     "@auto-it/git-tag": "10.29.2",
     "@types/node": "15.3.0",
     "auto": "10.29.2",
-    "typescript": "^3.9.9"
+    "typescript": "3.9.9"
   },
   "dependencies": {
     "@auto-it/core": "^10.27.0",

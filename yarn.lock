@@ -3112,7 +3112,7 @@ resolve@~1.7.1:
   languageName: node
   linkType: hard
 
-typescript@^3.9.9:
+typescript@3.9.9:
   version: 3.9.9
   resolution: "typescript@npm:3.9.9"
   bin:
@@ -3122,7 +3122,7 @@ typescript@^3.9.9:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@^3.9.9#builtin<compat/typescript>":
+"typescript@patch:typescript@3.9.9#builtin<compat/typescript>":
   version: 3.9.9
   resolution: "typescript@patch:typescript@npm%3A3.9.9#builtin<compat/typescript>::version=3.9.9&hash=a45b0e"
   bin:
@@ -3182,7 +3182,7 @@ typescript@^3.9.9:
     "@yarnpkg/pnpify": ^3.0.0-rc.3
     auto: 10.29.2
     semver: ^7.3.5
-    typescript: ^3.9.9
+    typescript: 3.9.9
   languageName: unknown
   linkType: soft
 
