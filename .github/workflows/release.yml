@@ -21,11 +21,13 @@ jobs:
 
       - uses: actions/cache@v2
         with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-${{ hashFiles('**/yarn.lock') }}
+          path: |
+            **/node_modules
+            .yarn/cache
+          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
 
       - name: Yarn install
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2

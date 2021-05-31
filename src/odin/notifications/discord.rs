@@ -1,13 +1,10 @@
-use crate::files::{
-  config::{config_file, read_config},
-  FileManager,
-};
-use crate::notifications::EventStatus;
+use crate::{files::discord::load_discord, notifications::EventStatus};
+
 use crate::notifications::NotificationMessage;
-use inflections::case::to_title_case;
+use crate::utils::get_server_name;
+use handlebars::Handlebars;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use std::{env, str::FromStr};
 
 #[derive(Debug)]
 enum Color {
@@ -36,54 +33,76 @@ pub fn is_discord_webhook(webhook_url: &str) -> bool {
 
 #[derive(Deserialize, Serialize)]
 pub struct DiscordWebHookEmbed {
-  title: String,
-  description: String,
-  color: i32,
+  pub(crate) title: String,
+  pub(crate) description: String,
+  pub(crate) color: i32,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct DiscordWebHookBody {
-  content: String,
-  embeds: Vec<DiscordWebHookEmbed>,
+  pub(crate) content: String,
+  pub(crate) embeds: Vec<DiscordWebHookEmbed>,
 }
 
-impl DiscordWebHookBody {
-  pub fn new(event: &NotificationMessage) -> Self {
-    // Some contexts currently don't get passed in $NAME so fall back to reading from the config
-    // if it's missing or invalid UTF-8
-    let server_name = match env::var("NAME") {
-      Ok(name) if !name.is_empty() => name,
-      _ => {
-        let config_file = config_file();
-        debug!(
-          "Empty or missing $NAME. Falling back to reading from {}",
-          config_file.path()
-        );
-        let config = read_config(config_file);
-        config.name
-      }
-    };
-    let status = &event.event_type.status;
-    let event_status = EventStatus::from_str(status).unwrap_or(EventStatus::Failed);
-    let color: i32 = Color::from(event_status) as i32;
-    let payload = DiscordWebHookBody {
-      content: to_title_case(format!("Notification From: {}", server_name).as_str()),
-      embeds: vec![DiscordWebHookEmbed {
-        title: String::from(&event.event_type.name),
-        description: String::from(&event.event_message),
-        color,
-      }],
-    };
-    debug!(
-      "Discord Payload: {}",
-      serde_json::to_string(&payload).unwrap()
-    );
-    payload
+pub fn body_template() -> DiscordWebHookBody {
+  DiscordWebHookBody {
+    content: "Notification: {{server_name}}".to_string(),
+    embeds: vec![DiscordWebHookEmbed {
+      title: "{{title}}".to_string(),
+      description: "{{description}}".to_string(),
+      color: 16388413,
+    }],
+  }
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct IncomingNotification {
+  title: String,
+  description: String,
+  status: String,
+  timestamp: String,
+  server_name: String,
+}
+
+impl From<&NotificationMessage> for IncomingNotification {
+  fn from(notification: &NotificationMessage) -> IncomingNotification {
+    IncomingNotification {
+      title: String::from(&notification.event_type.name),
+      description: String::from(&notification.event_message),
+      status: String::from(&notification.event_type.status),
+      timestamp: String::from(&notification.timestamp),
+      server_name: get_server_name(),
+    }
   }
 }
 
 impl From<&NotificationMessage> for DiscordWebHookBody {
   fn from(event: &NotificationMessage) -> Self {
-    Self::new(event)
+    let discord_file = load_discord();
+    let mut handlebars = Handlebars::new();
+    let default_event = body_template();
+    let discord_event = &discord_file
+      .events
+      .get(&event.event_type.name.as_str().to_lowercase())
+      .unwrap_or(&default_event);
+    let source = serde_json::to_string(&discord_event).unwrap();
+    debug!("Discord Notification Template: {}", &source);
+    handlebars
+      .register_template_string("notification", source)
+      .unwrap();
+
+    let values = IncomingNotification::from(event);
+    debug!(
+      "Discord Notification Values: {}",
+      serde_json::to_string(&values).unwrap()
+    );
+    let rendered = match handlebars.render("notification", &values) {
+      Ok(value) => {
+        debug!("Discord Notification Parsed: \n{}", value);
+        value
+      }
+      Err(msg) => panic!("{}", msg.to_string()),
+    };
+    serde_json::from_str(&rendered).unwrap()
   }
 }

@@ -28,10 +28,10 @@ cleanup() {
     /bin/bash /home/steam/scripts/auto_backup.sh "shutdown"
   fi
   if [[ -n $TAIL_PID ]]; then
-    kill $TAIL_PID
+    kill "$TAIL_PID"
   fi
   if [[ -n $ODIN_HTTP_SERVER_PID ]]; then
-    kill $ODIN_HTTP_SERVER_PID
+    kill "$ODIN_HTTP_SERVER_PID"
   fi
 }
 
@@ -141,7 +141,10 @@ log "Herding Graydwarfs..."
 log_names=("valheim_server.log" "valheim_server.err" "output.log" "auto-update.out" "auto-backup.out")
 log_files=("${log_names[@]/#/\/home\/steam\/valheim\/logs/}")
 touch "${log_files[@]}" # Destroy logs on start up, this can be changed later to roll logs or archive them.
+
+# shellcheck disable=SC2086
 tail -F ${log_files[*]} &
 export TAIL_PID=$!
+
 # Waiting for logs.
 wait $TAIL_PID

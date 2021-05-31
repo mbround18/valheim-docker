@@ -18,22 +18,29 @@ run_task = { name = "clippy", fork = true }
 # Build Docker
 [tasks."docker:build"]
 workspace = false
-command = "docker-compose"
-args = ["-f", "./docker-compose.dev.yml", "build"]
+command = "docker"
+args = ["compose", "-f", "./docker-compose.dev.yml", "build"]
 dependencies = ["setup"]
 
 # Launch Docker
 [tasks."docker:up"]
 workspace = false
-command = "docker-compose"
-args = ["-f", "./docker-compose.dev.yml", "up"]
+command = "docker"
+args = ["compose", "-f", "./docker-compose.dev.yml", "up"]
+dependencies = ["setup"]
+
+# Launch Docker
+[tasks."docker:down"]
+workspace = false
+command = "docker"
+args = ["compose", "-f", "./docker-compose.dev.yml", "down"]
 dependencies = ["setup"]
 
 # Launch Docker
 [tasks."docker:push"]
 workspace = false
-command = "docker-compose"
-args = ["-f", "./docker-compose.dev.yml", "push"]
+command = "docker"
+args = ["compose", "-f", "./docker-compose.dev.yml", "push"]
 dependencies = ["setup"]
 
 # Start Development Workflow
@@ -44,7 +51,7 @@ dependencies = ["member_format", "member_clippy", "docker:up"]
 # Start Development Workflow
 [tasks."start:dev"]
 workspace = false
-dependencies = ["member_format", "member_clippy", "docker:build", "docker:up"]
+dependencies = ["member_format", "member_clippy", "docker:down", "docker:build", "docker:up"]
 
 
 # Start Development Workflow

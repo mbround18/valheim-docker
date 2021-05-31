@@ -1,5 +1,4 @@
 [workspace]
-
 members = [
   "src/odin",
   "src/huginn"

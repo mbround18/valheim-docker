@@ -1,28 +1,31 @@
-use std::env;
-
+use crate::utils::get_server_name;
+use crate::{
+  notifications::{
+    discord::{is_discord_webhook, DiscordWebHookBody},
+    enums::{
+      event_status::EventStatus,
+      notification_event::{EventType, NotificationEvent},
+    },
+  },
+  utils::environment::fetch_var,
+};
 use chrono::prelude::*;
-use inflections::case::{to_constant_case, to_title_case};
+use inflections::case::to_title_case;
 use log::{debug, error, info, warn};
-use reqwest::blocking::RequestBuilder;
-use reqwest::StatusCode;
+use reqwest::{blocking::RequestBuilder, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 
-use crate::notifications::discord::{is_discord_webhook, DiscordWebHookBody};
-use crate::notifications::enums::event_status::EventStatus;
-use crate::notifications::enums::notification_event::{EventType, NotificationEvent};
-use crate::utils::environment::fetch_var;
-use reqwest::Url;
-
-mod discord;
+pub mod discord;
 pub mod enums;
 
 pub const WEBHOOK_URL: &str = "WEBHOOK_URL";
 
 #[derive(Deserialize, Serialize)]
 pub struct NotificationMessage {
-  event_type: EventType,
-  event_message: String,
-  timestamp: String,
+  pub(crate) author: String,
+  pub(crate) event_type: EventType,
+  pub(crate) event_message: String,
+  pub(crate) timestamp: String,
 }
 
 fn fetch_webhook_url() -> String {
@@ -48,17 +51,10 @@ fn is_webhook_enabled() -> bool {
   false
 }
 
-fn parse_webhook_env_var(event_type: EventType) -> String {
-  if event_type.name.to_lowercase().eq("broadcast") {
-    to_constant_case(format!("WEBHOOK_{}_MESSAGE", event_type.name).as_str())
-  } else {
-    to_constant_case(format!("WEBHOOK_{}_{}_MESSAGE", event_type.name, event_type.status).as_str())
-  }
-}
-
 impl NotificationEvent {
   fn create_notification_message(&self) -> NotificationMessage {
     NotificationMessage {
+      author: format!("Notification: {}", get_server_name()),
       event_type: self.to_event_type(),
       event_message: format!(
         "Server Status: {}",
@@ -94,15 +90,16 @@ impl NotificationEvent {
     debug!("Webhook URL: {}", webhook_url);
     client.post(webhook_url)
   }
-  pub fn send_custom_notification(&self, webhook_url: &str, message: &str) {
-    let mut notification = self.create_notification_message();
-    notification.event_message = message.to_string();
+  pub fn send_custom_notification(&self, webhook_url: &str, notification: &NotificationMessage) {
     debug!("Webhook enabled, sending notification {}", self.to_string());
-
+    debug!(
+      "Event Received: {}",
+      serde_json::to_string_pretty(&notification).unwrap()
+    );
     let mut req = self.build_request(webhook_url);
     req = if is_discord_webhook(webhook_url) {
       info!("Sending discord notification <3");
-      req.json(&DiscordWebHookBody::from(&notification))
+      req.json(&DiscordWebHookBody::from(notification))
     } else {
       debug!(
         "Webhook Payload: {}",
@@ -113,12 +110,17 @@ impl NotificationEvent {
     self.handle_request(req);
   }
   pub fn send_notification(&self) {
+    debug!("Checking for notification information...");
     if is_webhook_enabled() {
       debug!("Webhook found! Starting notification process...");
       let event = self.create_notification_message();
-      let env_var_name = parse_webhook_env_var(event.event_type);
-      let notification_message = env::var(env_var_name).unwrap_or(event.event_message);
-      self.send_custom_notification(fetch_webhook_url().as_str(), notification_message.as_str());
+      let enabled_var = format!("WEBHOOK_STATUS_{}", event.event_type.status).to_uppercase();
+      debug!("Checking ENV Var: {}", &enabled_var);
+      if fetch_var(&enabled_var, "0").eq("1") {
+        self.send_custom_notification(&fetch_webhook_url(), &event);
+      } else {
+        debug!("Skipping notification, {} is set to 0", enabled_var);
+      }
     } else {
       debug!("Skipping notification, no webhook supplied!");
     }

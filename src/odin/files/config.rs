@@ -1,15 +1,23 @@
 use crate::constants;
-use crate::files::ValheimArguments;
 use crate::files::{FileManager, ManagedFile};
 use crate::utils::environment::fetch_var;
 use crate::utils::{get_working_dir, parse_arg_variable};
 use clap::ArgMatches;
 use log::{debug, error};
-use std::fs;
-use std::path::PathBuf;
-use std::process::exit;
+use serde::{Deserialize, Serialize};
+use std::{fs, path::PathBuf, process::exit};
 
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
+
+#[derive(Deserialize, Serialize)]
+pub struct ValheimArguments {
+  pub(crate) port: String,
+  pub(crate) name: String,
+  pub(crate) world: String,
+  pub(crate) public: String,
+  pub(crate) password: String,
+  pub(crate) command: String,
+}
 
 pub fn load_config() -> ValheimArguments {
   let file = config_file();
@@ -63,7 +71,7 @@ pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
     password: parse_arg_variable(args, "password", ""),
     command,
   };
-  let content_to_write = serde_json::to_string(content).unwrap();
+  let content_to_write = serde_json::to_string_pretty(content).unwrap();
   debug!(
     "Writing config content: \n{}",
     serde_json::to_string_pretty(content).unwrap()

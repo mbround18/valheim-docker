@@ -5,4 +5,8 @@ target/
 tmp/
 docs/
 .run
-release/
+docker-compose*
+node_modules/
+package.json
+yarn.lock
+.yarn
