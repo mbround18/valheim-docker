@@ -45,7 +45,7 @@ jobs:
           password: ${{ secrets.DOCKER_TOKEN }}
 
       - name: Login to GitHub Container Registry
-#        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
@@ -57,7 +57,7 @@ jobs:
         with:
           context: .
           file: ./Dockerfile.${{ matrix.image }}
-#          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
