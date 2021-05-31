@@ -1,3 +1,25 @@
+# v1.4.0 (Mon May 31 2021)
+
+#### 🚀 Enhancement
+
+- ci fix [#383](https://github.com/mbround18/valheim-docker/pull/383) ([@mbround18](https://github.com/mbround18))
+- Mbround18/discord webhooks [#380](https://github.com/mbround18/valheim-docker/pull/380) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update dependency @auto-it/all-contributors to v10.29.2 [#373](https://github.com/mbround18/valheim-docker/pull/373) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.29.2 [#374](https://github.com/mbround18/valheim-docker/pull/374) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.29.2 [#379](https://github.com/mbround18/valheim-docker/pull/379) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.18.0 [#378](https://github.com/mbround18/valheim-docker/pull/378) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.3.5 (Sat May 22 2021)
 
 #### 🐛 Bug Fix
