@@ -211,7 +211,8 @@ If you would like to have release notifications tied into your Discord server, c
 ## Versions
 
 - latest (Stable): Mod support! and cleaned up the code base.
-- 1.3.0 (Does Not Exist): The tag exists here in GitHub but this was a ghost release.
+- 1.4.x (Stable): Webhook for discord upgrade.
+- 1.3.x (Stable): Health of codebase improvements.
 - 1.2.0 (Stable): Added additional stop features and sig for stopping. 
 - 1.1.1 (Stable): Patch to fix arguments
 - 1.1.0 (Unstable): Cleaned up image and made it faster
