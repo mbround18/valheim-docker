@@ -1,3 +1,36 @@
+# v1.4.1 (Mon Jun 28 2021)
+
+#### 🐛 Bug Fix
+
+- Update metrics.rs [#401](https://github.com/mbround18/valheim-docker/pull/401) ([@mbround18](https://github.com/mbround18))
+
+#### 📝 Documentation
+
+- Update README.md [#386](https://github.com/mbround18/valheim-docker/pull/386) ([@mbround18](https://github.com/mbround18))
+- Update README.md [#385](https://github.com/mbround18/valheim-docker/pull/385) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update dependency typescript to v3.9.10 [#397](https://github.com/mbround18/valheim-docker/pull/397) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate reqwest to 0.11.4 [#398](https://github.com/mbround18/valheim-docker/pull/398) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate rand to 0.8.4 [#396](https://github.com/mbround18/valheim-docker/pull/396) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate once_cell to 1.8 [#395](https://github.com/mbround18/valheim-docker/pull/395) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/all-contributors to v10.29.3 [#390](https://github.com/mbround18/valheim-docker/pull/390) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.29.3 [#391](https://github.com/mbround18/valheim-docker/pull/391) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.29.3 [#392](https://github.com/mbround18/valheim-docker/pull/392) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.18.2 [#388](https://github.com/mbround18/valheim-docker/pull/388) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.18.1 [#387](https://github.com/mbround18/valheim-docker/pull/387) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate handlebars to v4 [#382](https://github.com/mbround18/valheim-docker/pull/382) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Pin dependency typescript to v3.9.9 [#381](https://github.com/mbround18/valheim-docker/pull/381) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.0 (Mon May 31 2021)
 
 #### 🚀 Enhancement
