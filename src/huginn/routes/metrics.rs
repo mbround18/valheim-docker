@@ -30,5 +30,5 @@ pub fn invoke() -> String {
       bepinex_installed = info.bepinex.enabled as i32
     ),
   ];
-  content.join("\n")
+  format!("{}\n", content.join("\n"))
 }
