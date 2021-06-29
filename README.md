@@ -6,7 +6,7 @@
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt=""></a>
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt=""></a>
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-3-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Running on Linux Server
@@ -236,8 +236,10 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="https://m.bruno.fyi/"><img src="https://avatars.githubusercontent.com/u/12646562?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael</b></sub></a><br /><a href="#infra-mbround18" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Code">💻</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Documentation">📖</a></td>
     <td align="center"><a href="http://arneman.me/"><img src="https://avatars.githubusercontent.com/u/3298808?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Mark</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=bearlikelion" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://m.bruno.fyi/"><img src="https://avatars.githubusercontent.com/u/12646562?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael</b></sub></a><br /><a href="#infra-mbround18" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Code">💻</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/apps/imgbot"><img src="https://avatars.githubusercontent.com/in/4706?v=4?s=100" width="100px;" alt=""/><br /><sub><b>imgbot[bot]</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=imgbot[bot]" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/AGhost-7"><img src="https://avatars.githubusercontent.com/u/6957411?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jonathan Boudreau</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=AGhost-7" title="Code">💻</a></td>
   </tr>
 </table>
 
