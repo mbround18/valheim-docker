@@ -1,3 +1,17 @@
+# v1.4.2 (Tue Jun 29 2021)
+
+#### 🐛 Bug Fix
+
+- Update README.md [#403](https://github.com/mbround18/valheim-docker/pull/403) ([@mbround18](https://github.com/mbround18))
+- add support for custom post-install scripts [#400](https://github.com/mbround18/valheim-docker/pull/400) ([@AGhost-7](https://github.com/AGhost-7))
+
+#### Authors: 2
+
+- Jonathan Boudreau ([@AGhost-7](https://github.com/AGhost-7))
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v1.4.1 (Mon Jun 28 2021)
 
 #### 🐛 Bug Fix
