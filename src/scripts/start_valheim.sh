@@ -122,9 +122,9 @@ if [ ! "${TYPE}" = "vanilla" ]; then
   done
 fi
 
-if [ -d /start-valheim-post-install.d/ ]; then
+if [ -d "/valheim-post-install.d/" ]; then
   log "Executing post-install scripts"
-  find /start-valheim-post-install.d/ -type f -executable -exec {} \;
+  find /valheim-post-install.d/ -type f -executable -exec {} \;
 fi
 
 if [ -n "${HTTP_PORT}" ]; then
