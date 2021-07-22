@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@auto-it/all-contributors": "10.29.3",
-    "@auto-it/git-tag": "10.29.3",
+    "@auto-it/git-tag": "10.30.0",
     "@types/node": "15.3.0",
     "auto": "10.29.3",
     "typescript": "3.9.10"
