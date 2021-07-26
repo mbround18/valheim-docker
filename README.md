@@ -222,7 +222,7 @@ If you would like to have release notifications tied into your Discord server, c
 [Odin]: src/odin/README.md
 [Huginn]: src/huginn/README.md
 [Valheim]: https://www.valheimgame.com/
-[Getting started with mods]: ./docs/getting*started_with_mods.md
+[Getting started with mods]: ./docs/tutorials/getting_started_with_mods.md
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1*\_\_\_\_\*
 
 [//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)
