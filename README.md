@@ -192,7 +192,6 @@ This is a tutorial of a recommended path to transfering files. This can be done 
 
 ## Sponsors
 
-<a href="https://github.com/AtroposOrbis"><img width=50 src="https://avatars.githubusercontent.com/u/8618455?s=460&u=935d96983cafa4f0e5dd822dad10c23e8c1b021e&v=4"  alt="AtroposOrbis"/></a>
 <a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
 
 ## Release Notifications
