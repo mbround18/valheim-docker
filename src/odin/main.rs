@@ -23,7 +23,8 @@ fn main() {
   let yaml = load_yaml!("cli.yaml");
   let app = App::from(yaml)
     .version(constants::VERSION)
-    .setting(AppSettings::SubcommandRequired);
+    .setting(AppSettings::SubcommandRequired)
+    .setting(AppSettings::ArgRequiredElseHelp);
   let matches = app.get_matches();
   let debug_mode = matches.is_present("debug") || environment::fetch_var("DEBUG_MODE", "0").eq("1");
 
@@ -32,23 +33,25 @@ fn main() {
   }
 
   logger::initialize_logger(debug_mode).unwrap();
-  debug!("Debug mode enabled!");
-  if let Some((command_name, _)) = matches.subcommand() {
-    debug!("Launching {} command...", command_name);
-  };
-  match matches.subcommand().expect("Subcommand is required") {
-    ("configure", sub_m) => commands::configure::invoke(sub_m),
+  if debug_mode {
+    debug!("Debug mode enabled!");
+  }
+  let command_name = matches.subcommand();
+  debug!("Launching {} command...", command_name.0);
+
+  match matches.subcommand() {
+    ("configure", sub_m) => commands::configure::invoke(sub_m.unwrap()),
     ("install", _) => handle_exit_status(
       commands::install::invoke(constants::GAME_ID),
       "Successfully installed Valheim!".to_string(),
     ),
-    ("start", sub_m) => commands::start::invoke(sub_m),
-    ("stop", sub_m) => commands::stop::invoke(sub_m),
-    ("backup", sub_m) => commands::backup::invoke(sub_m),
-    ("notify", sub_m) => commands::notify::invoke(sub_m),
-    ("update", sub_m) => commands::update::invoke(sub_m),
-    ("mod:install", sub_m) => commands::install_mod::invoke(sub_m),
-    ("status", sub_m) => commands::status::invoke(sub_m),
+    ("start", sub_m) => commands::start::invoke(sub_m.unwrap()),
+    ("stop", sub_m) => commands::stop::invoke(sub_m.unwrap()),
+    ("backup", sub_m) => commands::backup::invoke(sub_m.unwrap()),
+    ("notify", sub_m) => commands::notify::invoke(sub_m.unwrap()),
+    ("update", sub_m) => commands::update::invoke(sub_m.unwrap()),
+    ("mod:install", sub_m) => commands::install_mod::invoke(sub_m.unwrap()),
+    ("status", sub_m) => commands::status::invoke(sub_m.unwrap()),
     _ => {
       panic!("No Command Launched!");
     } // Either no subcommand or one not tested for...

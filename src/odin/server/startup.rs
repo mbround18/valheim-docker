@@ -61,13 +61,13 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     // Required vars
     .args(&[
       "-port",
-      &config.port.as_str(),
+      config.port.as_str(),
       "-name",
-      &config.name.as_str(),
+      config.name.as_str(),
       "-world",
-      &config.world.as_str(),
+      config.world.as_str(),
       "-public",
-      &config.public.as_str(),
+      config.public.as_str(),
     ])
     .env("SteamAppId", environment::fetch_var("APPID", "892970"))
     .current_dir(game_directory());
@@ -84,7 +84,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     exit(1)
   } else {
     debug!(target: "server_startup","Password found, adding password flag.");
-    base_command = base_command.args(&["-password", &config.password.as_str()]);
+    base_command = base_command.args(&["-password", config.password.as_str()]);
   }
 
   // Tack on save dir at the end.

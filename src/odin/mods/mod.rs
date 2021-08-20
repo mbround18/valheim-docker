@@ -34,28 +34,28 @@ impl ZipExt for ZipArchive<File> {
         Err(_) => continue,
       };
 
-      let mut outpath = dst_dir.as_ref().join(filepath);
+      let mut out_path = dst_dir.as_ref().join(filepath);
 
-      debug!("Extracting file: {:?}", outpath);
+      debug!("Extracting file: {:?}", out_path);
 
       if file.name().ends_with('/') {
-        fs::create_dir_all(&outpath)?;
+        fs::create_dir_all(&out_path)?;
       } else {
-        if let Some(p) = outpath.parent() {
+        if let Some(p) = out_path.parent() {
           if !p.exists() {
             fs::create_dir_all(&p)?;
           }
         }
 
         // Don't overwrite old cfg files
-        if outpath.extension().unwrap_or_default() == "cfg" && outpath.exists() {
+        if out_path.extension().unwrap_or_default() == "cfg" && out_path.exists() {
           debug!("File is config with already exiting destination! Adding '.new'");
-          outpath = outpath.with_extension("cfg.new");
+          out_path = out_path.with_extension("cfg.new");
         }
 
-        let mut outfile = File::create(&outpath)?;
+        let mut outfile = File::create(&out_path)?;
         io::copy(&mut file, &mut outfile)?;
-        debug!("Extracted file {:?}", outpath);
+        debug!("Extracted file {:?}", out_path);
       }
 
       // Get and Set permissions
@@ -63,7 +63,7 @@ impl ZipExt for ZipArchive<File> {
       {
         use std::os::unix::fs::PermissionsExt;
         if let Some(mode) = file.unix_mode() {
-          fs::set_permissions(&outpath, fs::Permissions::from_mode(mode))?;
+          fs::set_permissions(&out_path, fs::Permissions::from_mode(mode))?;
         }
       }
     }
@@ -251,7 +251,7 @@ impl ValheimMod {
         self.staging_location
       ));
     }
-    if let Ok(parsed_url) = Url::parse(&download_url) {
+    if let Ok(parsed_url) = Url::parse(download_url) {
       match reqwest::blocking::get(parsed_url) {
         Ok(mut response) => {
           if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
@@ -262,7 +262,7 @@ impl ValheimMod {
 
           let file_name = parse_file_name(
             &Url::parse(&self.url).unwrap(),
-            format!("{}.{}", get_md5_hash(&download_url), &self.file_type).as_str(),
+            format!("{}.{}", get_md5_hash(download_url), &self.file_type).as_str(),
           );
           self.staging_location = self.staging_location.join(file_name);
           debug!("Downloading to: {:?}", self.staging_location);
