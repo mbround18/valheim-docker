@@ -63,7 +63,7 @@ dependencies = ["member_format", "member_clippy", "docker:build"]
 [tasks.access]
 workspace = false
 command = "docker-compose"
-args = ["-f", ".`/docker-compose.dev.yml", "exec", "--user", "steam", "valheim", "bash"]
+args = ["-f", "./docker-compose.dev.yml", "exec", "--user", "steam", "valheim", "bash"]
 
 # Access docker container as root
 [tasks."access:admin"]
