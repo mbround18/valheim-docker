@@ -1,3 +1,34 @@
+# v1.4.3 (Sat Aug 21 2021)
+
+#### 🐛 Bug Fix
+
+- Regressed dep and fixed other [#421](https://github.com/mbround18/valheim-docker/pull/421) ([@mbround18](https://github.com/mbround18))
+
+#### 📝 Documentation
+
+- Update README.md [#413](https://github.com/mbround18/valheim-docker/pull/413) ([@mbround18](https://github.com/mbround18))
+- Update README.md - fixed mods link [#412](https://github.com/mbround18/valheim-docker/pull/412) ([@Kellei2983](https://github.com/Kellei2983))
+- Create CODE_OF_CONDUCT.md [#406](https://github.com/mbround18/valheim-docker/pull/406) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update dependency @auto-it/all-contributors to v10.31.0 [#417](https://github.com/mbround18/valheim-docker/pull/417) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.31.0 [#419](https://github.com/mbround18/valheim-docker/pull/419) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.31.0 [#418](https://github.com/mbround18/valheim-docker/pull/418) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to 4.2.2 [#414](https://github.com/mbround18/valheim-docker/pull/414) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.30.0 [#409](https://github.com/mbround18/valheim-docker/pull/409) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/all-contributors to v10.30.0 [#407](https://github.com/mbround18/valheim-docker/pull/407) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.30.0 [#408](https://github.com/mbround18/valheim-docker/pull/408) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Lukáš Hruška ([@Kellei2983](https://github.com/Kellei2983))
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.2 (Tue Jun 29 2021)
 
 #### 🐛 Bug Fix
