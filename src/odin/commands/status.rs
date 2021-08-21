@@ -30,7 +30,7 @@ fn parse_address(args: &ArgMatches) -> Result<SocketAddrV4, AddrParseError> {
 
 pub fn invoke(args: &ArgMatches) {
   let output_json = args.is_present("json");
-  let address = parse_address(&args).unwrap_or_else(|_| {
+  let address = parse_address(args).unwrap_or_else(|_| {
     let addr = fetch_var("ADDRESS", args.value_of("address").unwrap());
     error!("Failed to parse supplied address! {}", addr);
     exit(1)

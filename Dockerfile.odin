@@ -23,14 +23,14 @@ FROM mbround18/cargo-make:latest as cargo-make
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-FROM rust as builder
+FROM rust:1.54 as builder
 WORKDIR /data/odin
 COPY . .
 # Copy over the cached dependencies
 COPY --from=cacher /data/odin/target target
-COPY --from=cacher /usr/local/cargo /usr/local/cargo
-COPY --from=cargo-make /usr/local/bin/cargo-make /usr/local/bin/cargo-make
-RUN cargo-make make -p production release
+COPY --from=cacher /usr/local/cargo/registry /usr/local/cargo/
+COPY --from=cargo-make /usr/local/bin/cargo-make /usr/local/cargo/bin
+RUN /usr/local/cargo/bin/cargo make -p production release
 
 # ------------------ #
 # -- Odin Runtime -- #

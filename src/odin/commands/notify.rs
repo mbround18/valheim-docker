@@ -13,7 +13,7 @@ pub fn invoke(args: &ArgMatches) {
       .unwrap_or("Test Notification")
       .to_string(),
   );
-  let webhook_url = parse_arg_variable(&args, "WEBHOOK_URL", "");
+  let webhook_url = parse_arg_variable(args, "WEBHOOK_URL", "");
   let notification = NotificationMessage {
     author: get_server_name(),
     event_type: EventType {

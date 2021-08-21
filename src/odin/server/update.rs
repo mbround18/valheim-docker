@@ -104,14 +104,14 @@ fn get_latest_build_id() -> String {
   // Remove the cached file to force an updated response. This is done because `steamcmd` seems to
   // refuse to update information before querying the app_info even with `+app_info_update 1` or
   // `+@bCSForceNoCache 1`
-  let appinfo_file = Path::new("/home/steam/Steam/appcache/appinfo.vdf");
-  fs::remove_file(&appinfo_file).unwrap_or_else(|e| match e.kind() {
+  let app_info_file = Path::new("/home/steam/Steam/appcache/appinfo.vdf");
+  fs::remove_file(&app_info_file).unwrap_or_else(|e| match e.kind() {
     // AOK if it doesn't exist
     ErrorKind::NotFound => {}
     err_kind => {
       error!(
-        "Failed to remove appinfo file at '{}'! Error: {:?}",
-        appinfo_file.display(),
+        "Failed to remove app_info file at '{}'! Error: {:?}",
+        app_info_file.display(),
         err_kind
       );
       exit(1);
@@ -148,7 +148,7 @@ fn extract_build_id_from_manifest(manifest: &str) -> &str {
 
 fn extract_build_id_from_app_info(app_info: &str) -> &str {
   let mut lines = app_info.lines();
-  while let Some(line) = lines.next() {
+  for line in &mut lines {
     if line.trim() == "\"public\"" {
       break;
     }

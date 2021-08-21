@@ -99,7 +99,7 @@ impl BepInExEnvironment {
       &self.doorstop_invoke_dll,
     ];
     let expected_state = true;
-    let output = checks.iter().all(|ref v| path_exists(&v) == expected_state);
+    let output = checks.iter().all(|v| path_exists(v) == expected_state);
     if output {
       debug!("Yay! looks like we found all the required files for BepInEx to run! <3")
     } else {

@@ -45,7 +45,7 @@ impl std::str::FromStr for NotificationEvent {
       ::std::result::Result::Ok(Broadcast)
     } else {
       let status = parts[1];
-      let event_status = EventStatus::from_str(&status).unwrap();
+      let event_status = EventStatus::from_str(status).unwrap();
       match event {
         "Update" => ::std::result::Result::Ok(Update(event_status)),
         "Start" => ::std::result::Result::Ok(Start(event_status)),

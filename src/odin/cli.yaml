@@ -1,7 +1,7 @@
 name: odin
 version: "stub"
 author: mbround18
-about: Installs and Runs Valheim
+help: Installs and Runs Valheim
 args:
   - run_as_root:
       long: run-as-root
@@ -18,11 +18,11 @@ args:
       short: r
       global: true
       long: dry-run
-      about: Will output the commands that it intends to run.
+      help: Will output the commands that it intends to run.
 
 subcommands:
   - configure:
-      about: >
+      help: >
         Initializes Odin with its configuration variables.
 
       version: "1.0"
@@ -31,76 +31,76 @@ subcommands:
         - server_executable:
             long: server-executable
             value_name: SERVER_EXECUTABLE_PATH
-            about: Sets the servers executable path.
+            help: Sets the servers executable path.
             takes_value: true
             default_value: ./valheim_server.x86_64
         - name:
             short: n
             long: name
             value_name: NAME
-            about: Sets the name of the server, (Can be set with ENV variable NAME)
+            help: Sets the name of the server, (Can be set with ENV variable NAME)
             takes_value: true
         - port:
             short: p
             long: port
             value_name: PORT
-            about: Sets the port of the server, (Can be set with ENV variable PORT)
+            help: Sets the port of the server, (Can be set with ENV variable PORT)
             takes_value: true
         - world:
             short: w
             long: world
             value_name: WORLD
-            about: Sets the world of the server, (Can be set with ENV variable WORLD)
+            help: Sets the world of the server, (Can be set with ENV variable WORLD)
             takes_value: true
         - password:
             short: s
             long: password
             value_name: PASSWORD
-            about: Sets the password of the server, (Can be set with ENV variable PASSWORD)
+            help: Sets the password of the server, (Can be set with ENV variable PASSWORD)
             takes_value: true
         - public:
             short: o
             long: public
             value_name: PUBLIC
-            about: Sets the public state of the server, (Can be set with ENV variable PUBLIC)
+            help: Sets the public state of the server, (Can be set with ENV variable PUBLIC)
             takes_value: true
   - install:
-      about: >
+      help: >
         Installs Valheim with steamcmd
 
       version: "2.1"
       author: mbround18
   - start:
-      about: >
+      help: >
         Starts Valheim
 
       version: "2.0"
       author: mbround18
   - stop:
-      about: >
+      help: >
         Stops Valheim
 
       version: "1.1"
       author: mbround18
   - backup:
-      about: >
+      help: >
         Backups the current saves to a specific location
 
       version: "1.0"
       author: mbround18
       args:
         - INPUT_DIR:
-            about: Directory to back up
+            help: Directory to back up
             required: true
             index: 1
         - OUTPUT_FILE:
-            about: Sets the output file to use
+            help: Sets the output file to use
             required: true
             index: 2
   - update:
       version: "1.0"
       author: LovecraftianHorror
-      about: >
+      help: >
           Attempts to update an existing Valheim server installation. By
           default this involves checking for an update, if an update is
           available, the server will be shut down, updated, and brought back online
@@ -111,7 +111,7 @@ subcommands:
         - check:
             long: check
             short: c
-            about: >
+            help: >
                 Check for a server update, exiting with 0 if one is available
                 and 10 if the server is up to date.
 
@@ -120,38 +120,38 @@ subcommands:
         - force:
             long: force
             short: f
-            about: >
+            help: >
               Force an update attempt, even if no update is detected.
 
             conflicts_with:
                 - check
   - notify:
-      about: >
+      help: >
         Sends a notification to the provided webhook.
 
       version: "1.1"
       author: mbround18
       args:
         - MESSAGE:
-            about: Message to send to the webhook.
+            help: Message to send to the webhook.
             required: true
 
         - TITLE:
             long: title
             required: false
             takes_value: true
-            about: >
+            help: >
               Title of the message block (required by discord & generic webhook, automatically supplied, default: "Broadcast")
 
         - webhook_url:
             long: webhook
             value_name: WEBHOOK_URL
             takes_value: true
-            about: >
+            help: >
               Sets the webhook to send a notification to, (Can be set with ENV variable WEBHOOK_URL)
 
   - mod:install:
-      about: >
+      help: >
         Installs a mod from a given source by downloading the zip file and then extracting it.
         Supported platforms are Nexus (with premium account and API key), GitHub, and any other direct download source.
 
@@ -159,11 +159,11 @@ subcommands:
       author: mbround18
       args:
         - URL:
-            about: Url of the mod to download and install
+            help: Url of the mod to download and install
             required: true
             index: 1
   - status:
-      about: >
+      help: >
         Prints out the status of your server with information about current players, mod support, and a few other details.
         Note: If your server has PUBLIC set to 0 it will not be able to be queried!
 
@@ -171,13 +171,13 @@ subcommands:
       author: mbround18
       args:
         - json:
-            about: Print out as json
+            help: Print out as json
             required: false
             takes_value: false
             long: json
             short: j
         - address:
-            about: Search for server information based on address
+            help: Search for server information based on address
             required: false
             takes_value: true
             long: address
