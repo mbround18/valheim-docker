@@ -121,7 +121,7 @@ impl ValheimMod {
     Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."))
   }
 
-  fn remove_byte_order_mark(value: String) -> String {
+  fn remove_byte_order_mark(&self, value: String) -> String {
     if value.contains('\u{feff}') {
       debug!("Found and removed UTF-8 BOM");
       return value.trim_start_matches('\u{feff}').to_string();
