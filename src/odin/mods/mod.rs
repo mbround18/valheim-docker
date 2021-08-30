@@ -14,9 +14,9 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use zip::{
-  read::{ZipFile},
+  read::ZipFile,
   result::{ZipError, ZipResult},
-  ZipArchive,
+  ZipArchive
 };
 
 trait ZipExt {
