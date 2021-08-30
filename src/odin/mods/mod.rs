@@ -127,7 +127,7 @@ impl ValheimMod {
       return value.trim_start_matches('\u{feff}').to_string();
     }
 
-    return value.to_string();
+    value
   }
 
   fn copy_single_file<P1, P2>(&self, from: P1, to: P2)
