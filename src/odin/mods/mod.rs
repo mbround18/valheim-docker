@@ -10,9 +10,11 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, create_dir_all, File};
 use std::io;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use zip::{
+  read::{ZipFile},
   result::{ZipError, ZipResult},
   ZipArchive,
 };
@@ -104,6 +106,8 @@ impl ValheimMod {
       Ok(value) => value,
       Err(error) => {
         error!("Failed to deserialize manifest file: {:?}", error);
+        // TODO: Remove Exit Code and provide an Ok or Err.
+        exit(1);
       }
     };
 
@@ -112,15 +116,15 @@ impl ValheimMod {
 
     // Some manifest files include a UTF-8 BOM sequence, breaking serde json parsing
     // See https://github.com/serde-rs/serde/issues/1753
-    json_data = remove_byte_mark_order(json_data);
+    json_data = self.remove_byte_order_mark(json_data);
 
-    return Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."));
+    Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."))
   }
 
-  fn remove_byte_mark_order(value: String) -> String {
-    if value.contains("\u{feff}") {
+  fn remove_byte_order_mark(value: String) -> String {
+    if value.contains('\u{feff}') {
       debug!("Found and removed UTF-8 BOM");
-      return value.trim_start_matches("\u{feff}").to_string();
+      return value.trim_start_matches('\u{feff}').to_string();
     }
 
     return value.to_string();
