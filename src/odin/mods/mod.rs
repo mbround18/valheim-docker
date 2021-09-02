@@ -16,7 +16,7 @@ use std::process::exit;
 use zip::{
   read::ZipFile,
   result::{ZipError, ZipResult},
-  ZipArchive
+  ZipArchive,
 };
 
 trait ZipExt {
