@@ -1,3 +1,20 @@
+# v1.4.4 (Thu Sep 02 2021)
+
+#### 🐛 Bug Fix
+
+- Pin dependencies [#429](https://github.com/mbround18/valheim-docker/pull/429) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Updated workflows, deps, and scripts [#428](https://github.com/mbround18/valheim-docker/pull/428) ([@mbround18](https://github.com/mbround18))
+- [Odin] Fix installation of mods having a UTF-8 BOM in their manifest.json [#423](https://github.com/mbround18/valheim-docker/pull/423) ([@JulianVallee](https://github.com/JulianVallee) [@mbround18](https://github.com/mbround18))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Julian Vallée ([@JulianVallee](https://github.com/JulianVallee))
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.3 (Sat Aug 21 2021)
 
 #### 🐛 Bug Fix
