@@ -56,6 +56,15 @@
       "contributions": [
         "doc"
       ]
+    },
+    {
+      "login": "JulianVallee",
+      "name": "Julian Vallée",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6720458?v=4",
+      "profile": "http://vallee-design.de/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7
