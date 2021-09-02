@@ -64,22 +64,3 @@ jobs:
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-
-      - name: Send Release Notification
-        if: github.event_name != 'pull_request' && "${{ matrix.image }}" == "valheim"
-        env:
-          NAME: "GitHub Release Notification"
-        run: |
-          if [ "${{ matrix.image }}" != "valheim" ]; then
-            exit 0
-          fi
-
-          # Send release notification
-          docker run --rm \
-          -e NAME="New Version: mbround18/${{ matrix.image }}:latest" \
-          mbround18/odin:latest notify                 \
-            --webhook "${{ secrets.RELEASE_WEBHOOK }}" \
-            --title "New Release! <3"                  \
-            "New release of "
-          "New release of mbround18/${{ matrix.image }}:latest!! Tagged with: ${{ steps.meta.outputs.tags }}!!" \
-
