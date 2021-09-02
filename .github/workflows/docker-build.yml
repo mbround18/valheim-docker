@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: true
       max-parallel: 1
-      matrix: 
+      matrix:
         image: [odin, valheim]
     steps:
       - uses: actions/checkout@v2
@@ -30,13 +30,15 @@ jobs:
         with:
           file: ./Dockerfile.${{ matrix.image }}
           push: false
-          tags: mbround18/${{ matrix.image }}:latest  
+          tags: mbround18/${{ matrix.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-      
+
       - name: Finalization
         run: echo "Finalized"
-        
+
 
