@@ -17,14 +17,8 @@ jobs:
 
       - uses: actions/setup-node@v2
         with:
+          cache: "yarn"
           node-version: '14'
-
-      - uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-            .yarn/cache
-          key: ${{ runner.os }}-${{ hashFiles('**/package.json') }}
 
       - name: Yarn install
         run: yarn install
