@@ -867,7 +867,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"auto@npm:^10.31.0":
+"auto@npm:10.31.0":
   version: 10.31.0
   resolution: "auto@npm:10.31.0"
   dependencies:
@@ -3169,7 +3169,7 @@ resolve@~1.7.1:
   languageName: node
   linkType: hard
 
-typescript@^4.4.2:
+typescript@4.4.2:
   version: 4.4.2
   resolution: "typescript@npm:4.4.2"
   bin:
@@ -3179,7 +3179,7 @@ typescript@^4.4.2:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@^4.4.2#~builtin<compat/typescript>":
+"typescript@patch:typescript@4.4.2#~builtin<compat/typescript>":
   version: 4.4.2
   resolution: "typescript@patch:typescript@npm%3A4.4.2#~builtin<compat/typescript>::version=4.4.2&hash=d8b4e7"
   bin:
@@ -3237,9 +3237,9 @@ typescript@^4.4.2:
     "@types/node": 15.3.0
     "@types/semver": ^7.3.5
     "@yarnpkg/pnpify": ^3.0.0-rc.3
-    auto: ^10.31.0
+    auto: 10.31.0
     semver: ^7.3.5
-    typescript: ^4.4.2
+    typescript: 4.4.2
   languageName: unknown
   linkType: soft
 
