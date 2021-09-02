@@ -10,9 +10,11 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, create_dir_all, File};
 use std::io;
+use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use zip::{
+  read::ZipFile,
   result::{ZipError, ZipResult},
   ZipArchive,
 };
@@ -99,8 +101,33 @@ impl ValheimMod {
 
   fn try_parse_manifest(&self, archive: &mut ZipArchive<File>) -> Result<Manifest, ZipError> {
     debug!("Parsing 'manifest.json' ...");
-    let manifest = archive.by_name("manifest.json")?;
-    Ok(serde_json::from_reader(manifest).expect("Failed deserializing manifest"))
+
+    let mut manifest: ZipFile = match archive.by_name("manifest.json") {
+      Ok(value) => value,
+      Err(error) => {
+        error!("Failed to deserialize manifest file: {:?}", error);
+        // TODO: Remove Exit Code and provide an Ok or Err.
+        exit(1);
+      }
+    };
+
+    let mut json_data = String::new();
+    manifest.read_to_string(&mut json_data).unwrap();
+
+    // Some manifest files include a UTF-8 BOM sequence, breaking serde json parsing
+    // See https://github.com/serde-rs/serde/issues/1753
+    json_data = self.remove_byte_order_mark(json_data);
+
+    Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."))
+  }
+
+  fn remove_byte_order_mark(&self, value: String) -> String {
+    if value.contains('\u{feff}') {
+      debug!("Found and removed UTF-8 BOM");
+      return value.trim_start_matches('\u{feff}').to_string();
+    }
+
+    value
   }
 
   fn copy_single_file<P1, P2>(&self, from: P1, to: P2)
