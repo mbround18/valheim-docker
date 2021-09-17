@@ -1,9 +1,9 @@
 use log::{error, info};
-use sysinfo::{ProcessExt, Signal, System, SystemExt};
+use sysinfo::{ProcessExt, Signal};
 
 use std::{thread, time::Duration};
 
-use crate::constants;
+use super::process::ServerProcess;
 
 pub fn blocking_shutdown() {
   send_shutdown_signal();
@@ -12,9 +12,8 @@ pub fn blocking_shutdown() {
 
 pub fn send_shutdown_signal() {
   info!("Scanning for Valheim process");
-  let mut system = System::new();
-  system.refresh_all();
-  let processes = system.get_process_by_name(constants::VALHEIM_EXECUTABLE_NAME);
+  let mut server_process = ServerProcess::new();
+  let processes = server_process.get_valheim_processes();
   if processes.is_empty() {
     info!("Process NOT found!")
   } else {
@@ -34,11 +33,9 @@ pub fn send_shutdown_signal() {
 
 fn wait_for_exit() {
   info!("Waiting for server to completely shutdown...");
-  let mut system = System::new();
+  let mut server_process = ServerProcess::new();
   loop {
-    system.refresh_all();
-    let processes = system.get_process_by_name(constants::VALHEIM_EXECUTABLE_NAME);
-    if processes.is_empty() {
+    if server_process.is_running() {
       break;
     } else {
       // Delay to keep down CPU usage
