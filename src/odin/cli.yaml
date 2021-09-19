@@ -1,7 +1,7 @@
 name: odin
 version: "stub"
 author: mbround18
-help: Installs and Runs Valheim
+about: Installs and Runs Valheim
 args:
   - run_as_root:
       long: run-as-root
