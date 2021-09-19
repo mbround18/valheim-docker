@@ -35,7 +35,7 @@ fn wait_for_exit() {
   info!("Waiting for server to completely shutdown...");
   let mut server_process = ServerProcess::new();
   loop {
-    if server_process.is_running() {
+    if !server_process.is_running() {
       break;
     } else {
       // Delay to keep down CPU usage
