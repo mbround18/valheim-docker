@@ -1,3 +1,15 @@
+# v1.4.6 (Sun Sep 19 2021)
+
+#### 🐛 Bug Fix
+
+- Update deps [#446](https://github.com/mbround18/valheim-docker/pull/446) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v1.4.5 (Sun Sep 19 2021)
 
 #### 🐛 Bug Fix
