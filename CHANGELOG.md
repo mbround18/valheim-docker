@@ -1,3 +1,23 @@
+# v1.4.5 (Sun Sep 19 2021)
+
+#### 🐛 Bug Fix
+
+- [Odin] Fix shutdown not working on unix [#441](https://github.com/mbround18/valheim-docker/pull/441) ([@Finomnis](https://github.com/Finomnis))
+- Update Rust crate a2s to 0.3 [#434](https://github.com/mbround18/valheim-docker/pull/434) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### 🔩 Dependency Updates
+
+- Update rust Docker tag to v1.55 [#432](https://github.com/mbround18/valheim-docker/pull/432) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.4.3 [#433](https://github.com/mbround18/valheim-docker/pull/433) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@Finomnis](https://github.com/Finomnis)
+- [@renovate[bot]](https://github.com/renovate[bot])
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.4 (Thu Sep 02 2021)
 
 #### 🐛 Bug Fix
