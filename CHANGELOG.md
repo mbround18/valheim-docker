@@ -1,3 +1,21 @@
+# v1.4.8 (Wed Sep 22 2021)
+
+#### 🐛 Bug Fix
+
+- Fix ValheimPlus type [#451](https://github.com/mbround18/valheim-docker/pull/451) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Pin dependencies [#447](https://github.com/mbround18/valheim-docker/pull/447) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.7 (Sun Sep 19 2021)
 
 #### 🐛 Bug Fix
