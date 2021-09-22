@@ -1,3 +1,15 @@
+# v1.4.7 (Sun Sep 19 2021)
+
+#### 🐛 Bug Fix
+
+- [Odin] Fix shutdown procedure finishing too early [#448](https://github.com/mbround18/valheim-docker/pull/448) ([@Finomnis](https://github.com/Finomnis))
+
+#### Authors: 1
+
+- [@Finomnis](https://github.com/Finomnis)
+
+---
+
 # v1.4.6 (Sun Sep 19 2021)
 
 #### 🐛 Bug Fix
