@@ -203,10 +203,6 @@ If you would like to have release notifications tied into your Discord server, c
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
-# Contributions
-
-- @some_guy - design, doc
-
 ## Versions
 
 - latest (Stable): Mod support! and cleaned up the code base.

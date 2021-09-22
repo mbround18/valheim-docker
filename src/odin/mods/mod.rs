@@ -14,7 +14,6 @@ use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 use zip::{
-  read::ZipFile,
   result::{ZipError, ZipResult},
   ZipArchive,
 };
@@ -102,23 +101,23 @@ impl ValheimMod {
   fn try_parse_manifest(&self, archive: &mut ZipArchive<File>) -> Result<Manifest, ZipError> {
     debug!("Parsing 'manifest.json' ...");
 
-    let mut manifest: ZipFile = match archive.by_name("manifest.json") {
-      Ok(value) => value,
+    match archive.by_name("manifest.json") {
+      Ok(mut manifest) => {
+        debug!("'manifest.json' successfully loaded");
+        let mut json_data = String::new();
+        manifest.read_to_string(&mut json_data).unwrap();
+
+        // Some manifest files include a UTF-8 BOM sequence, breaking serde json parsing
+        // See https://github.com/serde-rs/serde/issues/1753
+        json_data = self.remove_byte_order_mark(json_data);
+
+        Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."))
+      }
       Err(error) => {
         error!("Failed to deserialize manifest file: {:?}", error);
-        // TODO: Remove Exit Code and provide an Ok or Err.
-        exit(1);
+        Err(error)
       }
-    };
-
-    let mut json_data = String::new();
-    manifest.read_to_string(&mut json_data).unwrap();
-
-    // Some manifest files include a UTF-8 BOM sequence, breaking serde json parsing
-    // See https://github.com/serde-rs/serde/issues/1753
-    json_data = self.remove_byte_order_mark(json_data);
-
-    Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."))
+    }
   }
 
   fn remove_byte_order_mark(&self, value: String) -> String {
@@ -155,21 +154,20 @@ impl ValheimMod {
   }
 
   fn is_mod_framework(&self, archive: &mut ZipArchive<File>) -> bool {
-    let maybe_manifest = self.try_parse_manifest(archive).ok();
-    match maybe_manifest {
-      Some(Manifest { name }) => {
-        let mod_dir = format!("{}/", name);
-        let mod_dir_exists = archive.file_names().any(|file_name| file_name == mod_dir);
+    if let Ok(maybe_manifest) = self.try_parse_manifest(archive) {
+      let name = maybe_manifest.name;
+      let mod_dir = format!("{}/", name);
+      let mod_dir_exists = archive.file_names().any(|file_name| file_name == mod_dir);
 
-        // It's a mod framework based on a specific name and if it has a matching directory in the
-        // archive
-        debug!("Validating if file is a framework");
-        mod_dir_exists && (name == "BepInExPack_Valheim" || name == "BepInEx_Valheim_Full")
-      }
-      None => archive
+      // It's a mod framework based on a specific name and if it has a matching directory in the
+      // archive
+      debug!("Validating if file is a framework");
+      mod_dir_exists && (name == "BepInExPack_Valheim" || name == "BepInEx_Valheim_Full")
+    } else {
+      archive
         // If there is no manifest, fall back to checking for winhttp.dll as a heuristic
         .file_names()
-        .any(|file_name| file_name.eq_ignore_ascii_case("winhttp.dll")),
+        .any(|file_name| file_name.eq_ignore_ascii_case("winhttp.dll"))
     }
   }
 
