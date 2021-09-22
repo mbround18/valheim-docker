@@ -18,8 +18,8 @@
     "@auto-it/all-contributors": "10.31.0",
     "@auto-it/git-tag": "10.31.0",
     "@types/node": "15.3.0",
-    "auto": "^10.32.0",
-    "typescript": "^4.4.3"
+    "auto": "10.32.0",
+    "typescript": "4.4.3"
   },
   "dependencies": {
     "@auto-it/core": "^10.27.0",
