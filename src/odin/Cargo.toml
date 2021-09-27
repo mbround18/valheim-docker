@@ -45,7 +45,7 @@ chrono = "0.4"
 zip = { version = "0.5" }
 fs_extra = "1.2.0"
 glob = "0.3.0"
-a2s = "0.3"
+a2s = "0.4"
 users = "*"
 
 [dev-dependencies]
