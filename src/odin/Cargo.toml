@@ -33,7 +33,7 @@ log = "0.4.14"
 clap = { version = "2.33.3" , features = ["yaml"] }
 which = "4.2.2"
 serde = { version = "1.0", features = ["derive"], default_features = false  }
-sysinfo = { version = "0.18.2", default_features = false }
+sysinfo = { version = "0.20", default_features = false }
 serde_json = "1.0"
 daemonize = "0.4"
 tar = "0.4"
@@ -45,7 +45,7 @@ chrono = "0.4"
 zip = { version = "0.5" }
 fs_extra = "1.2.0"
 glob = "0.3.0"
-a2s = "0.4"
+a2s = "0.3.0"
 users = "*"
 
 [dev-dependencies]
