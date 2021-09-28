@@ -1,0 +1,21 @@
+*                    text=auto  eol=lf
+*.txt		         text
+*.vcproj	         text eol=crlf
+*.sh		         text eol=lf
+*.rs		         text eol=lf
+*.c	     	         text eol=lf
+*.h		             text eol=lf
+*.cpp		         text eol=lf
+*.hpp		         text eol=lf
+*.cc		         text eol=lf
+*.hh		         text eol=lf
+*.cxx		         text eol=lf
+*.hxx		         text eol=lf
+*.c++		         text eol=lf
+*.h++		         text eol=lf
+*.cs		         text eol=lf
+*.vb		         text eol=lf
+*.bas		         text eol=lf
+*.frm		         text eol=lf
+*.jpg		        -text
+*.png		        -textgh
