@@ -74,6 +74,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "JustinByrne",
+      "name": "Justin Byrne",
+      "avatar_url": "https://avatars.githubusercontent.com/u/14056930?v=4",
+      "profile": "https://tech.jrlbyrne.com/",
+      "contributions": [
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7
