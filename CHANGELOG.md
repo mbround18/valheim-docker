@@ -1,3 +1,28 @@
+# v1.4.9 (Tue Sep 28 2021)
+
+#### 🐛 Bug Fix
+
+- Fix sysinfo [#454](https://github.com/mbround18/valheim-docker/pull/454) ([@mbround18](https://github.com/mbround18))
+
+#### 📝 Documentation
+
+- Fixed spelling mistake [#453](https://github.com/mbround18/valheim-docker/pull/453) ([@JustinByrne](https://github.com/JustinByrne))
+
+#### 🔩 Dependency Updates
+
+- Update Rust crate a2s to 0.4 [#452](https://github.com/mbround18/valheim-docker/pull/452) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/all-contributors to v10.32.0 [#435](https://github.com/mbround18/valheim-docker/pull/435) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.32.0 [#436](https://github.com/mbround18/valheim-docker/pull/436) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Justin Byrne ([@JustinByrne](https://github.com/JustinByrne))
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.8 (Wed Sep 22 2021)
 
 #### 🐛 Bug Fix
