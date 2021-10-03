@@ -119,8 +119,6 @@ setup_filesystem() {
   mkdir -p "${GAME_LOCATION}"
   mkdir -p "${GAME_LOCATION}/logs"
   chown -R ${STEAM_UID}:${STEAM_GID} "${GAME_LOCATION}"
-  cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim
-
 
   # Other
   mkdir -p /home/steam/scripts

@@ -7,7 +7,7 @@ FROM mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
 # --------------- #
 # -- Steam CMD -- #
 # --------------- #
-FROM cm2network/steamcmd:root
+FROM steamcmd/steamcmd:ubuntu
 
 RUN apt-get update                     \
     && apt-get upgrade -y              \
@@ -19,6 +19,14 @@ RUN apt-get update                     \
     && rm -rf /var/lib/apt/lists/*     \
     && gosu nobody true                \
     && dos2unix
+
+RUN addgroup --system steam \
+    && adduser --system     \
+      --home /home/steam    \
+      --shell /bin/bash     \
+      steam                 \
+    && usermod -aG steam steam
+
 
 # Container informaiton
 ARG GITHUB_SHA="not-set"
@@ -60,13 +68,11 @@ ENV PUID=1000                                                     \
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --from=runtime /usr/local/bin/odin /usr/local/bin/odin
-COPY --from=runtime /usr/local/bin/huginn /usr/local/bin/huginn
+COPY --from=runtime /apps/odin /apps/huginn /usr/local/bin/
 COPY ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 RUN usermod -u ${PUID} steam                            \
     && groupmod -g ${PGID} steam                        \
-    && chsh -s /bin/bash steam                          \
     && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version \
     && chmod 755 -R /home/steam/scripts/                \
     && chmod 755 /entrypoint.sh                         \
