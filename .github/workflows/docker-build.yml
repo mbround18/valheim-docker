@@ -31,8 +31,6 @@ jobs:
           file: ./Dockerfile.${{ matrix.image }}
           push: false
           tags: mbround18/${{ matrix.image }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
           build-args: |
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"

@@ -119,6 +119,7 @@ setup_filesystem() {
   mkdir -p "${GAME_LOCATION}"
   mkdir -p "${GAME_LOCATION}/logs"
   chown -R ${STEAM_UID}:${STEAM_GID} "${GAME_LOCATION}"
+  chown -R ${STEAM_UID}:${STEAM_GID} "${GAME_LOCATION}"
 
   # Other
   mkdir -p /home/steam/scripts
