@@ -9,6 +9,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  cancel-previous:
+    name: Cancel Previous
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
+
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
   build:
@@ -18,6 +26,11 @@ jobs:
       max-parallel: 1
       matrix:
         image: [odin, valheim]
+        include:
+          - image: odin
+            push: true
+          - image: valheim
+            push: false
     steps:
       - uses: actions/checkout@v2
 
@@ -47,7 +60,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           file: ./Dockerfile.${{ matrix.image }}
-          push: true
+          push: ${{ matrix.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
