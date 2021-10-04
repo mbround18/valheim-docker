@@ -2,6 +2,11 @@ name: Docker Build
 
 on:
   pull_request:
+    types:
+      - labeled
+      - edited
+      - synchronize
+      - unlabeled
     branches:
       - main
 
@@ -30,7 +35,7 @@ jobs:
           - image: odin
             push: true
           - image: valheim
-            push: false
+            push: ${{ contains(github.event.pull_request.labels.*.name, 'canary') }}
     steps:
       - uses: actions/checkout@v2
 
