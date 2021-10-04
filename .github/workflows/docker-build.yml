@@ -24,17 +24,37 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: mbround18
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Docker meta
+        id: meta
+        uses: crazy-max/ghaction-docker-meta@v3
+        with:
+          # list of Docker images to use as base name for tags
+          images: |
+            ghcr.io/mbround18/${{ matrix.image }}
+
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=sha
+
       - name: Build ${{ matrix.image }}
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           file: ./Dockerfile.${{ matrix.image }}
-          push: false
-          tags: mbround18/${{ matrix.image }}:latest
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
+            "ODIN_IMAGE_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
 
       - name: Finalization
         run: echo "Finalized"
