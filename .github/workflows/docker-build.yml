@@ -36,7 +36,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ghcr.io/mbround18/${{ matrix.image }}
+            mbround18/${{ matrix.image }}
 
           # generate Docker tags based on the following events/attributes
           tags: |
