@@ -15,7 +15,7 @@
     "test": "cargo test"
   },
   "devDependencies": {
-    "@auto-it/all-contributors": "10.32.0",
+    "@auto-it/all-contributors": "10.32.1",
     "@auto-it/git-tag": "10.32.0",
     "@types/node": "15.3.0",
     "auto": "^10.32.1",

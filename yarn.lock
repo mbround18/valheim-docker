@@ -14,12 +14,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@auto-it/all-contributors@npm:10.32.0":
-  version: 10.32.0
-  resolution: "@auto-it/all-contributors@npm:10.32.0"
+"@auto-it/all-contributors@npm:10.32.1":
+  version: 10.32.1
+  resolution: "@auto-it/all-contributors@npm:10.32.1"
   dependencies:
-    "@auto-it/bot-list": 10.32.0
-    "@auto-it/core": 10.32.0
+    "@auto-it/bot-list": 10.32.1
+    "@auto-it/core": 10.32.1
     "@octokit/rest": ^18.0.0
     all-contributors-cli: 6.19.0
     anymatch: ^3.1.1
@@ -30,7 +30,7 @@ __metadata:
     fromentries: ^1.2.0
     io-ts: ^2.1.2
     tslib: 2.1.0
-  checksum: 7ea8ff76a39ed478cf2002ed189370ba64db3b8e062b00d870bc57c8b1b511011f78b9740a93eb78f71f5e401c33d92bf7763a2b587ed118a66d00ec3506e67b
+  checksum: 9c1883d2258bbd0b708efb653f35098e776af85eb2e00324c8665cee52466393a14fd20739eda00a85097546c8eb47082332bd854fa4704944aa287c894162da
   languageName: node
   linkType: hard
 
@@ -3287,7 +3287,7 @@ typescript@^4.4.3:
   version: 0.0.0-use.local
   resolution: "valheim@workspace:."
   dependencies:
-    "@auto-it/all-contributors": 10.32.0
+    "@auto-it/all-contributors": 10.32.1
     "@auto-it/core": ^10.27.0
     "@auto-it/git-tag": 10.32.0
     "@octokit/core": ^3.4.0
