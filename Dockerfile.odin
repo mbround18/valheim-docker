@@ -1,7 +1,7 @@
 # ------------------ #
 # -- Odin Planner -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.54-alpine as planner
+FROM lukemathwalker/cargo-chef:latest-rust-1.55-alpine as planner
 WORKDIR /data/odin
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
@@ -9,7 +9,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ------------------ #
 # -- Odin Cacher  -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.54-alpine as cacher
+FROM lukemathwalker/cargo-chef:latest-rust-1.55-alpine as cacher
 WORKDIR /data/odin
 COPY --from=planner /data/odin/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
@@ -35,9 +35,8 @@ RUN /usr/local/cargo/bin/cargo make -p production release
 # ------------------ #
 # -- Odin Runtime -- #
 # ------------------ #
-FROM debian:buster-slim as runtime
-WORKDIR /data/odin
-COPY --from=builder /data/odin/target/release/odin /usr/local/bin/
-COPY --from=builder /data/odin/target/release/huginn /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/odin"]
+FROM debian:11-slim as runtime
+WORKDIR /apps
+COPY --from=builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
+ENTRYPOINT ["/apps/odin"]
 CMD ["--version"]
