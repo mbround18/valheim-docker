@@ -1,3 +1,15 @@
+# v1.4.10 (Tue Oct 05 2021)
+
+#### 🐛 Bug Fix
+
+- Switch to a more maintained image [#460](https://github.com/mbround18/valheim-docker/pull/460) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v1.4.9 (Tue Sep 28 2021)
 
 #### 🐛 Bug Fix
