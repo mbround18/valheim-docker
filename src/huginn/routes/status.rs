@@ -1,7 +1,7 @@
 use crate::fetch_info;
-use warp::reply::{json, Json};
+use rocket::response::content::Json;
 
-pub fn invoke() -> Json {
-  let info = fetch_info();
-  json(&info)
+#[get("/status")]
+pub fn status() -> Json<String> {
+  Json(serde_json::to_string(&fetch_info()).unwrap())
 }

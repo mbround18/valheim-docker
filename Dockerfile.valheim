@@ -20,12 +20,13 @@ RUN apt-get update                     \
     && gosu nobody true                \
     && dos2unix
 
-RUN addgroup --system steam     \
-    && adduser --system         \
-      --home /home/steam        \
-      --shell /bin/bash         \
-      steam                     \
-    && usermod -aG steam steam  \
+RUN mkdir -p /home/steam            \
+    && adduser                      \
+      --home /home/steam            \
+      --shell /bin/bash             \
+      steam                         \
+    && usermod -aG steam steam      \
+    && usermod -d /home/steam steam \
     && chmod ugo+rw /tmp/dumps
 
 

@@ -30,8 +30,8 @@ cleanup() {
   if [[ -n $TAIL_PID ]]; then
     kill "$TAIL_PID"
   fi
-  if [[ -n $ODIN_HTTP_SERVER_PID ]]; then
-    kill "$ODIN_HTTP_SERVER_PID"
+  if [[ -n $HUGINN_HTTP_SERVER_PID ]]; then
+    kill "$HUGINN_HTTP_SERVER_PID"
   fi
 }
 
@@ -129,7 +129,7 @@ fi
 
 if [ -n "${HTTP_PORT}" ]; then
   huginn &
-  export ODIN_HTTP_SERVER_PID=$!
+  export HUGINN_HTTP_SERVER_PID=$!
 fi
 
 # Setting up script traps

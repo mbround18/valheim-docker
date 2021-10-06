@@ -20,16 +20,26 @@ pub struct ServerInfo {
   pub players: u8,
   pub max_players: u8,
   pub map: String,
+  pub server_type: String,
+  pub connection_url: String,
   pub online: bool,
   pub bepinex: BepInExInfo,
   pub jobs: Vec<JobInfo>,
 }
 
+fn ipv4_to_connection_url(address: SocketAddrV4) -> String {
+  format!("steam://connect/{}:{}", address.ip(), address.port())
+}
+
 impl ServerInfo {
   pub fn new(address: SocketAddrV4) -> ServerInfo {
     let query_client = A2SClient::new().unwrap();
-    match query_client.info(address) {
-      Ok(a2s_info) => ServerInfo::from(a2s_info),
+    match query_client.info(&address) {
+      Ok(a2s_info) => {
+        let mut info = ServerInfo::from(a2s_info);
+        info.connection_url = ipv4_to_connection_url(address);
+        info
+      }
       Err(_err) => {
         error!("Failed to request server information!");
         ServerInfo::offline()
@@ -38,11 +48,14 @@ impl ServerInfo {
   }
   pub fn offline() -> ServerInfo {
     let unknown = String::from("Unknown");
+
     ServerInfo {
       name: fetch_var("NAME", &unknown),
       version: unknown.clone(),
       players: 0,
       max_players: 0,
+      server_type: fetch_var("TYPE", "Vanilla"),
+      connection_url: String::from("unknown"),
       map: fetch_var("NAME", &unknown),
       online: false,
       bepinex: BepInExInfo::disabled(),
@@ -66,7 +79,9 @@ impl From<Info> for ServerInfo {
       players: info.players,
       max_players: info.max_players,
       map: info.map,
+      server_type: fetch_var("TYPE", "Vanilla"),
       online: true,
+      connection_url: String::from("unknown"),
       bepinex: BepInExInfo::new(),
       jobs: vec![
         JobInfo::from_str(AUTO_UPDATE_JOB).unwrap(),

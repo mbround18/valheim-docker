@@ -1,6 +1,7 @@
 use crate::fetch_info;
 
-pub fn invoke() -> String {
+#[get("/metrics")]
+pub fn metrics() -> String {
   let info = fetch_info();
   let labels = format!(
     "{{name=\"{name}\", version=\"{version}\", map=\"{map}\"}}",
