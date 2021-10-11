@@ -1,10 +1,6 @@
 mod routes;
 
-use crate::routes::{
-  connect::{connect, secure_connect},
-  metrics::metrics,
-  status::status,
-};
+use crate::routes::{metrics::metrics, status::status};
 use log::info;
 use odin::{logger::initialize_logger, server::ServerInfo, utils::environment::fetch_var};
 use std::net::SocketAddrV4;
@@ -38,5 +34,15 @@ fn rocket() -> _ {
     &port
   );
 
-  rocket::custom(figment).mount("/", routes![status, metrics, connect, secure_connect])
+  #[cfg(feature = "connect")]
+  let routes = routes![
+    status,
+    metrics,
+    crate::routes::connect::connect,
+    crate::routes::connect::secure_connect
+  ];
+
+  #[cfg(not(feature = "connect"))]
+  let routes = routes![status, metrics];
+  rocket::custom(figment).mount("/", routes)
 }

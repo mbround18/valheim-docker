@@ -78,7 +78,14 @@ huginn &
 
 ## Endpoints
 
-| Endpoint   | Description |
-|------------|------------|
-| `/metrics` | Provides a Prometheus compatible output of the server status. [Click here to see a guide on how to get a dashboard setup.](https://github.com/mbround18/valheim-docker/discussions/330) | 
-| `/status`  | Provides a more traditional JSON output of the server status. |
+| Status   | Endpoint   | Description |
+|----------|------------|------------|
+| Enabled  | `/metrics` | Provides a Prometheus compatible output of the server status. [Click here to see a guide on how to get a dashboard setup.](https://github.com/mbround18/valheim-docker/discussions/330) | 
+| Enabled  | `/status`  | Provides a more traditional JSON output of the server status. |
+| Disabled | `/connect` | Launches steams connection api against your server. (Populate the `ADDRESS` env to speed this up.) |
+| Disabled | `/connect?password=<password>` | Similar to the connect API but auto-fills the password for steam. Password must be `base64` encoded and then [URL Encoded](https://www.w3schools.com/tags/ref_urlencode.ASP) |
+
+
+## Notes
+
+- Connection endpoints disabled due to an issue where it will attempt to connect but fail. 
