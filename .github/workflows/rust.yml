@@ -23,16 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Setup | Rust | Stable
-        uses: ATiltedTree/setup-rust@v1
-        with:
-          rust-version: stable
-          components: cargo-make
       - name: Setup | Rust | Nightly
         uses: ATiltedTree/setup-rust@v1
         with:
           rust-version: nightly
           components: clippy rustfmt
+      - run: cargo install cargo-make
       - name: Build
         run: cargo build --verbose
       - name: Run tests
