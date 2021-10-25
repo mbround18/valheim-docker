@@ -50,9 +50,7 @@ jobs:
 
       - uses: papeloto/action-zip@v1
         with:
-          files: |
-            target/release/odin
-            target/release/huginn
+          files: target/release/odin target/release/huginn
           dest: tmp/bundle.zip
 
       - name: Yarn install
