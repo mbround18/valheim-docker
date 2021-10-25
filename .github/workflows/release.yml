@@ -21,6 +21,22 @@ jobs:
           cache: "yarn"
           node-version: '14'
 
+      - name: Setup | Rust
+        uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+          components: clippy,rustfmt,cargo-make
+
+      - name: Build Release
+        run: makers -p production release
+
+      - uses: papeloto/action-zip@v1
+        with:
+          files: |
+            target/release/odin
+            target/release/huginn
+          dest: bundle.zip
+
       - name: Yarn install
         run: yarn install
 

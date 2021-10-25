@@ -1,7 +1,8 @@
 {
   "plugins": [
     ".auto/plugins/release.ts",
-    "all-contributors"
+    "all-contributors",
+    ["upload-assets", { "assets": ["./bundle.zip"] }]
   ],
   "owner": "mbround18",
   "repo": "valheim-docker",
