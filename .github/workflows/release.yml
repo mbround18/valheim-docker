@@ -6,6 +6,13 @@ env:
   GH_TOKEN: "${{ secrets.GH_TOKEN }}"
 
 jobs:
+  cancel-previous:
+    name: Cancel Previous
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9
+        with:
+          access_token: ${{ github.token }}
   release:
     name: Release Train WooohWoooohh
     runs-on: ubuntu-latest
