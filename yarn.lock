@@ -262,7 +262,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@auto-it/upload-assets@npm:^10.32.1":
+"@auto-it/upload-assets@npm:10.32.1":
   version: 10.32.1
   resolution: "@auto-it/upload-assets@npm:10.32.1"
   dependencies:
@@ -3401,7 +3401,7 @@ typescript@4.4.4:
     "@auto-it/all-contributors": 10.32.0
     "@auto-it/core": ^10.27.0
     "@auto-it/git-tag": 10.32.1
-    "@auto-it/upload-assets": ^10.32.1
+    "@auto-it/upload-assets": 10.32.1
     "@octokit/core": ^3.4.0
     "@types/node": 15.3.0
     "@types/semver": ^7.3.5
