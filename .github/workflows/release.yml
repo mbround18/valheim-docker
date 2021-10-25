@@ -34,7 +34,16 @@ jobs:
           rust-version: nightly
           components: clippy rustfmt
 
-      - run: cargo install cargo-make
+      - uses: davidB/rust-cargo-make@v1
+        name: Install Cargo Make
+
+      - uses: actions/cache@v2
+        name: Cache Cargo Files
+        with:
+          path: |
+            target/release
+            target/debug
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build Release
         run: makers -p production release

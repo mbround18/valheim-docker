@@ -18,6 +18,7 @@ jobs:
       - uses: styfle/cancel-workflow-action@0.9.1
         with:
           access_token: ${{ github.token }}
+
   build-nd-test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -28,7 +29,17 @@ jobs:
         with:
           rust-version: nightly
           components: clippy rustfmt
-      - run: cargo install cargo-make
+
+      - uses: davidB/rust-cargo-make@v1
+        name: Install Cargo Make
+
+      - uses: actions/cache@v2
+        name: Cache Cargo Files
+        with:
+          path: |
+            target/release
+            target/debug
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
       - name: Build
         run: cargo build --verbose
       - name: Run tests
