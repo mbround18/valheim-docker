@@ -44,7 +44,7 @@ jobs:
           files: |
             target/release/odin
             target/release/huginn
-          dest: bundle.zip
+          dest: tmp/bundle.zip
 
       - name: Yarn install
         run: yarn install
