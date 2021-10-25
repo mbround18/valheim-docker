@@ -6,6 +6,13 @@ env:
   GH_TOKEN: "${{ secrets.GH_TOKEN }}"
 
 jobs:
+  cancel-previous:
+    name: Cancel Previous
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.9.1
+        with:
+          access_token: ${{ github.token }}
   release:
     name: Release Train WooohWoooohh
     runs-on: ubuntu-latest
@@ -20,6 +27,33 @@ jobs:
         with:
           cache: "yarn"
           node-version: '14'
+
+      - name: Setup | Rust | Nightly
+        uses: ATiltedTree/setup-rust@v1
+        with:
+          rust-version: nightly
+          components: clippy rustfmt
+
+      - uses: davidB/rust-cargo-make@v1
+        name: Install Cargo Make
+
+      - uses: actions/cache@v2
+        name: Cache Cargo Files
+        with:
+          path: |
+            target/release
+            target/debug
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Release
+        run: cargo make -p production release
+
+      - uses: papeloto/action-zip@v1
+        with:
+          files: |
+            target/release/odin
+            target/release/huginn
+          dest: tmp/bundle.zip
 
       - name: Yarn install
         run: yarn install
