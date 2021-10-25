@@ -25,7 +25,7 @@ jobs:
         uses: ATiltedTree/setup-rust@v1
         with:
           rust-version: nightly
-          components: clippy,rustfmt,cargo-make
+          components: clippy rustfmt cargo-make
 
       - name: Build Release
         run: makers -p production release
