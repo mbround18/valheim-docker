@@ -1,3 +1,25 @@
+# v1.4.11 (Mon Oct 25 2021)
+
+#### 🐛 Bug Fix
+
+- Publish bundle.zip [#471](https://github.com/mbround18/valheim-docker/pull/471) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update rust Docker tag to v1.56 [#470](https://github.com/mbround18/valheim-docker/pull/470) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.4.4 [#469](https://github.com/mbround18/valheim-docker/pull/469) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate a2s to 0.5.0 [#466](https://github.com/mbround18/valheim-docker/pull/466) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.32.1 [#458](https://github.com/mbround18/valheim-docker/pull/458) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Pin dependencies [#463](https://github.com/mbround18/valheim-docker/pull/463) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.10 (Tue Oct 05 2021)
 
 #### 🐛 Bug Fix
