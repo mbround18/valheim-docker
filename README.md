@@ -32,7 +32,7 @@
   * [BepInEx Support](#bepinex-support)
   * [Webhook Support](#webhook-support)
 * [Guides](#guides)
-  > Did you write a guide? or perhapse an article? Add a PR to have it added here in the readme <3
+  > Did you write a guide? or perhaps an article? Add a PR to have it added here in the readme <3
   * [How to Transfer Files](#how-to-transfer-files)
   * [External: Hosting Valheim on Rocket Pi X](https://ikarus.sg/valheim-server-rock-pi-x/)
   * [External: Valheim on AWS](https://aws.amazon.com/getting-started/hands-on/valheim-on-aws/)
