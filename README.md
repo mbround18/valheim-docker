@@ -9,6 +9,36 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
+## Table of Contents
+
+* [Running on a bare-metal Linux Server](#running-on-a-bare-metal-linux-server)
+  * [From Release](#from-release)
+  * [From Source](#from-source)
+* [Running with Docker](#running-with-docker)
+  * [Download Locations](#download-locations)
+    * [DockerHub](#dockerhub)
+    * [GitHub Container Registry](#github-container-registry)
+  * [Environment Variables](#environment-variables)
+    * [Container Env Variables](#container-env-variables)
+    * [Auto Update](#auto-update)
+    * [Auto Backup](#auto-backup)
+* [Docker Compose](#docker-compose)
+  * [Simple](#simple)
+  * [Everything but the kitchen sink](#everything-but-the-kitchen-sink)
+* [Bundled Tools](#bundled-tools)
+  * [Odin](#odin)
+  * [Huginn Http Server](#huginn-http-server)
+* [Feature Information](#feature-information)
+  * [BepInEx Support](#bepinex-support)
+  * [Webhook Support](#webhook-support)
+* [Guides](#guides)
+  * [How to Transfer Files](#how-to-transfer-files)
+* [Additional Information](#additional-information)
+  * [Discord Release Notifications](#discord-release-notifications)
+  * [Versions](#versions)
+* [❤️ Sponsors ❤️](#sponsors)
+* [✨ Contributors ✨](#contributors-)
+
 ## Running on a bare-metal Linux Server
 
 ### From Release
@@ -106,21 +136,9 @@ Auto update job, queries steam and compares it against your internal steam files
 
 Auto backup job produces an output of a `*.tar.gz` file which should average around 30mb for a world that has an average of 4 players consistently building on. You should be aware that if you place the server folder in your saves folder your backups could become astronomical in size. This is a common problem that others have observed, to avoid this please follow the guide for how volume mounts should be made in the `docker-compose.yml`.
 
-#### [Huginn] Http Server
+## Docker Compose
 
-| Variable  | Default               | Required | Description                                                                                                                  |
-| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
-| HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
-
-- `/metrics` provides a prometheous style metrics output.
-- `/status` provides a more traditional status page.
-
-> Note on `ADDRESS` this can be set to `127.0.0.1:<your query port>` or `<your public ip>:<your query port>` but does not have to be set. If it is set, it will prevent odin from reaching out to aws ip service from asking for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your valheim server.
-
-### Docker Compose
-
-#### Simple
+### Simple
 
 > This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables' description notes!
 
@@ -145,7 +163,7 @@ services:
       - ./valheim/server:/home/steam/valheim
 ```
 
-#### Everything but the kitchen sink
+### Everything but the kitchen sink
 
 ```yaml
 version: "3"
@@ -178,12 +196,28 @@ services:
       - ./valheim/server:/home/steam/valheim
       - ./valheim/backups:/home/steam/backups
 ```
+## Bundled Tools
 
 ### [Odin]
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
 
 [Click here to see advanced environment variables for Odin](src/odin/README.md)
+
+
+### [Huginn] Http Server
+
+| Variable  | Default               | Required | Description                                                                                                                  |
+| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
+| HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
+
+- `/metrics` provides a prometheous style metrics output.
+- `/status` provides a more traditional status page.
+
+> Note on `ADDRESS` this can be set to `127.0.0.1:<your query port>` or `<your public ip>:<your query port>` but does not have to be set. If it is set, it will prevent odin from reaching out to aws ip service from asking for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your valheim server.
+
+## Feature Information
 
 ### [BepInEx Support](./docs/bepinex.md)
 
@@ -199,17 +233,18 @@ Only use the documentation link below if you want advanced settings!
 
 [Click Here to view documentation on Webhook Support](./docs/webhooks.md)
 
+## Guides
+
 ### [How to Transfer Files](./docs/tutorials/how-to-transfer-files.md)
 
 This is a tutorial of a recommended path to transfering files. This can be done to transfer world files between hosts, transfer BepInEx configs, or even to transfer backups.
 
 [Click Here to view the tutorial of how to transfer files.](./docs/tutorials/how-to-transfer-files.md)
 
-## Sponsors
 
-<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
+## Additional Information
 
-## Release Notifications
+### Discord Release Notifications
 
 If you would like to have release notifications tied into your Discord server, click here:
 
@@ -218,7 +253,7 @@ If you would like to have release notifications tied into your Discord server, c
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
-## Versions
+### Versions
 
 - latest (Stable): Mod support! and cleaned up the code base.
 - 1.4.x (Stable): Webhook for discord upgrade.
@@ -236,6 +271,10 @@ If you would like to have release notifications tied into your Discord server, c
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1*\_\_\_\_\*
 
 [//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)
+
+## Sponsors
+
+<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
 
 ## Contributors ✨
 
