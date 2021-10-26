@@ -22,6 +22,8 @@
 7. Run `odin configure --password "Your Super Strong Password"` (you can also supply `--name "Server Name"`, `--port "Server Port"`, or other arguments available.)
 8. Finally, run `odin start`. 
 
+**How-to Article:** https://dev.to/mbround18/running-valheim-on-an-linux-server-4kh1
+
 ### From Source
 
 This repo bundles its tools in a way that you can run them without having to install docker!
