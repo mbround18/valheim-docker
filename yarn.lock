@@ -597,10 +597,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:15.3.0":
-  version: 15.3.0
-  resolution: "@types/node@npm:15.3.0"
-  checksum: fb9d6c4e9be5cc7b972b97bbbe4e111f48be284ae173d6946bc336ffec8dd3bf024a3c2fb0f065e07ae499127b8ff2aa5ab098a37ca03be1b5856ba499d6f2a4
+"@types/node@npm:16.11.6":
+  version: 16.11.6
+  resolution: "@types/node@npm:16.11.6"
+  checksum: 6e19634766ff589d3d2f361c2196b671f8f133cdadc5ad347a621c360d8994b6c4fbccfb2ad9c60c588c593831a96497c9c6b77d2b7e91be723384b94f6368e7
   languageName: node
   linkType: hard
 
@@ -3403,7 +3403,7 @@ typescript@4.4.4:
     "@auto-it/git-tag": 10.32.1
     "@auto-it/upload-assets": 10.32.1
     "@octokit/core": ^3.4.0
-    "@types/node": 15.3.0
+    "@types/node": 16.11.6
     "@types/semver": ^7.3.5
     "@yarnpkg/pnpify": ^3.0.0-rc.3
     auto: 10.32.1
