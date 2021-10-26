@@ -32,7 +32,12 @@
   * [BepInEx Support](#bepinex-support)
   * [Webhook Support](#webhook-support)
 * [Guides](#guides)
+  > Did you write a guide? or perhapse an article? Add a PR to have it added here in the readme <3
   * [How to Transfer Files](#how-to-transfer-files)
+  * [External: Hosting Valheim on Rocket Pi X](https://ikarus.sg/valheim-server-rock-pi-x/)
+  * [External: Valheim on AWS](https://aws.amazon.com/getting-started/hands-on/valheim-on-aws/)
+  * [External: How to host a dedicated Valheim server on Amazon Lightsail](https://updateloop.dev/dedicated-valheim-lightsail/)
+  * [External: Experience With Valheim Game Hosting With Docker](https://norton-setup.support/games/experience-with-valheim-game-hosting-with-docker/)
 * [Additional Information](#additional-information)
   * [Discord Release Notifications](#discord-release-notifications)
   * [Versions](#versions)
