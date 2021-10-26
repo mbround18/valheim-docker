@@ -1,3 +1,21 @@
+# v1.4.12 (Tue Oct 26 2021)
+
+#### 🐛 Bug Fix
+
+- Fix bundle [#473](https://github.com/mbround18/valheim-docker/pull/473) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Pin dependency @auto-it/upload-assets to 10.32.1 [#472](https://github.com/mbround18/valheim-docker/pull/472) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.11 (Mon Oct 25 2021)
 
 #### 🐛 Bug Fix
