@@ -9,7 +9,20 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-## Running on Linux Server
+## Running on a bare-metal Linux Server
+
+### From Release
+
+1. Navigate to `https://github.com/mbround18/valheim-docker/releases/latest`
+2. Download the `bundle.zip` to your server
+3. Extract the `bundle.zip`
+4. Make the files executable `chmod +x {odin,huginn}`
+5. Optional: Add the files to your path. 
+6. Navigate to the folder where you want your server installed. 
+7. Run `odin configure --password "Your Super Strong Password"` (you can also supply `--name "Server Name"`, `--port "Server Port"`, or other arguments available.)
+8. Finally, run `odin start`. 
+
+### From Source
 
 This repo bundles its tools in a way that you can run them without having to install docker!
 If you purely want to run this on a Linux based system, without docker, take a look at the links below <3
