@@ -205,14 +205,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@auto-it/git-tag@npm:10.32.3":
-  version: 10.32.3
-  resolution: "@auto-it/git-tag@npm:10.32.3"
+"@auto-it/git-tag@npm:10.32.5":
+  version: 10.32.5
+  resolution: "@auto-it/git-tag@npm:10.32.5"
   dependencies:
-    "@auto-it/core": 10.32.3
+    "@auto-it/core": 10.32.5
     semver: ^7.0.0
     tslib: 2.1.0
-  checksum: 25d665074ca6fc810f493bcf8bcaa33baff52b37c034f0f576da8c04b96ba818a26ff033e0caf5060c9148fa2500932141e0e422aa7d70bcf51f84c1a8a31f63
+  checksum: 6a4d74cdcd2839c3cdbd5d3afcc2d1b16d31860c02a05799f00d9bf9ec9a4cd0e93bf9e719ef4c18344bda60671ffe009c5aa3bbd4ba3578d643a4777dcf7392
   languageName: node
   linkType: hard
 
@@ -3400,7 +3400,7 @@ typescript@4.5.3:
   dependencies:
     "@auto-it/all-contributors": 10.32.5
     "@auto-it/core": ^10.27.0
-    "@auto-it/git-tag": 10.32.3
+    "@auto-it/git-tag": 10.32.5
     "@auto-it/upload-assets": 10.32.3
     "@octokit/core": ^3.4.0
     "@types/node": 15.3.0
