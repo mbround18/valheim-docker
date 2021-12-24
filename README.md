@@ -9,7 +9,57 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-## Running on Linux Server
+## Table of Contents
+
+* [Running on a bare-metal Linux Server](#running-on-a-bare-metal-linux-server)
+  * [From Release](#from-release)
+  * [From Source](#from-source)
+* [Running with Docker](#running-with-docker)
+  * [Download Locations](#download-locations)
+    * [DockerHub](#dockerhub)
+    * [GitHub Container Registry](#github-container-registry)
+  * [Environment Variables](#environment-variables)
+    * [Container Env Variables](#container-env-variables)
+    * [Auto Update](#auto-update)
+    * [Auto Backup](#auto-backup)
+* [Docker Compose](#docker-compose)
+  * [Simple](#simple)
+  * [Everything but the kitchen sink](#everything-but-the-kitchen-sink)
+* [Bundled Tools](#bundled-tools)
+  * [Odin](#odin)
+  * [Huginn Http Server](#huginn-http-server)
+* [Feature Information](#feature-information)
+  * [BepInEx Support](#bepinex-support)
+  * [Webhook Support](#webhook-support)
+* [Guides](#guides)
+  > Did you write a guide? or perhaps an article? Add a PR to have it added here in the readme <3
+  * [How to Transfer Files](#how-to-transfer-files)
+  * [External: Hosting Valheim on Rocket Pi X](https://ikarus.sg/valheim-server-rock-pi-x/)
+  * [External: Valheim on AWS](https://aws.amazon.com/getting-started/hands-on/valheim-on-aws/)
+  * [External: How to host a dedicated Valheim server on Amazon Lightsail](https://updateloop.dev/dedicated-valheim-lightsail/)
+  * [External: Experience With Valheim Game Hosting With Docker](https://norton-setup.support/games/experience-with-valheim-game-hosting-with-docker/)
+* [Additional Information](#additional-information)
+  * [Discord Release Notifications](#discord-release-notifications)
+  * [Versions](#versions)
+* [❤️ Sponsors ❤️](#sponsors)
+* [✨ Contributors ✨](#contributors-)
+
+## Running on a bare-metal Linux Server
+
+### From Release
+
+1. Navigate to `https://github.com/mbround18/valheim-docker/releases/latest`
+2. Download the `bundle.zip` to your server
+3. Extract the `bundle.zip`
+4. Make the files executable `chmod +x {odin,huginn}`
+5. Optional: Add the files to your path. 
+6. Navigate to the folder where you want your server installed. 
+7. Run `odin configure --password "Your Super Strong Password"` (you can also supply `--name "Server Name"`, `--port "Server Port"`, or other arguments available.)
+8. Finally, run `odin start`. 
+
+**More in-depth How-to Article:** https://dev.to/mbround18/running-valheim-on-an-linux-server-4kh1
+
+### From Source
 
 This repo bundles its tools in a way that you can run them without having to install docker!
 If you purely want to run this on a Linux based system, without docker, take a look at the links below <3
@@ -55,7 +105,7 @@ If you purely want to run this on a Linux based system, without docker, take a l
 | PUBLIC            | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                                                                                                 |
 | PASSWORD          | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                                                                                                 |
 | TYPE              | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                       |
-| MODS              | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                       |
+| MODS              | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/tutorials/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                       |
 | WEBHOOK_URL       | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
 | UPDATE_ON_STARTUP | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                          |
 
@@ -91,21 +141,9 @@ Auto update job, queries steam and compares it against your internal steam files
 
 Auto backup job produces an output of a `*.tar.gz` file which should average around 30mb for a world that has an average of 4 players consistently building on. You should be aware that if you place the server folder in your saves folder your backups could become astronomical in size. This is a common problem that others have observed, to avoid this please follow the guide for how volume mounts should be made in the `docker-compose.yml`.
 
-#### [Huginn] Http Server
+## Docker Compose
 
-| Variable  | Default               | Required | Description                                                                                                                  |
-| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
-| HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
-
-- `/metrics` provides a prometheous style metrics output.
-- `/status` provides a more traditional status page.
-
-> Note on `ADDRESS` this can be set to `127.0.0.1:<your query port>` or `<your public ip>:<your query port>` but does not have to be set. If it is set, it will prevent odin from reaching out to aws ip service from asking for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your valheim server.
-
-### Docker Compose
-
-#### Simple
+### Simple
 
 > This is a basic example of a docker compose, you can apply any of the variables above to the `environment` section below but be sure to follow each variables' description notes!
 
@@ -130,7 +168,7 @@ services:
       - ./valheim/server:/home/steam/valheim
 ```
 
-#### Everything but the kitchen sink
+### Everything but the kitchen sink
 
 ```yaml
 version: "3"
@@ -163,12 +201,28 @@ services:
       - ./valheim/server:/home/steam/valheim
       - ./valheim/backups:/home/steam/backups
 ```
+## Bundled Tools
 
 ### [Odin]
 
 This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it click here: [Odin]
 
 [Click here to see advanced environment variables for Odin](src/odin/README.md)
+
+
+### [Huginn] Http Server
+
+| Variable  | Default               | Required | Description                                                                                                                  |
+| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
+| HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
+
+- `/metrics` provides a prometheous style metrics output.
+- `/status` provides a more traditional status page.
+
+> Note on `ADDRESS` this can be set to `127.0.0.1:<your query port>` or `<your public ip>:<your query port>` but does not have to be set. If it is set, it will prevent odin from reaching out to aws ip service from asking for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your valheim server.
+
+## Feature Information
 
 ### [BepInEx Support](./docs/bepinex.md)
 
@@ -184,17 +238,18 @@ Only use the documentation link below if you want advanced settings!
 
 [Click Here to view documentation on Webhook Support](./docs/webhooks.md)
 
+## Guides
+
 ### [How to Transfer Files](./docs/tutorials/how-to-transfer-files.md)
 
 This is a tutorial of a recommended path to transfering files. This can be done to transfer world files between hosts, transfer BepInEx configs, or even to transfer backups.
 
 [Click Here to view the tutorial of how to transfer files.](./docs/tutorials/how-to-transfer-files.md)
 
-## Sponsors
 
-<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
+## Additional Information
 
-## Release Notifications
+### Discord Release Notifications
 
 If you would like to have release notifications tied into your Discord server, click here:
 
@@ -203,7 +258,7 @@ If you would like to have release notifications tied into your Discord server, c
 **Note**: The discord is PURELY for release notifications and any + all permissions involving sending chat messages has been disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
-## Versions
+### Versions
 
 - latest (Stable): Mod support! and cleaned up the code base.
 - 1.4.x (Stable): Webhook for discord upgrade.
@@ -221,6 +276,10 @@ If you would like to have release notifications tied into your Discord server, c
 [If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1*\_\_\_\_\*
 
 [//]: <> (Image Base Url: https://github.com/mbround18/valheim-docker/blob/main/docs/assets/name.png?raw=true)
+
+## Sponsors
+
+<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
 
 ## Contributors ✨
 
