@@ -1,7 +1,7 @@
 # ------------------ #
 # -- Odin Planner -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.56-alpine as planner
+FROM lukemathwalker/cargo-chef:latest-rust-1.57-alpine as planner
 WORKDIR /data/odin
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
@@ -9,7 +9,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ------------------ #
 # -- Odin Cacher  -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.56-alpine as cacher
+FROM lukemathwalker/cargo-chef:latest-rust-1.57-alpine as cacher
 WORKDIR /data/odin
 COPY --from=planner /data/odin/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
@@ -23,7 +23,7 @@ FROM mbround18/cargo-make:latest as cargo-make
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-FROM rust:1.56 as builder
+FROM rust:1.57 as builder
 WORKDIR /data/odin
 COPY . .
 # Copy over the cached dependencies

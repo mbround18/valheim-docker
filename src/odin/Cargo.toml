@@ -2,7 +2,7 @@
 name = "odin"
 version = "1.4.3"
 authors = ["mbround18"]
-edition = "2018"
+edition = "2021"
 license = "BSD-3-Clause License"
 description = "Valheim server manager"
 readme = "README.md"
@@ -30,10 +30,10 @@ path = "lib.rs"
 handlebars = "4"
 dotenv = "0.15"
 log = "0.4"
-clap = { version = "2.33.3" , features = ["yaml"] }
+clap = { version = "2" , features = ["yaml"] }
 which = "4.2.2"
 serde = { version = "1.0", features = ["derive"], default_features = false  }
-sysinfo = { version = "0.20", default_features = false }
+sysinfo = { version = "0", default_features = false }
 serde_json = "1.0"
 daemonize = "0.4"
 tar = "0.4"

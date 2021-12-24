@@ -2,7 +2,7 @@
 name = "huginn"
 version = "0.1.0"
 authors = ["mbround18"]
-edition = "2018"
+edition = "2021"
 license = "BSD-3-Clause License"
 description = "Valheim http status"
 readme = "README.md"

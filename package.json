@@ -12,7 +12,8 @@
     "start:dev": "cargo make start:dev",
     "lint": "cargo fmt && cargo clippy",
     "build": "cargo make build:dev",
-    "test": "cargo test"
+    "test": "cargo test",
+    "sdks": "yarn dlx @yarnpkg/sdks"
   },
   "devDependencies": {
     "@auto-it/all-contributors": "10.32.0",
@@ -28,5 +29,6 @@
     "@types/semver": "^7.3.5",
     "@yarnpkg/pnpify": "^3.0.0-rc.3",
     "semver": "^7.3.5"
-  }
+  },
+  "packageManager": "yarn@3.1.1"
 }

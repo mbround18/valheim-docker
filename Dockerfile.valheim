@@ -11,7 +11,7 @@ FROM steamcmd/steamcmd:ubuntu
 
 RUN apt-get update                     \
     && apt-get upgrade -y              \
-    && apt-get install -y              \
+    && apt-get install -y -q             \
     htop net-tools nano gcc g++ gdb    \
     netcat curl wget zip unzip         \
     cron sudo gosu dos2unix            \
