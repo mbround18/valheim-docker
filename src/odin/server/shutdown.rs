@@ -1,5 +1,5 @@
 use log::{error, info};
-use sysinfo::{ProcessExt, Signal};
+use sysinfo::ProcessExt;
 
 use std::{thread, time::Duration};
 
@@ -22,7 +22,7 @@ pub fn send_shutdown_signal() {
         "Found Process with pid {}! Sending Interrupt!",
         found_process.pid()
       );
-      if found_process.kill(Signal::Interrupt) {
+      if found_process.kill() {
         info!("Process signal interrupt sent successfully!")
       } else {
         error!("Failed to send signal interrupt!")

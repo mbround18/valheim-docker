@@ -24,7 +24,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   let app_update = format!("+app_update {}", app_id);
   let mut steamcmd = steamcmd_command();
   let install_command = steamcmd
-    .args(&[login, force_install_dir, app_update])
+    .args(&[force_install_dir, login, app_update])
     .arg("+quit")
     .stdout(Stdio::inherit())
     .stderr(Stdio::inherit());
