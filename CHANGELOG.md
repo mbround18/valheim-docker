@@ -1,3 +1,44 @@
+# v1.4.13 (Sat Dec 25 2021)
+
+#### 🐛 Bug Fix
+
+- Upgrade all the things [#502](https://github.com/mbround18/valheim-docker/pull/502) ([@mbround18](https://github.com/mbround18))
+- Update dependency @auto-it/all-contributors to v10.32.5 [#484](https://github.com/mbround18/valheim-docker/pull/484) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 2.34.0 [#488](https://github.com/mbround18/valheim-docker/pull/488) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### ⚠️ Pushed to `main`
+
+- Update FUNDING.yml ([@mbround18](https://github.com/mbround18))
+- Update README.md ([@mbround18](https://github.com/mbround18))
+
+#### 📝 Documentation
+
+- Update README.md [#482](https://github.com/mbround18/valheim-docker/pull/482) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update Rust crate once_cell to 1.9 [#497](https://github.com/mbround18/valheim-docker/pull/497) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.32.5 [#494](https://github.com/mbround18/valheim-docker/pull/494) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update rust Docker tag to v1.57 [#489](https://github.com/mbround18/valheim-docker/pull/489) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.5.3 [#491](https://github.com/mbround18/valheim-docker/pull/491) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.32.3 [#485](https://github.com/mbround18/valheim-docker/pull/485) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/upload-assets to v10.32.3 [#486](https://github.com/mbround18/valheim-docker/pull/486) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.32.3 [#487](https://github.com/mbround18/valheim-docker/pull/487) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.5.2 [#483](https://github.com/mbround18/valheim-docker/pull/483) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.21 [#480](https://github.com/mbround18/valheim-docker/pull/480) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/all-contributors to v10.32.2 [#475](https://github.com/mbround18/valheim-docker/pull/475) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.32.2 [#478](https://github.com/mbround18/valheim-docker/pull/478) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/git-tag to v10.32.2 [#476](https://github.com/mbround18/valheim-docker/pull/476) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/upload-assets to v10.32.2 [#477](https://github.com/mbround18/valheim-docker/pull/477) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.12 (Tue Oct 26 2021)
 
 #### 🐛 Bug Fix
