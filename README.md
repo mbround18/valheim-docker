@@ -107,6 +107,7 @@ If you purely want to run this on a Linux based system, without docker, take a l
 | TYPE              | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                       |
 | MODS              | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/tutorials/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                       |
 | WEBHOOK_URL       | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| WEBHOOK_INCLUDE_PUBLIC_IP       | `0`       | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address.  NOTE: If your server is behind a NAT using PAT with more than one external IP address (very unlikely on a home network), this could be inaccurate if your NAT doesn't maintain your server to a single external IP. |
 | UPDATE_ON_STARTUP | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                          |
 
 #### Container Env Variables
@@ -195,6 +196,7 @@ services:
       AUTO_BACKUP_ON_UPDATE: 1
       AUTO_BACKUP_ON_SHUTDOWN: 1
       WEBHOOK_URL: "https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
+      WEBHOOK_INCLUDE_PUBLIC_IP: 1
       UPDATE_ON_STARTUP: 0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
