@@ -64,12 +64,8 @@ fn is_webhook_include_public_ip() -> bool {
   false
 }
 
-#[tokio::main]
-async fn get_public_ip() -> String {
-  if let Some(ip) = public_ip::addr().await {
-    return ip.to_string();
-  }
-  "Couldn't determine Public IP address.".to_string()
+fn get_public_ip() -> String {
+  reqwest::blocking::get("https://api.ipify.org").unwrap().text().unwrap().to_string()
 }
 
 pub fn get_notification_server_name() -> String {
