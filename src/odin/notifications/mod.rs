@@ -65,7 +65,11 @@ fn is_webhook_include_public_ip() -> bool {
 }
 
 fn get_public_ip() -> String {
-  reqwest::blocking::get("https://api.ipify.org").unwrap().text().unwrap().to_string()
+  reqwest::blocking::get("https://api.ipify.org")
+    .unwrap()
+    .text()
+    .unwrap()
+    .to_string()
 }
 
 pub fn get_notification_server_name() -> String {
