@@ -20,7 +20,7 @@
     "@auto-it/git-tag": "10.32.5",
     "@auto-it/upload-assets": "10.32.5",
     "@types/node": "15.3.0",
-    "auto": "10.32.5",
+    "auto": "10.32.6",
     "typescript": "4.5.4"
   },
   "dependencies": {
