@@ -19,6 +19,7 @@ pub mod discord;
 pub mod enums;
 
 pub const WEBHOOK_URL: &str = "WEBHOOK_URL";
+pub const WEBHOOK_INCLUDE_PUBLIC_IP: &str = "WEBHOOK_INCLUDE_PUBLIC_IP";
 
 #[derive(Deserialize, Serialize)]
 pub struct NotificationMessage {
@@ -49,6 +50,39 @@ fn is_webhook_enabled() -> bool {
     return is_valid;
   }
   false
+}
+
+fn is_webhook_include_public_ip() -> bool {
+  if fetch_var(WEBHOOK_INCLUDE_PUBLIC_IP, "0")
+    .trim_start_matches('"')
+    .trim_end_matches('"')
+    .eq("1")
+  {
+    debug!("Webhook Include Public IP found!");
+    return true;
+  }
+  false
+}
+
+fn get_public_ip() -> String {
+  reqwest::blocking::get("https://api.ipify.org")
+    .unwrap()
+    .text()
+    .unwrap()
+    .to_string()
+}
+
+pub fn get_notification_server_name() -> String {
+  if is_webhook_include_public_ip() {
+    return [
+      get_server_name(),
+      " (".to_string(),
+      get_public_ip(),
+      ")".to_string(),
+    ]
+    .join("");
+  }
+  get_server_name()
 }
 
 impl NotificationEvent {
