@@ -14,8 +14,8 @@ RUN apt-get update                     \
     && apt-get install -y -q             \
     htop net-tools nano gcc g++ gdb    \
     netcat curl wget zip unzip         \
-    cron sudo gosu dos2unix            \
-    libsdl2-2.0-0  jq   libc6-dev      \
+    cron sudo gosu dos2unix  glibc    \
+    libsdl2-2.0-0  jq  libc6 libc6-dev      \
     && rm -rf /var/lib/apt/lists/*     \
     && gosu nobody true                \
     && dos2unix

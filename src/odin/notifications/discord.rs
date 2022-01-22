@@ -1,9 +1,11 @@
-use crate::{files::discord::load_discord, notifications::EventStatus};
+use crate::{files::discord::load_discord};
 
-use crate::notifications::{get_notification_server_name, NotificationMessage};
+use crate::notifications::{NotificationMessage};
 use handlebars::Handlebars;
 use log::debug;
 use serde::{Deserialize, Serialize};
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::parse_server_name_for_notification;
 
 #[derive(Debug)]
 enum Color {
@@ -70,7 +72,7 @@ impl From<&NotificationMessage> for IncomingNotification {
       description: String::from(&notification.event_message),
       status: String::from(&notification.event_type.status),
       timestamp: String::from(&notification.timestamp),
-      server_name: get_notification_server_name(),
+      server_name: parse_server_name_for_notification(),
     }
   }
 }
