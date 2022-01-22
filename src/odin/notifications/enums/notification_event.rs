@@ -243,11 +243,13 @@ mod webhook_tests {
 
 #[cfg(test)]
 mod enum_tests {
+  use std::env::set_var;
   use inflections::case::to_title_case;
 
   use super::*;
   use crate::notifications::enums::event_status::EventStatus;
-  use crate::notifications::NotificationEvent::Broadcast;
+  use crate::notifications::enums::notification_event::NotificationEvent::Broadcast;
+
 
   #[test]
   fn parse_enum_as_string() {
@@ -256,6 +258,7 @@ mod enum_tests {
 
   #[test]
   fn parse_enum_create_notification() {
+    set_var("NAME", "parse_enum_create_notification");
     let event = NotificationEvent::Stop(EventStatus::Running);
     let notification = event.create_notification_message();
     assert_eq!(
