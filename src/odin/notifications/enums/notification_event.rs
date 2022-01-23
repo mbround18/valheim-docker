@@ -5,7 +5,7 @@ use crate::notifications::{
   NotificationMessage, WEBHOOK_INCLUDE_PUBLIC_IP, WEBHOOK_URL,
 };
 use crate::utils::environment::fetch_var;
-use crate::utils::get_server_name;
+use crate::utils::{fetch_public_address, get_server_name};
 use chrono::Local;
 use inflections::case::to_title_case;
 use log::{debug, error, info, warn};
@@ -62,19 +62,12 @@ fn is_webhook_include_public_ip() -> bool {
   false
 }
 
-fn get_public_ip() -> String {
-  reqwest::blocking::get("https://api.ipify.org")
-    .unwrap()
-    .text()
-    .unwrap()
-}
-
 pub fn parse_server_name_for_notification() -> String {
   if is_webhook_include_public_ip() {
     return [
       get_server_name(),
       " (".to_string(),
-      get_public_ip(),
+      fetch_public_address().unwrap().to_string(),
       ")".to_string(),
     ]
     .join("");
