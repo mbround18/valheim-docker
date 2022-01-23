@@ -97,22 +97,23 @@ If you purely want to run this on a Linux based system, without docker, take a l
 
 > See further on down for advanced environment variables.
 
-| Variable          | Default           | Required | Description                                                                                                                                                                                                                                   |
-| ----------------- | ----------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PORT              | `2456`            | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458)                                                                                                                                          |
-| NAME              | `Valheim Docker`  | TRUE     | The name of your server! Make it fun and unique!                                                                                                                                                                                              |
-| WORLD             | `Dedicated`       | TRUE     | This is used to generate the name of your world.                                                                                                                                                                                              |
-| PUBLIC            | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                                                                                                 |
-| PASSWORD          | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                                                                                                 |
-| TYPE              | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                       |
-| MODS              | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/tutorials/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                       |
-| WEBHOOK_URL       | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
-| UPDATE_ON_STARTUP | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                          |
+| Variable                  | Default           | Required | Description                                                                                                                                                                                                                                                                                                                      |
+|---------------------------|-------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PORT                      | `2456`            | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458)                                                                                                                                                                                                                             |
+| NAME                      | `Valheim Docker`  | TRUE     | The name of your server! Make it fun and unique!                                                                                                                                                                                                                                                                                 |
+| WORLD                     | `Dedicated`       | TRUE     | This is used to generate the name of your world.                                                                                                                                                                                                                                                                                 |
+| PUBLIC                    | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                                                                                                                                                                                    |
+| PASSWORD                  | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                                                                                                                                                                                    |
+| TYPE                      | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                                                                                                          |
+| MODS                      | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/tutorials/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                                                                                                |
+| WEBHOOK_URL               | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                                                                    |
+| WEBHOOK_INCLUDE_PUBLIC_IP | `0`               | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address.  NOTE: If your server is behind a NAT using PAT with more than one external IP address (very unlikely on a home network), this could be inaccurate if your NAT doesn't maintain your server to a single external IP. |
+| UPDATE_ON_STARTUP         | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                                                                                                             |
 
 #### Container Env Variables
 
 | Variable | Default               | Required | Description                                                                                                                                                                                           |
-| -------- | --------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|----------|-----------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | TZ       | `America/Los_Angeles` | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
 | PUID     | `1000`                | FALSE    | Sets the User Id of the steam user.                                                                                                                                                                   |
 | PGID     | `1000`                | FALSE    | Sets the Group Id of the steam user.                                                                                                                                                                  |
@@ -120,7 +121,7 @@ If you purely want to run this on a Linux based system, without docker, take a l
 #### Auto Update
 
 | Variable                       | Default     | Required | Description                                                                                                                                                                                                                                                                     |
-| ------------------------------ | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|--------------------------------|-------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | AUTO_UPDATE                    | `0`         | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE           | `0 1 * * *` | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]                                                                                                              |
 | AUTO_UPDATE_PAUSE_WITH_PLAYERS | `0`         | FALSE    | Does not process an update for the server if there are players online.                                                                                                                                                                                                          |
@@ -130,7 +131,7 @@ Auto update job, queries steam and compares it against your internal steam files
 #### Auto Backup
 
 | Variable                          | Default        | Required | Description                                                                                                                                                 |
-| --------------------------------- | -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------|----------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | AUTO_BACKUP                       | `0`            | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory.       |
 | AUTO_BACKUP_SCHEDULE              | `*/15 * * * *` | FALSE    | Change to set how frequently you would like the server to backup. [If you need help figuring out a cron schedule click here].                               |
 | AUTO_BACKUP_REMOVE_OLD            | `1`            | FALSE    | Set to `0` to keep all backups or manually manage them.                                                                                                     |
@@ -153,9 +154,9 @@ services:
   valheim:
     image: mbround18/valheim:latest
     ports:
-      - 2456:2456/udp
-      - 2457:2457/udp
-      - 2458:2458/udp
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
     environment:
       PORT: 2456
       NAME: "Created With Valheim Docker"
@@ -176,9 +177,9 @@ services:
   valheim:
     image: mbround18/valheim:latest
     ports:
-      - 2456:2456/udp
-      - 2457:2457/udp
-      - 2458:2458/udp
+      - "2456:2456/udp"
+      - "2457:2457/udp"
+      - "2458:2458/udp"
     environment:
       PORT: 2456
       NAME: "Created With Valheim Docker"
@@ -195,6 +196,7 @@ services:
       AUTO_BACKUP_ON_UPDATE: 1
       AUTO_BACKUP_ON_SHUTDOWN: 1
       WEBHOOK_URL: "https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
+      WEBHOOK_INCLUDE_PUBLIC_IP: 1
       UPDATE_ON_STARTUP: 0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
@@ -213,7 +215,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 ### [Huginn] Http Server
 
 | Variable  | Default               | Required | Description                                                                                                                  |
-| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
+|-----------|-----------------------|----------|------------------------------------------------------------------------------------------------------------------------------|
 | ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
 | HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
 
