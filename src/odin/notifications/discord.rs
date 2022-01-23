@@ -1,11 +1,11 @@
-use crate::{files::discord::load_discord};
+use crate::files::discord::load_discord;
 
-use crate::notifications::{NotificationMessage};
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::parse_server_name_for_notification;
+use crate::notifications::NotificationMessage;
 use handlebars::Handlebars;
 use log::debug;
 use serde::{Deserialize, Serialize};
-use crate::notifications::enums::event_status::EventStatus;
-use crate::notifications::enums::notification_event::parse_server_name_for_notification;
 
 #[derive(Debug)]
 enum Color {

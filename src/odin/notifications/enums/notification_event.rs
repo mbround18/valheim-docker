@@ -1,14 +1,17 @@
 use crate::errors::VariantNotFound;
 use crate::notifications::enums::event_status::EventStatus;
-use serde::{Deserialize, Serialize};
-use std::fmt;
+use crate::notifications::{
+  discord::{is_discord_webhook, DiscordWebHookBody},
+  NotificationMessage, WEBHOOK_INCLUDE_PUBLIC_IP, WEBHOOK_URL,
+};
+use crate::utils::environment::fetch_var;
+use crate::utils::get_server_name;
 use chrono::Local;
 use inflections::case::to_title_case;
 use log::{debug, error, info, warn};
 use reqwest::{blocking::RequestBuilder, StatusCode, Url};
-use crate::notifications::{discord::{DiscordWebHookBody, is_discord_webhook}, NotificationMessage, WEBHOOK_INCLUDE_PUBLIC_IP, WEBHOOK_URL};
-use crate::utils::environment::fetch_var;
-use crate::utils::get_server_name;
+use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(PartialEq, Debug, Deserialize, Serialize)]
 pub enum NotificationEvent {
@@ -74,7 +77,7 @@ pub fn parse_server_name_for_notification() -> String {
       get_public_ip(),
       ")".to_string(),
     ]
-      .join("");
+    .join("");
   }
   get_server_name()
 }
@@ -205,7 +208,6 @@ mod notification_event_tests {
   }
 }
 
-
 #[cfg(test)]
 mod webhook_tests {
   use super::*;
@@ -243,13 +245,12 @@ mod webhook_tests {
 
 #[cfg(test)]
 mod enum_tests {
-  use std::env::set_var;
   use inflections::case::to_title_case;
+  use std::env::set_var;
 
   use super::*;
   use crate::notifications::enums::event_status::EventStatus;
   use crate::notifications::enums::notification_event::NotificationEvent::Broadcast;
-
 
   #[test]
   fn parse_enum_as_string() {

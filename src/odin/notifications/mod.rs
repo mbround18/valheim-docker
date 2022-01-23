@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::notifications::enums::notification_event::EventType;
+use serde::{Deserialize, Serialize};
 
 pub mod discord;
 pub mod enums;
@@ -14,4 +14,3 @@ pub struct NotificationMessage {
   pub(crate) event_message: String,
   pub(crate) timestamp: String,
 }
-
