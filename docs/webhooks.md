@@ -9,6 +9,7 @@
 | WEBHOOK_STATUS_RUNNING            | "0"                                | FALSE    | Posts a running status to discord when a command is initialized. |
 | WEBHOOK_STATUS_FAILED             | "1"                                | FALSE    | Posts a failed status to discord in the event of a failure. |
 | WEBHOOK_STATUS_SUCCESSFUL         | "1"                                | FALSE    | Posts a running status to discord when the command succeeds. |
+| WEBHOOK_INCLUDE_PUBLIC_IP         | `0`                                | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address. |
 
 ## POST Body Example
 

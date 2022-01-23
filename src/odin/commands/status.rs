@@ -1,41 +1,37 @@
 use crate::server::ServerInfo;
-use crate::utils::environment::fetch_var;
-use crate::utils::parse_arg_variable;
+use crate::utils::{fetch_public_address, parse_arg_variable};
 use clap::ArgMatches;
 use log::{error, info};
 use std::env;
-use std::net::{AddrParseError, SocketAddrV4};
+use std::net::SocketAddrV4;
 use std::process::exit;
 use std::str::FromStr;
 
-pub fn fetch_public_address() -> Result<SocketAddrV4, AddrParseError> {
-  let current_ip = env::var("ADDRESS").unwrap_or_else(|_| {
-    reqwest::blocking::get("https://api.ipify.org")
-      .unwrap()
-      .text()
-      .unwrap()
-  });
-  let current_port: u16 = fetch_var("PORT", "2456").parse().unwrap();
-  SocketAddrV4::from_str(&format!("{}:{}", current_ip, current_port + 1))
-}
-
-fn parse_address(args: &ArgMatches) -> Result<SocketAddrV4, AddrParseError> {
-  let has_address = args.is_present("address");
-  if has_address {
-    SocketAddrV4::from_str(&parse_arg_variable(args, "address", ""))
-  } else {
-    fetch_public_address()
+fn parse_address(address: &str) -> SocketAddrV4 {
+  match SocketAddrV4::from_str(address) {
+    Ok(parsed_address) => parsed_address,
+    Err(_) => {
+      error!("Failed to parse supplied address! {}", address);
+      exit(1)
+    }
   }
 }
 
 pub fn invoke(args: &ArgMatches) {
   let output_json = args.is_present("json");
-  let address = parse_address(args).unwrap_or_else(|_| {
-    let addr = fetch_var("ADDRESS", args.value_of("address").unwrap());
-    error!("Failed to parse supplied address! {}", addr);
-    exit(1)
-  });
-  let server_info = ServerInfo::from(address);
+  let use_local = args.is_present("local");
+  let address = if use_local {
+    String::from("127.0.0.1:2457")
+  } else if args.is_present("address") {
+    parse_arg_variable(args, "address", "")
+  } else {
+    match env::var("ADDRESS") {
+      Ok(env_address) => env_address,
+      Err(_) => fetch_public_address().unwrap().to_string(),
+    }
+  };
+  let parsed_address = parse_address(&address);
+  let server_info = ServerInfo::from(parsed_address);
   if output_json {
     println!("{}", serde_json::to_string_pretty(&server_info).unwrap());
   } else {

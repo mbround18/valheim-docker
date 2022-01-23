@@ -1,7 +1,8 @@
-use crate::{files::discord::load_discord, notifications::EventStatus};
+use crate::files::discord::load_discord;
 
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::parse_server_name_for_notification;
 use crate::notifications::NotificationMessage;
-use crate::utils::get_server_name;
 use handlebars::Handlebars;
 use log::debug;
 use serde::{Deserialize, Serialize};
@@ -71,7 +72,7 @@ impl From<&NotificationMessage> for IncomingNotification {
       description: String::from(&notification.event_message),
       status: String::from(&notification.event_type.status),
       timestamp: String::from(&notification.timestamp),
-      server_name: get_server_name(),
+      server_name: parse_server_name_for_notification(),
     }
   }
 }
