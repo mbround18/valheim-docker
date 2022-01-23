@@ -1,3 +1,34 @@
+# v1.5.0 (Sun Jan 23 2022)
+
+#### 🚀 Enhancement
+
+- Apeabody/public ip [#516](https://github.com/mbround18/valheim-docker/pull/516) ([@apeabody](https://github.com/apeabody) [@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- FIX: Update README section for BepInEx [#518](https://github.com/mbround18/valheim-docker/pull/518) ([@apeabody](https://github.com/apeabody))
+- Updated deps [#507](https://github.com/mbround18/valheim-docker/pull/507) (mbruno@mbruno-desktop.local [@mbround18](https://github.com/mbround18))
+
+#### ⚠️ Pushed to `main`
+
+- Update docker-build.yml ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Pin dependencies [#508](https://github.com/mbround18/valheim-docker/pull/508) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update rust Docker tag to v1.58 [#509](https://github.com/mbround18/valheim-docker/pull/509) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Pin dependencies [#503](https://github.com/mbround18/valheim-docker/pull/503) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 5
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Andrew Peabody ([@apeabody](https://github.com/apeabody))
+- Michael ([@mbround18](https://github.com/mbround18))
+- Michael Bruno (mbruno@mbruno-desktop.local)
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.4.13 (Sat Dec 25 2021)
 
 #### 🐛 Bug Fix
