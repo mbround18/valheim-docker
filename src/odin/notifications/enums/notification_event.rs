@@ -64,7 +64,11 @@ fn is_webhook_include_public_ip() -> bool {
 
 pub fn parse_server_name_for_notification() -> String {
   if is_webhook_include_public_ip() {
-    format!("{} {:?}", get_server_name(), fetch_public_address())
+    format!(
+      "{} - {}",
+      get_server_name(),
+      fetch_public_address().unwrap()
+    )
   } else {
     get_server_name()
   }
