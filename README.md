@@ -228,10 +228,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 
 ### [BepInEx Support](./docs/bepinex.md)
 
-This repo automatically launches with the proper environment variables for BepInEx.
-However, you have to install it manually in the container due to the fact that the modding community around Valheim is still in its infancy.
-
-[Click Here to view documentation on BepInEx Support](./docs/bepinex.md)
+As of [March 2021](./docs/bepinex.md) the TYPE variable can be used to automatically install BepInEx. For details see [Getting started with mods].
 
 ### [Webhook Support](./docs/webhooks.md)
 
