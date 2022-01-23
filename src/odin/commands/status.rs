@@ -21,7 +21,7 @@ pub fn invoke(args: &ArgMatches) {
   let output_json = args.is_present("json");
   let use_local = args.is_present("local");
   let address = if use_local {
-    String::from("127.0.0.1:2456")
+    String::from("127.0.0.1:2457")
   } else if args.is_present("address") {
     parse_arg_variable(args, "address", "")
   } else {
