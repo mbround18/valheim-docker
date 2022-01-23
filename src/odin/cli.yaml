@@ -183,6 +183,12 @@ subcommands:
             takes_value: false
             long: json
             short: j
+        - local:
+            help: Overrides address to use localhost
+            required: false
+            takes_value: false
+            long: local
+            short: l
         - address:
             help: Search for server information based on address
             required: false
