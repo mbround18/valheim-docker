@@ -76,6 +76,9 @@ If you purely want to run this on a Linux based system, without docker, take a l
 
 ## Running with Docker
 
+> This image does use verion 3+ for all of its compose examples. 
+> Please use Docker engine >=20 or make adjustments accordingly. 
+> 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 >
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
@@ -146,6 +149,9 @@ Auto update job, queries steam and compares it against your internal steam files
 Auto backup job produces an output of a `*.tar.gz` file which should average around 30mb for a world that has an average of 4 players consistently building on. You should be aware that if you place the server folder in your saves folder your backups could become astronomical in size. This is a common problem that others have observed, to avoid this please follow the guide for how volume mounts should be made in the `docker-compose.yml`.
 
 ## Docker Compose
+
+> This image does use verion 3+ for all of its compose examples. 
+> Please use Docker engine >=20 or make adjustments accordingly. 
 
 ### Simple
 
