@@ -2,22 +2,23 @@
 # -- Odin Builder -- #
 # ------------------ #
 ARG ODIN_IMAGE_VERSION=latest
-FROM mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
+FROM --platform=linux/amd64 mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
 
 # --------------- #
 # -- Steam CMD -- #
 # --------------- #
 FROM steamcmd/steamcmd:ubuntu
 
-RUN apt-get update                     \
-    && apt-get upgrade -y              \
-    && apt-get install -y -q             \
-    htop net-tools nano gcc g++ gdb    \
-    netcat curl wget zip unzip         \
-    cron sudo gosu dos2unix      \
-    libsdl2-2.0-0  jq  libc6 libc6-dev      \
-    && rm -rf /var/lib/apt/lists/*     \
-    && gosu nobody true                \
+RUN apt-get update                        \
+    && apt-get upgrade -y                 \
+    && apt-get install -y -q              \
+    build-essentials                      \
+    htop net-tools nano gcc g++ gdb       \
+    netcat curl wget zip unzip            \
+    cron sudo gosu dos2unix               \
+    libsdl2-2.0-0  jq  libc6 libc6-dev    \
+    && rm -rf /var/lib/apt/lists/*        \
+    && gosu nobody true                   \
     && dos2unix
 
 RUN addgroup --system steam     \
