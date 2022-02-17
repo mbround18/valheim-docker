@@ -76,6 +76,7 @@ If you purely want to run this on a Linux based system, without docker, take a l
 
 ## Running with Docker
 
+> This image does use verion 3+ for all of its compose examples. Please use Docker engine >=20. 
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 >
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
