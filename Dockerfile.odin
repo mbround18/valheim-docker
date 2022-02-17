@@ -15,12 +15,16 @@ RUN cargo chef prepare --recipe-path recipe.json
 # -- Odin Builder -- #
 # ------------------ #
 FROM registry.hub.docker.com/lukemathwalker/cargo-chef:latest-rust-1.58 as builder
+# Restrict Cargo
+COPY ./config/config.toml /.cargo/config.toml
+
+# Setup Project Files
 WORKDIR /data/odin
 COPY . .
 COPY --from=planner /data/odin/recipe.json recipe.json
-
 RUN cargo chef cook --release --recipe-path recipe.json
 
+# Build for production
 COPY --from=cargo-make /usr/local/bin/cargo-make /usr/local/cargo/bin
 RUN /usr/local/cargo/bin/cargo make -p production release
 

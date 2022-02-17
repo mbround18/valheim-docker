@@ -9,10 +9,13 @@ FROM --platform=linux/amd64 mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
 # --------------- #
 FROM steamcmd/steamcmd:ubuntu
 
+ENV TZ=America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 RUN apt-get update                        \
     && apt-get upgrade -y                 \
-    && apt-get install -y -q              \
-    build-essentials                      \
+    && apt-get install -y -qq             \
+    build-essential                       \
     htop net-tools nano gcc g++ gdb       \
     netcat curl wget zip unzip            \
     cron sudo gosu dos2unix               \
