@@ -45,7 +45,10 @@ pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: 
         info!("{}", success_message);
       } else {
         match exit_status.code() {
-          Some(code) => info!("Exited with http code: {}", code),
+          Some(code) => {
+            error!("Exited with http code: {}", code);
+            exit(code)
+          },
           None => info!("Process terminated by signal"),
         }
       }
