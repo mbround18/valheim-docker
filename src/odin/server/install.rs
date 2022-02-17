@@ -1,11 +1,15 @@
 use log::{debug, info};
 
-use std::{env, io, path::Path, process::{ExitStatus, Stdio}};
+use std::{
+  env, io,
+  path::Path,
+  process::{ExitStatus, Stdio},
+};
 
+use crate::utils::environment;
 use crate::{
   constants, executable::execute_mut, steamcmd::steamcmd_command, utils::get_working_dir,
 };
-use crate::utils::environment;
 
 pub fn is_installed() -> bool {
   Path::new(&get_working_dir())
@@ -15,8 +19,6 @@ pub fn is_installed() -> bool {
 
 pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   info!("Installing {} to {}", app_id, get_working_dir());
-
-
 
   let login = "+login anonymous".to_string();
   let force_install_dir = format!("+force_install_dir {}", get_working_dir());

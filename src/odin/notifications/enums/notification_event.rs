@@ -162,7 +162,7 @@ impl NotificationEvent {
 impl fmt::Display for NotificationEvent {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let debug = format!("{:?}", self);
-    let formatted = debug.replace("(", " ").replace(")", "");
+    let formatted = debug.replace('(', " ").replace(')', "");
     f.write_str(&formatted)
   }
 }

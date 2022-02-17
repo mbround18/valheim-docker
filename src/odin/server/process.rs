@@ -21,8 +21,7 @@ impl ServerProcess {
       .process_by_name(&constants::VALHEIM_EXECUTABLE_NAME[..15])
   }
 
-  //noinspection RsSelfConvention
-  pub fn is_process_running(&mut self) -> bool {
+  pub fn are_process_running(&mut self) -> bool {
     !self.valheim_processes().is_empty()
   }
 }

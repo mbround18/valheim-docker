@@ -842,7 +842,7 @@ dependencies = [
 
 [[package]]
 name = "odin"
-version = "1.4.3"
+version = "1.5.1"
 dependencies = [
  "a2s",
  "cargo-husky",
