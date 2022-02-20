@@ -1,3 +1,26 @@
+# v1.5.1 (Sun Feb 20 2022)
+
+#### 🐛 Bug Fix
+
+- Additional Arguments [#528](https://github.com/mbround18/valheim-docker/pull/528) ([@mbround18](https://github.com/mbround18))
+- Update README.md [#529](https://github.com/mbround18/valheim-docker/pull/529) ([@mbround18](https://github.com/mbround18))
+- ADD: External link to AWS Cloudformation template using ECS and Spot [#517](https://github.com/mbround18/valheim-docker/pull/517) ([@apeabody](https://github.com/apeabody) [@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update Rust crate a2s to 0.5.1 [#522](https://github.com/mbround18/valheim-docker/pull/522) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to 4.2.4 [#521](https://github.com/mbround18/valheim-docker/pull/521) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Pin dependencies [#519](https://github.com/mbround18/valheim-docker/pull/519) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Andrew Peabody ([@apeabody](https://github.com/apeabody))
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.5.0 (Sun Jan 23 2022)
 
 #### 🚀 Enhancement
