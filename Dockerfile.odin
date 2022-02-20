@@ -16,7 +16,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ------------------ #
 FROM registry.hub.docker.com/lukemathwalker/cargo-chef:latest-rust-1.58 as builder
 # Restrict Cargo
-COPY ./config/config.toml /.cargo/config.toml
+# COPY ./config/config.toml /.cargo/config.toml
 
 # Setup Project Files
 WORKDIR /data/odin
