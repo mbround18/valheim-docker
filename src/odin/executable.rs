@@ -6,7 +6,7 @@ pub fn find_command(executable: &str) -> Option<Command> {
   let script_file = Path::new(executable);
   if script_file.exists() {
     info!("Executing: {} .....", executable.to_string());
-    Option::from(Command::new(executable.to_string()))
+    Option::from(Command::new(executable))
   } else {
     match which::which(executable) {
       Ok(executable_path) => Option::from(Command::new(executable_path)),
@@ -45,7 +45,10 @@ pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: 
         info!("{}", success_message);
       } else {
         match exit_status.code() {
-          Some(code) => info!("Exited with http code: {}", code),
+          Some(code) => {
+            error!("Exited with http code: {}", code);
+            exit(code)
+          }
           None => info!("Process terminated by signal"),
         }
       }

@@ -113,6 +113,8 @@ If you purely want to run this on a Linux based system, without docker, take a l
 | WEBHOOK_URL               | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                                                                    |
 | WEBHOOK_INCLUDE_PUBLIC_IP | `0`               | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address.  NOTE: If your server is behind a NAT using PAT with more than one external IP address (very unlikely on a home network), this could be inaccurate if your NAT doesn't maintain your server to a single external IP. |
 | UPDATE_ON_STARTUP         | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                                                                                                             |
+| ADDITIONAL_STEAMCMD_ARGS  | ``                | FALSE    | Sets optional arguments for install                                                                                                                                                                                                                                                                                              |
+
 
 #### Container Env Variables
 

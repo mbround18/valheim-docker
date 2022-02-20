@@ -1,0 +1,2 @@
+[build]
+jobs = 1                      # number of parallel jobs, defaults to # of CPUs

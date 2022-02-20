@@ -282,7 +282,7 @@ impl ValheimMod {
           if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
             debug!("Using url (in case of redirect): {}", &self.url);
             self.url = response.url().to_string();
-            self.file_type = url_parse_file_type(&response.url().to_string());
+            self.file_type = url_parse_file_type(response.url().as_ref());
           }
 
           let file_name = parse_file_name(
