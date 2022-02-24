@@ -61,7 +61,13 @@ elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
 else
   log "Skipping install process, looks like valheim_server is already installed :)"
 fi
-cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
+
+if [ -f "/home/steam/steamcmd/linux64/steamclient.so" ]; then 
+  cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
+fi
+
+
+
 
 # Setting up server
 log "Initializing Variables...."

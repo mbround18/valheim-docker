@@ -11,6 +11,9 @@ use crate::{
   constants, executable::execute_mut, steamcmd::steamcmd_command, utils::get_working_dir,
 };
 
+const BETA_BRANCH: &str = "public-test";
+const BETA_BRANCH_PASSWORD: &str = "yesimadebackups";
+
 pub fn is_installed() -> bool {
   Path::new(&get_working_dir())
     .join(constants::VALHEIM_EXECUTABLE_NAME)
@@ -19,9 +22,14 @@ pub fn is_installed() -> bool {
 
 fn add_additional_args(args: &mut Vec<String>) {
   if let Ok(extra_args) = env::var("ADDITIONAL_STEAMCMD_ARGS") {
-    args.push(String::from(
-      extra_args.trim_start_matches('"').trim_end_matches('"'),
-    ))
+    let additional_args = String::from(extra_args.trim_start_matches('"').trim_end_matches('"'));
+    debug!("Adding additional arguments! {}", additional_args);
+    args.push(additional_args)
+  }
+  if environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1") {
+    debug!("Using public beta branch");
+    args.push(format!("-beta {}", BETA_BRANCH));
+    args.push(format!("-betapassword \"{}\"", BETA_BRANCH_PASSWORD));
   }
 }
 
@@ -51,19 +59,29 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
 #[cfg(test)]
 mod tests {
-  use crate::server::install::add_additional_args;
+  use crate::server::install::{add_additional_args, BETA_BRANCH, BETA_BRANCH_PASSWORD};
 
   #[test]
-  fn adding_additional_args() {
+  fn add_custom_args() {
     let mut args = vec!["example".to_string()];
-    std::env::set_var(
-      "ADDITIONAL_STEAMCMD_ARGS",
-      "\"-beta publicbeta -betapassword iamsure\"",
-    );
+    let extra_args = "-beta publicbeta -betapassword iamsure";
+    std::env::set_var("ADDITIONAL_STEAMCMD_ARGS", format!("\"{}\"", extra_args));
+    add_additional_args(&mut args);
+    assert_eq!(args.join(" "), format!("example {}", extra_args));
+    std::env::remove_var("ADDITIONAL_STEAMCMD_ARGS");
+  }
+  #[test]
+  fn add_beta_args() {
+    let mut args = vec!["example".to_string()];
+    std::env::set_var("USE_PUBLIC_BETA", "1");
     add_additional_args(&mut args);
     assert_eq!(
       args.join(" "),
-      "example -beta publicbeta -betapassword iamsure".to_string()
+      format!(
+        "example -beta {} -betapassword \"{}\"",
+        BETA_BRANCH, BETA_BRANCH_PASSWORD
+      )
     );
+    std::env::remove_var("USE_PUBLIC_BETA");
   }
 }
