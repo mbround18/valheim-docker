@@ -1,3 +1,23 @@
+# v1.5.2 (Thu Feb 24 2022)
+
+#### 🐛 Bug Fix
+
+- Public Test [#534](https://github.com/mbround18/valheim-docker/pull/534) ([@mbround18](https://github.com/mbround18))
+- Update Dockerfile.odin [#537](https://github.com/mbround18/valheim-docker/pull/537) ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update Yarn to v3.2.0 [#536](https://github.com/mbround18/valheim-docker/pull/536) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serial_test to 0.6.0 [#533](https://github.com/mbround18/valheim-docker/pull/533) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.5.1 (Sun Feb 20 2022)
 
 #### 🐛 Bug Fix
