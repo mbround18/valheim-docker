@@ -33,7 +33,7 @@ log "Creating backup..."
 file_name="$(date +"%Y%m%d-%H%M%S")-${1:-"backup"}.tar.gz"
 
 
-if [ -x "$(command -v nice)" && ${AUTO_BACKUP_NICE_LEVEL:=0} -ge 1 && ${AUTO_BACKUP_NICE_LEVEL:=0} -ls 19 ]; then 
+if [ -x "$(command -v nice)" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -ge "1" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -le "19" ]; then 
   nice -n ${AUTO_BACKUP_NICE_LEVEL} \
     odin backup \
     /home/steam/.config/unity3d/IronGate/Valheim \
