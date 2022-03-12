@@ -77,47 +77,46 @@ Replace the `xx.xx.xx.xx` with your server IP and `query-port` with the `PORT` v
 odin status --address "xx.xx.xx.xx:query-port"
 ```
 
-
 ## Systemd service
 
 1. With the root user or using sudo run
 
    ```shell
-   nano /etc/systemd/system/valheim.service 
+   nano /etc/systemd/system/valheim.service
    ```
 
 2. Copy and paste the text below
 
-    ```toml
-    [Unit]
-    Description=Valheim Server
-    After=network.target
-    StartLimitIntervalSec=0
-   
-    [Service]
-    Type=simple
-    Restart=always
-    RestartSec=1
-    User=steam
-    Environment="PORT=2456" 'NAME="Valheim Docker"' "WORLD=Dedicated" "PUBLIC=1" "PASSWORD=changeme"
-    WorkingDirectory=/home/steam/valheim
-    ExecStartPre=/usr/bin/env /usr/local/bin/odin configure
-    ExecStart=/usr/bin/env /usr/local/bin/odin start
-    ExecStop=/usr/bin/env /usr/local/bin/odin stop
-    
-    [Install]
-    WantedBy=multi-user.target
-    ```
+   ```toml
+   [Unit]
+   Description=Valheim Server
+   After=network.target
+   StartLimitIntervalSec=0
+
+   [Service]
+   Type=simple
+   Restart=always
+   RestartSec=1
+   User=steam
+   Environment="PORT=2456" 'NAME="Valheim Docker"' "WORLD=Dedicated" "PUBLIC=1" "PASSWORD=changeme"
+   WorkingDirectory=/home/steam/valheim
+   ExecStartPre=/usr/bin/env /usr/local/bin/odin configure
+   ExecStart=/usr/bin/env /usr/local/bin/odin start
+   ExecStop=/usr/bin/env /usr/local/bin/odin stop
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
 
 3. Make any necessary changes to the service to fit your needs.
 4. Next save the file and start the service.
 
-    ```shell
-    sudo systemctl start valheim
-    ```
+   ```shell
+   sudo systemctl start valheim
+   ```
 
 5. To have the server start on server launch, run:
 
-    ```shell
-    sudo systemctl enable valheim
-    ```
+   ```shell
+   sudo systemctl enable valheim
+   ```

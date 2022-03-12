@@ -1,49 +1,60 @@
-<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
-
 # [Valheim]
+
+<img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
 
 <a href="https://hub.docker.com/r/mbround18/valheim"><img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt=""></a>
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt=""></a>
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt=""></a>
+
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
 
-* [Running on a bare-metal Linux Server](#running-on-a-bare-metal-linux-server)
-  * [From Release](#from-release)
-  * [From Source](#from-source)
-* [Running with Docker](#running-with-docker)
-  * [Download Locations](#download-locations)
-    * [DockerHub](#dockerhub)
-    * [GitHub Container Registry](#github-container-registry)
-  * [Environment Variables](#environment-variables)
-    * [Container Env Variables](#container-env-variables)
-    * [Auto Update](#auto-update)
-    * [Auto Backup](#auto-backup)
-* [Docker Compose](#docker-compose)
-  * [Simple](#simple)
-  * [Everything but the kitchen sink](#everything-but-the-kitchen-sink)
-* [Bundled Tools](#bundled-tools)
-  * [Odin](#odin)
-  * [Huginn Http Server](#huginn-http-server)
-* [Feature Information](#feature-information)
-  * [BepInEx Support](#bepinex-support)
-  * [Webhook Support](#webhook-support)
-* [Guides](#guides)
-  > Did you write a guide? or perhaps an article? Add a PR to have it added here in the readme <3
-  * [How to Transfer Files](#how-to-transfer-files)
-  * [External: Hosting Valheim on Rocket Pi X](https://ikarus.sg/valheim-server-rock-pi-x/)
-  * [External: Valheim on AWS](https://aws.amazon.com/getting-started/hands-on/valheim-on-aws/)
-  * [External: How to host a dedicated Valheim server on Amazon Lightsail](https://updateloop.dev/dedicated-valheim-lightsail/)
-  * [External: Experience With Valheim Game Hosting With Docker](https://norton-setup.support/games/experience-with-valheim-game-hosting-with-docker/)
-  * [External: AWS Cloudformation template using Elastic Container Service with a Spot Instance for cost savings](https://github.com/apeabody/Valheim-AWS-ECS-Spot)
-* [Additional Information](#additional-information)
-  * [Discord Release Notifications](#discord-release-notifications)
-  * [Versions](#versions)
-* [❤️ Sponsors ❤️](#sponsors)
-* [✨ Contributors ✨](#contributors-)
+- [[Valheim]](#valheim)
+  - [Table of Contents](#table-of-contents)
+  - [Running on a bare-metal Linux Server](#running-on-a-bare-metal-linux-server)
+    - [From Release](#from-release)
+    - [From Source](#from-source)
+  - [Running with Docker](#running-with-docker)
+    - [Download Locations](#download-locations)
+      - [DockerHub](#dockerhub)
+      - [GitHub Container Registry](#github-container-registry)
+    - [Environment Variables](#environment-variables)
+      - [Container Env Variables](#container-env-variables)
+      - [Auto Update](#auto-update)
+      - [Auto Backup](#auto-backup)
+  - [Docker Compose](#docker-compose)
+    - [Simple](#simple)
+    - [Everything but the kitchen sink](#everything-but-the-kitchen-sink)
+  - [Bundled Tools](#bundled-tools)
+    - [[Odin]](#odin)
+    - [[Huginn] Http Server](#huginn-http-server)
+  - [Feature Information](#feature-information)
+    - [BepInEx Support](#bepinex-support)
+    - [Webhook Support](#webhook-support)
+  - [Guides](#guides)
+    - [How to Transfer Files](#how-to-transfer-files)
+  - [Additional Information](#additional-information)
+    - [Discord Release Notifications](#discord-release-notifications)
+    - [Versions](#versions)
+  - [Sponsors](#sponsors)
+  - [Contributors ✨](#contributors-)
+    > Did you write a guide? or perhaps an article? Add a PR to have it added here in the readme <3
+  - [How to Transfer Files](#how-to-transfer-files)
+  - [External: Hosting Valheim on Rocket Pi X](https://ikarus.sg/valheim-server-rock-pi-x/)
+  - [External: Valheim on AWS](https://aws.amazon.com/getting-started/hands-on/valheim-on-aws/)
+  - [External: How to host a dedicated Valheim server on Amazon Lightsail](https://updateloop.dev/dedicated-valheim-lightsail/)
+  - [External: Experience With Valheim Game Hosting With Docker](https://norton-setup.support/games/experience-with-valheim-game-hosting-with-docker/)
+  - [External: AWS Cloudformation template using Elastic Container Service with a Spot Instance for cost savings](https://github.com/apeabody/Valheim-AWS-ECS-Spot)
+- [Additional Information](#additional-information)
+  - [Discord Release Notifications](#discord-release-notifications)
+  - [Versions](#versions)
+- [❤️ Sponsors ❤️](#sponsors)
+- [✨ Contributors ✨](#contributors-)
 
 ## Running on a bare-metal Linux Server
 
@@ -53,12 +64,12 @@
 2. Download the `bundle.zip` to your server
 3. Extract the `bundle.zip`
 4. Make the files executable `chmod +x {odin,huginn}`
-5. Optional: Add the files to your path. 
-6. Navigate to the folder where you want your server installed. 
+5. Optional: Add the files to your path.
+6. Navigate to the folder where you want your server installed.
 7. Run `odin configure --password "Your Super Strong Password"` (you can also supply `--name "Server Name"`, `--port "Server Port"`, or other arguments available.)
-8. Finally, run `odin start`. 
+8. Finally, run `odin start`.
 
-**More in-depth How-to Article:** https://dev.to/mbround18/running-valheim-on-an-linux-server-4kh1
+**More in-depth How-to Article:** <https://dev.to/mbround18/running-valheim-on-an-linux-server-4kh1>
 
 ### From Source
 
@@ -76,9 +87,9 @@ If you purely want to run this on a Linux based system, without docker, take a l
 
 ## Running with Docker
 
-> This image does use verion 3+ for all of its compose examples. 
-> Please use Docker engine >=20 or make adjustments accordingly. 
-> 
+> This image does use verion 3+ for all of its compose examples.
+> Please use Docker engine >=20 or make adjustments accordingly.
+>
 > [If you are looking for a guide on how to get started click here](https://github.com/mbround18/valheim-docker/discussions/28)
 >
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
@@ -101,25 +112,24 @@ If you purely want to run this on a Linux based system, without docker, take a l
 
 > See further on down for advanced environment variables.
 
-| Variable                  | Default           | Required | Description                                                                                                                                                                                                                                                                                                                      |
-|---------------------------|-------------------|----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| PORT                      | `2456`            | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458)                                                                                                                                                                                                                             |
-| NAME                      | `Valheim Docker`  | TRUE     | The name of your server! Make it fun and unique!                                                                                                                                                                                                                                                                                 |
-| WORLD                     | `Dedicated`       | TRUE     | This is used to generate the name of your world.                                                                                                                                                                                                                                                                                 |
-| PUBLIC                    | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                                                                                                                                                                                    |
-| PASSWORD                  | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                                                                                                                                                                                    |
-| TYPE                      | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                                                                                                          |
-| MODS                      | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/tutorials/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                                                                                                |
-| WEBHOOK_URL               | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                                                                    |
-| WEBHOOK_INCLUDE_PUBLIC_IP | `0`               | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address.  NOTE: If your server is behind a NAT using PAT with more than one external IP address (very unlikely on a home network), this could be inaccurate if your NAT doesn't maintain your server to a single external IP. |
-| UPDATE_ON_STARTUP         | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                                                                                                             |
-| ADDITIONAL_STEAMCMD_ARGS  | ``                | FALSE    | Sets optional arguments for install                                                                                                                                                                                                                                                                                              |
-
+| Variable                  | Default           | Required | Description                                                                                                                                                                                                                                                                                                                     |
+| ------------------------- | ----------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PORT                      | `2456`            | TRUE     | Sets the port your server will listen on. Take note it will also listen on +2 (ex: 2456, 2457, 2458)                                                                                                                                                                                                                            |
+| NAME                      | `Valheim Docker`  | TRUE     | The name of your server! Make it fun and unique!                                                                                                                                                                                                                                                                                |
+| WORLD                     | `Dedicated`       | TRUE     | This is used to generate the name of your world.                                                                                                                                                                                                                                                                                |
+| PUBLIC                    | `1`               | FALSE    | Sets whether or not your server is public on the server list.                                                                                                                                                                                                                                                                   |
+| PASSWORD                  | `<please set me>` | TRUE     | Set this to something unique!                                                                                                                                                                                                                                                                                                   |
+| TYPE                      | `Vanilla`         | FALSE    | This can be set to `ValheimPlus`, `BepInEx`, `BepInExFull` or `Vanilla`                                                                                                                                                                                                                                                         |
+| MODS                      | `<nothing>`       | FALSE    | This is an array of mods separated by comma and a new line. [Click Here for Examples](./docs/tutorials/getting_started_with_mods.md) Supported files are `zip`, `dll`, and `cfg`.                                                                                                                                               |
+| WEBHOOK_URL               | `<nothing>`       | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                                                                   |
+| WEBHOOK_INCLUDE_PUBLIC_IP | `0`               | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address. NOTE: If your server is behind a NAT using PAT with more than one external IP address (very unlikely on a home network), this could be inaccurate if your NAT doesn't maintain your server to a single external IP. |
+| UPDATE_ON_STARTUP         | `1`               | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                                                                                                            |
+| ADDITIONAL_STEAMCMD_ARGS  | ``                | FALSE    | Sets optional arguments for install                                                                                                                                                                                                                                                                                             |
 
 #### Container Env Variables
 
 | Variable | Default               | Required | Description                                                                                                                                                                                           |
-|----------|-----------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------- | --------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TZ       | `America/Los_Angeles` | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
 | PUID     | `1000`                | FALSE    | Sets the User Id of the steam user.                                                                                                                                                                   |
 | PGID     | `1000`                | FALSE    | Sets the Group Id of the steam user.                                                                                                                                                                  |
@@ -127,7 +137,7 @@ If you purely want to run this on a Linux based system, without docker, take a l
 #### Auto Update
 
 | Variable                       | Default     | Required | Description                                                                                                                                                                                                                                                                     |
-|--------------------------------|-------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------------------------ | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AUTO_UPDATE                    | `0`         | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
 | AUTO_UPDATE_SCHEDULE           | `0 1 * * *` | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update. [If you need help figuring out a cron schedule click here]                                                                                                              |
 | AUTO_UPDATE_PAUSE_WITH_PLAYERS | `0`         | FALSE    | Does not process an update for the server if there are players online.                                                                                                                                                                                                          |
@@ -137,9 +147,10 @@ Auto update job, queries steam and compares it against your internal steam files
 #### Auto Backup
 
 | Variable                          | Default        | Required | Description                                                                                                                                                 |
-|-----------------------------------|----------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------------------- | -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AUTO_BACKUP                       | `0`            | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory.       |
 | AUTO_BACKUP_SCHEDULE              | `*/15 * * * *` | FALSE    | Change to set how frequently you would like the server to backup. [If you need help figuring out a cron schedule click here].                               |
+| AUTO_BACKUP_NICE_LEVEL            | `NOT SET`      | FALSE    | [Do NOT set this variable unless you are following this guide here](https://github.com/mbround18/valheim-docker/discussions/532)                            |
 | AUTO_BACKUP_REMOVE_OLD            | `1`            | FALSE    | Set to `0` to keep all backups or manually manage them.                                                                                                     |
 | AUTO_BACKUP_DAYS_TO_LIVE          | `3`            | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this number as needed. |
 | AUTO_BACKUP_ON_UPDATE             | `0`            | FALSE    | Create a backup on right before updating and starting your server.                                                                                          |
@@ -150,8 +161,8 @@ Auto backup job produces an output of a `*.tar.gz` file which should average aro
 
 ## Docker Compose
 
-> This image does use verion 3+ for all of its compose examples. 
-> Please use Docker engine >=20 or make adjustments accordingly. 
+> This image does use verion 3+ for all of its compose examples.
+> Please use Docker engine >=20 or make adjustments accordingly.
 
 ### Simple
 
@@ -212,6 +223,7 @@ services:
       - ./valheim/server:/home/steam/valheim
       - ./valheim/backups:/home/steam/backups
 ```
+
 ## Bundled Tools
 
 ### [Odin]
@@ -220,11 +232,10 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 
 [Click here to see advanced environment variables for Odin](src/odin/README.md)
 
-
 ### [Huginn] Http Server
 
 | Variable  | Default               | Required | Description                                                                                                                  |
-|-----------|-----------------------|----------|------------------------------------------------------------------------------------------------------------------------------|
+| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
 | HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
 
@@ -254,7 +265,6 @@ This is a tutorial of a recommended path to transfering files. This can be done 
 
 [Click Here to view the tutorial of how to transfer files.](./docs/tutorials/how-to-transfer-files.md)
 
-
 ## Additional Information
 
 ### Discord Release Notifications
@@ -271,10 +281,10 @@ If you would like to have release notifications tied into your Discord server, c
 - latest (Stable): Mod support! and cleaned up the code base.
 - 1.4.x (Stable): Webhook for discord upgrade.
 - 1.3.x (Stable): Health of codebase improvements.
-- 1.2.0 (Stable): Added additional stop features and sig for stopping. 
+- 1.2.0 (Stable): Added additional stop features and sig for stopping.
 - 1.1.1 (Stable): Patch to fix arguments
 - 1.1.0 (Unstable): Cleaned up image and made it faster
-- 1.0.0 (Stable): It works! 
+- 1.0.0 (Stable): It works!
 
 [//]: <> (Links below...................)
 [Odin]: src/odin/README.md
