@@ -1,3 +1,29 @@
+# v1.5.3 (Fri Mar 18 2022)
+
+#### 🐛 Bug Fix
+
+- Niceeee and Dep uprades [#549](https://github.com/mbround18/valheim-docker/pull/549) ([@mbround18](https://github.com/mbround18))
+- Update dependency @auto-it/git-tag to v10.34.1 [#544](https://github.com/mbround18/valheim-docker/pull/544) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.34.1 [#546](https://github.com/mbround18/valheim-docker/pull/546) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/checkout action to v3 [#542](https://github.com/mbround18/valheim-docker/pull/542) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### ⚠️ Pushed to `main`
+
+- Update renovate.json ([@mbround18](https://github.com/mbround18))
+
+#### 🔩 Dependency Updates
+
+- Update dependency typescript to v4.6.2 [#541](https://github.com/mbround18/valheim-docker/pull/541) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/setup-node action to v3 [#539](https://github.com/mbround18/valheim-docker/pull/539) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.5.2 (Thu Feb 24 2022)
 
 #### 🐛 Bug Fix
