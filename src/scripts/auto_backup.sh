@@ -8,7 +8,6 @@ log() {
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
 
-
 if [ "${PUBLIC:=0}" -eq 0 ] && [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
   log "Woah, cannot pause backup process on a server with PUBLIC=0"
   log "This is because we cannot query your server via the Steam API"
@@ -23,7 +22,6 @@ else
   fi
 fi
 
-
 log "Starting auto backup process..."
 
 if [ "${AUTO_BACKUP_REMOVE_OLD:=0}" -eq 1 ]; then
@@ -34,6 +32,18 @@ fi
 log "Creating backup..."
 file_name="$(date +"%Y%m%d-%H%M%S")-${1:-"backup"}.tar.gz"
 
-odin backup /home/steam/.config/unity3d/IronGate/Valheim "/home/steam/backups/${file_name}" || exit 1
+
+if [ -x "$(command -v nice)" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -ge "1" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -le "19" ]; then 
+  nice -n ${AUTO_BACKUP_NICE_LEVEL} \
+    odin backup \
+    /home/steam/.config/unity3d/IronGate/Valheim \
+    "/home/steam/backups/${file_name}" \
+    || exit 1
+else
+  odin backup \
+  /home/steam/.config/unity3d/IronGate/Valheim \
+  "/home/steam/backups/${file_name}" \
+  || exit 1
+fi
 
 log "Backup process complete! Created ${file_name}"
