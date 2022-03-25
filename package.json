@@ -16,7 +16,7 @@
     "sdks": "yarn dlx @yarnpkg/sdks"
   },
   "devDependencies": {
-    "@auto-it/all-contributors": "10.32.5",
+    "@auto-it/all-contributors": "10.36.5",
     "@auto-it/git-tag": "10.34.1",
     "@auto-it/upload-assets": "10.32.5",
     "@types/node": "15.3.0",
