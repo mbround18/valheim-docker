@@ -48,6 +48,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@auto-it/bot-list@npm:10.36.5":
+  version: 10.36.5
+  resolution: "@auto-it/bot-list@npm:10.36.5"
+  checksum: eaae806200ab9ba3d2b7e9ac4ae4b072ff193edcf5d335fd75cfd428be7693cb0edde7be2eea8d7ad396edb9421bc5fab35c1ed6467b782b822ce93efee6d6b1
+  languageName: node
+  linkType: hard
+
 "@auto-it/core@npm:10.32.5, @auto-it/core@npm:^10.32.5":
   version: 10.32.5
   resolution: "@auto-it/core@npm:10.32.5"
@@ -148,14 +155,64 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@auto-it/git-tag@npm:10.34.1":
-  version: 10.34.1
-  resolution: "@auto-it/git-tag@npm:10.34.1"
+"@auto-it/core@npm:10.36.5":
+  version: 10.36.5
+  resolution: "@auto-it/core@npm:10.36.5"
   dependencies:
-    "@auto-it/core": 10.34.1
+    "@auto-it/bot-list": 10.36.5
+    "@endemolshinegroup/cosmiconfig-typescript-loader": ^3.0.2
+    "@octokit/plugin-enterprise-compatibility": 1.3.0
+    "@octokit/plugin-retry": ^3.0.9
+    "@octokit/plugin-throttling": ^3.6.2
+    "@octokit/rest": ^18.12.0
+    await-to-js: ^3.0.0
+    chalk: ^4.0.0
+    cosmiconfig: 7.0.0
+    deepmerge: ^4.0.0
+    dotenv: ^8.0.0
+    endent: ^2.1.0
+    enquirer: ^2.3.4
+    env-ci: ^5.0.1
+    fast-glob: ^3.1.1
+    fp-ts: ^2.5.3
+    fromentries: ^1.2.0
+    gitlog: ^4.0.3
+    https-proxy-agent: ^5.0.0
+    import-cwd: ^3.0.0
+    import-from: ^3.0.0
+    io-ts: ^2.1.2
+    lodash.chunk: ^4.2.0
+    log-symbols: ^4.0.0
+    node-fetch: 2.6.7
+    parse-author: ^2.0.0
+    parse-github-url: 1.0.2
+    pretty-ms: ^7.0.0
+    requireg: ^0.2.2
+    semver: ^7.0.0
+    signale: ^1.4.0
+    tapable: ^2.2.0
+    terminal-link: ^2.1.1
+    tinycolor2: ^1.4.1
+    ts-node: ^9.1.1
+    tslib: 2.1.0
+    type-fest: ^0.21.1
+    typescript-memoize: ^1.0.0-alpha.3
+    url-join: ^4.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: fff46962c6e426bb5bfce32b044672b781488e03af9aaddce40f2f9f24026d8d6fe34c374a0b54ebc8f972ffa846e954fee391153199b8ddffe54f0a39826f2c
+  languageName: node
+  linkType: hard
+
+"@auto-it/git-tag@npm:10.36.5":
+  version: 10.36.5
+  resolution: "@auto-it/git-tag@npm:10.36.5"
+  dependencies:
+    "@auto-it/core": 10.36.5
     semver: ^7.0.0
     tslib: 2.1.0
-  checksum: ff7cca4907756619bff8c54056cdf65dcbcba4721c479791fe6e48c46ba1f62936c8a924c3b8168313daaa135fd9846a172de8aa0cd08cf979b2f1074b021603
+  checksum: 89435fd81cb7b324eff626fbc878bc98e3cebdf11b3c56283e7b80aa317e88ee3f642522fe1b52d77e0ded727cb74f2866b6f2e1090aef486f077fba93469384
   languageName: node
   linkType: hard
 
@@ -407,6 +464,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/plugin-paginate-rest@npm:^2.16.8":
+  version: 2.17.0
+  resolution: "@octokit/plugin-paginate-rest@npm:2.17.0"
+  dependencies:
+    "@octokit/types": ^6.34.0
+  peerDependencies:
+    "@octokit/core": ">=2"
+  checksum: c8753cda6f7ede79d0e9df43a54e56020aa1c9c6887684e0e0d45cb6ee0dcabf460c3e4b8a18edabef711bb269fd826616e99e78dc29fb30d47c210c562603a0
+  languageName: node
+  linkType: hard
+
 "@octokit/plugin-paginate-rest@npm:^2.6.2":
   version: 2.13.3
   resolution: "@octokit/plugin-paginate-rest@npm:2.13.3"
@@ -427,6 +495,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/plugin-request-log@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@octokit/plugin-request-log@npm:1.0.4"
+  peerDependencies:
+    "@octokit/core": ">=3"
+  checksum: 2086db00056aee0f8ebd79797b5b57149ae1014e757ea08985b71eec8c3d85dbb54533f4fd34b6b9ecaa760904ae6a7536be27d71e50a3782ab47809094bfc0c
+  languageName: node
+  linkType: hard
+
 "@octokit/plugin-rest-endpoint-methods@npm:5.3.1":
   version: 5.3.1
   resolution: "@octokit/plugin-rest-endpoint-methods@npm:5.3.1"
@@ -436,6 +513,18 @@ __metadata:
   peerDependencies:
     "@octokit/core": ">=3"
   checksum: 7bc7e294dd66af4b2692ce93d28544f2c3473b4fbe5d935cbe6f7765339e5a83bb12977a403af5d093e8fd038fa707bfd68f81b9d38d4038391de64be73d003c
+  languageName: node
+  linkType: hard
+
+"@octokit/plugin-rest-endpoint-methods@npm:^5.12.0":
+  version: 5.13.0
+  resolution: "@octokit/plugin-rest-endpoint-methods@npm:5.13.0"
+  dependencies:
+    "@octokit/types": ^6.34.0
+    deprecation: ^2.3.1
+  peerDependencies:
+    "@octokit/core": ">=3"
+  checksum: f331457e4317130adb456b27df2a99609fb54a4dc2da6f87009e567c7325680c901abf18ad08483535bab4ec1c892e4236f4135a2804603aebb12c0698c678c8
   languageName: node
   linkType: hard
 
@@ -449,6 +538,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/plugin-retry@npm:^3.0.9":
+  version: 3.0.9
+  resolution: "@octokit/plugin-retry@npm:3.0.9"
+  dependencies:
+    "@octokit/types": ^6.0.3
+    bottleneck: ^2.15.3
+  checksum: 5744780d308dd2f2b8174264604a9f8ea977374256f5eaf0314e5181c32f96ec53a3cfcee67bf1b48dc7eed401ebefebd2fa744b41cf03103affac92f397a874
+  languageName: node
+  linkType: hard
+
 "@octokit/plugin-throttling@npm:^3.2.0":
   version: 3.4.1
   resolution: "@octokit/plugin-throttling@npm:3.4.1"
@@ -458,6 +557,18 @@ __metadata:
   peerDependencies:
     "@octokit/core": ^3.0.0
   checksum: 30008c49549f18c8edca759cde7667202edb6e0c987bf7baae1fd6865ce6ee6b2ee289ae88c4c75033900db0e73e096030d5ff52da5daed7c8cae0041769679a
+  languageName: node
+  linkType: hard
+
+"@octokit/plugin-throttling@npm:^3.6.2":
+  version: 3.6.2
+  resolution: "@octokit/plugin-throttling@npm:3.6.2"
+  dependencies:
+    "@octokit/types": ^6.0.1
+    bottleneck: ^2.15.3
+  peerDependencies:
+    "@octokit/core": ^3.5.0
+  checksum: 69bd8b51662fcc59a10ac39d827ebb99939ec74aaabefaf9a9af11df41b4816618aa44a37e0ac04ae33af898d00892c978ce97b26c327834d5ed4e4026aa6de4
   languageName: node
   linkType: hard
 
@@ -523,6 +634,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@octokit/rest@npm:^18.12.0":
+  version: 18.12.0
+  resolution: "@octokit/rest@npm:18.12.0"
+  dependencies:
+    "@octokit/core": ^3.5.1
+    "@octokit/plugin-paginate-rest": ^2.16.8
+    "@octokit/plugin-request-log": ^1.0.4
+    "@octokit/plugin-rest-endpoint-methods": ^5.12.0
+  checksum: c18bd6676a60b66819b016b0f969fcd04d8dfa04d01b7af9af9a7410ff028c621c995185e29454c23c47906da506c1e01620711259989a964ebbfd9106f5b715
+  languageName: node
+  linkType: hard
+
 "@octokit/types@npm:^6.0.1, @octokit/types@npm:^6.0.3, @octokit/types@npm:^6.11.0, @octokit/types@npm:^6.16.2, @octokit/types@npm:^6.7.1":
   version: 6.16.2
   resolution: "@octokit/types@npm:6.16.2"
@@ -532,7 +655,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@octokit/types@npm:^6.16.1":
+"@octokit/types@npm:^6.16.1, @octokit/types@npm:^6.34.0":
   version: 6.34.0
   resolution: "@octokit/types@npm:6.34.0"
   dependencies:
@@ -1475,6 +1598,17 @@ __metadata:
     fast-json-parse: ^1.0.3
     objectorarray: ^1.0.4
   checksum: 21a290c8e23d2760d0cda200888964623d3ecba6f7c2fd1fa068477cf2e6168d67c0313d91190e23e3163ab329c8491f5f102802088926abf8afa74e8c652b1a
+  languageName: node
+  linkType: hard
+
+"endent@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "endent@npm:2.1.0"
+  dependencies:
+    dedent: ^0.7.0
+    fast-json-parse: ^1.0.3
+    objectorarray: ^1.0.5
+  checksum: c352831088fce745a39ddbd5f87a17e073ea6556e7e96e9010d945a3f3020f836b9a84657123fa01e897db9216f4b080d950b5ded9bf3a8227f14a34efaaaf7c
   languageName: node
   linkType: hard
 
@@ -2468,6 +2602,13 @@ __metadata:
   version: 1.0.4
   resolution: "objectorarray@npm:1.0.4"
   checksum: f6b1dca119c1eb84ae7870de13066b2171512c826869d3655a13369b91ab7e035a44cc218a0bb09c893455031665f9c13bc0efadec5060c0356cf52311751465
+  languageName: node
+  linkType: hard
+
+"objectorarray@npm:^1.0.5":
+  version: 1.0.5
+  resolution: "objectorarray@npm:1.0.5"
+  checksum: 8fd776aa495d113e217837f4adc1d53e63f656498237094d25f84c3e2c038b34b71d6fd85c4b60c7ae5f558790e5042426a400fae3eac35f297e11be12643a78
   languageName: node
   linkType: hard
 
@@ -3491,7 +3632,7 @@ resolve@~1.7.1:
   dependencies:
     "@auto-it/all-contributors": 10.32.5
     "@auto-it/core": ^10.32.5
-    "@auto-it/git-tag": 10.34.1
+    "@auto-it/git-tag": 10.36.5
     "@auto-it/upload-assets": 10.32.5
     "@octokit/core": ^3.5.1
     "@types/node": 15.3.0
