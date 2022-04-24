@@ -25,7 +25,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           cache: "yarn"
-          node-version: '14'
+          node-version: "14"
 
       - name: Setup | Rust | Nightly
         uses: ATiltedTree/setup-rust@v1
@@ -66,5 +66,3 @@ jobs:
       - name: Create Release
         run: |
           yarn release
-
-
