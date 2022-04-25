@@ -22,7 +22,7 @@ if odin update --check; then
       if [ "${AUTO_UPDATE_PAUSE_WITH_PLAYERS:=0}" -eq 1 ]; then
         export ADDRESS=${ADDRESS:="127.0.0.1:2457"}
         NUMBER_OF_PLAYERS=$(DEBUG_MODE=false odin status --address="${ADDRESS}" --json | jq -r '.players')
-        if [ "${NUMBER_OF_PLAYERS}" -gt 0 ]; then
+        if [ "${NUMBER_OF_PLAYERS:=0}" -gt 0 ]; then
           log "An update is available. Skipping update, while ${NUMBER_OF_PLAYERS} players online...."
           exit 0
         fi
