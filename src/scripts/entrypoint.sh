@@ -91,7 +91,6 @@ setup_cron_env() {
          fi
        fi
     done
-    cat "/env.sh"
     echo "Preset Env Configured"
 }
 
