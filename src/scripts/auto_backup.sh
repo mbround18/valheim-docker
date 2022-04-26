@@ -15,7 +15,7 @@ else
   if [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
     export ADDRESS=${ADDRESS:="127.0.0.1:2457"}
     NUMBER_OF_PLAYERS=$(DEBUG_MODE=false odin status --address="${ADDRESS}" --json | jq -r '.players')
-    if [ "${NUMBER_OF_PLAYERS}" -eq 0 ]; then
+    if [ "${NUMBER_OF_PLAYERS:=0}" -eq 0 ]; then
       log "Skipping backup, no players are online."
       exit 0
     fi
