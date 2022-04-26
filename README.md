@@ -7,9 +7,7 @@
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt=""></a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
-
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -319,6 +317,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
   <tr>
     <td align="center"><a href="https://tech.jrlbyrne.com/"><img src="https://avatars.githubusercontent.com/u/14056930?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Justin Byrne</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=JustinByrne" title="Documentation">📖</a></td>
     <td align="center"><a href="http://blog.andrewpeabody.com/"><img src="https://avatars.githubusercontent.com/u/14035345?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Andrew Peabody</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=apeabody" title="Documentation">📖</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=apeabody" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/morales2k"><img src="https://avatars.githubusercontent.com/u/1074855?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jorge Morales</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=morales2k" title="Code">💻</a></td>
   </tr>
 </table>
 

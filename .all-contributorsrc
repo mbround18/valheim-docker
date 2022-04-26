@@ -93,6 +93,15 @@
         "doc",
         "code"
       ]
+    },
+    {
+      "login": "morales2k",
+      "name": "Jorge Morales",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1074855?v=4",
+      "profile": "https://github.com/morales2k",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7
