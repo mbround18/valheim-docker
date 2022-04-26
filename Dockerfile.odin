@@ -1,7 +1,7 @@
 # ------------------ #
 # -- Odin Planner -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.58 as planner
+FROM lukemathwalker/cargo-chef:latest-rust-1.60 as planner
 WORKDIR /data/odin
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
@@ -9,7 +9,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ------------------ #
 # -- Odin Cacher  -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.58 as cacher
+FROM lukemathwalker/cargo-chef:latest-rust-1.60 as cacher
 WORKDIR /data/odin
 COPY --from=planner /data/odin/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
