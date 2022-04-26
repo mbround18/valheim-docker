@@ -15,7 +15,7 @@ else
   if [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
     export ADDRESS=${ADDRESS:="127.0.0.1:2457"}
     NUMBER_OF_PLAYERS=$(DEBUG_MODE=false odin status --address="${ADDRESS}" --json | jq -r '.players')
-    if [ "${NUMBER_OF_PLAYERS}" -eq 0 ]; then
+    if [ "${NUMBER_OF_PLAYERS:=0}" -eq 0 ]; then
       log "Skipping backup, no players are online."
       exit 0
     fi
@@ -33,7 +33,7 @@ log "Creating backup..."
 file_name="$(date +"%Y%m%d-%H%M%S")-${1:-"backup"}.tar.gz"
 
 
-if [ -x "$(command -v nice)" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -ge "1" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -le "19" ]; then 
+if [ -x "$(command -v nice)" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -ge "1" ] && [ "${AUTO_BACKUP_NICE_LEVEL:=0}" -le "19" ]; then
   nice -n ${AUTO_BACKUP_NICE_LEVEL} \
     odin backup \
     /home/steam/.config/unity3d/IronGate/Valheim \
