@@ -1,3 +1,23 @@
+# v1.5.4 (Tue Apr 26 2022)
+
+#### 🐛 Bug Fix
+
+- Env Length Fix [#566](https://github.com/mbround18/valheim-docker/pull/566) ([@mbround18](https://github.com/mbround18))
+- [Bug] Fix default val  when testing with -eq [#567](https://github.com/mbround18/valheim-docker/pull/567) ([@morales2k](https://github.com/morales2k))
+- updated deps [#562](https://github.com/mbround18/valheim-docker/pull/562) ([@mbround18](https://github.com/mbround18))
+- Update actions/cache action to v3 [#556](https://github.com/mbround18/valheim-docker/pull/556) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to 4.2.5 [#554](https://github.com/mbround18/valheim-docker/pull/554) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate zip to 0.6.0 [#555](https://github.com/mbround18/valheim-docker/pull/555) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Jorge Morales ([@morales2k](https://github.com/morales2k))
+- Michael ([@mbround18](https://github.com/mbround18))
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.5.3 (Fri Mar 18 2022)
 
 #### 🐛 Bug Fix
