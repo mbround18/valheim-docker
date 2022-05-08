@@ -18,7 +18,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: crazy-max/ghaction-docker-meta@v3
+        uses: crazy-max/ghaction-docker-meta@v4
         with:
           # list of Docker images to use as base name for tags
           images: |
