@@ -31,5 +31,5 @@
     "@yarnpkg/pnpify": "^3.1.1-rc.8",
     "semver": "^7.3.7"
   },
-  "packageManager": "yarn@3.2.0"
+  "packageManager": "yarn@3.2.1"
 }
