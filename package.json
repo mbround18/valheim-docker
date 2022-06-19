@@ -18,7 +18,7 @@
   "devDependencies": {
     "@auto-it/all-contributors": "10.32.5",
     "@auto-it/git-tag": "10.34.1",
-    "@auto-it/upload-assets": "10.32.5",
+    "@auto-it/upload-assets": "10.37.1",
     "@types/node": "15.3.0",
     "auto": "10.37.1",
     "prettier": "2.7.1",
