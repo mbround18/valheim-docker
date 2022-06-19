@@ -262,19 +262,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@auto-it/upload-assets@npm:10.32.5":
-  version: 10.32.5
-  resolution: "@auto-it/upload-assets@npm:10.32.5"
+"@auto-it/upload-assets@npm:10.37.1":
+  version: 10.37.1
+  resolution: "@auto-it/upload-assets@npm:10.37.1"
   dependencies:
-    "@auto-it/core": 10.32.5
-    endent: ^2.0.1
+    "@auto-it/core": 10.37.1
+    endent: ^2.1.0
     fast-glob: ^3.1.1
     file-type: ^16.0.0
     fp-ts: ^2.5.3
     io-ts: ^2.1.2
     terminal-link: ^2.1.1
     tslib: 2.1.0
-  checksum: fb1fae1cbacb6fdf8cee180fa1e4b4d30e9ef1e3d1e6f85a866c612b1d3bf796f9f95cbc8b85fe54ac2bc134cfbb82e670a76c3e3625f04c47dbc88fc626f9c2
+  checksum: 348f386a763f4b09f988da74f44fe7ae7b05259f51008f075ed1abbea290445b76189da6a8bb169dd518c28f209f2ca597eb82213a34c424d3c9c0440158506b
   languageName: node
   linkType: hard
 
@@ -3667,7 +3667,7 @@ resolve@~1.7.1:
     "@auto-it/all-contributors": 10.32.5
     "@auto-it/core": ^10.32.5
     "@auto-it/git-tag": 10.34.1
-    "@auto-it/upload-assets": 10.32.5
+    "@auto-it/upload-assets": 10.37.1
     "@octokit/core": ^3.5.1
     "@types/node": 15.3.0
     "@types/semver": ^7.3.9
