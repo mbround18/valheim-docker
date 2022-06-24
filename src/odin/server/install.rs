@@ -64,21 +64,28 @@ mod tests {
   #[test]
   fn add_custom_args() {
     let mut args = vec!["example".to_string()];
-    let extra_args = "-beta publicbeta -betapassword iamsure";
+    let extra_args = "-i -am -some -extra -args";
     std::env::set_var("ADDITIONAL_STEAMCMD_ARGS", format!("\"{}\"", extra_args));
     add_additional_args(&mut args);
-    assert_eq!(args.join(" "), format!("example {}", extra_args));
+    assert_eq!(
+      args.join(" "),
+      format!(
+        "example {} -beta {} -betapassword \"{}\"",
+        extra_args, BETA_BRANCH, BETA_BRANCH_PASSWORD
+      )
+    );
     std::env::remove_var("ADDITIONAL_STEAMCMD_ARGS");
   }
   #[test]
   fn add_beta_args() {
     let mut args = vec!["example".to_string()];
+    std::env::set_var("ADDITIONAL_STEAMCMD_ARGS", "".to_string());
     std::env::set_var("USE_PUBLIC_BETA", "1");
     add_additional_args(&mut args);
     assert_eq!(
       args.join(" "),
       format!(
-        "example -beta {} -betapassword \"{}\"",
+        "example  -beta {} -betapassword \"{}\"",
         BETA_BRANCH, BETA_BRANCH_PASSWORD
       )
     );

@@ -167,6 +167,7 @@ log "$(groupmod -g ${PGID} steam)"
 # Configure Cron
 AUTO_UPDATE="${AUTO_UPDATE:=0}"
 AUTO_BACKUP="${AUTO_BACKUP:=0}"
+SCHEDULED_RESTART="${SCHEDULED_RESTART:=0}" 
 
 setup_cron_env
 
@@ -192,8 +193,18 @@ if [ "${AUTO_BACKUP}" -eq 1 ]; then
     "AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD} AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE}"
 fi
 
+if [ "${SCHEDULED_RESTART}" -eq 1 ]; then
+  log "Scheduled Restarts Enabled..."
+  log "Scheduled Restart Schedule: ${SCHEDULED_RESTART_SCHEDULE}"
+  SCHEDULED_RESTART_SCHEDULE=$(echo "$SCHEDULED_RESTART_SCHEDULE" | tr -d '"')
+  setup_cron \
+    "scheduled-restart" \
+    "scheduled_restart.sh" \
+    "${SCHEDULED_RESTART_SCHEDULE}"
+fi
+
 # Apply cron job
-if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ]; then
+if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ] || [ "${SCHEDULED_RESTART}" -eq 1 ]; then
   cat /etc/cron.d/* | crontab -
   /usr/sbin/cron -f &
   export CRON_PID=$!

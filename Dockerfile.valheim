@@ -62,6 +62,8 @@ ENV PUID=1000                                                     \
     AUTO_BACKUP_ON_UPDATE="0"                                     \
     AUTO_BACKUP_ON_SHUTDOWN="0"                                   \
     AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS="0"                         \
+    SCHEDULED_RESTART="0"                                         \
+    SCHEDULED_RESTART_SCHEDULE="0 2 * * *"                        \
     # Folders and file system related
     SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim"  \
     MODS_LOCATION="/home/steam/staging/mods"                      \
