@@ -159,6 +159,15 @@ Auto update job, queries steam and compares it against your internal steam files
 
 Auto backup job produces an output of a `*.tar.gz` file which should average around 30mb for a world that has an average of 4 players consistently building on. You should be aware that if you place the server folder in your saves folder your backups could become astronomical in size. This is a common problem that others have observed, to avoid this please follow the guide for how volume mounts should be made in the `docker-compose.yml`.
 
+#### Scheduled Restarts
+
+Scheduled restarts allow th operator to trigger restarts on a cron job
+
+| Variable                   | Default     | Required | Description                                                        |
+| -------------------------- | ----------- | -------- | ------------------------------------------------------------------ |
+| SCHEDULED_RESTART          | `0`         | FALSE    | Allows you to enable scheduled restarts                            |
+| SCHEDULED_RESTART_SCHEDULE | `0 2 * * *` | FALSE    | Defaults to everyday at 2 am but can be configured with valid cron |
+
 ## Docker Compose
 
 > This image does use verion 3+ for all of its compose examples.

@@ -101,22 +101,22 @@ subcommands:
       version: "1.0"
       author: LovecraftianHorror
       about: >
-          Attempts to update an existing Valheim server installation. By
-          default this involves checking for an update, if an update is
-          available, the server will be shut down, updated, and brought back online
-          if it was running before. If no update is available then there should
-          be no effect from calling this.
+        Attempts to update an existing Valheim server installation. By
+        default this involves checking for an update, if an update is
+        available, the server will be shut down, updated, and brought back online
+        if it was running before. If no update is available then there should
+        be no effect from calling this.
 
       args:
         - check:
             long: check
             short: c
             help: >
-                Check for a server update, exiting with 0 if one is available
-                and 10 if the server is up to date.
+              Check for a server update, exiting with 0 if one is available
+              and 10 if the server is up to date.
 
             conflicts_with:
-                - force
+              - force
         - force:
             long: force
             short: f
@@ -124,7 +124,7 @@ subcommands:
               Force an update attempt, even if no update is detected.
 
             conflicts_with:
-                - check
+              - check
   - notify:
       about: >
         Sends a notification to the provided webhook.
