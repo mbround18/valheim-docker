@@ -1,3 +1,37 @@
+# v1.6.0 (Tue Jul 05 2022)
+
+#### 🚀 Enhancement
+
+- Upgraded and removed auto dependency [#588](https://github.com/mbround18/valheim-docker/pull/588) (mbruno@AdAstra.localdomain [@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update dependency rust to v1.62 [#594](https://github.com/mbround18/valheim-docker/pull/594) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serial_test to 0.8.0 [#589](https://github.com/mbround18/valheim-docker/pull/589) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency @auto-it/upload-assets to v10.37.1 [#579](https://github.com/mbround18/valheim-docker/pull/579) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency prettier to v2.7.1 [#585](https://github.com/mbround18/valheim-docker/pull/585) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.7.4 [#586](https://github.com/mbround18/valheim-docker/pull/586) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.7.3 [#582](https://github.com/mbround18/valheim-docker/pull/582) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serial_test to 0.7.0 [#584](https://github.com/mbround18/valheim-docker/pull/584) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.37.1 [#583](https://github.com/mbround18/valheim-docker/pull/583) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency rust to v1.61 [#576](https://github.com/mbround18/valheim-docker/pull/576) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency auto to v10.37.0 [#580](https://github.com/mbround18/valheim-docker/pull/580) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update Yarn to v3.2.1 [#575](https://github.com/mbround18/valheim-docker/pull/575) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update crazy-max/ghaction-docker-meta action to v4 [#570](https://github.com/mbround18/valheim-docker/pull/570) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update docker/build-push-action action to v3 [#571](https://github.com/mbround18/valheim-docker/pull/571) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update docker/login-action action to v2 [#572](https://github.com/mbround18/valheim-docker/pull/572) ([@renovate-bot](https://github.com/renovate-bot) [@mbround18](https://github.com/mbround18) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update docker/setup-buildx-action action to v2 [#573](https://github.com/mbround18/valheim-docker/pull/573) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+- Update dependency typescript to v4.6.4 [#568](https://github.com/mbround18/valheim-docker/pull/568) ([@renovate-bot](https://github.com/renovate-bot) [@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- Michael Bruno (mbruno@AdAstra.localdomain)
+- WhiteSource Renovate ([@renovate-bot](https://github.com/renovate-bot))
+
+---
+
 # v1.5.4 (Tue Apr 26 2022)
 
 #### 🐛 Bug Fix
