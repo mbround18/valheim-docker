@@ -8,13 +8,13 @@ jobs:
     name: Cancel Previous
     runs-on: ubuntu-latest
     steps:
-      - uses: styfle/cancel-workflow-action@0.9.1
+      - uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
   enforce-label:
     runs-on: ubuntu-latest
     steps:
-      - uses: styfle/cancel-workflow-action@0.9.1
+      - uses: styfle/cancel-workflow-action@0.10.0
         with:
           access_token: ${{ github.token }}
       - uses: yogevbd/enforce-label-action@2.2.2
