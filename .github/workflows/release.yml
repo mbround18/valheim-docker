@@ -21,11 +21,12 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_TOKEN }}
 
       - uses: actions/setup-node@v3
         with:
           cache: "yarn"
-          node-version: "14"
+          node-version: "16"
 
       - name: Setup | Rust | Nightly
         uses: ATiltedTree/setup-rust@v1
@@ -55,14 +56,7 @@ jobs:
       - name: Yarn install
         run: yarn install
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
+      - name: Auto Release Tool by Intuit
+        uses: mbround18/auto@v1.1.0
         with:
-          key: ${{ secrets.SSH_KEY }}
-          name: id_rsa # optional
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-          if_key_exists: replace
-
-      - name: Create Release
-        run: |
-          yarn release
+          token: ${{ secrets.GH_TOKEN }}

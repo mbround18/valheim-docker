@@ -1,6 +1,6 @@
 {
   "plugins": [
-    ".auto/plugins/release.ts",
+    "git-tag",
     "all-contributors",
     ["upload-assets", { "assets": ["./tmp/bundle.zip"] }]
   ],
