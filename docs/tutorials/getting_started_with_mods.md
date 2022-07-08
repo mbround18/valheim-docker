@@ -30,7 +30,7 @@
          - "MODS=
            https://cdn.thunderstore.io/live/repository/packages/abearcodes-SimpleRecycling-0.0.10.zip,
            https://cdn.thunderstore.io/live/repository/packages/abearcodes-CraftingWithContainers-1.0.9.zip
-         "
+           "
    ```
 
 3. Now that you have your compose setup, run `docker-compose up`
