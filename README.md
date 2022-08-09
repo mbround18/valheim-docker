@@ -180,6 +180,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:latest
+    stop_signal: SIGINT
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"
@@ -203,6 +204,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:latest
+    stop_signal: SIGINT
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"
