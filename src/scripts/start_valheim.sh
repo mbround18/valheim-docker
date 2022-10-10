@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 cd /home/steam/valheim || exit 1
 STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
@@ -41,6 +42,7 @@ log "Port: ${PORT}"
 log "Name: ${NAME}"
 log "World: ${WORLD}"
 log "Public: ${PUBLIC}"
+log "With Crossplay: ${ENABLE_CROSSPLAY}"
 log "Password: (REDACTED)"
 
 export SteamAppId=${APPID:-892970}

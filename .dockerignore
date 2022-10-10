@@ -4,7 +4,6 @@
 target/
 tmp/
 docs/
-.run
 docker-compose*
 node_modules/
 package.json

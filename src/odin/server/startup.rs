@@ -16,6 +16,7 @@ use crate::{
   utils::environment,
 };
 use std::process::exit;
+use handlebars::template::BlockParam::Pair;
 
 type CommandResult = io::Result<Child>;
 
@@ -85,6 +86,13 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
   } else {
     debug!(target: "server_startup","Password found, adding password flag.");
     base_command = base_command.args(&["-password", config.password.as_str()]);
+  }
+
+  if fetch_var("ENABLE_CROSSPLAY", "0").eq("1") {
+    info!("Launching with Crossplay! <3");
+    base_command = base_command.arg("-crossplay")
+  } else {
+    error!("No Crossplay Enabled!")
   }
 
   // Tack on save dir at the end.

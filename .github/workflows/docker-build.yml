@@ -13,15 +13,11 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-jobs:
-  cancel-previous:
-    name: Cancel Previous
-    runs-on: ubuntu-latest
-    steps:
-      - uses: styfle/cancel-workflow-action@0.10.0
-        with:
-          access_token: ${{ github.token }}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
+jobs:
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
   build:
