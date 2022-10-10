@@ -92,7 +92,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     info!("Launching with Crossplay! <3");
     base_command = base_command.arg("-crossplay")
   } else {
-    error!("No Crossplay Enabled!")
+    debug!("No Crossplay Enabled!")
   }
 
   // Tack on save dir at the end.
