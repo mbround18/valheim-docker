@@ -15,8 +15,8 @@ use crate::{
   messages,
   utils::environment,
 };
-use std::process::exit;
 use handlebars::template::BlockParam::Pair;
+use std::process::exit;
 
 type CommandResult = io::Result<Child>;
 
