@@ -1,3 +1,30 @@
+# v1.7.0 (Tue Oct 11 2022)
+
+#### 🚀 Enhancement
+
+- Crossplay Support [#619](https://github.com/mbround18/valheim-docker/pull/619) ([@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update rust Docker tag to v1.64 [#610](https://github.com/mbround18/valheim-docker/pull/610) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Yarn to v3.2.3 [#612](https://github.com/mbround18/valheim-docker/pull/612) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to 4.3.0 [#614](https://github.com/mbround18/valheim-docker/pull/614) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate chrono to 0.4.21 [#608](https://github.com/mbround18/valheim-docker/pull/608) ([@renovate[bot]](https://github.com/renovate[bot]))
+- [Documentation]  Add `SIGINT` [#607](https://github.com/mbround18/valheim-docker/pull/607) ([@spannerman79](https://github.com/spannerman79))
+- Update Rust crate chrono to 0.4.20 [#604](https://github.com/mbround18/valheim-docker/pull/604) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Yarn to v3.2.2 [#600](https://github.com/mbround18/valheim-docker/pull/600) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update getting_started_with_mods.md [#598](https://github.com/mbround18/valheim-docker/pull/598) ([@mbround18](https://github.com/mbround18))
+- Update mbround18/auto action to v1.2.0 [#597](https://github.com/mbround18/valheim-docker/pull/597) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update styfle/cancel-workflow-action action to v0.10.0 [#590](https://github.com/mbround18/valheim-docker/pull/590) ([@renovate[bot]](https://github.com/renovate[bot]) [@mbround18](https://github.com/mbround18))
+
+#### Authors: 3
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+- Spanner_Man ([@spannerman79](https://github.com/spannerman79))
+
+---
+
 # v1.6.0 (Tue Jul 05 2022)
 
 #### 🚀 Enhancement
