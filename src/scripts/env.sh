@@ -3,9 +3,9 @@
 # AUTO GENERATED; DO NOT MODIFY #
 #################################
 
-. /etc/profile
-. ~/.bash_profile
-. ~/.bashrc
+source /etc/profile
+source "${HOME}/.bash_profile"
+source "${HOME}/.bashrc"
 
 #################################
 # AUTO GENERATED; DO NOT MODIFY #

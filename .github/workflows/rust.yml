@@ -6,19 +6,15 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NAME: "Rust Test"
   CARGO_TERM_COLOR: always
 
 jobs:
-  cancel-previous:
-    name: Cancel Previous
-    runs-on: ubuntu-latest
-    steps:
-      - uses: styfle/cancel-workflow-action@0.10.0
-        with:
-          access_token: ${{ github.token }}
-
   build-nd-test:
     name: Build & Test
     runs-on: ubuntu-latest
@@ -40,6 +36,7 @@ jobs:
             target/release
             target/debug
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Build
         run: cargo build --verbose
       - name: Run tests
