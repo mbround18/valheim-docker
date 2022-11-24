@@ -1,3 +1,24 @@
+# v1.8.0 (Thu Nov 24 2022)
+
+#### 🚀 Enhancement
+
+- Update Rust crate serial_test to 0.9.0 [#609](https://github.com/mbround18/valheim-docker/pull/609) ([@renovate[bot]](https://github.com/renovate[bot]) [@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Mistlands support fix & windows stop issue fixed [#627](https://github.com/mbround18/valheim-docker/pull/627) ([@mbround18](https://github.com/mbround18))
+- Update rust Docker tag to v1.65 [#624](https://github.com/mbround18/valheim-docker/pull/624) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate zip to 0.6.3 [#622](https://github.com/mbround18/valheim-docker/pull/622) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update enforce-labels.yml [#621](https://github.com/mbround18/valheim-docker/pull/621) ([@mbround18](https://github.com/mbround18))
+- Update mbround18/auto action to v1.3.0 [#613](https://github.com/mbround18/valheim-docker/pull/613) ([@renovate[bot]](https://github.com/renovate[bot]) [@mbround18](https://github.com/mbround18))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v1.7.0 (Tue Oct 11 2022)
 
 #### 🚀 Enhancement
