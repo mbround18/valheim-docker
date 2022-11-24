@@ -62,7 +62,7 @@ pub trait FileManager {
   }
   fn set_executable(&self) -> bool {
     if let Ok(_output) = create_execution("chmod")
-      .args(&["+x", self.path().as_str()])
+      .args(["+x", self.path().as_str()])
       .output()
     {
       info!("Successfully set {} to executable", self.path());

@@ -1,8 +1,15 @@
 use crate::constants;
-use sysinfo::{System, SystemExt};
+use log::{error, info};
+use sysinfo::{ProcessExt, Signal, System, SystemExt};
 
 pub struct ServerProcess {
   system: System,
+}
+
+impl Clone for ServerProcess {
+  fn clone(&self) -> Self {
+    ServerProcess::new()
+  }
 }
 
 impl ServerProcess {
@@ -23,5 +30,25 @@ impl ServerProcess {
 
   pub fn are_process_running(&mut self) -> bool {
     !self.valheim_processes().is_empty()
+  }
+
+  pub fn send_interrupt(&mut self) {
+    info!("Scanning for Valheim process");
+    let processes = self.valheim_processes();
+    if processes.is_empty() {
+      info!("Process NOT found!")
+    } else {
+      for found_process in processes {
+        info!(
+          "Found Process with pid {}! Sending Interrupt!",
+          found_process.pid()
+        );
+        if found_process.kill_with(Signal::Interrupt).unwrap() {
+          info!("Process signal interrupt sent successfully!")
+        } else {
+          error!("Failed to send signal interrupt!")
+        }
+      }
+    }
   }
 }

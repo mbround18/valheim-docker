@@ -1,7 +1,7 @@
 use crate::errors::VariantNotFound;
 use serde::{Deserialize, Serialize};
 
-#[derive(PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub enum EventStatus {
   Running,
   Successful,

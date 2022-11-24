@@ -15,7 +15,6 @@ use crate::{
   messages,
   utils::environment,
 };
-use handlebars::template::BlockParam::Pair;
 use std::process::exit;
 
 type CommandResult = io::Result<Child>;
@@ -60,7 +59,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
       "-nographics -batchmode",
     ))
     // Required vars
-    .args(&[
+    .args([
       "-port",
       config.port.as_str(),
       "-name",
@@ -85,7 +84,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     exit(1)
   } else {
     debug!(target: "server_startup","Password found, adding password flag.");
-    base_command = base_command.args(&["-password", config.password.as_str()]);
+    base_command = base_command.args(["-password", config.password.as_str()]);
   }
 
   if fetch_var("ENABLE_CROSSPLAY", "0").eq("1") {
@@ -96,7 +95,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
   }
 
   // Tack on save dir at the end.
-  base_command = base_command.args(&["-savedir", &saves_directory()]);
+  base_command = base_command.args(["-savedir", &saves_directory()]);
 
   info!(target: "server_startup","Executable: {}", &config.command);
   info!(target: "server_startup","Launching Command...");
