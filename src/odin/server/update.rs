@@ -16,7 +16,6 @@ impl UpdateInfo {
   pub fn new() -> Self {
     let current_build_id = get_current_build_id();
     let latest_build_id = get_latest_build_id();
-
     Self::internal_new(current_build_id, latest_build_id)
   }
 
