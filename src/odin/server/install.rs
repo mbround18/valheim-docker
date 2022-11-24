@@ -29,22 +29,25 @@ fn add_additional_args(args: &mut Vec<String>) {
   if environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1") {
     debug!("Using public beta branch");
     args.push(format!("-beta {}", BETA_BRANCH));
-    args.push(format!("-betapassword \"{}\"", BETA_BRANCH_PASSWORD));
+    args.push(format!("-betapassword {}", BETA_BRANCH_PASSWORD));
+    args.push(String::from("validate"));
   }
 }
 
 pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   info!("Installing {} to {}", app_id, get_working_dir());
-
   let login = "+login anonymous".to_string();
   let force_install_dir = format!("+force_install_dir {}", get_working_dir());
   let app_update = format!("+app_update {}", app_id);
   let mut steamcmd = steamcmd_command();
-  let mut args = vec![force_install_dir, login, app_update];
-  // Option to have steamcmd be verbose
+  let mut args = vec![force_install_dir, login];
+
   if environment::fetch_var("DEBUG_MODE", "0").eq("1") {
-    args.push(String::from("+verbose"));
+    args.push(String::from("verbose"));
   }
+
+  args.push(app_update);
+
   add_additional_args(&mut args);
 
   let install_command = steamcmd
@@ -85,7 +88,7 @@ mod tests {
     assert_eq!(
       args.join(" "),
       format!(
-        "example  -beta {} -betapassword \"{}\"",
+        "example  -beta {} -betapassword {} validate",
         BETA_BRANCH, BETA_BRANCH_PASSWORD
       )
     );

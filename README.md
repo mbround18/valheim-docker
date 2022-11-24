@@ -307,7 +307,6 @@ If you would like to have release notifications tied into your Discord server, c
 
 ## Sponsors
 
-<a href="https://github.com/arevak"><img src="https://avatars.githubusercontent.com/u/839250?s=460&v=4" width=50  alt="arevak"/></a>
 
 ## Contributors ✨
 

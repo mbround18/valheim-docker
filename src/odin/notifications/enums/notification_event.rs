@@ -13,7 +13,7 @@ use reqwest::{blocking::RequestBuilder, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub enum NotificationEvent {
   Broadcast,
   Update(EventStatus),
@@ -21,7 +21,7 @@ pub enum NotificationEvent {
   Stop(EventStatus),
 }
 
-#[derive(PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct EventType {
   pub(crate) name: String,
   pub(crate) status: String,
@@ -153,7 +153,7 @@ impl NotificationEvent {
   pub(crate) fn to_event_type(&self) -> EventType {
     let event = self.to_string();
     let parsed_event: Vec<&str> = event.split(' ').collect();
-    let name = parsed_event.get(0).unwrap_or(&"EVENT NAME").to_string();
+    let name = parsed_event.first().unwrap_or(&"EVENT NAME").to_string();
     let status = parsed_event.get(1).unwrap_or(&"Triggered").to_string();
     EventType { name, status }
   }

@@ -6,7 +6,7 @@ use crate::{
   constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
 };
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UpdateInfo {
   current_build_id: String,
   latest_build_id: String,
@@ -16,7 +16,6 @@ impl UpdateInfo {
   pub fn new() -> Self {
     let current_build_id = get_current_build_id();
     let latest_build_id = get_latest_build_id();
-
     Self::internal_new(current_build_id, latest_build_id)
   }
 
@@ -38,14 +37,6 @@ impl UpdateInfo {
   pub fn update_available(&self) -> bool {
     self.current_build_id != self.latest_build_id
   }
-
-  // pub fn current_build_id(&self) -> &str {
-  //   &self.current_build_id
-  // }
-
-  // pub fn latest_build_id(&self) -> &str {
-  //   &self.latest_build_id
-  // }
 }
 
 impl Default for UpdateInfo {
@@ -105,7 +96,7 @@ fn get_latest_build_id() -> String {
   // refuse to update information before querying the app_info even with `+app_info_update 1` or
   // `+@bCSForceNoCache 1`
   let app_info_file = Path::new("/home/steam/Steam/appcache/appinfo.vdf");
-  fs::remove_file(&app_info_file).unwrap_or_else(|e| match e.kind() {
+  fs::remove_file(app_info_file).unwrap_or_else(|e| match e.kind() {
     // AOK if it doesn't exist
     ErrorKind::NotFound => {}
     err_kind => {
@@ -171,7 +162,7 @@ fn extract_build_id_from_app_info(app_info: &str) -> &str {
 // Note: This is super brittle and will fail if there is whitespace within the key or value _or_ if
 // there are escaped " at the end of the key or value
 fn split_vdf_key_val(vdf_pair: &str) -> (&str, &str) {
-  let mut pieces = vdf_pair.trim().split_whitespace();
+  let mut pieces = vdf_pair.split_whitespace();
   let key = pieces.next().expect("Missing vdf key").trim_matches('"');
   let val = pieces.next().expect("Missing vdf val").trim_matches('"');
 
