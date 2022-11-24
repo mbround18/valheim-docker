@@ -1,46 +1,22 @@
-use log::{error, info};
-use sysinfo::ProcessExt;
+use log::debug;
 
 use std::{thread, time::Duration};
 
-use super::process::ServerProcess;
+use crate::server::process::ServerProcess;
 
 pub fn blocking_shutdown() {
-  send_shutdown_signal();
-  wait_for_exit();
-}
-
-pub fn send_shutdown_signal() {
-  info!("Scanning for Valheim process");
   let mut server_process = ServerProcess::new();
-  let processes = server_process.valheim_processes();
-  if processes.is_empty() {
-    info!("Process NOT found!")
-  } else {
-    for found_process in processes {
-      info!(
-        "Found Process with pid {}! Sending Interrupt!",
-        found_process.pid()
-      );
-      if found_process.kill() {
-        info!("Process signal interrupt sent successfully!")
-      } else {
-        error!("Failed to send signal interrupt!")
-      }
-    }
-  }
-}
-
-fn wait_for_exit() {
-  info!("Waiting for server to completely shutdown...");
-  let mut server_process = ServerProcess::new();
+  server_process.send_interrupt();
+  thread::sleep(Duration::from_secs(5));
   loop {
-    if !server_process.are_process_running() {
+    let mut server = server_process.clone();
+    debug!("Checking if valheim is still running.");
+    if !server.are_process_running() {
+      debug!("Valheim process has been stopped successfully!");
       break;
     } else {
-      // Delay to keep down CPU usage
-      thread::sleep(Duration::from_secs(1));
+      debug!("Sleeping for 5s to wait for process to stop.");
+      thread::sleep(Duration::from_secs(5));
     }
   }
-  info!("Server has been shutdown successfully!")
 }

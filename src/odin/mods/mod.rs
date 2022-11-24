@@ -44,7 +44,7 @@ impl ZipExt for ZipArchive<File> {
       } else {
         if let Some(p) = out_path.parent() {
           if !p.exists() {
-            fs::create_dir_all(&p)?;
+            fs::create_dir_all(p)?;
           }
         }
 
@@ -139,7 +139,7 @@ impl ValheimMod {
 
     let mut dir_options = CopyOptions::new();
     dir_options.overwrite = true;
-    match fs_extra::copy_items(&[&from], &to, &dir_options) {
+    match fs_extra::copy_items(&[&from], to, &dir_options) {
       Ok(_) => debug!("Successfully copied {:?} to {:?}", from, to),
       Err(_) => {
         error!("Failed to install {}", self.url);
