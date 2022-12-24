@@ -22,6 +22,8 @@ Huginn is a status server used to check the status of your Valheim server.
 | ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
 | HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
 
+NOTE: your server MUST be public (eg. `PUBLIC=1`) in order for Odin+Huginn to collect and report statistics.
+
 ### Manually Launching
 
 Simply launch `huginn` in the background with:

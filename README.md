@@ -254,6 +254,8 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 
 > Note on `ADDRESS` this can be set to `127.0.0.1:<your query port>` or `<your public ip>:<your query port>` but does not have to be set. If it is set, it will prevent odin from reaching out to aws ip service from asking for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your valheim server.
 
+> Another note: your server MUST be public (eg. `PUBLIC=1`) in order for Odin+Huginn to collect and report statistics.
+
 ## Feature Information
 
 ### [BepInEx Support](./docs/bepinex.md)
