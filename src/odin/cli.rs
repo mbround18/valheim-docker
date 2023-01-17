@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use std::env;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -20,16 +21,26 @@ pub struct Cli {
   pub commands: Commands,
 }
 
+fn default_world() -> String {
+  env::var("WORLD").unwrap_or_else(|_| "Dedicated".to_string())
+}
+
+fn default_password() -> String {
+  env::var("PASSWORD").unwrap_or_else(|_| "P@ssw0rd!".to_string())
+}
+
 #[derive(Subcommand)]
 pub enum Commands {
   /// Initializes Odin with its configuration variables.
   Configure {
     /// Sets the name of the server, (Can be set with ENV variable NAME)
-    #[arg(short, long, default_value_t = {"Valheim powered by Odin".to_string()})]
+    #[arg(short, long, env = "NAME")]
+    #[arg(default_value_t = String::from("Valheim powered by Odin"))]
     name: String,
 
     /// Sets the servers executable path.
-    #[arg(long, value_name = "SERVER_EXECUTABLE_PATH", default_value_t = format!("./{}", crate::constants::VALHEIM_EXECUTABLE_NAME))]
+    #[arg(long, env = "SERVER_EXECUTABLE_PATH")]
+    #[arg(default_value_t = format!("./{}", crate::constants::VALHEIM_EXECUTABLE_NAME))]
     server_executable: String,
 
     /// Sets the port of the server, (Can be set with ENV variable PORT)
@@ -37,11 +48,11 @@ pub enum Commands {
     port: u16,
 
     /// Sets the world of the server, (Can be set with ENV variable WORLD)
-    #[arg(short, long, default_value_t = {"Dedicated".to_string()})]
+    #[arg(short, long, default_value_t = default_world())]
     world: String,
 
     /// Sets the password of the server, (Can be set with ENV variable PASSWORD)
-    #[arg(short = 's', long, default_value_t = {"P@ssw0rd!".to_string()})]
+    #[arg(short = 's', long, default_value_t = default_password())]
     password: String,
 
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
@@ -50,13 +61,13 @@ pub enum Commands {
   },
 
   /// Installs Valheim with steamcmd
-  Install {},
+  Install,
 
   /// Starts Valheim
-  Start {},
+  Start,
 
   /// Stops Valheim
-  Stop {},
+  Stop,
 
   /// Backups the current saves to a specific location
   Backup {
@@ -74,7 +85,7 @@ pub enum Commands {
   /// be no effect from calling this.
   Update {
     /// Check for a server update, exiting with 0 if one is available and 10 if the server is up to date.
-    #[arg(short, long, default_value_t = false)]
+    #[arg(short, long, conflicts_with("force"), default_value_t = false)]
     check: bool,
 
     /// Force an update attempt, even if no update is detected.
@@ -127,4 +138,5 @@ pub enum Commands {
     #[arg(short, long)]
     address: Option<String>,
   },
+  About,
 }

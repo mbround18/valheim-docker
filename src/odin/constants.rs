@@ -1,5 +1,4 @@
 // Odin Specific
-// pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const ODIN_WORKING_DIR: &str = "ODIN_WORKING_DIR";
 pub const SAVE_LOCATION: &str = "SAVE_LOCATION";
 pub const MODS_LOCATION: &str = "MODS_LOCATION";

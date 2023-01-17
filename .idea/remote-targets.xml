@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="RemoteTargetsManager">
+    <option name="projectDefaultTargetUuid" value="af4ba5d3-9923-40ed-a296-b27f43a88e09" />
     <targets>
       <target name="WSL - Ubuntu-22.04" type="wsl" uuid="af4ba5d3-9923-40ed-a296-b27f43a88e09">
         <config>

@@ -1,10 +1,11 @@
 use crate::commands::configure::Configuration;
 use crate::files::{FileManager, ManagedFile};
+use crate::traits::AsOneOrZero;
 use crate::utils::environment::fetch_var;
 
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
-use std::{env, fs, path::PathBuf, process::exit};
+use std::{fs, path::PathBuf, process::exit};
 
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
@@ -20,9 +21,7 @@ pub struct ValheimArguments {
 
 impl From<Configuration> for ValheimArguments {
   fn from(value: Configuration) -> Self {
-    let command = match fs::canonicalize(PathBuf::from(
-      env::var("SERVER_EXECUTABLE").unwrap_or(value.server_executable),
-    )) {
+    let command = match fs::canonicalize(PathBuf::from(value.server_executable)) {
       Ok(command_path) => command_path.to_str().unwrap().to_string(),
       Err(_) => {
         error!("Failed to find server executable! Please run `odin install`");
@@ -31,11 +30,11 @@ impl From<Configuration> for ValheimArguments {
     };
 
     ValheimArguments {
-      port: env::var("PORT").unwrap_or_else(|_| value.port.to_string()),
-      name: env::var("NAME").unwrap_or(value.name),
-      world: env::var("WORLD").unwrap_or(value.world),
-      public: env::var("PUBLIC").unwrap_or_else(|_| value.public.to_string()),
-      password: env::var("PASSWORD").unwrap_or(value.password),
+      port: value.port.to_string(),
+      name: value.name,
+      world: value.world,
+      public: value.public.as_string(),
+      password: value.password,
       command,
     }
   }
