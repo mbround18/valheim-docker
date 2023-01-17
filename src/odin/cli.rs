@@ -25,7 +25,7 @@ pub enum Commands {
   /// Initializes Odin with its configuration variables.
   Configure {
     /// Sets the name of the server, (Can be set with ENV variable NAME)
-    #[arg(short, long, value_name = "NAME", default_value_t = {"Valheim powered by Odin".to_string()})]
+    #[arg(short, long, default_value_t = {"Valheim powered by Odin".to_string()})]
     name: String,
 
     /// Sets the servers executable path.
