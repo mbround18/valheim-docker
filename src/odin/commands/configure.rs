@@ -6,7 +6,7 @@ use log::debug;
 pub struct Configuration {
   pub name: String,
   pub server_executable: String,
-  pub port: u32,
+  pub port: u16,
   pub world: String,
   pub password: String,
   pub public: bool,
@@ -16,7 +16,7 @@ impl Configuration {
   pub fn new(
     name: String,
     server_executable: String,
-    port: u32,
+    port: u16,
     world: String,
     password: String,
     public: bool,

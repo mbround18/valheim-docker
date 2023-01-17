@@ -34,7 +34,7 @@ pub enum Commands {
 
     /// Sets the port of the server, (Can be set with ENV variable PORT)
     #[arg(short, long, default_value_t = 2456)]
-    port: u32,
+    port: u16,
 
     /// Sets the world of the server, (Can be set with ENV variable WORLD)
     #[arg(short, long, default_value_t = {"Dedicated".to_string()})]
