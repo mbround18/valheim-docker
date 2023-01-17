@@ -33,7 +33,7 @@ pub enum Commands {
     server_executable: String,
 
     /// Sets the port of the server, (Can be set with ENV variable PORT)
-    #[arg(short, long, value_name = "PORT", default_value_t = 2456)]
+    #[arg(short, long, default_value_t = 2456)]
     port: u32,
 
     /// Sets the world of the server, (Can be set with ENV variable WORLD)
