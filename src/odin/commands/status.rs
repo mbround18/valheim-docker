@@ -1,6 +1,6 @@
 use crate::server::ServerInfo;
-use crate::utils::{fetch_public_address, parse_arg_variable};
-use clap::ArgMatches;
+use crate::utils::fetch_public_address;
+
 use log::{error, info};
 use std::env;
 use std::net::SocketAddrV4;
@@ -17,24 +17,19 @@ fn parse_address(address: &str) -> SocketAddrV4 {
   }
 }
 
-pub fn invoke(args: &ArgMatches) {
-  let output_json = args.is_present("json");
-  let use_local = args.is_present("local");
+pub fn invoke(output_json: bool, use_local: bool, supplied_address: Option<String>) {
   let address = if use_local {
     String::from("127.0.0.1:2457")
-  } else if args.is_present("address") {
-    parse_arg_variable(args, "address", "")
   } else {
-    match env::var("ADDRESS") {
-      Ok(env_address) => env_address,
-      Err(_) => fetch_public_address().unwrap().to_string(),
-    }
+    env::var("ADDRESS").unwrap_or_else(|_| {
+      supplied_address.unwrap_or_else(|| fetch_public_address().unwrap().to_string())
+    })
   };
   let parsed_address = parse_address(&address);
   let server_info = ServerInfo::from(parsed_address);
   if output_json {
     println!("{}", serde_json::to_string_pretty(&server_info).unwrap());
   } else {
-    info!("{}", server_info)
+    info!("{server_info}")
   }
 }

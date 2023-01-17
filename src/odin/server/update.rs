@@ -71,7 +71,7 @@ pub fn update_server() {
     match server::start_daemonized(config) {
       Ok(_) => info!("Server daemon started"),
       Err(e) => {
-        error!("Error daemonizing: {}", e);
+        error!("Error daemonizing: {e}");
         exit(1);
       }
     }
@@ -81,7 +81,7 @@ pub fn update_server() {
 fn get_current_build_id() -> String {
   let manifest_path = Path::new(&get_working_dir())
     .join("steamapps")
-    .join(&format!("appmanifest_{}.acf", constants::GAME_ID));
+    .join(format!("appmanifest_{}.acf", constants::GAME_ID));
   let manifest_data = fs::read_to_string(&manifest_path).unwrap_or_else(|_| {
     panic!(
       "Failed to read manifest file at '{}'",

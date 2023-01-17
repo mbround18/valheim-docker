@@ -233,7 +233,7 @@ impl ValheimMod {
       debug!("Copying downloaded dll to BepInEx plugin directory...");
       self.copy_single_file(
         &self.staging_location,
-        &common_paths::bepinex_plugin_directory(),
+        common_paths::bepinex_plugin_directory(),
       );
     } else if self.file_type.eq("cfg") {
       debug!("Copying single cfg into config directory");

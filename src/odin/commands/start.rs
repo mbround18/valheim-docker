@@ -3,16 +3,15 @@ use crate::{
   notifications::enums::{event_status::EventStatus, notification_event::NotificationEvent},
   server,
 };
-use clap::ArgMatches;
+
 use log::{debug, error, info};
 use std::process::exit;
 
-pub fn invoke(args: &ArgMatches) {
+pub fn invoke(dry_run: bool) {
   info!(target: "commands_start", "Setting up start scripts...");
   NotificationEvent::Start(EventStatus::Running).send_notification();
   debug!(target: "commands_start", "Loading config file...");
   let config = load_config();
-  let dry_run: bool = args.is_present("dry_run");
   debug!(target: "commands_start", "Dry run condition: {}", dry_run);
   info!(target: "commands_start", "Looking for burial mounds...");
   if !dry_run {

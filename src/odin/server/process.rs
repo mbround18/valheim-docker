@@ -20,12 +20,19 @@ impl ServerProcess {
   }
 
   pub fn valheim_processes(&mut self) -> Vec<&sysinfo::Process> {
+    let mut processes = Vec::new();
+
     self.system.refresh_processes();
     // Limit search string to 15 characters, as some unix operating systems
     // cannot handle more then 15 character long process names
-    self
+    for process in self
       .system
-      .process_by_name(&constants::VALHEIM_EXECUTABLE_NAME[..15])
+      .processes_by_name(&constants::VALHEIM_EXECUTABLE_NAME[..15])
+    {
+      processes.push(process)
+    }
+
+    processes
   }
 
   pub fn are_process_running(&mut self) -> bool {

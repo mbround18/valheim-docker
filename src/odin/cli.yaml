@@ -141,7 +141,7 @@ subcommands:
             required: false
             takes_value: true
             help: >
-              Title of the message block (required by discord & generic webhook, automatically supplied, default: "Broadcast")
+              
 
         - webhook_url:
             long: webhook

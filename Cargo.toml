@@ -4,6 +4,7 @@ members = [
   "src/huginn"
 ]
 
+
 [profile.dev]
 opt-level = 0
 

@@ -3,7 +3,6 @@ pub mod environment;
 pub mod fetch_public_ip_address;
 pub use fetch_public_ip_address::fetch_public_address;
 
-use clap::ArgMatches;
 use log::debug;
 use std::env;
 use std::path::Path;
@@ -35,21 +34,6 @@ pub fn get_server_name() -> String {
       config.name
     }
   }
-}
-
-pub fn parse_arg_variable(args: &ArgMatches, name: &str, default: &str) -> String {
-  debug!("Checking env for {}", name);
-  if let Ok(env_val) = env::var(name.to_uppercase()) {
-    if !env_val.is_empty() {
-      debug!("Env variable found {}={}", name, env_val);
-      return env_val;
-    }
-  }
-  if let Ok(env_val) = env::var(format!("SERVER_{}", name).to_uppercase()) {
-    debug!("Env variable found {}={}", name, env_val);
-    return env_val;
-  }
-  args.value_of(name).unwrap_or(default).to_string()
 }
 
 pub fn path_exists(path: &str) -> bool {
