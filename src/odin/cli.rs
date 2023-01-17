@@ -37,7 +37,7 @@ pub enum Commands {
     port: u32,
 
     /// Sets the world of the server, (Can be set with ENV variable WORLD)
-    #[arg(short, long, value_name = "WORLD", default_value_t = {"Dedicated".to_string()})]
+    #[arg(short, long, default_value_t = {"Dedicated".to_string()})]
     world: String,
 
     /// Sets the password of the server, (Can be set with ENV variable PASSWORD)
