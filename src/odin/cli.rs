@@ -41,7 +41,7 @@ pub enum Commands {
     world: String,
 
     /// Sets the password of the server, (Can be set with ENV variable PASSWORD)
-    #[arg(short, long, value_name = "PASSWORD", default_value_t = {"P@ssw0rd!".to_string()})]
+    #[arg(short = 's', long, default_value_t = {"P@ssw0rd!".to_string()})]
     password: String,
 
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
