@@ -29,7 +29,7 @@ pub enum Commands {
     name: String,
 
     /// Sets the servers executable path.
-    #[arg(short, long, value_name = "SERVER_EXECUTABLE_PATH", default_value_t = {format!("./{}", crate::constants::VALHEIM_EXECUTABLE_NAME)})]
+    #[arg(long, value_name = "SERVER_EXECUTABLE_PATH", default_value_t = format!("./{}", crate::constants::VALHEIM_EXECUTABLE_NAME))]
     server_executable: String,
 
     /// Sets the port of the server, (Can be set with ENV variable PORT)
