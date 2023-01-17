@@ -45,7 +45,7 @@ pub enum Commands {
     password: String,
 
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
-    #[arg(short, long, value_name = "PUBLIC", default_value_t = false)]
+    #[arg(short = 'o', long)]
     public: bool,
   },
 
