@@ -84,10 +84,6 @@ pub fn invoke(dry_run: bool, check: bool, force: bool) {
     RunAction::Real
   };
 
-  if check.eq(&true).eq(&force) {
-    panic!("Woah! You can't check and force at the same time! Please choose one!")
-  }
-
   let server_state = ServerState::new();
   let update_state = UpdateState::new();
   match update_state {

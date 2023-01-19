@@ -3,6 +3,8 @@ use dotenv::dotenv;
 use log::debug;
 
 use crate::executable::handle_exit_status;
+use crate::messages::about;
+
 mod cli;
 pub mod commands;
 mod constants;
@@ -70,7 +72,7 @@ fn main() {
       address,
     } => commands::status::invoke(json, local, address),
     Commands::About {} => {
-      println!("{}", env!("GIT_HASH"));
+      about(env!("GIT_HASH"));
     }
   }
 }

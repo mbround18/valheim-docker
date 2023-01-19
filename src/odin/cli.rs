@@ -1,5 +1,4 @@
 use clap::{Parser, Subcommand};
-use std::env;
 
 #[derive(Parser)]
 #[command(author, version)]
@@ -21,14 +20,6 @@ pub struct Cli {
   pub commands: Commands,
 }
 
-fn default_world() -> String {
-  env::var("WORLD").unwrap_or_else(|_| "Dedicated".to_string())
-}
-
-fn default_password() -> String {
-  env::var("PASSWORD").unwrap_or_else(|_| "P@ssw0rd!".to_string())
-}
-
 #[derive(Subcommand)]
 pub enum Commands {
   /// Initializes Odin with its configuration variables.
@@ -44,19 +35,22 @@ pub enum Commands {
     server_executable: String,
 
     /// Sets the port of the server, (Can be set with ENV variable PORT)
-    #[arg(short, long, default_value_t = 2456)]
+    #[arg(short, long, env = "PORT")]
+    #[arg(default_value_t = 2456)]
     port: u16,
 
     /// Sets the world of the server, (Can be set with ENV variable WORLD)
-    #[arg(short, long, default_value_t = default_world())]
+    #[arg(short, long, env = "WORLD")]
+    #[arg(default_value_t = String::from("Dedicated"))]
     world: String,
 
     /// Sets the password of the server, (Can be set with ENV variable PASSWORD)
-    #[arg(short = 's', long, default_value_t = default_password())]
+    #[arg(long, env = "PASSWORD")]
+    #[arg(default_value_t = String::from("P@ssw0rd!"))]
     password: String,
 
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
-    #[arg(short = 'o', long)]
+    #[arg(short = 'o', long, env = "PUBLIC")]
     public: bool,
   },
 
@@ -89,30 +83,25 @@ pub enum Commands {
     check: bool,
 
     /// Force an update attempt, even if no update is detected.
-    #[arg(short, long, default_value_t = false)]
+    #[arg(short, long)]
     force: bool,
   },
 
   /// Sends a notification to the provided webhook.
   Notify {
     /// Title of the message block (required by discord & generic webhook, automatically supplied, default: "Broadcast")
-    #[arg(short, long, value_name = "TITLE", default_value_t = {"Broadcast".to_string()})]
+    #[arg(long, env = "TITLE")]
+    #[arg(default_value_t = String::from("Broadcast"))]
     title: String,
 
     /// Message to send to the webhook.
-    #[arg(short, long, value_name = "MESSAGE", default_value_t = {"Test Notification".to_string()})]
+    #[arg(long, env = "MESSAGE")]
+    #[arg(default_value_t = String::from("Test Notification"))]
     message: String,
 
     /// Sets the webhook to send a notification to, (Can be set with ENV variable WEBHOOK_URL)
-    #[arg(short, long, value_name = "WEBHOOK_URL")]
+    #[arg(long, env = "WEBHOOK_URL")]
     webhook_url: Option<String>,
-    // Sets the webhook to include the server's public IP in notifications, (Can be set with ENV variable WEBHOOK_INCLUDE_PUBLIC_IP)
-    // #[arg(
-    //   short,
-    //   long = "webhook_include_public_ip",
-    //   value_name = "WEBHOOK_INCLUDE_PUBLIC_IP"
-    // )]
-    // webhook_include_public_ip: bool,
   },
 
   /// Installs a mod from a given source by downloading the zip file and then extracting it.
@@ -127,16 +116,17 @@ pub enum Commands {
   /// Note: If your server has PUBLIC set to 0 it will not be able to be queried!
   Status {
     /// Print out as json
-    #[arg(short, long)]
+    #[arg(long)]
     json: bool,
 
     /// Overrides address to use localhost
-    #[arg(short, long)]
+    #[arg(long)]
     local: bool,
 
     /// Search for server information based on address
-    #[arg(short, long)]
+    #[arg(long)]
     address: Option<String>,
   },
+  /// Prints out information about Odin
   About,
 }

@@ -1,5 +1,13 @@
 use log::info;
 
+pub fn about(hash: &str) {
+  println!("{}", "-".repeat(80));
+  println!("Odin, a project built to manage your Valheim server.");
+  println!("Built Ref: {hash}");
+  println!("Join the Discussion!: https://github.com/mbround18/valheim-docker/discussions");
+  println!("{}", "-".repeat(80));
+}
+
 pub fn modding_disclaimer() {
   info!("##########################################################################################################################");
   info!("DISCLAIMER! Modding your server can cause a lot of errors.");
