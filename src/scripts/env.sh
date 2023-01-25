@@ -4,8 +4,8 @@
 #################################
 
 source /etc/profile
-source "${HOME}/.bash_profile"
-source "${HOME}/.bashrc"
+test "${HOME}/.profile" && source "${HOME}/.profile"
+test "${HOME}/.bashrc" && source "${HOME}/.bashrc"
 
 #################################
 # AUTO GENERATED; DO NOT MODIFY #
