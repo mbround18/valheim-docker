@@ -85,6 +85,7 @@ setup_cron_env() {
     AUTO_BACKUP_ON_SHUTDOWN=${AUTO_BACKUP_ON_SHUTDOWN}
     AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS=${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}
     " | \
+    sed "s/'/\\'/g" | \
     while read -r line; do
        if [[ "${line}" == *"="* ]]; then
          CONTENT="export ${line}"
