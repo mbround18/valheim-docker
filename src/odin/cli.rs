@@ -51,7 +51,7 @@ pub enum Commands {
 
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
     #[arg(short = 'o', long, env = "PUBLIC")]
-    public: bool,
+    public: String,
   },
 
   /// Installs Valheim with steamcmd

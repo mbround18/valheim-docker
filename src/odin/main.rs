@@ -46,7 +46,7 @@ fn main() {
       port,
       world,
       password,
-      public,
+      { public.eq("1") }.to_owned(),
     )
     .invoke(),
     Commands::Install {} => handle_exit_status(
