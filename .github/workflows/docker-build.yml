@@ -21,7 +21,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@3
+      - uses: actions/setup-node@v3
       - run: |
           npx -y prettier --check ./
   #          npx -y shellcheck ./.github/scripts/*.sh ./src/scripts/*.sh
