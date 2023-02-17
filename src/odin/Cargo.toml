@@ -31,7 +31,7 @@ handlebars = "4"
 dotenv = "0.15"
 log = "0.4"
 clap = { version = "2" , features = ["yaml"] }
-which = "4.3.0"
+which = "4.4.0"
 serde = { version = "1.0", features = ["derive"], default_features = false  }
 sysinfo = { version = "0.22.5", default_features = false }
 serde_json = "1.0"
