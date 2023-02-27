@@ -18,6 +18,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v3
+      - run: |
+          npx -y prettier --check ./
+  #          npx -y shellcheck ./.github/scripts/*.sh ./src/scripts/*.sh
+  step_summary_meta:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          PUSH=${{ contains(github.event.pull_request.labels.*.name, 'canary') }}
+
+          if [ "${PUSH}" = "true" ]; then
+            echo "## Image Published!" >> $GITHUB_STEP_SUMMARY
+            echo "> These are development images, expect bugs!!"
+          fi
+
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
   build:
@@ -73,4 +92,19 @@ jobs:
             "ODIN_IMAGE_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
 
       - name: Finalization
-        run: echo "Finalized"
+        run: |
+          echo "Finalized"
+          if [ "${{ matrix.push }}" = "true" ]; then
+            {
+              echo "\`\`\`"
+              if [ "${{ matrix.image }}" = "odin" ]; then
+                echo "docker run ${{ steps.meta.outputs.tags }}"
+              else
+                echo "docker run --rm -it \\"
+                echo "  -e PASSWORD=\"123abc\""
+                echo "  -e PUBLIC=\"1\" \\"
+                echo "  ${{ steps.meta.outputs.tags }}"
+              fi
+              echo "\`\`\`"
+            } >> $GITHUB_STEP_SUMMARY
+          fi

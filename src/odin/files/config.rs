@@ -1,8 +1,8 @@
-use crate::constants;
+use crate::commands::configure::Configuration;
 use crate::files::{FileManager, ManagedFile};
+use crate::traits::AsOneOrZero;
 use crate::utils::environment::fetch_var;
-use crate::utils::{get_working_dir, parse_arg_variable};
-use clap::ArgMatches;
+
 use log::{debug, error};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf, process::exit};
@@ -17,6 +17,27 @@ pub struct ValheimArguments {
   pub(crate) public: String,
   pub(crate) password: String,
   pub(crate) command: String,
+}
+
+impl From<Configuration> for ValheimArguments {
+  fn from(value: Configuration) -> Self {
+    let command = match fs::canonicalize(PathBuf::from(value.server_executable)) {
+      Ok(command_path) => command_path.to_str().unwrap().to_string(),
+      Err(_) => {
+        error!("Failed to find server executable! Please run `odin install`");
+        exit(1)
+      }
+    };
+
+    ValheimArguments {
+      port: value.port.to_string(),
+      name: value.name,
+      world: value.world,
+      public: value.public.as_string(),
+      password: value.password,
+      command,
+    }
+  }
 }
 
 pub fn load_config() -> ValheimArguments {
@@ -45,36 +66,13 @@ pub fn read_config(config: ManagedFile) -> ValheimArguments {
   serde_json::from_str(content.as_str()).unwrap()
 }
 
-pub fn write_config(config: ManagedFile, args: &ArgMatches) -> bool {
-  let server_executable: &str = &[
-    get_working_dir(),
-    constants::VALHEIM_EXECUTABLE_NAME.to_string(),
-  ]
-  .join("/");
-  let command = match fs::canonicalize(PathBuf::from(parse_arg_variable(
-    args,
-    "server_executable",
-    server_executable,
-  ))) {
-    Ok(command_path) => command_path.to_str().unwrap().to_string(),
-    Err(_) => {
-      error!("Failed to find server executable! Please run `odin install`");
-      exit(1)
-    }
-  };
+pub fn write_config(config: ManagedFile, args: Configuration) -> bool {
+  let content = ValheimArguments::from(args);
 
-  let content = &ValheimArguments {
-    port: parse_arg_variable(args, "port", "2456"),
-    name: parse_arg_variable(args, "name", "Valheim powered by Odin"),
-    world: parse_arg_variable(args, "world", "Dedicated"),
-    public: parse_arg_variable(args, "public", "1"),
-    password: parse_arg_variable(args, "password", ""),
-    command,
-  };
-  let content_to_write = serde_json::to_string_pretty(content).unwrap();
+  let content_to_write = serde_json::to_string_pretty(&content).unwrap();
   debug!(
     "Writing config content: \n{}",
-    serde_json::to_string_pretty(content).unwrap()
+    serde_json::to_string_pretty(&content).unwrap()
   );
   config.write(content_to_write)
 }

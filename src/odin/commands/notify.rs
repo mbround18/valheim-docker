@@ -1,19 +1,15 @@
 use crate::notifications::enums::notification_event::{EventType, NotificationEvent};
 use crate::notifications::NotificationMessage;
-use crate::utils::{get_server_name, parse_arg_variable};
+use crate::utils::get_server_name;
 use chrono::Local;
-use clap::ArgMatches;
+use std::env;
+
 use log::{error, info};
 
-pub fn invoke(args: &ArgMatches) {
-  let name = String::from(&args.value_of("TITLE").unwrap_or("Broadcast").to_string());
-  let event_message = String::from(
-    &args
-      .value_of("MESSAGE")
-      .unwrap_or("Test Notification")
-      .to_string(),
-  );
-  let webhook_url = parse_arg_variable(args, "WEBHOOK_URL", "");
+pub fn invoke(title: String, message: String, webhook_url: Option<String>) {
+  let name = env::var("TITLE").unwrap_or(title);
+  let event_message = env::var("MESSAGE").unwrap_or(message);
+  let webhook_url = env::var("WEBHOOK_URL").unwrap_or_else(|_| webhook_url.unwrap_or_default());
   let notification = NotificationMessage {
     author: get_server_name(),
     event_type: EventType {

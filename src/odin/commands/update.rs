@@ -1,4 +1,3 @@
-use clap::ArgMatches;
 use log::{debug, error, info};
 
 use std::process::exit;
@@ -68,7 +67,7 @@ impl ServerState {
   }
 }
 
-pub fn invoke(args: &ArgMatches) {
+pub fn invoke(dry_run: bool, check: bool, force: bool) {
   info!("Checking for updates");
 
   if !server::is_installed() {
@@ -79,13 +78,11 @@ pub fn invoke(args: &ArgMatches) {
     exit(1);
   }
 
-  let run_action = if args.is_present("dry_run") {
+  let run_action = if dry_run {
     RunAction::Dry
   } else {
     RunAction::Real
   };
-  let check = args.is_present("check");
-  let force = args.is_present("force");
 
   let server_state = ServerState::new();
   let update_state = UpdateState::new();
