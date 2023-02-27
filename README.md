@@ -2,9 +2,12 @@
 
 <img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
 
+<!-- Docker Pulls -->
 <a href="https://hub.docker.com/r/mbround18/valheim"><img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt=""></a>
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-publish.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Rust&style=for-the-badge" alt=""></a>
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/workflow/status/mbround18/valheim-docker/Rust?label=Docker&style=for-the-badge" alt=""></a>
+<!-- Rust Workflow -->
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/rust.yml?branch=main&label=Rust&style=for-the-badge" alt=""></a>
+<!-- Docker Release Workflow -->
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-release.yml"><img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/docker-release.yml?label=Docker&style=for-the-badge" alt=""></a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
@@ -12,7 +15,7 @@
 
 ## Table of Contents
 
-- [[Valheim]](#valheim)
+- [Valheim](#valheim)
   - [Table of Contents](#table-of-contents)
   - [Running on a bare-metal Linux Server](#running-on-a-bare-metal-linux-server)
     - [From Release](#from-release)
@@ -29,8 +32,8 @@
     - [Simple](#simple)
     - [Everything but the kitchen sink](#everything-but-the-kitchen-sink)
   - [Bundled Tools](#bundled-tools)
-    - [[Odin]](#odin)
-    - [[Huginn] Http Server](#huginn-http-server)
+    - [Odin](#odin)
+    - [Huginn Http Server](#huginn-http-server)
   - [Feature Information](#feature-information)
     - [BepInEx Support](#bepinex-support)
     - [Webhook Support](#webhook-support)
