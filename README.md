@@ -280,6 +280,12 @@ This is a tutorial of a recommended path to transfering files. This can be done 
 
 [Click Here to view the tutorial of how to transfer files.](./docs/tutorials/how-to-transfer-files.md)
 
+### How to access your container in docker
+
+```bash
+docker exec -it $CONTAINER_NAME gosu steam bash
+```
+
 ## Additional Information
 
 ### Discord Release Notifications
