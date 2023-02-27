@@ -1,3 +1,25 @@
+# v2.0.0 (Mon Feb 27 2023)
+
+#### 💥 Breaking Change
+
+- Refactored to derive [#651](https://github.com/mbround18/valheim-docker/pull/651) (no-reply@boop.ninja [@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update mbround18/auto action to v1.4.0 [#656](https://github.com/mbround18/valheim-docker/pull/656) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update note on requirements for Huginn statistics [#643](https://github.com/mbround18/valheim-docker/pull/643) ([@cameronwp](https://github.com/cameronwp))
+- Update rust Docker tag to v1.66 [#638](https://github.com/mbround18/valheim-docker/pull/638) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate chrono to 0.4.23 [#611](https://github.com/mbround18/valheim-docker/pull/611) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Cameron Pittman ([@cameronwp](https://github.com/cameronwp))
+- mbround18 (no-reply@boop.ninja)
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v1.8.0 (Thu Nov 24 2022)
 
 #### 🚀 Enhancement
