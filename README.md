@@ -3,14 +3,21 @@
 <img src="./docs/assets/valheim-docker-logo.png" width="500" height="auto" alt="">
 
 <!-- Docker Pulls -->
+
 <a href="https://hub.docker.com/r/mbround18/valheim"><img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt=""></a>
+
 <!-- Rust Workflow -->
+
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml"><img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/rust.yml?branch=main&label=Rust&style=for-the-badge" alt=""></a>
+
 <!-- Docker Release Workflow -->
+
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-release.yml"><img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/docker-release.yml?label=Docker&style=for-the-badge" alt=""></a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -46,6 +53,7 @@
   - [Contributors ✨](#contributors-)
     > Did you write a guide? or perhaps an article? Add a PR to have it added here in the readme <3
   - [How to Transfer Files](#how-to-transfer-files)
+  - [External: Hosting with Dokku? Checkout this guide!](https://tkte.ch/articles/2023/03/03/Valheim.html)
   - [External: Hosting Valheim on Rocket Pi X](https://ikarus.sg/valheim-server-rock-pi-x/)
   - [External: Valheim on AWS](https://aws.amazon.com/getting-started/hands-on/valheim-on-aws/)
   - [External: How to host a dedicated Valheim server on Amazon Lightsail](https://updateloop.dev/dedicated-valheim-lightsail/)
