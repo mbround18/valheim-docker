@@ -30,7 +30,7 @@ path = "lib.rs"
 handlebars = "4"
 dotenv = "0.15"
 log = "0.4"
-clap = { version = "4.1.1", features = [ "derive", "env" ] }
+clap = { version = "4.1.8", features = [ "derive", "env" ] }
 which = "4.3.0"
 serde = { version = "1.0", features = ["derive"], default_features = false  }
 sysinfo = { version = "0.28.2", default_features = false }
