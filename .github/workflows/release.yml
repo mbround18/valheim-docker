@@ -46,6 +46,6 @@ jobs:
           dest: tmp/bundle.zip
 
       - name: Auto Release Tool by Intuit
-        uses: mbround18/auto@v1.4.0
+        uses: mbround18/auto@v1.5.0
         with:
           token: ${{ secrets.GH_TOKEN }}
