@@ -100,7 +100,6 @@ impl ValheimMod {
 
   fn try_parse_manifest(&self, archive: &mut ZipArchive<File>) -> Result<Manifest, ZipError> {
     debug!("Parsing 'manifest.json' ...");
-
     match archive.by_name("manifest.json") {
       Ok(mut manifest) => {
         debug!("'manifest.json' successfully loaded");
@@ -157,7 +156,10 @@ impl ValheimMod {
     if let Ok(maybe_manifest) = self.try_parse_manifest(archive) {
       let name = maybe_manifest.name;
       let mod_dir = format!("{}/", name);
-      let mod_dir_exists = archive.file_names().any(|file_name| file_name == mod_dir);
+
+      let mod_dir_exists = archive
+        .file_names()
+        .any(|file_name| file_name.starts_with(&mod_dir));
 
       // It's a mod framework based on a specific name and if it has a matching directory in the
       // archive
@@ -310,4 +312,78 @@ impl ValheimMod {
       ))
     }
   }
+}
+
+#[cfg(test)]
+mod zip_test {
+  use super::*;
+  use std::env::temp_dir;
+  use std::path::Path;
+
+  fn load_zip(file: &str) -> ZipArchive<File> {
+    ZipArchive::new(File::open(Path::new(file)).unwrap()).unwrap()
+  }
+
+  fn valheim_mod(url: String) -> ValheimMod {
+    ValheimMod {
+      url,
+      staging_location: temp_dir(),
+      installed: false,
+      downloaded: false,
+      file_type: "zip".to_string(),
+    }
+  }
+
+  macro_rules! test_zip {
+    ($name:ident, $file:expr, $expected:expr) => {
+      #[test]
+      fn $name() {
+        let mut zip = load_zip($file);
+        let info = valheim_mod("test-url".to_string());
+        assert_eq!(info.is_mod_framework(&mut zip), $expected);
+      }
+    };
+  }
+  test_zip!(
+    test_is_mod_framework,
+    "tests/resources/manifest.framework.zip",
+    true
+  );
+  test_zip!(
+    test_is_not_mod_framework,
+    "tests/resources/manifest.mod.zip",
+    false
+  );
+
+  macro_rules! test_is_this_download_a_framework {
+    ($name:ident, $url:expr, $expected:expr) => {
+      #[test]
+      fn $name() {
+        let mut info = valheim_mod($url);
+        info.download().unwrap();
+
+        let zip_file = File::open(&info.staging_location).unwrap();
+        let mut zip = ZipArchive::new(zip_file).unwrap();
+        assert_eq!(info.is_mod_framework(&mut zip), $expected);
+      }
+    };
+  }
+
+  test_is_this_download_a_framework!(
+    test_bepinexpack_valheim_v5_4_2102_is_a_framework,
+    format!(
+      "https://gcdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-{}.zip",
+      "5.4.2102"
+    ),
+    true
+  );
+
+  test_is_this_download_a_framework!(
+    test_bepinexpack_valheim_v5_4_6_is_not_a_framework,
+    format!(
+      "https://gcdn.thunderstore.io/live/repository/packages/denikson-BepInExPack_Valheim-{}.zip",
+      "5.4.6"
+    ),
+    true
+  );
 }
