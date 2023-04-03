@@ -1,3 +1,38 @@
+# v2.1.0 (Mon Apr 03 2023)
+
+#### 🚀 Enhancement
+
+- Fix for upgraded zip module [#687](https://github.com/mbround18/valheim-docker/pull/687) ([@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update Rust crate clap to 4.2.1 [#683](https://github.com/mbround18/valheim-docker/pull/683) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serial_test to v2 [#684](https://github.com/mbround18/valheim-docker/pull/684) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.28.4 [#681](https://github.com/mbround18/valheim-docker/pull/681) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.1.14 [#682](https://github.com/mbround18/valheim-docker/pull/682) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.1.13 [#680](https://github.com/mbround18/valheim-docker/pull/680) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update mbround18/auto action to v1.5.0 [#678](https://github.com/mbround18/valheim-docker/pull/678) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.1.11 [#679](https://github.com/mbround18/valheim-docker/pull/679) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.1.10 [#677](https://github.com/mbround18/valheim-docker/pull/677) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.28.3 [#676](https://github.com/mbround18/valheim-docker/pull/676) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate a2s to 0.5.2 [#675](https://github.com/mbround18/valheim-docker/pull/675) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.1.9 [#674](https://github.com/mbround18/valheim-docker/pull/674) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.1.8 [#668](https://github.com/mbround18/valheim-docker/pull/668) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate sysinfo to 0.28.2 [#670](https://github.com/mbround18/valheim-docker/pull/670) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update rust Docker tag to v1.68 [#672](https://github.com/mbround18/valheim-docker/pull/672) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate chrono to 0.4.24 [#673](https://github.com/mbround18/valheim-docker/pull/673) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### 📝 Documentation
+
+- Updated the readme [#669](https://github.com/mbround18/valheim-docker/pull/669) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.0.0 (Mon Feb 27 2023)
 
 #### 💥 Breaking Change
