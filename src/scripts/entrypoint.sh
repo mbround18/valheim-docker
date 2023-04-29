@@ -26,19 +26,19 @@ line() {
   log "###########################################################################"
 }
 
-check_version() {
-  file="/home/steam/.version"
-  sha="$(tail -n+1 $file | head -n1)"
-  branch="$(tail -n+2 $file | head -n1)"
-  repository="$(tail -n+3 $file | head -n1)"
-  github_version="$(curl -s "https://api.github.com/repos/${repository}/branches/${branch//refs\/heads\//}" | jq '.commit.sha')"
-  if [ -z "$github_version" ] || [ "$github_version" == "null" ]; then
-    log "You must be in development. Good luck!"
-  elif [ "${github_version//\"/}" != "${sha//\"/}" ]; then
-    log "Hey you! It looks like there is an update on $repository for $branch"
-    log "Please consider running \`docker-compose pull valheim\` or pull the image based on your use case"
-  fi
-}
+#check_version() {
+#  file="/home/steam/.version"
+#  sha="$(tail -n+1 $file | head -n1)"
+#  branch="$(tail -n+2 $file | head -n1)"
+#  repository="$(tail -n+3 $file | head -n1)"
+#  github_version="$(curl -s "https://api.github.com/repos/${repository}/branches/${branch//refs\/heads\//}" | jq '.commit.sha')"
+#  if [ -z "$github_version" ] || [ "$github_version" == "null" ]; then
+#    log "You must be in development. Good luck!"
+#  elif [ "${github_version//\"/}" != "${sha//\"/}" ]; then
+#    log "Hey you! It looks like there is an update on $repository for $branch"
+#    log "Please consider running \`docker-compose pull valheim\` or pull the image based on your use case"
+#  fi
+#}
 
 clean_up() {
   echo "Safely shutting down..." >>/home/steam/output.log
@@ -84,6 +84,15 @@ setup_cron_env() {
     AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE}
     AUTO_BACKUP_ON_SHUTDOWN=${AUTO_BACKUP_ON_SHUTDOWN}
     AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS=${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}
+
+    VALHEIM_PLUS_RELEASES_URL=${VALHEIM_PLUS_RELEASES_URL:-https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest}
+    VALHEIM_PLUS_DOWNLOAD_URL=${VALHEIM_PLUS_DOWNLOAD_URL}
+
+    BEPINEX_RELEASES_URL=${BEPINEX_RELEASES_URL:-https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim}
+    BEPINEX_DOWNLOAD_URL=${BEPINEX_DOWNLOAD_URL}
+
+    BEPINEX_FULL_RELEASES_URL=${BEPINEX_FULL_RELEASES_URL:-https://valheim.thunderstore.io/api/experimental/package/1F31A/BepInEx_Valheim_Full}
+
     " | \
     while read -r line; do
        if [[ "${line}" == *"="* ]]; then
@@ -133,13 +142,13 @@ setup_filesystem() {
   # Valheim Server
   mkdir -p "${GAME_LOCATION}"
   mkdir -p "${GAME_LOCATION}/logs"
-  chown -R ${STEAM_UID}:${STEAM_GID} "${GAME_LOCATION}"
-  chown -R ${STEAM_UID}:${STEAM_GID} "${GAME_LOCATION}"
+  chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
+  chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
 
   # Other
   mkdir -p /home/steam/scripts
-  chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/scripts
-  chown -R ${STEAM_UID}:${STEAM_GID} /home/steam/
+  chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/scripts
+  chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/
 }
 
 check_memory() {
@@ -156,7 +165,7 @@ check_memory() {
 line
 log "Valheim Server - $(date)"
 log "Initializing your container..."
-check_version
+#check_version
 line
 check_memory
 
