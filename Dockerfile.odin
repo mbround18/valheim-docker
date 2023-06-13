@@ -35,7 +35,7 @@ RUN /usr/local/cargo/bin/cargo make -p production release
 # ------------------ #
 # -- Odin Runtime -- #
 # ------------------ #
-FROM debian:11-slim as runtime
+FROM debian:12-slim as runtime
 WORKDIR /apps
 COPY --from=builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
 ENTRYPOINT ["/apps/odin"]
