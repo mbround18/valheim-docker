@@ -1,4 +1,4 @@
-use daemonize::{Daemonize, DaemonizeError};
+use daemonize::{Daemonize, Error};
 use log::{debug, error, info};
 
 use std::{io, process::Child};
@@ -19,7 +19,7 @@ use std::process::exit;
 
 type CommandResult = io::Result<Child>;
 
-pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, DaemonizeError> {
+pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error> {
   let stdout = create_file(format!("{}/logs/valheim_server.log", game_directory()).as_str());
   let stderr = create_file(format!("{}/logs/valheim_server.err", game_directory()).as_str());
   Daemonize::new()
@@ -28,7 +28,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Daemo
     .group("steam")
     .stdout(stdout)
     .stderr(stderr)
-    .exit_action(|| {
+    .privileged_action(|| {
       let bepinex_env = BepInExEnvironment::new();
       if bepinex_env.is_installed() {
         info!(target: "server_startup","Server has been started with BepInEx! Keep in mind this may cause errors!!");
