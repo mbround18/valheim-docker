@@ -1,3 +1,15 @@
+# v2.1.2 (Fri Jun 16 2023)
+
+#### 🐛 Bug Fix
+
+- Env var shake up for download urls [#696](https://github.com/mbround18/valheim-docker/pull/696) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.1.1 (Tue Jun 13 2023)
 
 #### 🐛 Bug Fix
