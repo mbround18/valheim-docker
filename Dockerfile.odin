@@ -1,7 +1,10 @@
+ARG DEBIAN_VERSION=12
+ARG RUST_VERSION=1.70
+
 # ------------------ #
 # -- Odin Planner -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.70 as planner
+FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION} as planner
 WORKDIR /data/odin
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
@@ -9,7 +12,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ------------------ #
 # -- Odin Cacher  -- #
 # ------------------ #
-FROM lukemathwalker/cargo-chef:latest-rust-1.70 as cacher
+FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION} as cacher
 WORKDIR /data/odin
 COPY --from=planner /data/odin/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
@@ -23,7 +26,7 @@ FROM mbround18/cargo-make:latest as cargo-make
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-FROM rust:1.70 as builder
+FROM rust:${RUST_VERSION} as builder
 WORKDIR /data/odin
 COPY . .
 # Copy over the cached dependencies
@@ -35,7 +38,7 @@ RUN /usr/local/cargo/bin/cargo make -p production release
 # ------------------ #
 # -- Odin Runtime -- #
 # ------------------ #
-FROM debian:11-slim as runtime
+FROM debian:${DEBIAN_VERSION}-slim as runtime
 WORKDIR /apps
 COPY --from=builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
 ENTRYPOINT ["/apps/odin"]

@@ -36,6 +36,36 @@ cleanup() {
   fi
 }
 
+install_valheim_plus() {
+    log "Installing ValheimPlus"
+    VALHEIM_PLUS_DOWNLOAD_URL="${VALHEIM_PLUS_DOWNLOAD_URL:-""}"
+    if [ -z "${VALHEIM_PLUS_DOWNLOAD_URL}" ]; then
+      VALHEIM_PLUS_DOWNLOAD_URL="$(curl "${VALHEIM_PLUS_RELEASES_URL}" | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
+    fi
+    log "Pulling ValheimPlus from ${VALHEIM_PLUS_DOWNLOAD_URL}"
+    odin mod:install "${VALHEIM_PLUS_DOWNLOAD_URL}"
+}
+
+install_bepinex() {
+    log "Installing BepInEx"
+    BEPINEX_DOWNLOAD_URL="${BEPINEX_DOWNLOAD_URL:-""}"
+    if [ -z "${BEPINEX_DOWNLOAD_URL}" ]; then
+      BEPINEX_DOWNLOAD_URL="$(curl "${BEPINEX_RELEASES_URL}" | jq -r '.latest.download_url')"
+    fi
+    log "Pulling BepInEx from ${BEPINEX_DOWNLOAD_URL}"
+    odin mod:install "${BEPINEX_DOWNLOAD_URL}"
+}
+
+install_bepinex_full() {
+    log "Installing BepInEx Full"
+    BEPINEX_FULL_DOWNLOAD_URL="${BEPINEX_FULL_DOWNLOAD_URL:-""}"
+    if [ -z "${BEPINEX_FULL_DOWNLOAD_URL}" ]; then
+      BEPINEX_FULL_DOWNLOAD_URL="$(curl "${BEPINEX_FULL_RELEASES_URL}" | jq -r '.latest.download_url')"
+    fi
+    log "Pulling BepInEx Full from ${BEPINEX_FULL_DOWNLOAD_URL}"
+    odin mod:install "${BEPINEX_FULL_DOWNLOAD_URL}"
+}
+
 initialize "Installing Valheim via $(odin --version)..."
 log "Variables loaded....."
 log "Port: ${PORT}"
@@ -68,9 +98,6 @@ if [ -f "/home/steam/steamcmd/linux64/steamclient.so" ]; then
   cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
 fi
 
-
-
-
 # Setting up server
 log "Initializing Variables...."
 odin configure || exit 1
@@ -91,30 +118,21 @@ elif
     # ValheimPlus with update on startup or force install
     { [ "${TYPE}" = "valheimplus" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
 then
-  log "Installing ValheimPlus"
-  VALHEIM_PLUS_URL="$(curl https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
-  log "Pulling ValheimPlus from ${VALHEIM_PLUS_URL}"
-  odin mod:install "${VALHEIM_PLUS_URL}"
+  install_valheim_plus
 elif
   # BepInEx not yet installed
   { [ "${TYPE}" = "bepinex" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } ||
     # BepInEx with update on startup or force install
     { [ "${TYPE}" = "bepinex" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
 then
-  log "Installing BepInEx"
-  BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/ | jq -r '.latest.download_url')"
-  log "Pulling BepInEx from ${BEPINEX_URL}"
-  odin mod:install "${BEPINEX_URL}"
+  install_bepinex
 elif
   # BepInEx not yet installed
   { [ "${TYPE}" = "bepinexfull" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } ||
     # BepInEx with update on startup or force install
     { [ "${TYPE}" = "bepinexfull" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
 then
-  log "Installing BepInEx Full"
-  BEPINEX_URL="$(curl https://valheim.thunderstore.io/api/experimental/package/1F31A/BepInEx_Valheim_Full/ | jq -r '.latest.download_url')"
-  log "Pulling BepInEx Full from ${BEPINEX_URL}"
-  odin mod:install "${BEPINEX_URL}"
+  install_bepinex_full
 fi
 
 if [ ! "${TYPE}" = "vanilla" ]; then
@@ -156,7 +174,7 @@ log_files=("${log_names[@]/#/\/home\/steam\/valheim\/logs/}")
 touch "${log_files[@]}" # Destroy logs on start up, this can be changed later to roll logs or archive them.
 
 # shellcheck disable=SC2086
-tail -F ${log_files[*]} &
+tail -F "${log_files[@]}" &
 export TAIL_PID=$!
 
 # Waiting for logs.
