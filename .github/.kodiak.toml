@@ -1,0 +1,7 @@
+version = 1
+
+[merge]
+require_automerge_label = false
+
+[approve.auto_approve_usernames]
+usernames = ["dependabot", "renovate"]
