@@ -40,39 +40,44 @@ ARG GITHUB_REF="not-set"
 ARG GITHUB_REPOSITORY="not-set"
 
 # User config
-ENV PUID=1000                                                     \
-    PGID=1000                                                     \
+ENV PUID=1000                                                                                                        \
+    PGID=1000                                                                                                        \
     # Set up timezone information
-    TZ=America/Los_Angeles                                        \
+    TZ=America/Los_Angeles                                                                                           \
     # Server Specific env variables.
-    PORT="2456"                                                   \
-    NAME="Valheim Docker"                                         \
-    WORLD="Dedicated"                                             \
-    PUBLIC="1"                                                    \
-    PASSWORD=""                                                   \
-    TYPE="Vanilla"                                                \
-    UPDATE_ON_STARTUP="1"                                         \
+    PORT="2456"                                                                                                      \
+    NAME="Valheim Docker"                                                                                            \
+    WORLD="Dedicated"                                                                                                \
+    PUBLIC="1"                                                                                                       \
+    PASSWORD=""                                                                                                      \
+    TYPE="Vanilla"                                                                                                   \
+    UPDATE_ON_STARTUP="1"                                                                                            \
     # Auto Update Configs
-    AUTO_UPDATE="0"                                               \
-    AUTO_UPDATE_SCHEDULE="0 1 * * *"                              \
+    AUTO_UPDATE="0"                                                                                                  \
+    AUTO_UPDATE_SCHEDULE="0 1 * * *"                                                                                 \
     # Auto Backup Configs
-    AUTO_BACKUP="0"                                               \
-    AUTO_BACKUP_SCHEDULE="*/15 * * * *"                           \
-    AUTO_BACKUP_REMOVE_OLD="1"                                    \
-    AUTO_BACKUP_DAYS_TO_LIVE="3"                                  \
-    AUTO_BACKUP_ON_UPDATE="0"                                     \
-    AUTO_BACKUP_ON_SHUTDOWN="0"                                   \
-    AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS="0"                         \
-    SCHEDULED_RESTART="0"                                         \
-    SCHEDULED_RESTART_SCHEDULE="0 2 * * *"                        \
+    AUTO_BACKUP="0"                                                                                                  \
+    AUTO_BACKUP_SCHEDULE="*/15 * * * *"                                                                              \
+    AUTO_BACKUP_REMOVE_OLD="1"                                                                                       \
+    AUTO_BACKUP_DAYS_TO_LIVE="3"                                                                                     \
+    AUTO_BACKUP_ON_UPDATE="0"                                                                                        \
+    AUTO_BACKUP_ON_SHUTDOWN="0"                                                                                      \
+    AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS="0"                                                                            \
+    SCHEDULED_RESTART="0"                                                                                            \
+    SCHEDULED_RESTART_SCHEDULE="0 2 * * *"                                                                           \
     # Folders and file system related
-    SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim"  \
-    MODS_LOCATION="/home/steam/staging/mods"                      \
-    GAME_LOCATION="/home/steam/valheim"                           \
-    BACKUP_LOCATION="/home/steam/backups"                         \
+    SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim"                                                     \
+    MODS_LOCATION="/home/steam/staging/mods"                                                                         \
+    GAME_LOCATION="/home/steam/valheim"                                                                              \
+    BACKUP_LOCATION="/home/steam/backups"                                                                            \
     # Webhook Information
-    WEBHOOK_STATUS_SUCCESSFUL="1"                                 \
-    WEBHOOK_STATUS_FAILED="1"
+    WEBHOOK_STATUS_SUCCESSFUL="1"                                                                                    \
+    WEBHOOK_STATUS_FAILED="1"                                                                                        \
+    # Server Type Download Information
+    VALHEIM_PLUS_RELEASES_URL="https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest"                 \
+    BEPINEX_RELEASES_URL="https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"    \
+    BEPINEX_FULL_RELEASES_URL="https://valheim.thunderstore.io/api/experimental/package/1F31A/BepInEx_Valheim_Full/"
+
 
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
