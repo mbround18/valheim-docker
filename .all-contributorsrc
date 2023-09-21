@@ -3,7 +3,9 @@
   "projectOwner": "mbround18",
   "repoType": "github",
   "repoHost": "https://github.com",
-  "files": ["README.md"],
+  "files": [
+    "README.md"
+  ],
   "imageSize": 100,
   "commit": true,
   "commitConvention": "eslint",
@@ -13,84 +15,120 @@
       "name": "Mark",
       "avatar_url": "https://avatars.githubusercontent.com/u/3298808?v=4",
       "profile": "http://arneman.me/",
-      "contributions": ["doc"]
+      "contributions": [
+        "doc"
+      ]
     },
     {
       "login": "mbround18",
       "name": "Michael",
       "avatar_url": "https://avatars.githubusercontent.com/u/12646562?v=4",
       "profile": "https://m.bruno.fyi/",
-      "contributions": ["infra", "code", "doc"]
+      "contributions": [
+        "infra",
+        "code",
+        "doc"
+      ]
     },
     {
       "login": "imgbot[bot]",
       "name": "imgbot[bot]",
       "avatar_url": "https://avatars.githubusercontent.com/in/4706?v=4",
       "profile": "https://github.com/apps/imgbot",
-      "contributions": ["doc"]
+      "contributions": [
+        "doc"
+      ]
     },
     {
       "login": "AGhost-7",
       "name": "Jonathan Boudreau",
       "avatar_url": "https://avatars.githubusercontent.com/u/6957411?v=4",
       "profile": "https://github.com/AGhost-7",
-      "contributions": ["code"]
+      "contributions": [
+        "code"
+      ]
     },
     {
       "login": "Kellei2983",
       "name": "Lukáš Hruška",
       "avatar_url": "https://avatars.githubusercontent.com/u/32897629?v=4",
       "profile": "https://github.com/Kellei2983",
-      "contributions": ["doc"]
+      "contributions": [
+        "doc"
+      ]
     },
     {
       "login": "JulianVallee",
       "name": "Julian Vallée",
       "avatar_url": "https://avatars.githubusercontent.com/u/6720458?v=4",
       "profile": "http://vallee-design.de/",
-      "contributions": ["code"]
+      "contributions": [
+        "code"
+      ]
     },
     {
       "login": "Finomnis",
       "name": "Finomnis",
       "avatar_url": "https://avatars.githubusercontent.com/u/3129043?v=4",
       "profile": "https://github.com/Finomnis",
-      "contributions": ["code"]
+      "contributions": [
+        "code"
+      ]
     },
     {
       "login": "JustinByrne",
       "name": "Justin Byrne",
       "avatar_url": "https://avatars.githubusercontent.com/u/14056930?v=4",
       "profile": "https://tech.jrlbyrne.com/",
-      "contributions": ["doc"]
+      "contributions": [
+        "doc"
+      ]
     },
     {
       "login": "apeabody",
       "name": "Andrew Peabody",
       "avatar_url": "https://avatars.githubusercontent.com/u/14035345?v=4",
       "profile": "http://blog.andrewpeabody.com/",
-      "contributions": ["doc", "code"]
+      "contributions": [
+        "doc",
+        "code"
+      ]
     },
     {
       "login": "morales2k",
       "name": "Jorge Morales",
       "avatar_url": "https://avatars.githubusercontent.com/u/1074855?v=4",
       "profile": "https://github.com/morales2k",
-      "contributions": ["code"]
+      "contributions": [
+        "code"
+      ]
     },
     {
       "login": "spannerman79",
       "name": "Spanner_Man",
       "avatar_url": "https://avatars.githubusercontent.com/u/7542384?v=4",
       "profile": "https://github.com/spannerman79",
-      "contributions": ["doc"]
+      "contributions": [
+        "doc"
+      ]
     },
     {
       "login": "cameronwp",
       "name": "Cameron Pittman",
       "avatar_url": "https://avatars.githubusercontent.com/u/5186335?v=4",
       "profile": "https://hurtlingthrough.space/",
-      "contributions": ["doc"]
+      "contributions": [
+        "doc"
+      ]
+    },
+    {
+      "login": "kodiakhq[bot]",
+      "name": "kodiakhq[bot]",
+      "avatar_url": "https://avatars.githubusercontent.com/in/29196?v=4",
+      "profile": "https://github.com/apps/kodiakhq",
+      "contributions": [
+        "infra"
+      ]
     }
   ],
   "contributorsPerLine": 7
