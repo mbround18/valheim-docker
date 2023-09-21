@@ -3,9 +3,11 @@ members = [
   "src/odin",
   "src/huginn"
 ]
+resolver = "1"
 
 [profile.dev]
 opt-level = 0
 
 [profile.release]
+
 opt-level = 3
