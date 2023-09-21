@@ -1,3 +1,31 @@
+# v2.1.4 (Thu Sep 21 2023)
+
+#### 🐛 Bug Fix
+
+- FooDeas Refactor [#730](https://github.com/mbround18/valheim-docker/pull/730) ([@mbround18](https://github.com/mbround18))
+- Update Rust crate clap to 4.4.4 [#728](https://github.com/mbround18/valheim-docker/pull/728) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate chrono to 0.4.31 [#727](https://github.com/mbround18/valheim-docker/pull/727) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to 4.4.3 [#726](https://github.com/mbround18/valheim-docker/pull/726) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update docker/setup-buildx-action action to v3 [#725](https://github.com/mbround18/valheim-docker/pull/725) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update docker/login-action action to v3 [#724](https://github.com/mbround18/valheim-docker/pull/724) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update docker/build-push-action action to v5 [#723](https://github.com/mbround18/valheim-docker/pull/723) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update crazy-max/ghaction-docker-meta action to v5 [#722](https://github.com/mbround18/valheim-docker/pull/722) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Bump webpki from 0.22.0 to 0.22.1 [#720](https://github.com/mbround18/valheim-docker/pull/720) ([@dependabot[bot]](https://github.com/dependabot[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate sysinfo to 0.29.10 [#718](https://github.com/mbround18/valheim-docker/pull/718) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate chrono to 0.4.30 [#717](https://github.com/mbround18/valheim-docker/pull/717) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to 4.4.2 [#716](https://github.com/mbround18/valheim-docker/pull/716) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to 4.4.1 [#714](https://github.com/mbround18/valheim-docker/pull/714) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/checkout action to v4 [#715](https://github.com/mbround18/valheim-docker/pull/715) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@dependabot[bot]](https://github.com/dependabot[bot])
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.1.2 (Fri Jun 16 2023)
 
 #### 🐛 Bug Fix
