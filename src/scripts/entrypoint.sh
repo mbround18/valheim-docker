@@ -85,21 +85,11 @@ setup_cron_env() {
     AUTO_BACKUP_ON_SHUTDOWN=${AUTO_BACKUP_ON_SHUTDOWN}
     AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS=${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}
 
-<<<<<<< Updated upstream
-    VALHEIM_PLUS_RELEASES_URL=${VALHEIM_PLUS_RELEASES_URL:-https://api.github.com/repos/valheimPlus/ValheimPlus/releases/latest}
-    VALHEIM_PLUS_DOWNLOAD_URL=${VALHEIM_PLUS_DOWNLOAD_URL}
-
-    BEPINEX_RELEASES_URL=${BEPINEX_RELEASES_URL:-https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim}
-    BEPINEX_DOWNLOAD_URL=${BEPINEX_DOWNLOAD_URL}
-
-    BEPINEX_FULL_RELEASES_URL=${BEPINEX_FULL_RELEASES_URL:-https://valheim.thunderstore.io/api/experimental/package/1F31A/BepInEx_Valheim_Full}
-=======
     VALHEIM_PLUS_RELEASES_URL=\"${VALHEIM_PLUS_RELEASES_URL:""}\"
     VALHEIM_PLUS_DOWNLOAD_URL=\"${VALHEIM_PLUS_DOWNLOAD_URL}\"
 
     BEPINEX_RELEASES_URL=\"${BEPINEX_RELEASES_URL:-"https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"}\"
     BEPINEX_DOWNLOAD_URL=\"${BEPINEX_DOWNLOAD_URL}\"
->>>>>>> Stashed changes
 
     BEPINEX_FULL_RELEASES_URL=\"${BEPINEX_FULL_RELEASES_URL:-""}\"
     " | \
