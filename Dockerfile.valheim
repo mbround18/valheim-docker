@@ -74,8 +74,6 @@ ENV PUID=1000                                                     \
     WEBHOOK_STATUS_SUCCESSFUL="1"                                 \
     WEBHOOK_STATUS_FAILED="1"
 
->>>>>>> Stashed changes
-
 COPY ./src/scripts/*.sh /home/steam/scripts/
 COPY ./src/scripts/entrypoint.sh /entrypoint.sh
 COPY ./src/scripts/env.sh /env.sh
