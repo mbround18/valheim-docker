@@ -3,10 +3,23 @@
 cd /home/steam/valheim || exit 1
 STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
+source /env.sh
 
 log() {
   PREFIX="[Valheim][steam]"
   printf "%-16s: %s\n" "${PREFIX}" "$1"
+}
+
+deprecation_notice() {
+  log "-------------------------------------------------------------------------"
+  log "-------------------------------------------------------------------------"
+  log "-------------------------------------------------------------------------"
+  log "-------------------------------------------------------------------------"
+  log "WARNING: ${1}"
+  log "-------------------------------------------------------------------------"
+  log "-------------------------------------------------------------------------"
+  log "-------------------------------------------------------------------------"
+  log "-------------------------------------------------------------------------"
 }
 
 line() {
@@ -37,33 +50,36 @@ cleanup() {
 }
 
 install_valheim_plus() {
-    log "Installing ValheimPlus"
-    VALHEIM_PLUS_DOWNLOAD_URL="${VALHEIM_PLUS_DOWNLOAD_URL:-""}"
-    if [ -z "${VALHEIM_PLUS_DOWNLOAD_URL}" ]; then
-      VALHEIM_PLUS_DOWNLOAD_URL="$(curl "${VALHEIM_PLUS_RELEASES_URL}" | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
-    fi
-    log "Pulling ValheimPlus from ${VALHEIM_PLUS_DOWNLOAD_URL}"
-    odin mod:install "${VALHEIM_PLUS_DOWNLOAD_URL}"
+  deprecation_notice "ValheimPlus has been deprecated!!!!!! Please use BepInEx instead!"
+#    log "Installing ValheimPlus"
+#    VALHEIM_PLUS_DOWNLOAD_URL="${VALHEIM_PLUS_DOWNLOAD_URL:-""}"
+#    if [ -z "${VALHEIM_PLUS_DOWNLOAD_URL}" ]; then
+#      VALHEIM_PLUS_DOWNLOAD_URL="$(curl -L "${VALHEIM_PLUS_RELEASES_URL}" | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
+#    fi
+#    log "Pulling ValheimPlus from ${VALHEIM_PLUS_DOWNLOAD_URL}"
+#    odin mod:install "${VALHEIM_PLUS_DOWNLOAD_URL}"
 }
 
 install_bepinex() {
     log "Installing BepInEx"
     BEPINEX_DOWNLOAD_URL="${BEPINEX_DOWNLOAD_URL:-""}"
     if [ -z "${BEPINEX_DOWNLOAD_URL}" ]; then
-      BEPINEX_DOWNLOAD_URL="$(curl "${BEPINEX_RELEASES_URL}" | jq -r '.latest.download_url')"
+      echo "Calling: curl -L ${BEPINEX_RELEASES_URL} | jq -r '.latest.download_url'"
+      BEPINEX_DOWNLOAD_URL="$(curl -L "${BEPINEX_RELEASES_URL}" | jq -r '.latest.download_url')"
     fi
     log "Pulling BepInEx from ${BEPINEX_DOWNLOAD_URL}"
     odin mod:install "${BEPINEX_DOWNLOAD_URL}"
 }
 
 install_bepinex_full() {
-    log "Installing BepInEx Full"
-    BEPINEX_FULL_DOWNLOAD_URL="${BEPINEX_FULL_DOWNLOAD_URL:-""}"
-    if [ -z "${BEPINEX_FULL_DOWNLOAD_URL}" ]; then
-      BEPINEX_FULL_DOWNLOAD_URL="$(curl "${BEPINEX_FULL_RELEASES_URL}" | jq -r '.latest.download_url')"
-    fi
-    log "Pulling BepInEx Full from ${BEPINEX_FULL_DOWNLOAD_URL}"
-    odin mod:install "${BEPINEX_FULL_DOWNLOAD_URL}"
+    deprecation_notice "BepInExFull has been deprecated!!!!!! Please use BepInEx instead!"
+#    log "Installing BepInEx Full"
+#    BEPINEX_FULL_DOWNLOAD_URL="${BEPINEX_FULL_DOWNLOAD_URL:-""}"
+#    if [ -z "${BEPINEX_FULL_DOWNLOAD_URL}" ]; then
+#      BEPINEX_FULL_DOWNLOAD_URL="$(curl -L "${BEPINEX_FULL_RELEASES_URL}" | jq -r '.latest.download_url')"
+#    fi
+#    log "Pulling BepInEx Full from ${BEPINEX_FULL_DOWNLOAD_URL}"
+#    odin mod:install "${BEPINEX_FULL_DOWNLOAD_URL}"
 }
 
 initialize "Installing Valheim via $(odin --version)..."

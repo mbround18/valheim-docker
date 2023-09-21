@@ -18,7 +18,7 @@ services:
       TZ: "America/Los_Angeles"
       AUTO_UPDATE: 1
       AUTO_UPDATE_SCHEDULE: "0 1 * * *"
-      TYPE: Vanilla
+      TYPE: BepInEx
     build:
       context: .
       dockerfile: ./Dockerfile.valheim
