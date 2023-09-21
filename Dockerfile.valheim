@@ -71,11 +71,7 @@ ENV PUID=1000                                                     \
     GAME_LOCATION="/home/steam/valheim"                           \
     BACKUP_LOCATION="/home/steam/backups"                         \
     # Webhook Information
-<<<<<<< Updated upstream
     WEBHOOK_STATUS_SUCCESSFUL="1"                                 \
-    WEBHOOK_STATUS_FAILED="1"
-=======
-    WEBHOOK_STATUS_SUCCESSFUL="1"                                                                                    \
     WEBHOOK_STATUS_FAILED="1"
 
 >>>>>>> Stashed changes
