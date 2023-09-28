@@ -1,3 +1,20 @@
+# v2.2.0 (Thu Sep 28 2023)
+
+#### 🚀 Enhancement
+
+- mbround18/732 fix shutdown [#735](https://github.com/mbround18/valheim-docker/pull/735) ([@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update actions/checkout digest to 8ade135 [#731](https://github.com/mbround18/valheim-docker/pull/731) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.1.4 (Thu Sep 21 2023)
 
 #### 🐛 Bug Fix
