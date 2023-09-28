@@ -8,6 +8,7 @@ use crate::{constants, server, utils::get_working_dir};
 
 pub fn invoke(dry_run: bool) {
   NotificationEvent::Stop(EventStatus::Running).send_notification();
+
   info!("Stopping server {}", get_working_dir());
   if dry_run {
     info!("This command would have run: ");

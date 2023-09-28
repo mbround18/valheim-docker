@@ -2,6 +2,7 @@
   <configuration default="false" name="docker-compose.yml: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" server-name="Docker">
     <deployment type="docker-compose.yml">
       <settings>
+        <option name="envFilePath" value="" />
         <option name="removeVolumesOnComposeDown" value="true" />
         <option name="commandLineOptions" value="--build" />
         <option name="services">

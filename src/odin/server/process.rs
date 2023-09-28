@@ -1,5 +1,5 @@
 use crate::constants;
-use log::{error, info};
+use log::{debug, error, info};
 use sysinfo::{ProcessExt, Signal, System, SystemExt};
 
 pub struct ServerProcess {
@@ -23,13 +23,27 @@ impl ServerProcess {
     let mut processes = Vec::new();
 
     self.system.refresh_processes();
+    debug!(
+      "Scanning for Valheim process via system module. Num of processes: {}",
+      self.system.processes().len()
+    );
+
     // Limit search string to 15 characters, as some unix operating systems
     // cannot handle more then 15 character long process names
-    for process in self
-      .system
-      .processes_by_name(&constants::VALHEIM_EXECUTABLE_NAME[..15])
-    {
-      processes.push(process)
+    for (pid, process) in self.system.processes() {
+      debug!("Looking at: PID: {}; Process: {:?}", pid, process.exe());
+
+      if process
+        .exe()
+        .to_str()
+        .unwrap()
+        .contains(constants::VALHEIM_EXECUTABLE_NAME)
+      {
+        debug!("Found process with name: {}", process.name());
+        processes.push(process);
+      } else {
+        continue;
+      }
     }
 
     processes
