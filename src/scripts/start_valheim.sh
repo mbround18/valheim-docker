@@ -90,6 +90,22 @@ log "World: ${WORLD}"
 log "Public: ${PUBLIC}"
 log "With Crossplay: ${ENABLE_CROSSPLAY}"
 log "Password: (REDACTED)"
+log "Preset: ${PRESET}"
+log "Modifiers: ${MODIFIERS}"
+log "Set Key: ${SET_KEY}"
+log "Auto Update: ${AUTO_UPDATE}"
+log "Auto Backup: ${AUTO_BACKUP}"
+log "Auto Backup On Update: ${AUTO_BACKUP_ON_UPDATE}"
+log "Auto Backup On Shutdown: ${AUTO_BACKUP_ON_SHUTDOWN}"
+log "Auto Backup Pause With No Players: ${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}"
+log "Auto Backup Pause With Players: ${AUTO_BACKUP_PAUSE_WITH_PLAYERS}"
+log "Auto Backup Remove Old: ${AUTO_BACKUP_REMOVE_OLD}"
+log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
+log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"
+log "Update On Startup: ${UPDATE_ON_STARTUP}"
+log "Mods: ${MODS}"
+line
+
 
 export SteamAppId=${APPID:-892970}
 

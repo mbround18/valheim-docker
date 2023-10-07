@@ -1,4 +1,4 @@
-use crate::commands::configure::Configuration;
+use crate::commands::configure::{Configuration, Modifiers};
 use crate::files::{FileManager, ManagedFile};
 use crate::traits::AsOneOrZero;
 use crate::utils::environment::fetch_var;
@@ -9,17 +9,41 @@ use std::{fs, path::PathBuf, process::exit};
 
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ValheimArguments {
+  /// The port of the server, (Can be set with ENV variable PORT)
   pub(crate) port: String,
+
+  /// The name of the server, (Can be set with ENV variable NAME)
   pub(crate) name: String,
+
+  /// The world of the server, (Can be set with ENV variable WORLD)
   pub(crate) world: String,
+
+  /// The public state of the server, (Can be set with ENV variable PUBLIC)
   pub(crate) public: String,
+
+  /// The password of the server, (Can be set with ENV variable PASSWORD)
   pub(crate) password: String,
+
+  /// The command to launch the server
   pub(crate) command: String,
+
+  /// The preset for launching the server, (Can be set with ENV variable PRESET)
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub(crate) preset: Option<String>,
+
+  /// The modifiers for launching the server, (Can be set with ENV variable MODIFIERS)
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub(crate) modifiers: Option<Vec<Modifiers>>,
+
+  /// The set_key for launching the server, (Can be set with ENV variable SET_KEY)
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub(crate) set_key: Option<String>,
 }
 
 impl From<Configuration> for ValheimArguments {
+  /// Creates a new ValheimArguments from a Configuration
   fn from(value: Configuration) -> Self {
     let command = match fs::canonicalize(PathBuf::from(value.server_executable)) {
       Ok(command_path) => command_path.to_str().unwrap().to_string(),
@@ -36,10 +60,14 @@ impl From<Configuration> for ValheimArguments {
       public: value.public.as_string(),
       password: value.password,
       command,
+      preset: value.preset,
+      modifiers: value.modifiers,
+      set_key: value.set_key,
     }
   }
 }
 
+/// Loads the configuration from the config file
 pub fn load_config() -> ValheimArguments {
   let file = config_file();
   let config = read_config(file);
@@ -52,12 +80,14 @@ pub fn load_config() -> ValheimArguments {
   config
 }
 
+/// Creates a new config file
 pub fn config_file() -> ManagedFile {
   let name = fetch_var(ODIN_CONFIG_FILE_VAR, "config.json");
   debug!("Config file set to: {}", name);
   ManagedFile { name }
 }
 
+/// Reads the config file
 pub fn read_config(config: ManagedFile) -> ValheimArguments {
   let content = config.read();
   if content.is_empty() {
@@ -66,6 +96,7 @@ pub fn read_config(config: ManagedFile) -> ValheimArguments {
   serde_json::from_str(content.as_str()).unwrap()
 }
 
+/// Writes the config file
 pub fn write_config(config: ManagedFile, args: Configuration) -> bool {
   let content = ValheimArguments::from(args);
 

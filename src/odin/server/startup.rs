@@ -35,7 +35,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
         messages::modding_disclaimer();
         debug!(target: "server_startup","{:#?}", bepinex_env);
       }
-      info!(target: "server_startup","Server has been started and Daemonized. It should be online shortly!");
+      info!(target: "server_startup","Server has been started and Daemonize. It should be online shortly!");
       info!(target: "server_startup","Keep an eye out for 'Game server connected' in the log!");
       NotificationEvent::Start(EventStatus::Successful).send_notification();
       info!(target: "server_startup","(this indicates its online without any errors.)")
@@ -52,6 +52,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     format!("{}/linux64", game_directory()).as_str(),
   );
   debug!(target: "server_startup","Setting up base command");
+  debug!(target: "server_startup","Launching With Args: \n{:#?}", &config);
   let mut base_command = command
     // Extra launch arguments
     .arg(fetch_var(
@@ -69,7 +70,27 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
       "-public",
       config.public.as_str(),
     ])
-    .env("SteamAppId", environment::fetch_var("APPID", "892970"))
+    .arg(if let Some(set_key) = &config.set_key {
+      format!("-setkey {}", set_key)
+    } else {
+      String::new()
+    })
+    .arg(if let Some(preset) = &config.preset {
+      format!("-preset {}", preset)
+    } else {
+      String::new()
+    })
+    .arg(if let Some(modifiers) = &config.modifiers {
+      modifiers
+        .iter()
+        .map(|modifier| format!("-modifier {} {}", modifier.name, modifier.value))
+        .collect::<Vec<String>>()
+        .join(" ")
+        .to_string()
+    } else {
+      String::new()
+    })
+    .env("SteamAppId", fetch_var("APPID", "892970"))
     .current_dir(game_directory());
 
   let is_public = config.public.eq("1");

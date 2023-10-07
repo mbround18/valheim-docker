@@ -9,8 +9,9 @@ pub struct Cli {
   pub run_as_root: bool,
 
   /// Make everything noisy but very helpful to identify issues.
-  #[arg(long)]
-  pub debug: bool,
+  /// This will enable debugging, you can use the env variable DEBUG_MODE to set this as well.
+  #[arg(long, env = "DEBUG_MODE", action = clap::ArgAction::Set)]
+  pub debug: String,
 
   /// Will spit out the commands as if it were to run them but not really.
   #[arg(short = 'r', long)]
@@ -52,6 +53,19 @@ pub enum Commands {
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
     #[arg(short = 'o', long, env = "PUBLIC")]
     public: String,
+
+    /// Sets flag modifiers for launching the server, (Can be set with ENV variable MODIFIERS)
+    /// This should be comma separated with equal variables, e.g. "raids=none,combat=hard"
+    #[arg(long, env = "MODIFIERS")]
+    modifiers: Option<String>,
+
+    /// Sets flag preset for launching the server, (Can be set with ENV variable PRESET)
+    #[arg(long, env = "PRESET")]
+    preset: Option<String>,
+
+    /// Sets flag set_key for launching the server, (Can be set with ENV variable SET_KEY)
+    #[arg(long, env = "SET_KEY")]
+    set_key: Option<String>,
   },
 
   /// Installs Valheim with steamcmd

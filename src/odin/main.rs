@@ -1,4 +1,6 @@
+use crate::commands::configure::Modifiers;
 use clap::Parser;
+use commands::configure::Configuration;
 use dotenv::dotenv;
 use log::debug;
 
@@ -40,13 +42,26 @@ fn main() {
       server_executable,
       world,
       port,
-    } => commands::configure::Configuration::new(
+      modifiers,
+      preset,
+      set_key,
+    } => Configuration::new(
       name,
       server_executable,
       port,
       world,
       password,
       { public.eq("1") }.to_owned(),
+      preset,
+      {
+        modifiers.map(|modifiers| {
+          modifiers
+            .split(',')
+            .map(|modifier| Modifiers::from(modifier.to_string()))
+            .collect()
+        })
+      },
+      set_key,
     )
     .invoke(),
     Commands::Install {} => handle_exit_status(
