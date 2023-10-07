@@ -17,11 +17,12 @@ RUN apt-get update                        \
     && apt-get install -y -qq             \
     build-essential                       \
     htop net-tools nano gcc g++ gdb       \
-    netcat curl wget zip unzip              \
+    netcat curl wget zip unzip            \
     cron sudo gosu dos2unix               \
-    libsdl2-2.0-0  jq  libc6 libc6-dev         \
-    libpulse-dev libatomic1                  \
-    && rm -rf /var/lib/apt/lists/*             \
+    libsdl2-2.0-0  jq  libc6 libc6-dev    \
+    libpulse-dev libatomic1               \
+    tzdata                                \
+    && rm -rf /var/lib/apt/lists/*        \
     && gosu nobody true                   \
     && dos2unix
 
