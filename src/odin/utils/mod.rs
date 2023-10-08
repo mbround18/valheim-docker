@@ -1,6 +1,8 @@
 pub mod common_paths;
 pub mod environment;
 pub mod fetch_public_ip_address;
+pub mod parse_truthy;
+
 pub use fetch_public_ip_address::fetch_public_address;
 
 use log::debug;

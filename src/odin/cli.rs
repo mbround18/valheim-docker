@@ -1,20 +1,22 @@
 use clap::{Parser, Subcommand};
 
+use crate::utils::parse_truthy::parse_truthy;
+
 #[derive(Parser)]
 #[command(author, version)]
 #[command(propagate_version = true)]
 pub struct Cli {
   /// Allows you to run as root
-  #[arg(long)]
+  #[arg(long, env = "I_ACCEPT_TO_RUN_THINGS_UNSAFELY", value_parser  = parse_truthy)]
   pub run_as_root: bool,
 
   /// Make everything noisy but very helpful to identify issues.
   /// This will enable debugging, you can use the env variable DEBUG_MODE to set this as well.
-  #[arg(long, env = "DEBUG_MODE", action = clap::ArgAction::Set)]
-  pub debug: String,
+  #[arg(long, env = "DEBUG_MODE", value_parser  = parse_truthy)]
+  pub debug: bool,
 
   /// Will spit out the commands as if it were to run them but not really.
-  #[arg(short = 'r', long)]
+  #[arg(short = 'r', long, env = "DRY_RUN", value_parser  = parse_truthy)]
   pub dry_run: bool,
 
   #[command(subcommand)]
