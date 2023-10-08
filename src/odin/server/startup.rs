@@ -1,13 +1,9 @@
+use std::{io, process::Child};
+use std::process::exit;
+
 use daemonize::{Daemonize, Error};
 use log::{debug, error, info};
 
-use std::{io, process::Child};
-
-use crate::mods::bepinex::BepInExEnvironment;
-use crate::notifications::enums::event_status::EventStatus;
-use crate::notifications::enums::notification_event::NotificationEvent;
-use crate::utils::common_paths::{game_directory, saves_directory};
-use crate::utils::environment::fetch_var;
 use crate::{
   constants,
   executable::create_execution,
@@ -15,7 +11,11 @@ use crate::{
   messages,
   utils::environment,
 };
-use std::process::exit;
+use crate::mods::bepinex::BepInExEnvironment;
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::NotificationEvent;
+use crate::utils::common_paths::{game_directory, saves_directory};
+use crate::utils::environment::fetch_var;
 
 type CommandResult = io::Result<Child>;
 
@@ -52,7 +52,7 @@ pub fn start(config: &ValheimArguments) -> CommandResult {
     format!("{}/linux64", game_directory()).as_str(),
   );
   debug!(target: "server_startup","Setting up base command");
-  debug!(target: "server_startup","Launching With Args: \n{:#?}", &config);
+  debug!("Launching With Args: \n{:#?}", &config);
   let mut base_command = command
     // Extra launch arguments
     .arg(fetch_var(

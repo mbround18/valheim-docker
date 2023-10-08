@@ -19,12 +19,6 @@ services:
       AUTO_UPDATE: 1
       AUTO_UPDATE_SCHEDULE: "0 1 * * *"
       TYPE: Vanilla
-      DEBUG_MODE: 1
-      PRESET: "Hammer"
-      MODIFIERS: |
-        raids=muchmore
-        combat=hard
-        deathpenalty=casual
     build:
       context: .
       dockerfile: ./Dockerfile.valheim

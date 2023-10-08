@@ -24,7 +24,7 @@ wsl.test: wsl.sync
 
 wsl.sync:
 	mkdir -p $(BUILD_DIR)
-	rsync -av $(SOURCE_DIR)/ $(BUILD_DIR)/ --exclude .git --exclude target
+	rsync -av $(SOURCE_DIR)/ $(BUILD_DIR)/ --exclude .git --exclude target --exclude tmp
 
 wsl.clean:
 	rm -rf $(BUILD_DIR)/target
