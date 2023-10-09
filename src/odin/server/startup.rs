@@ -1,9 +1,14 @@
-use std::{io, process::Child};
 use std::process::exit;
+use std::{io, process::Child};
 
 use daemonize::{Daemonize, Error};
 use log::{debug, error, info};
 
+use crate::mods::bepinex::BepInExEnvironment;
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::NotificationEvent;
+use crate::utils::common_paths::{game_directory, saves_directory};
+use crate::utils::environment::fetch_var;
 use crate::{
   constants,
   executable::create_execution,
@@ -11,11 +16,6 @@ use crate::{
   messages,
   utils::environment,
 };
-use crate::mods::bepinex::BepInExEnvironment;
-use crate::notifications::enums::event_status::EventStatus;
-use crate::notifications::enums::notification_event::NotificationEvent;
-use crate::utils::common_paths::{game_directory, saves_directory};
-use crate::utils::environment::fetch_var;
 
 type CommandResult = io::Result<Child>;
 
