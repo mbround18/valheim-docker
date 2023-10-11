@@ -1,19 +1,22 @@
 use clap::{Parser, Subcommand};
 
+use crate::utils::parse_truthy::parse_truthy;
+
 #[derive(Parser)]
 #[command(author, version)]
 #[command(propagate_version = true)]
 pub struct Cli {
   /// Allows you to run as root
-  #[arg(long)]
+  #[arg(long, env = "I_ACCEPT_TO_RUN_THINGS_UNSAFELY", value_parser  = parse_truthy)]
   pub run_as_root: bool,
 
   /// Make everything noisy but very helpful to identify issues.
-  #[arg(long)]
+  /// This will enable debugging, you can use the env variable DEBUG_MODE to set this as well.
+  #[arg(long, env = "DEBUG_MODE", value_parser  = parse_truthy)]
   pub debug: bool,
 
   /// Will spit out the commands as if it were to run them but not really.
-  #[arg(short = 'r', long)]
+  #[arg(short = 'r', long, env = "DRY_RUN", value_parser  = parse_truthy)]
   pub dry_run: bool,
 
   #[command(subcommand)]
@@ -52,6 +55,23 @@ pub enum Commands {
     /// Sets the public state of the server, (Can be set with ENV variable PUBLIC)
     #[arg(short = 'o', long, env = "PUBLIC")]
     public: String,
+
+    /// Sets flag modifiers for launching the server, (Can be set with ENV variable MODIFIERS)
+    /// This should be comma separated with equal variables, e.g. "raids=none,combat=hard"
+    #[arg(long, env = "MODIFIERS")]
+    modifiers: Option<String>,
+
+    /// Sets flag preset for launching the server, (Can be set with ENV variable PRESET)
+    #[arg(long, env = "PRESET")]
+    preset: Option<String>,
+
+    /// Sets flag set_key for launching the server, (Can be set with ENV variable SET_KEY)
+    #[arg(long, env = "SET_KEY")]
+    set_key: Option<String>,
+
+    /// Sets the save interval in seconds
+    #[arg(long, env = "SAVE_INTERVAL")]
+    save_interval: Option<u16>,
   },
 
   /// Installs Valheim with steamcmd

@@ -2,7 +2,11 @@ use clap::Parser;
 use dotenv::dotenv;
 use log::debug;
 
+use commands::configure::Configuration;
+
+use crate::commands::configure::Modifiers;
 use crate::executable::handle_exit_status;
+use crate::logger::debug_mode;
 use crate::messages::about;
 
 mod cli;
@@ -26,7 +30,7 @@ fn main() {
   use cli::{Cli, Commands};
   let cli = Cli::parse();
 
-  logger::initialize_logger(cli.debug).unwrap();
+  logger::initialize_logger(cli.debug || debug_mode()).unwrap();
 
   if cli.debug {
     debug!("Debug mode enabled!");
@@ -40,13 +44,28 @@ fn main() {
       server_executable,
       world,
       port,
-    } => commands::configure::Configuration::new(
+      modifiers,
+      preset,
+      set_key,
+      save_interval,
+    } => Configuration::new(
       name,
       server_executable,
       port,
       world,
       password,
       { public.eq("1") }.to_owned(),
+      preset,
+      {
+        modifiers.map(|modifiers| {
+          modifiers
+            .split(',')
+            .map(|modifier| Modifiers::from(modifier.to_string()))
+            .collect()
+        })
+      },
+      set_key,
+      save_interval,
     )
     .invoke(),
     Commands::Install {} => handle_exit_status(
@@ -81,8 +100,9 @@ fn main() {
 mod tests {
   // use super::*;
 
-  use crate::cli::Cli;
   use clap::CommandFactory;
+
+  use crate::cli::Cli;
 
   #[test]
   fn asserts() {
