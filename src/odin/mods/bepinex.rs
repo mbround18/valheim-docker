@@ -5,8 +5,8 @@ use log::{debug, info};
 use serde::{Deserialize, Serialize};
 
 use crate::constants;
-use crate::utils::{environment, path_exists};
 use crate::utils::common_paths::{bepinex_directory, bepinex_plugin_directory, game_directory};
+use crate::utils::{environment, path_exists};
 
 const DYLD_LIBRARY_PATH_VAR: &str = "DYLD_LIBRARY_PATH";
 const DYLD_INSERT_LIBRARIES_VAR: &str = "DYLD_INSERT_LIBRARIES";

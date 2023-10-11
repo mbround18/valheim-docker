@@ -1,9 +1,14 @@
-use std::{io, process::Child};
 use std::process::exit;
+use std::{io, process::Child};
 
 use daemonize::{Daemonize, Error};
 use log::{debug, error, info};
 
+use crate::mods::bepinex::BepInExEnvironment;
+use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::notification_event::NotificationEvent;
+use crate::utils::common_paths::{game_directory, saves_directory};
+use crate::utils::environment::fetch_var;
 use crate::{
   constants,
   executable::create_execution,
@@ -11,11 +16,6 @@ use crate::{
   messages,
   utils::environment,
 };
-use crate::mods::bepinex::BepInExEnvironment;
-use crate::notifications::enums::event_status::EventStatus;
-use crate::notifications::enums::notification_event::NotificationEvent;
-use crate::utils::common_paths::{game_directory, saves_directory};
-use crate::utils::environment::fetch_var;
 
 type CommandResult = io::Result<Child>;
 
@@ -42,7 +42,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
       NotificationEvent::Start(EventStatus::Successful).send_notification();
       info!("(this indicates its online without any errors.)")
     })
-      .privileged_action(move || command)
+    .privileged_action(move || command)
     .start()
 }
 
@@ -97,8 +97,8 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   if let Some(modifiers) = &config.modifiers {
     base_command.args(
       modifiers
-          .iter()
-          .map(|modifier| format!("-modifier {} {}", modifier.name, modifier.value)),
+        .iter()
+        .map(|modifier| format!("-modifier {} {}", modifier.name, modifier.value)),
     );
   };
 
@@ -107,8 +107,8 @@ pub fn start(config: ValheimArguments) -> CommandResult {
     "-nographics -batchmode {}",
     fetch_var("SERVER_EXTRA_LAUNCH_ARGS", "")
   )
-      .trim()
-      .to_string();
+  .trim()
+  .to_string();
   base_command.arg(extra_args);
 
   let is_public = config.public.eq("1");
