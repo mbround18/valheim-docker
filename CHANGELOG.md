@@ -1,3 +1,23 @@
+# v2.3.0 (Wed Oct 11 2023)
+
+#### 🚀 Enhancement
+
+- Add additional arguments for Valheim Server [#742](https://github.com/mbround18/valheim-docker/pull/742) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+
+#### 🐛 Bug Fix
+
+- Update rust Docker tag to v1.73 [#739](https://github.com/mbround18/valheim-docker/pull/739) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Add missing tzdata package to container to support time zones [#743](https://github.com/mbround18/valheim-docker/pull/743) ([@FooDeas](https://github.com/FooDeas))
+
+#### Authors: 4
+
+- [@FooDeas](https://github.com/FooDeas)
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.2.0 (Thu Sep 28 2023)
 
 #### 🚀 Enhancement
