@@ -34,5 +34,3 @@ wsl.clean-all:
 
 wsl.clippy: wsl.sync
 	cd $(BUILD_DIR) && cargo clippy
-
-

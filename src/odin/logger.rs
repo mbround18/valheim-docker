@@ -1,4 +1,8 @@
+use std::env;
+
 use log::{debug, Level, LevelFilter, Metadata, Record, SetLoggerError};
+
+use crate::utils::parse_truthy::parse_truthy;
 
 pub struct OdinLogger;
 
@@ -34,6 +38,19 @@ pub fn initialize_logger(debug: bool) -> Result<(), SetLoggerError> {
     LevelFilter::Info
   };
   let result = log::set_logger(&LOGGER).map(|_| log::set_max_level(level));
-  debug!("Debugging set to {}", debug.to_string());
-  result
+  match result {
+    Err(err) => {
+      println!("Error setting logger: {:?}", err);
+      Err(err)
+    }
+    Ok(_) => {
+      debug!("Logger initialized");
+      Ok(())
+    }
+  }
+}
+
+pub fn debug_mode() -> bool {
+  let debug_mode = env::var("DEBUG_MODE").unwrap_or(String::new());
+  parse_truthy(&debug_mode).unwrap_or(false)
 }

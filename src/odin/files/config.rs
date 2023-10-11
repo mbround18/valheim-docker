@@ -1,15 +1,16 @@
+use std::{fs, path::PathBuf, process::exit};
+
+use log::{debug, error};
+use serde::{Deserialize, Serialize};
+
 use crate::commands::configure::{Configuration, Modifiers};
 use crate::files::{FileManager, ManagedFile};
 use crate::traits::AsOneOrZero;
 use crate::utils::environment::fetch_var;
 
-use log::{debug, error};
-use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf, process::exit};
-
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct ValheimArguments {
   /// The port of the server, (Can be set with ENV variable PORT)
   pub(crate) port: String,
@@ -40,6 +41,10 @@ pub struct ValheimArguments {
   /// The set_key for launching the server, (Can be set with ENV variable SET_KEY)
   #[serde(skip_serializing_if = "Option::is_none")]
   pub(crate) set_key: Option<String>,
+
+  /// Sets the save interval in seconds
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub save_interval: Option<u16>,
 }
 
 impl From<Configuration> for ValheimArguments {
@@ -63,6 +68,7 @@ impl From<Configuration> for ValheimArguments {
       preset: value.preset,
       modifiers: value.modifiers,
       set_key: value.set_key,
+      save_interval: value.save_interval,
     }
   }
 }
@@ -110,10 +116,12 @@ pub fn write_config(config: ManagedFile, args: Configuration) -> bool {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
-  use rand::Rng;
   use std::env;
   use std::env::current_dir;
+
+  use rand::Rng;
+
+  use super::*;
 
   #[test]
   #[should_panic(

@@ -68,6 +68,10 @@ pub enum Commands {
     /// Sets flag set_key for launching the server, (Can be set with ENV variable SET_KEY)
     #[arg(long, env = "SET_KEY")]
     set_key: Option<String>,
+
+    /// Sets the save interval in seconds
+    #[arg(long, env = "SAVE_INTERVAL")]
+    save_interval: Option<u16>,
   },
 
   /// Installs Valheim with steamcmd

@@ -1,10 +1,12 @@
-use crate::constants;
-use crate::utils::common_paths::{bepinex_directory, bepinex_plugin_directory, game_directory};
-use crate::utils::{environment, path_exists};
-use log::{debug, info};
-use serde::{Deserialize, Serialize};
 use std::ops::Add;
 use std::process::{Child, Command};
+
+use log::{debug, info};
+use serde::{Deserialize, Serialize};
+
+use crate::constants;
+use crate::utils::{environment, path_exists};
+use crate::utils::common_paths::{bepinex_directory, bepinex_plugin_directory, game_directory};
 
 const DYLD_LIBRARY_PATH_VAR: &str = "DYLD_LIBRARY_PATH";
 const DYLD_INSERT_LIBRARIES_VAR: &str = "DYLD_INSERT_LIBRARIES";
@@ -103,7 +105,7 @@ impl BepInExEnvironment {
     if output {
       debug!("Yay! looks like we found all the required files for BepInEx to run! <3")
     } else {
-      debug!("Uhh ohh!!! Looks like you are missing something.")
+      debug!("We didn't find a modded instance! Launching a normal instance!")
     }
     output
   }

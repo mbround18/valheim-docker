@@ -1,12 +1,12 @@
-use crate::files::config::{config_file, write_config};
-use crate::files::discord::{discord_file, write_discord};
-
 use log::debug;
 use serde::{Deserialize, Serialize};
 
+use crate::files::config::{config_file, write_config};
+use crate::files::discord::{discord_file, write_discord};
+
 /// See: https://user-images.githubusercontent.com/34519392/273088066-b9c94664-9eef-419d-999a-8b8798462dee.PNG
 /// for a list of modifiers
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Modifiers {
   /// The name of the modifier
   pub name: String,
@@ -52,6 +52,9 @@ pub struct Configuration {
 
   /// Sets flag set_key for launching the server, (Can be set with ENV variable SET_KEY)
   pub set_key: Option<String>,
+
+  /// Sets the save interval in seconds
+  pub save_interval: Option<u16>,
 }
 
 impl Configuration {
@@ -67,6 +70,7 @@ impl Configuration {
     preset: Option<String>,
     modifiers: Option<Vec<Modifiers>>,
     set_key: Option<String>,
+    save_interval: Option<u16>,
   ) -> Self {
     Configuration {
       name,
@@ -78,6 +82,7 @@ impl Configuration {
       preset,
       modifiers,
       set_key,
+      save_interval,
     }
   }
 
