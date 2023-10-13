@@ -1,3 +1,15 @@
+# v2.3.1 (Fri Oct 13 2023)
+
+#### 🐛 Bug Fix
+
+- Fix | Argument Settings arent taking [#747](https://github.com/mbround18/valheim-docker/pull/747) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.3.0 (Wed Oct 11 2023)
 
 #### 🚀 Enhancement
