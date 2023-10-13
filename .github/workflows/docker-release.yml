@@ -56,6 +56,15 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: "JQ: Install"
+        run: |
+          sudo apt-get install -y jq
+
+      - name: "Cargo Make: Get Latest Version"
+        id: cargo-make
+        run: |
+            echo "version=$(curl -s https://api.github.com/repos/sagiegurari/cargo-make/releases/latest | jq -r '.tag_name')" >> $GITHUB_OUTPUT
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
@@ -70,3 +79,4 @@ jobs:
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
+            "CARGO_MAKE_VERSION=${{ steps.cargo-make.outputs.version }}"
