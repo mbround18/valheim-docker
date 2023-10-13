@@ -21,7 +21,16 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # -- Odin Project Mangement -- #
 # ---------------------------- #
 
-FROM mbround18/cargo-make:latest as cargo-make
+FROM rust:${RUST_VERSION} as cargo-make
+
+ARG CARGO_MAKE_VERSION=0.37.2
+
+ADD https://github.com/sagiegurari/cargo-make/releases/download/${CARGO_MAKE_VERSION}/cargo-make-v${CARGO_MAKE_VERSION}-x86_64-unknown-linux-gnu.zip /tmp/cargo-make.zip
+RUN unzip /tmp/cargo-make.zip -d /tmp \
+    && mv /tmp/cargo-make-v${CARGO_MAKE_VERSION}-x86_64-unknown-linux-gnu/cargo-make /usr/local/bin/cargo-make \
+    && rm -rf /tmp/cargo-make* \
+    && chmod +x /usr/local/bin/cargo-make
+
 
 # ------------------ #
 # -- Odin Builder -- #

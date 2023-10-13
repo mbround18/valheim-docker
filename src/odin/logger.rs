@@ -51,6 +51,6 @@ pub fn initialize_logger(debug: bool) -> Result<(), SetLoggerError> {
 }
 
 pub fn debug_mode() -> bool {
-  let debug_mode = env::var("DEBUG_MODE").unwrap_or(String::new());
+  let debug_mode = env::var("DEBUG_MODE").unwrap_or_default();
   parse_truthy(&debug_mode).unwrap_or(false)
 }

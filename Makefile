@@ -34,3 +34,18 @@ wsl.clean-all:
 
 wsl.clippy: wsl.sync
 	cd $(BUILD_DIR) && cargo clippy
+
+docker.build:
+	docker compose -f docker-compose.dev.yml build
+
+docker.up:
+	docker compose -f docker-compose.dev.yml up
+
+docker.build-up:
+	docker compose -f docker-compose.dev.yml up --build
+
+docker.down:
+	docker compose -f docker-compose.dev.yml disown
+
+docker.ssh:
+	docker compose -f docker-compose.dev.yml exec valheim gosu valheim bash
