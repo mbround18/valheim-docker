@@ -63,7 +63,7 @@ jobs:
       - name: "Cargo Make: Get Latest Version"
         id: cargo-make
         run: |
-            echo "version=$(curl -s https://api.github.com/repos/sagiegurari/cargo-make/releases/latest | jq -r '.tag_name')" >> $GITHUB_OUTPUT
+          echo "version=$(curl -s https://api.github.com/repos/sagiegurari/cargo-make/releases/latest | jq -r '.tag_name')" >> $GITHUB_OUTPUT
 
       - name: Build and push
         uses: docker/build-push-action@v5
