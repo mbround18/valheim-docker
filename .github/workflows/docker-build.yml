@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-node@v3
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
       - run: |
           npx -y prettier --check ./
   #          npx -y shellcheck ./.github/scripts/*.sh ./src/scripts/*.sh
@@ -52,7 +52,7 @@ jobs:
           - image: valheim
             push: ${{ contains(github.event.pull_request.labels.*.name, 'canary') }}
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
