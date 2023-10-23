@@ -101,7 +101,7 @@ If you purely want to run this on a Linux based system, without docker, take a l
 >
 > Mod Support! It is supported to launch the server with BepInEx but!!!!! as a disclaimer! You take responsibility for debugging why your server won't start.
 > Modding is not supported by the Valheim developers officially yet; Which means you WILL run into errors. This repo has been tested with running ValheimPlus as a test mod and does not have any issues.
-> See [Getting started with mods]
+> See [Getting started with mods](./docs/tutorials/getting_started_with_mods.md)
 
 ### Download Locations
 
