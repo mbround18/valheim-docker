@@ -82,6 +82,12 @@ install_bepinex_full() {
 #    odin mod:install "${BEPINEX_FULL_DOWNLOAD_URL}"
 }
 
+has_webhook="true"
+if [ -z "$WEBHOOK_URL" ]; then
+  has_webhook="false"
+fi
+
+
 initialize "Installing Valheim via $(odin --version)..."
 log "Variables loaded....."
 log "Port: ${PORT}"
@@ -93,6 +99,7 @@ log "Password: (REDACTED)"
 log "Preset: ${PRESET}"
 log "Modifiers: ${MODIFIERS}"
 log "Set Key: ${SET_KEY}"
+log "Has Webhook: ${has_webhook}"
 log "Auto Update: ${AUTO_UPDATE}"
 log "Auto Backup: ${AUTO_BACKUP}"
 log "Auto Backup On Update: ${AUTO_BACKUP_ON_UPDATE}"
