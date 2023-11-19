@@ -15,9 +15,7 @@
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-release.yml"><img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/docker-release.yml?label=Docker&style=for-the-badge" alt=""></a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
-[![All Contributors](https://img.shields.io/badge/all_contributors-13-orange.svg?style=flat-square)](#contributors-)
-
+[![All Contributors](https://img.shields.io/badge/all_contributors-14-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -353,6 +351,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <td align="center"><a href="https://github.com/spannerman79"><img src="https://avatars.githubusercontent.com/u/7542384?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Spanner_Man</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=spannerman79" title="Documentation">📖</a></td>
     <td align="center"><a href="https://hurtlingthrough.space/"><img src="https://avatars.githubusercontent.com/u/5186335?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Cameron Pittman</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=cameronwp" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/apps/kodiakhq"><img src="https://avatars.githubusercontent.com/in/29196?v=4?s=100" width="100px;" alt=""/><br /><sub><b>kodiakhq[bot]</b></sub></a><br /><a href="#infra-kodiakhq[bot]" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=kodiakhq[bot]" title="Documentation">📖</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=kodiakhq[bot]" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/andjo"><img src="https://avatars.githubusercontent.com/u/665563?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anders Johansson</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=andjo" title="Documentation">📖</a></td>
   </tr>
 </table>
 
