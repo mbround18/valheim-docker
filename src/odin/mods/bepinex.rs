@@ -95,9 +95,9 @@ impl BepInExEnvironment {
   pub fn is_installed(&self) -> bool {
     debug!("Checking for BepInEx specific files...");
     let checks = &[
-      &self.doorstop_corlib_override_path,
+      // &self.doorstop_corlib_override_path,
       &self.dyld_insert_libraries,
-      &self.dyld_library_path,
+      // &self.dyld_library_path,
       &self.doorstop_invoke_dll,
     ];
     let expected_state = true;
