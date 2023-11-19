@@ -1,3 +1,23 @@
+# v2.3.2 (Sun Nov 19 2023)
+
+#### 🐛 Bug Fix
+
+- Fixed #759 [#760](https://github.com/mbround18/valheim-docker/pull/760) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update actions/setup-node action to v4 [#752](https://github.com/mbround18/valheim-docker/pull/752) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update README.md [#751](https://github.com/mbround18/valheim-docker/pull/751) ([@andjo](https://github.com/andjo))
+- Update actions/checkout digest to b4ffde6 [#750](https://github.com/mbround18/valheim-docker/pull/750) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serde_with to 3.4.0 [#748](https://github.com/mbround18/valheim-docker/pull/748) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to v5 [#749](https://github.com/mbround18/valheim-docker/pull/749) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 4
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Anders Johansson ([@andjo](https://github.com/andjo))
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.3.1 (Fri Oct 13 2023)
 
 #### 🐛 Bug Fix
