@@ -104,6 +104,8 @@ WORKDIR /home/steam/valheim
 # Expose the ports for the server
 EXPOSE 2456/udp 2457/udp 2458/udp
 EXPOSE 2456/tcp 2457/tcp 2458/tcp
+# Expose ports for huginn
+EXPOSE 3000/tcp
 
 HEALTHCHECK --interval=1m --timeout=3s \
     CMD pidof valheim_server.x86_64 || exit 1
