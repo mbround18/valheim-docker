@@ -59,7 +59,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   debug!("Launching With Args: \n{:#?}", &config);
   // Sets the base command for the server
   let base_command = command
-    .env("SteamAppId", fetch_var("APPID", "892970"))
+    .env("SteamAppId", fetch_var("APPID", "896660"))
     .current_dir(game_directory());
 
   // Sets the name of the server, (Can be set with ENV variable NAME)

@@ -1,6 +1,6 @@
 use crate::constants;
 use log::{debug, error, info};
-use sysinfo::{ProcessExt, Signal, System, SystemExt};
+use sysinfo::{Signal, System};
 
 pub struct ServerProcess {
   system: System,
@@ -35,6 +35,7 @@ impl ServerProcess {
 
       if process
         .exe()
+        .expect("Failed to get process exe")
         .to_str()
         .unwrap()
         .contains(constants::VALHEIM_EXECUTABLE_NAME)

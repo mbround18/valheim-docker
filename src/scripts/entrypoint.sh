@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [ -f "/home/steam/scripts/utils.sh" ]; then
+  source "/home/steam/scripts/utils.sh"
+fi
+
+
 # Set up variables
 # shellcheck disable=SC2155
 export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
@@ -9,36 +14,7 @@ export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
 export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
 
 # Set up timezone
-ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime && echo "$TZ" >/etc/timezone
-
-# shellcheck disable=SC2039
-if [ "${EUID}" -ne 0 ]; then
-  log "Please run as root"
-  exit
-fi
-
-log() {
-  PREFIX="[Valheim][root]"
-  printf "%-16s: %s\n" "${PREFIX}" "$1"
-}
-
-line() {
-  log "###########################################################################"
-}
-
-#check_version() {
-#  file="/home/steam/.version"
-#  sha="$(tail -n+1 $file | head -n1)"
-#  branch="$(tail -n+2 $file | head -n1)"
-#  repository="$(tail -n+3 $file | head -n1)"
-#  github_version="$(curl -s "https://api.github.com/repos/${repository}/branches/${branch//refs\/heads\//}" | jq '.commit.sha')"
-#  if [ -z "$github_version" ] || [ "$github_version" == "null" ]; then
-#    log "You must be in development. Good luck!"
-#  elif [ "${github_version//\"/}" != "${sha//\"/}" ]; then
-#    log "Hey you! It looks like there is an update on $repository for $branch"
-#    log "Please consider running \`docker-compose pull valheim\` or pull the image based on your use case"
-#  fi
-#}
+sudo ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime && echo "$TZ" | sudo tee -a /etc/timezone
 
 clean_up() {
   echo "Safely shutting down..." >>/home/steam/output.log
@@ -101,7 +77,7 @@ setup_cron_env() {
        if [[ "${line}" == *"="* ]]; then
          CONTENT="export ${line}"
          if ! grep -q -F "${CONTENT}" "/env.sh" && [[ ! "${CONTENT}" =~ =$ ]]; then
-            echo "${CONTENT}" >> /env.sh
+            echo "${CONTENT}" | sudo tee -a /env.sh
          fi
        fi
     done
@@ -121,10 +97,10 @@ setup_cron() {
     "BASH_ENV=/env.sh" \
     "${SCRIPT_PATH}" \
     "${LOG_LOCATION}" \
-    > "/etc/cron.d/${CRON_NAME}"
-  echo "" >> "/etc/cron.d/${CRON_NAME}"
+    | sudo tee "/etc/cron.d/${CRON_NAME}"
+  echo "" | sudo tee -a "/etc/cron.d/${CRON_NAME}"
   # Give execution rights on the cron job
-  chmod 0644 "/etc/cron.d/${CRON_NAME}"
+  sudo chmod 0644 "/etc/cron.d/${CRON_NAME}"
   set +f
 }
 
@@ -145,23 +121,34 @@ setup_filesystem() {
   # Valheim Server
   mkdir -p "${GAME_LOCATION}"
   mkdir -p "${GAME_LOCATION}/logs"
-  chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
-  chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
+  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
+  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
 
   # Other
   mkdir -p /home/steam/scripts
-  chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/scripts
-  chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/
+  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/scripts
+  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/
+
+  # Enforce steam home
+  sudo usermod -d /home/steam steam
+  cd /home/steam || exit 1
 }
 
 check_memory() {
-  MEMORY=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024)))
+#  MEMORY=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024)))
   MESSAGE="Your system has less than 2GB of ram!!\nValheim might not run on your system!!"
-  if [ $MEMORY -lt 2000 ]; then
+
+  # Get the total memory in GB
+  total_memory=$(free -h | grep Mem: | awk '{print $2}' | tr -d GiM)
+
+  # Check if total memory is less than 2GB
+  if (( $(echo "$total_memory < 2" | bc -l) )); then
     line
     log "${MESSAGE^^}"
     line
     line
+  else
+    log "Total memory: ${total_memory}GB"
   fi
 }
 
@@ -169,14 +156,8 @@ line
 log "Valheim Server - $(date)"
 log "Initializing your container..."
 #check_version
-line
 check_memory
-
-log "Switching UID and GID"
-# shellcheck disable=SC2086
-log "$(usermod -u ${PUID} steam)"
-# shellcheck disable=SC2086
-log "$(groupmod -g ${PGID} steam)"
+line
 
 # Configure Cron
 AUTO_UPDATE="${AUTO_UPDATE:=0}"
@@ -220,7 +201,7 @@ fi
 # Apply cron job
 if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ] || [ "${SCHEDULED_RESTART}" -eq 1 ]; then
   cat /etc/cron.d/* | crontab -
-  /usr/sbin/cron -f &
+  sudo /usr/sbin/cron -f &
   export CRON_PID=$!
 fi
 
@@ -231,5 +212,5 @@ setup_filesystem
 log "Navigating to steam home..."
 cd /home/steam/valheim || exit 1
 
-log "Launching as steam..."
-exec gosu steam "$@"
+log "Launching as server..."
+. /home/steam/scripts/start_valheim.sh

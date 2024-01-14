@@ -16,7 +16,7 @@ AppID : 896660, change number : 10865381/10865381, last change : Wed Mar  3 00:4
 	{
 		"name"		"Valheim Dedicated Server"
 		"type"		"Tool"
-		"parent"		"892970"
+		"parent"		"896660"
 		"oslist"		"windows,linux"
 		"osarch"		""
 		"icon"		"1aab0586723c8578c7990ced7d443568649d0df2"
