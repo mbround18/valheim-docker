@@ -59,7 +59,11 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   debug!("Launching With Args: \n{:#?}", &config);
   // Sets the base command for the server
   let base_command = command
-    .env("SteamAppId", fetch_var("APPID", "896660"))
+    .env(
+      "SteamAppId",
+      // See https://www.reddit.com/r/valheim/comments/yvyxo8/trouble_with_the_dedicated_server/
+      String::from("892970"), // fetch_var("APPID", "896660")
+    )
     .current_dir(game_directory());
 
   // Sets the name of the server, (Can be set with ENV variable NAME)
