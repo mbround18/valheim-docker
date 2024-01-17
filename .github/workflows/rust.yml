@@ -29,7 +29,7 @@ jobs:
       - uses: davidB/rust-cargo-make@v1
         name: Install Cargo Make
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         name: Cache Cargo Files
         with:
           path: |
