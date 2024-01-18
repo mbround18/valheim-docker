@@ -8,7 +8,9 @@ fi
 # Set up variables
 # shellcheck disable=SC2155
 export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
+# shellcheck disable=SC2155
 export WORLD="$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")"
+# shellcheck disable=SC2155
 export PASSWORD="$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")"
 export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
 export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
@@ -87,20 +89,20 @@ setup_cron_env() {
 setup_cron() {
   set -f
   CRON_NAME=$1
-  SCRIPT_PATH="/home/steam/scripts/$2"
+  SCRIPT_PATH="$HOME/scripts/$2"
   CRON_SCHEDULE=$3
-  LOG_LOCATION="/home/steam/valheim/logs/$CRON_NAME.out"
-  mkdir -p "/home/steam/valheim/logs"
+  LOG_LOCATION="$HOME/valheim/logs/$CRON_NAME.out"
+  mkdir -p "$HOME/valheim/logs"
   [ -f "$LOG_LOCATION" ] && rm "$LOG_LOCATION"
-  printf "%s %s /usr/sbin/gosu steam /bin/bash %s >> %s 2>&1" \
+  printf "%s %s /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}" \
     "BASH_ENV=/env.sh" \
     "${SCRIPT_PATH}" \
     "${LOG_LOCATION}" \
-    | sudo tee "/etc/cron.d/${CRON_NAME}"
-  echo "" | sudo tee -a "/etc/cron.d/${CRON_NAME}"
+    | tee "$HOME/cron.d/${CRON_NAME}"
+  echo "" | tee -a "$HOME/cron.d/${CRON_NAME}"
   # Give execution rights on the cron job
-  sudo chmod 0644 "/etc/cron.d/${CRON_NAME}"
+  chmod 0644 "$HOME/cron.d/${CRON_NAME}"
   set +f
 }
 
@@ -200,7 +202,7 @@ fi
 
 # Apply cron job
 if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ] || [ "${SCHEDULED_RESTART}" -eq 1 ]; then
-  cat /etc/cron.d/* | crontab -
+  cat "$HOME"/cron.d/* | crontab -
   sudo /usr/sbin/cron -f &
   export CRON_PID=$!
 fi

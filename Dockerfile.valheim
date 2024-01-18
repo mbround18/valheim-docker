@@ -97,6 +97,7 @@ USER steam
 
 # Set the HOME environment variable to the steam user's home directory
 ENV HOME /home/steam
+ENV USER steam
 
 # Set the working directory to the game directory
 WORKDIR /home/steam/valheim

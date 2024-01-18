@@ -27,7 +27,6 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
   Daemonize::new()
     .working_directory(game_directory())
     .user("steam")
-    .group("steam")
     .stdout(stdout)
     .stderr(stderr)
     .privileged_action(|| {
