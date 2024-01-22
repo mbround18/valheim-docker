@@ -1,6 +1,6 @@
 use crate::constants;
 use log::{debug, error, info};
-use sysinfo::{ProcessExt, Signal, System, SystemExt};
+use sysinfo::{Signal, System};
 
 pub struct ServerProcess {
   system: System,
@@ -32,17 +32,20 @@ impl ServerProcess {
     // cannot handle more then 15 character long process names
     for (pid, process) in self.system.processes() {
       debug!("Looking at: PID: {}; Process: {:?}", pid, process.exe());
-
-      if process
-        .exe()
-        .to_str()
-        .unwrap()
-        .contains(constants::VALHEIM_EXECUTABLE_NAME)
-      {
-        debug!("Found process with name: {}", process.name());
-        processes.push(process);
-      } else {
-        continue;
+      match process.exe() {
+        Some(path) => {
+          if path
+            .to_str()
+            .unwrap()
+            .contains(constants::VALHEIM_EXECUTABLE_NAME)
+          {
+            debug!("Found process with name: {}", process.name());
+            processes.push(process);
+          } else {
+            continue;
+          }
+        }
+        None => continue,
       }
     }
 

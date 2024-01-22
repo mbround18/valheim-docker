@@ -21,7 +21,7 @@ RUN apt-get update                        \
     cron sudo gosu dos2unix               \
     libsdl2-2.0-0  jq  libc6 libc6-dev    \
     libpulse-dev libatomic1               \
-    tzdata                                \
+    tzdata bc                             \
     && rm -rf /var/lib/apt/lists/*        \
     && gosu nobody true                   \
     && dos2unix
@@ -88,8 +88,25 @@ RUN usermod -u ${PUID} steam                            \
     && chmod 755 /entrypoint.sh                         \
     && chmod 755 /env.sh                                \
     && chmod 755 /usr/local/bin/odin                    \
-    && dos2unix /entrypoint.sh /home/steam/.bashrc  /home/steam/scripts/*.sh
+    && dos2unix /entrypoint.sh /home/steam/.bashrc  /home/steam/scripts/*.sh \
+    && echo "steam ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
+
+# Set the steam user as the active user
+USER steam
+
+# Set the HOME environment variable to the steam user's home directory
+ENV HOME /home/steam
+ENV USER steam
+
+# Set the working directory to the game directory
+WORKDIR /home/steam/valheim
+
+# Expose the ports for the server
+EXPOSE 2456/udp 2457/udp 2458/udp
+EXPOSE 2456/tcp 2457/tcp 2458/tcp
+# Expose ports for huginn
+EXPOSE 3000/tcp
 
 HEALTHCHECK --interval=1m --timeout=3s \
     CMD pidof valheim_server.x86_64 || exit 1

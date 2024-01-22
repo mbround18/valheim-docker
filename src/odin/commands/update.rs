@@ -16,7 +16,7 @@ enum UpdateAction {
 impl UpdateAction {
   fn new(check: bool, force: bool) -> Self {
     match (check, force) {
-      (true, true) => panic!("`check` and `force` are mutually exlusive!"),
+      (true, true) => panic!("`check` and `force` are mutually exclusive!"),
       (true, false) => Self::Check,
       (false, true) => Self::Force,
       (false, false) => Self::Regular,
