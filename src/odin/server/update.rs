@@ -1,5 +1,6 @@
 use log::{debug, error, info};
 
+use regex::Regex;
 use std::{fs, io::ErrorKind, path::Path, process::exit};
 
 use crate::{
@@ -21,6 +22,8 @@ impl UpdateInfo {
 
   #[cfg(test)]
   pub fn new_testing(manifest_contents: &str, app_info_output: &str) -> Self {
+    debug!("Manifest contents:\n{}", manifest_contents);
+    debug!("App info output:\n{}", app_info_output);
     let current_build_id = extract_build_id_from_manifest(manifest_contents).to_string();
     let latest_build_id = extract_build_id_from_app_info(app_info_output).to_string();
 
@@ -128,45 +131,22 @@ fn get_latest_build_id() -> String {
 }
 
 fn extract_build_id_from_manifest(manifest: &str) -> &str {
-  for line in manifest.lines() {
-    if line.trim().starts_with("\"buildid\"") {
-      return split_vdf_key_val(line).1;
-    }
+  let re = Regex::new(r"(buildid)\W+(\d+)\W").unwrap();
+  // return group 2
+  if let Some(captures) = re.captures(manifest) {
+    return captures.get(2).map_or("", |m| m.as_str());
+  } else {
+    panic!("Unexpected manifest format:\n{}", manifest);
   }
-
-  panic!("Unexpected manifest format:\n{}", manifest);
 }
 
 fn extract_build_id_from_app_info(app_info: &str) -> &str {
-  let mut lines = app_info.lines();
-  for line in &mut lines {
-    if line.trim() == "\"public\"" {
-      break;
-    }
-  }
-
-  assert_eq!(
-    lines.next().map(|line| line.trim()),
-    Some("{"),
-    "Invalid app info"
-  );
-  let build_id_line = lines
-    .next()
-    .unwrap_or_else(|| panic!("Invalid app info format:\n{}", app_info))
-    .trim();
-  assert!(build_id_line.starts_with("\"buildid\""), "Invalid app info");
-
-  split_vdf_key_val(build_id_line).1
-}
-
-// Note: This is super brittle and will fail if there is whitespace within the key or value _or_ if
-// there are escaped " at the end of the key or value
-fn split_vdf_key_val(vdf_pair: &str) -> (&str, &str) {
-  let mut pieces = vdf_pair.split_whitespace();
-  let key = pieces.next().expect("Missing vdf key").trim_matches('"');
-  let val = pieces.next().expect("Missing vdf val").trim_matches('"');
-
-  (key, val)
+  let re = Regex::new(r"depots.\n[\W\S]+public.\n\W+(buildid)\W+(\d+)\W").unwrap();
+  // return group 2
+  re.captures(app_info)
+    .expect("Invalid App Info!")
+    .get(2)
+    .map_or("", |m| m.as_str())
 }
 
 #[cfg(test)]

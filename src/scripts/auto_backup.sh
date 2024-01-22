@@ -3,10 +3,22 @@
 export PATH="/usr/local/bin:$PATH"
 cd /home/steam/ || exit 1
 
+if [ "$(whoami)" != "steam" ]; then
+  echo "You must run this script as the steam user!"
+  exit 1
+fi
+
 log() {
   PREFIX="[Valheim][steam]"
   printf "%-16s: %s\n" "${PREFIX}" "$1"
 }
+
+line () {
+  log "###########################################################################"
+}
+
+line
+log "Valheim Server - $(date) Backup Process"
 
 if [ "${PUBLIC:=0}" -eq 0 ] && [ "${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS:=0}" -eq 1 ]; then
   log "Woah, cannot pause backup process on a server with PUBLIC=0"
@@ -47,3 +59,4 @@ else
 fi
 
 log "Backup process complete! Created ${file_name}"
+line

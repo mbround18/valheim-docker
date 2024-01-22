@@ -1,30 +1,40 @@
 #!/usr/bin/env bash
 
+
 cd /home/steam/valheim || exit 1
 STEAM_UID=${PUID:=1000}
 STEAM_GID=${PGID:=1000}
-source /env.sh
 
-log() {
-  PREFIX="[Valheim][steam]"
-  printf "%-16s: %s\n" "${PREFIX}" "$1"
-}
+# check for utils
+if [ -f "/home/steam/scripts/utils.sh" ]; then
+  source "/home/steam/scripts/utils.sh"
+fi
+
+# check for env.sh
+if [ -f "/env.sh" ]; then
+  source "/env.sh"
+fi
+
+if [ "${STEAM_UID}" -eq 0 ] || [ "${STEAM_GID}" -eq 0 ]; then
+  log -l "WARNING" "You should not run the server as root! Please use a non-root user!"
+fi
+
+if ! [ -f "/home/steam/.bashrc" ]; then
+  log -l "WARNING" "You should not run the server without a .bashrc! Please use a non-root user!"
+fi
 
 deprecation_notice() {
   log "-------------------------------------------------------------------------"
   log "-------------------------------------------------------------------------"
   log "-------------------------------------------------------------------------"
   log "-------------------------------------------------------------------------"
-  log "WARNING: ${1}"
+  log -l "WARNING" "${1}"
   log "-------------------------------------------------------------------------"
   log "-------------------------------------------------------------------------"
   log "-------------------------------------------------------------------------"
   log "-------------------------------------------------------------------------"
 }
 
-line() {
-  log "###########################################################################"
-}
 
 initialize() {
   line
@@ -51,13 +61,6 @@ cleanup() {
 
 install_valheim_plus() {
   deprecation_notice "ValheimPlus has been deprecated!!!!!! Please use BepInEx instead!"
-#    log "Installing ValheimPlus"
-#    VALHEIM_PLUS_DOWNLOAD_URL="${VALHEIM_PLUS_DOWNLOAD_URL:-""}"
-#    if [ -z "${VALHEIM_PLUS_DOWNLOAD_URL}" ]; then
-#      VALHEIM_PLUS_DOWNLOAD_URL="$(curl -L "${VALHEIM_PLUS_RELEASES_URL}" | jq -r '.assets[] | select(.name=="UnixServer.zip") | .browser_download_url')"
-#    fi
-#    log "Pulling ValheimPlus from ${VALHEIM_PLUS_DOWNLOAD_URL}"
-#    odin mod:install "${VALHEIM_PLUS_DOWNLOAD_URL}"
 }
 
 install_bepinex() {
@@ -73,13 +76,6 @@ install_bepinex() {
 
 install_bepinex_full() {
     deprecation_notice "BepInExFull has been deprecated!!!!!! Please use BepInEx instead!"
-#    log "Installing BepInEx Full"
-#    BEPINEX_FULL_DOWNLOAD_URL="${BEPINEX_FULL_DOWNLOAD_URL:-""}"
-#    if [ -z "${BEPINEX_FULL_DOWNLOAD_URL}" ]; then
-#      BEPINEX_FULL_DOWNLOAD_URL="$(curl -L "${BEPINEX_FULL_RELEASES_URL}" | jq -r '.latest.download_url')"
-#    fi
-#    log "Pulling BepInEx Full from ${BEPINEX_FULL_DOWNLOAD_URL}"
-#    odin mod:install "${BEPINEX_FULL_DOWNLOAD_URL}"
 }
 
 has_webhook="true"
@@ -114,10 +110,15 @@ log "Mods: ${MODS}"
 line
 
 
-export SteamAppId=${APPID:-892970}
+export SteamAppId=${APPID:-896660}
 
 # Setting up server
 log "Running Install..."
+log -l "DEBUG" "Current Directory: $(pwd)"
+log -l "DEBUG" "Current User: $(whoami)"
+log -l "DEBUG" "Current UID: ${UID}"
+log -l "DEBUG" "Current GID: ${PGID}"
+log -l "DEBUG" "Home Directory: ${HOME}"
 if [ ! -f "./valheim_server.x86_64" ] ||
   [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
   odin install || exit 1
