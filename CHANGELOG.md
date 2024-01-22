@@ -1,3 +1,26 @@
+# v2.4.0 (Mon Jan 22 2024)
+
+#### 🚀 Enhancement
+
+- Fix for 772 and 773 [#774](https://github.com/mbround18/valheim-docker/pull/774) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+
+#### 🐛 Bug Fix
+
+- Update Rust crate serde_with to 3.5.0 [#778](https://github.com/mbround18/valheim-docker/pull/778) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to v6 [#776](https://github.com/mbround18/valheim-docker/pull/776) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update actions/cache action to v4 [#775](https://github.com/mbround18/valheim-docker/pull/775) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serial_test to v3 [#770](https://github.com/mbround18/valheim-docker/pull/770) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update rust Docker tag to v1.75 [#766](https://github.com/mbround18/valheim-docker/pull/766) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate handlebars to v5 [#768](https://github.com/mbround18/valheim-docker/pull/768) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.3.2 (Sun Nov 19 2023)
 
 #### 🐛 Bug Fix
