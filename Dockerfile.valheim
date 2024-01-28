@@ -89,6 +89,7 @@ RUN usermod -u ${PUID} steam                            \
     && chmod 755 /env.sh                                \
     && chmod 755 /usr/local/bin/odin                    \
     && dos2unix /entrypoint.sh /home/steam/.bashrc  /home/steam/scripts/*.sh \
+    && echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
     && echo "steam ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 
