@@ -89,20 +89,35 @@ setup_cron_env() {
 setup_cron() {
   set -f
   CRON_NAME=$1
-  SCRIPT_PATH="$HOME/scripts/$2"
+  CRON_FOLDER="$HOME/cron.d/"
   CRON_SCHEDULE=$3
-  LOG_LOCATION="$HOME/valheim/logs/$CRON_NAME.out"
-  mkdir -p "$HOME/valheim/logs"
+
+  SCRIPT_PATH="$HOME/scripts/$2"
+  LOG_FOLDER="$HOME/valheim/logs"
+  LOG_LOCATION="$LOG_FOLDER/$CRON_NAME.out"
+
+  # Create the logs folders
+  if [ ! -d "$LOG_FOLDER" ]; then
+    mkdir -p "$LOG_FOLDER"
+  fi
+
+  # Create cron folder
+  if [ ! -d "$CRON_FOLDER" ]; then
+    mkdir -p "$CRON_FOLDER"
+  fi
   [ -f "$LOG_LOCATION" ] && rm "$LOG_LOCATION"
+
+  # Create the cron job
   printf "%s %s /bin/bash %s >> %s 2>&1" \
     "${CRON_SCHEDULE}" \
     "BASH_ENV=/env.sh" \
     "${SCRIPT_PATH}" \
     "${LOG_LOCATION}" \
-    | tee "$HOME/cron.d/${CRON_NAME}"
-  echo "" | tee -a "$HOME/cron.d/${CRON_NAME}"
+    | tee "$CRON_FOLDER/${CRON_NAME}"
+  echo "" | tee -a "$CRON_FOLDER/${CRON_NAME}"
+
   # Give execution rights on the cron job
-  chmod 0644 "$HOME/cron.d/${CRON_NAME}"
+  chmod 0644 "$CRON_FOLDER/${CRON_NAME}"
   set +f
 }
 

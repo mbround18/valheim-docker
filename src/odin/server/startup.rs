@@ -41,7 +41,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
       NotificationEvent::Start(EventStatus::Successful).send_notification();
       info!("(this indicates its online without any errors.)")
     })
-    .privileged_action(move || command)
+    .privileged_action(|| command)
     .start()
 }
 
