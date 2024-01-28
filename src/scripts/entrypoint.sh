@@ -113,7 +113,7 @@ setup_cron() {
     "BASH_ENV=/env.sh" \
     "${SCRIPT_PATH}" \
     "${LOG_LOCATION}" \
-    | tee "$HOME/cron.d/${CRON_NAME}"
+    | tee "$CRON_FOLDER/${CRON_NAME}"
   echo "" | tee -a "$CRON_FOLDER/${CRON_NAME}"
 
   # Give execution rights on the cron job
