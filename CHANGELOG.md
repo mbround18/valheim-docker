@@ -1,3 +1,19 @@
+# v2.4.1 (Sun Jan 28 2024)
+
+#### 🐛 Bug Fix
+
+- 784/fix [#785](https://github.com/mbround18/valheim-docker/pull/785) ([@mbround18](https://github.com/mbround18))
+- Update Rust crate serde_with to 3.5.1 [#780](https://github.com/mbround18/valheim-docker/pull/780) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate regex to 1.10.3 [#779](https://github.com/mbround18/valheim-docker/pull/779) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.4.0 (Mon Jan 22 2024)
 
 #### 🚀 Enhancement
