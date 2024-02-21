@@ -4,7 +4,6 @@ if [ -f "/home/steam/scripts/utils.sh" ]; then
   source "/home/steam/scripts/utils.sh"
 fi
 
-
 # Set up variables
 # shellcheck disable=SC2155
 export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
@@ -123,8 +122,11 @@ setup_cron() {
 
 setup_filesystem() {
   log "Setting up file systems"
-  STEAM_UID=${PUID:=1000}
+  STEAM_UID=1000
   STEAM_GID=${PGID:=1000}
+
+  mkdir -p "/home/steam/.steam/root"
+  mkdir -p "/home/steam/.steam/steam"
 
   # Save Files
   mkdir -p "${SAVE_LOCATION}"
