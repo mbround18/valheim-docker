@@ -23,7 +23,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 
 FROM rust:${RUST_VERSION} as cargo-make
 
-ARG CARGO_MAKE_VERSION=0.37.7
+ARG CARGO_MAKE_VERSION=0.37.8
 
 ADD https://github.com/sagiegurari/cargo-make/releases/download/${CARGO_MAKE_VERSION}/cargo-make-v${CARGO_MAKE_VERSION}-x86_64-unknown-linux-gnu.zip /tmp/cargo-make.zip
 RUN unzip /tmp/cargo-make.zip -d /tmp \
