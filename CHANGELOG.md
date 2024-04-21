@@ -1,3 +1,20 @@
+# v2.4.2 (Sun Apr 21 2024)
+
+#### 🐛 Bug Fix
+
+- Fix thunderstore URL #804 and logs not logging to file #803 [#807](https://github.com/mbround18/valheim-docker/pull/807) ([@mbround18](https://github.com/mbround18))
+- Update Rust crate clap to 4.5 [#790](https://github.com/mbround18/valheim-docker/pull/790) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update rust Docker tag to v1.76 [#791](https://github.com/mbround18/valheim-docker/pull/791) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Fix 787 | Update group [#788](https://github.com/mbround18/valheim-docker/pull/788) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v2.4.1 (Sun Jan 28 2024)
 
 #### 🐛 Bug Fix
