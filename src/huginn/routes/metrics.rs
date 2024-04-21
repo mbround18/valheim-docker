@@ -1,5 +1,7 @@
 use crate::fetch_info;
 
+
+
 pub fn invoke() -> String {
   let info = fetch_info();
   let labels = format!(
@@ -8,7 +10,7 @@ pub fn invoke() -> String {
     version = &info.version,
     map = &info.map
   );
-  let content = vec![
+  let content = [
     format!(
       "valheim_online{labels} {online}",
       labels = &labels,
