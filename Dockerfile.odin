@@ -37,5 +37,6 @@ RUN make release PROFILE=production
 FROM debian:${DEBIAN_VERSION}-slim as runtime
 WORKDIR /apps
 COPY --from=builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
+ENV ALLOW_RUN_AS_ROOT="1"
 ENTRYPOINT ["/apps/odin"]
 CMD ["--version"]
