@@ -132,7 +132,7 @@ impl BepInExEnvironment {
     }
   }
 
-  pub fn launch(&self, command: &mut Command) -> std::io::Result<Child> {
+  pub fn launch(&self, mut command: Command) -> std::io::Result<Child> {
     info!("BepInEx found! Setting up Environment...");
     command
       // DOORSTOP_ENABLE must not have quotes around it.

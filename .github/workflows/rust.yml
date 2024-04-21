@@ -19,15 +19,12 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/checkout@v4 # v4
       - name: Setup | Rust | Nightly
-        uses: ATiltedTree/setup-rust@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          rust-version: nightly
+          toolchain: nightly
           components: clippy rustfmt
-
-      - uses: davidB/rust-cargo-make@v1
-        name: Install Cargo Make
 
       - uses: actions/cache@v4
         name: Cache Cargo Files
