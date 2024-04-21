@@ -8,6 +8,7 @@ use crate::commands::configure::Modifiers;
 use crate::executable::handle_exit_status;
 use crate::logger::debug_mode;
 use crate::messages::about;
+use crate::utils::is_root::is_root;
 
 mod cli;
 pub mod commands;
@@ -25,6 +26,10 @@ pub mod traits;
 pub mod utils;
 
 fn main() {
+  if is_root() {
+    panic!("You must run this executable without root permissions");
+  }
+
   dotenv().ok();
 
   use cli::{Cli, Commands};

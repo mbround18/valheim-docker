@@ -1,6 +1,7 @@
 mod routes;
 
 use log::info;
+use odin::utils::is_root::is_root;
 use odin::{logger::initialize_logger, server::ServerInfo, utils::environment::fetch_var};
 use std::net::SocketAddrV4;
 use std::str::FromStr;
@@ -14,6 +15,9 @@ fn fetch_info() -> ServerInfo {
 
 #[tokio::main]
 async fn main() {
+  if is_root() {
+    panic!("You must run this executable without root permissions");
+  }
   // Logger
   let debug_mode = fetch_var("DEBUG_MODE", "0").eq("1");
   initialize_logger(debug_mode).unwrap();

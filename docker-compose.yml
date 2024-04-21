@@ -1,7 +1,7 @@
 version: "3"
 services:
   odin:
-    image: mbround18/odin:latest
+    image: mbround18/odin:sha-179b1b5
     build:
       context: .
       dockerfile: ./Dockerfile.odin
@@ -10,7 +10,7 @@ services:
   valheim:
     depends_on:
       - odin
-    image: mbround18/valheim:latest
+    image: mbround18/valheim:sha-179b1b5
     environment:
       PORT: 2456
       NAME: "Created With Valheim Docker"
