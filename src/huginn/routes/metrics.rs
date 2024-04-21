@@ -1,7 +1,5 @@
 use crate::fetch_info;
 
-
-
 pub fn invoke() -> String {
   let info = fetch_info();
   let labels = format!(
