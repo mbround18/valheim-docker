@@ -8,7 +8,7 @@ pub fn invoke() -> String {
     version = &info.version,
     map = &info.map
   );
-  let content = vec![
+  let content = [
     format!(
       "valheim_online{labels} {online}",
       labels = &labels,

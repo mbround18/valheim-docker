@@ -15,19 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - uses: actions/checkout@v4 # v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup | Rust | Nightly
-        uses: ATiltedTree/setup-rust@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          rust-version: nightly
+          toolchain: nightly
           components: clippy rustfmt
-
-      - uses: davidB/rust-cargo-make@v1
-        name: Install Cargo Make
 
       - uses: actions/cache@v4
         name: Cache Cargo Files
@@ -38,7 +35,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Build Release
-        run: cargo make -p production release
+        run: make release PROFILE=production
 
       - uses: vimtor/action-zip@v1
         with:
