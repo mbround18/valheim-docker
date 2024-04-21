@@ -1,51 +1,54 @@
-# Following this tutorial: https://markentier.tech/posts/2022/01/speedy-rust-builds-under-wsl2/
-# This makes developing on windows significantly easier for rust projects!!
+# Makefile
 
-SOURCE_DIR = $(PWD)
-# `notdir` returns the part after the last `/`
-# so if the source was "/some/nested/project", only "project" remains
-BUILD_DIR  = ~/tmp/$(notdir $(SOURCE_DIR))
+.PHONY: setup member_format member_clippy docker-build docker-up docker-down docker-push start start-dev build-dev access access-admin release-odin release-http-server release
 
-wsl.build: wsl.sync
-	cd $(BUILD_DIR) && cargo build
-	rsync -av $(BUILD_DIR)/target/debug/ $(SOURCE_DIR)/target/debug/ \
-		--exclude .git \
-		--exclude target \
-		--exclude .fingerprint \
-		--exclude build \
-		--exclude incremental \
-		--exclude deps
+setup:
+	@if [ ! -f "$$PWD/docker-compose.dev.yml" ]; then \
+		echo "Creating docker-compose.dev.yml for development"; \
+		cp "$$PWD/docker-compose.yml" "$$PWD/docker-compose.dev.yml"; \
+	fi
 
-wsl.run: wsl.sync
-	cd $(BUILD_DIR) && cargo run
+lint: member_format
+		docker run --rm -v "$$PWD:/app" -w /app node:lts  sh -c 'npx -y prettier --write .'
 
-wsl.test: wsl.sync
-	cd $(BUILD_DIR) && cargo test
+member_format:
+	cargo fmt
 
-wsl.sync:
-	mkdir -p $(BUILD_DIR)
-	rsync -av $(SOURCE_DIR)/ $(BUILD_DIR)/ --exclude .git --exclude target --exclude tmp
+member_clippy:
+	cargo clippy
 
-wsl.clean:
-	rm -rf $(BUILD_DIR)/target
+docker-build: setup
+	docker compose -f ./docker-compose.dev.yml build
 
-wsl.clean-all:
-	rm -rf $(BUILD_DIR)
+docker-up: setup
+	docker compose -f ./docker-compose.dev.yml up
 
-wsl.clippy: wsl.sync
-	cd $(BUILD_DIR) && cargo clippy
+docker-down: setup
+	docker compose -f ./docker-compose.dev.yml down
 
-docker.build:
-	docker compose -f docker-compose.dev.yml build
+docker-push: setup
+	docker compose -f ./docker-compose.dev.yml push
 
-docker.up:
-	docker compose -f docker-compose.dev.yml up
+start: member_format member_clippy docker-up
 
-docker.build-up:
-	docker compose -f docker-compose.dev.yml up --build
+start-dev: member_format member_clippy docker-down docker-build docker-up
 
-docker.down:
-	docker compose -f docker-compose.dev.yml disown
+build-dev: member_format member_clippy docker-build
 
-docker.ssh:
-	docker compose -f docker-compose.dev.yml exec valheim gosu valheim bash
+access:
+	docker-compose -f ./docker-compose.dev.yml exec --user steam valheim bash
+
+access-admin:
+	docker-compose -f ./docker-compose.dev.yml exec valheim bash
+
+release-odin:
+ifeq ($(PROFILE),production)
+	cargo build --release --bin odin
+endif
+
+release-http-server:
+ifeq ($(PROFILE),production)
+	cargo build --release --bin huginn
+endif
+
+release: release-odin release-http-server
