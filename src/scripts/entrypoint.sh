@@ -69,7 +69,7 @@ setup_cron_env() {
     VALHEIM_PLUS_RELEASES_URL=\"${VALHEIM_PLUS_RELEASES_URL:-""}\"
     VALHEIM_PLUS_DOWNLOAD_URL=\"${VALHEIM_PLUS_DOWNLOAD_URL}\"
 
-    BEPINEX_RELEASES_URL=\"${BEPINEX_RELEASES_URL:-"https://valheim.thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"}\"
+    BEPINEX_RELEASES_URL=\"${BEPINEX_RELEASES_URL:-"https://thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"}\"
     BEPINEX_DOWNLOAD_URL=\"${BEPINEX_DOWNLOAD_URL}\"
 
     BEPINEX_FULL_RELEASES_URL=\"${BEPINEX_FULL_RELEASES_URL:-""}\"
