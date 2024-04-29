@@ -14,6 +14,7 @@ RUN cargo chef prepare --recipe-path recipe.json
 # ------------------ #
 FROM lukemathwalker/cargo-chef:latest-rust-${RUST_VERSION} as cacher
 WORKDIR /data/odin
+RUN apt-get update && apt-get install -y cmake
 COPY --from=planner /data/odin/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
@@ -23,6 +24,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 # ------------------ #
 FROM rust:${RUST_VERSION} as builder
 WORKDIR /data/odin
+RUN apt-get update && apt-get install -y cmake
 COPY . .
 # Copy over the cached dependencies
 COPY --from=cacher /data/odin/target target

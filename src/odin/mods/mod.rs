@@ -26,11 +26,11 @@ impl ZipExt for ZipArchive<File> {
   fn extract_sub_dir_custom<P: AsRef<Path>>(&mut self, dst_dir: P, sub_dir: &str) -> ZipResult<()> {
     for i in 0..self.len() {
       let mut file = self.by_index(i)?;
-      let filepath = match file
+      let enclosed_name = file
         .enclosed_name()
-        .ok_or(ZipError::InvalidArchive("Invalid file path"))?
-        .strip_prefix(sub_dir)
-      {
+        .ok_or(ZipError::InvalidArchive("Invalid file path"))?;
+
+      let filepath = match enclosed_name.strip_prefix(sub_dir) {
         Ok(path) => path,
         Err(_) => continue,
       };

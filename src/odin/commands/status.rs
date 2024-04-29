@@ -21,9 +21,8 @@ pub fn invoke(output_json: bool, use_local: bool, supplied_address: Option<Strin
   let address = if use_local {
     String::from("127.0.0.1:2457")
   } else {
-    env::var("ADDRESS").unwrap_or_else(|_| {
-      supplied_address.unwrap_or_else(|| fetch_public_address().unwrap().to_string())
-    })
+    env::var("ADDRESS")
+      .unwrap_or_else(|_| supplied_address.unwrap_or_else(|| fetch_public_address().to_string()))
   };
   let parsed_address = parse_address(&address);
   let server_info = ServerInfo::from(parsed_address);
