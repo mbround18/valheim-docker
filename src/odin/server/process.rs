@@ -1,6 +1,7 @@
 use crate::constants;
 use log::{debug, error, info};
-use sysinfo::{Signal, System};
+use std::option::Option;
+use sysinfo::{Pid, Signal, System};
 
 pub struct ServerProcess {
   system: System,
@@ -20,57 +21,63 @@ impl ServerProcess {
   }
 
   pub fn valheim_processes(&mut self) -> Vec<&sysinfo::Process> {
-    let mut processes = Vec::new();
-
     self.system.refresh_processes();
     debug!(
-      "Scanning for Valheim process via system module. Num of processes: {}",
+      "Scanning for Valheim processes via system module. Number of processes: {}",
       self.system.processes().len()
     );
 
-    // Limit search string to 15 characters, as some unix operating systems
-    // cannot handle more then 15 character long process names
-    for (pid, process) in self.system.processes() {
-      debug!("Looking at: PID: {}; Process: {:?}", pid, process.exe());
-      match process.exe() {
-        Some(path) => {
-          if path
-            .to_str()
-            .unwrap()
-            .contains(constants::VALHEIM_EXECUTABLE_NAME)
-          {
-            debug!("Found process with name: {}", process.name());
-            processes.push(process);
-          } else {
-            continue;
-          }
-        }
-        None => continue,
-      }
-    }
+    self
+      .system
+      .processes()
+      .values()
+      .filter(|process| {
+        let path = process.exe().unwrap().to_str().unwrap();
+        path.contains(constants::VALHEIM_EXECUTABLE_NAME)
+      })
+      .collect()
+  }
 
-    processes
+  pub fn get_parent_process(process: &sysinfo::Process) -> Option<Pid> {
+    System::new_all()
+      .process(process.parent().unwrap())
+      .map(|parent| parent.pid())
   }
 
   pub fn are_process_running(&mut self) -> bool {
     !self.valheim_processes().is_empty()
   }
 
-  pub fn send_interrupt(&mut self) {
-    info!("Scanning for Valheim process");
-    let processes = self.valheim_processes();
-    if processes.is_empty() {
-      info!("Process NOT found!")
+  pub fn send_interrupt_to_pid(pid: u32) {
+    let s = System::new_all();
+    if let Some(process) = s.process(Pid::from(pid as usize)) {
+      info!("Found process with PID: {}", pid);
+      match process.kill_with(Signal::Interrupt) {
+        Some(_) => info!("Sent interrupt signal to PID: {}", pid),
+        None => error!("Failed to send interrupt signal to PID: {}.", pid),
+      };
     } else {
-      for found_process in processes {
-        info!(
-          "Found Process with pid {}! Sending Interrupt!",
-          found_process.pid()
-        );
-        if found_process.kill_with(Signal::Interrupt).unwrap() {
-          info!("Process signal interrupt sent successfully!")
-        } else {
-          error!("Failed to send signal interrupt!")
+      debug!("[{}]: failed to find process with PID... This can be good and means we stopped it successfully.", pid);
+    }
+  }
+
+  pub fn send_interrupt(&mut self) {
+    let processes = self.valheim_processes();
+    for process in processes {
+      if let Some(parent) = ServerProcess::get_parent_process(process) {
+        let s = System::new_all();
+        if !s
+          .process(parent)
+          .unwrap()
+          .exe()
+          .unwrap()
+          .to_str()
+          .unwrap()
+          .contains(constants::VALHEIM_EXECUTABLE_NAME)
+        {
+          let pid = process.pid();
+          info!("Found Valheim process with PID: {}", pid.as_u32());
+          ServerProcess::send_interrupt_to_pid(pid.as_u32());
         }
       }
     }
