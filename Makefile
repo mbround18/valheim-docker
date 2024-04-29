@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: setup member_format member_clippy docker-build docker-up docker-down docker-push start start-dev build-dev access access-admin release-odin release-http-server release
+.PHONY: setup member_format member_clippy docker-build docker-up docker-down docker-push start start-dev build-dev access access-admin release-odin release-http-server release test docker-dev
 
 setup:
 	@if [ ! -f "$$PWD/docker-compose.dev.yml" ]; then \
@@ -10,6 +10,9 @@ setup:
 
 lint: member_format
 		docker run --rm -v "$$PWD:/app" -w /app node:lts  sh -c 'npx -y prettier --write .'
+
+test:
+	cargo test
 
 member_format:
 	cargo fmt
@@ -28,6 +31,8 @@ docker-down: setup
 
 docker-push: setup
 	docker compose -f ./docker-compose.dev.yml push
+docker-dev: setup
+	docker compose -f ./docker-compose.dev.yml up --build
 
 start: member_format member_clippy docker-up
 
