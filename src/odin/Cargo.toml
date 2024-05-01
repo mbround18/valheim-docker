@@ -34,7 +34,7 @@ clap = { version = "4.5.4", features = [ "derive", "env" ] }
 which = "*"
 serde = { version = "1.0", features = ["derive"], default_features = false  }
 sysinfo = { version = "0", default_features = false }
-serde_json = "1.0"
+serde_json = "1.0.116"
 daemonize = "0.5.0"
 tar = "0.4"
 flate2 = "1.0.30"
