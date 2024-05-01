@@ -27,7 +27,7 @@ warp = { version = "0.3" }
 path = "../odin"
 
 [dev-dependencies.cargo-husky]
-version = "1"
+version = "1.5.0"
 default-features = false # Disable features which are enabled by default
 features = ["run-for-all",	"precommit-hook", "run-cargo-fmt", "run-cargo-test", "run-cargo-clippy"]
 
