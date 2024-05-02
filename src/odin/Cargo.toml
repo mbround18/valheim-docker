@@ -53,7 +53,7 @@ regex = "1.10.4"
 [dev-dependencies]
 once_cell = "1.19.0"
 rand = "0.8.5"
-serial_test = "3"
+serial_test = "3.1.1"
 mockito = "1.4.0"
 lazy_static = "1.4.0"
 
