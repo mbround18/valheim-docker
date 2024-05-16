@@ -46,6 +46,7 @@ trap clean_up INT TERM
 # Function to set up environment variables for cron jobs
 setup_cron_env() {
   log "Configuring Preset Env"
+  # shellcheck disable=SC2054
   env_vars=(
     "DEBUG_MODE"
     "ODIN_CONFIG_FILE"
@@ -84,6 +85,8 @@ setup_cron_env() {
     "BEPINEX_RELEASES_URL"
     "BEPINEX_DOWNLOAD_URL"
     "BEPINEX_FULL_RELEASES_URL"
+    "BETA_BRANCH"
+    "BETA_BRANCH_PASSWORD"
   )
 
   for var in "${env_vars[@]}"; do
