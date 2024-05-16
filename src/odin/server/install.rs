@@ -28,8 +28,12 @@ fn add_additional_args(args: &mut Vec<String>) {
   }
   if environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1") {
     debug!("Using public beta branch");
-    args.push(format!("-beta {}", BETA_BRANCH));
-    args.push(format!("-betapassword {}", BETA_BRANCH_PASSWORD));
+    args.push(format!("-beta {}", {
+      env::var("BETA_BRANCH").unwrap_or(BETA_BRANCH.to_string())
+    }));
+    args.push(format!("-betapassword {}", {
+      env::var("BETA_BRANCH_PASSWORD").unwrap_or(BETA_BRANCH_PASSWORD.to_string())
+    }));
     args.push(String::from("validate"));
   }
 }

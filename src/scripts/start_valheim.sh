@@ -1,49 +1,30 @@
 #!/usr/bin/env bash
 
+# Exit immediately if a command exits with a non-zero status
+set -e
 
-cd /home/steam/valheim || exit 1
-STEAM_UID=${PUID:=1000}
-STEAM_GID=${PGID:=1000}
+# Logging function to prepend timestamps to log messages
+log() {
+  echo "$(date) - $*"
+}
 
-# check for utils
-if [ -f "/home/steam/scripts/utils.sh" ]; then
-  source "/home/steam/scripts/utils.sh"
-fi
-
-# check for env.sh
-if [ -f "/env.sh" ]; then
-  source "/env.sh"
-fi
-
-if [ "${STEAM_UID}" -eq 0 ] || [ "${STEAM_GID}" -eq 0 ]; then
-  log -l "WARNING" "You should not run the server as root! Please use a non-root user!"
-fi
-
-if ! [ -f "/home/steam/.bashrc" ]; then
-  log -l "WARNING" "You should not run the server without a .bashrc! Please use a non-root user!"
-fi
-
+# Function to display a deprecation notice
 deprecation_notice() {
   log "-------------------------------------------------------------------------"
-  log "-------------------------------------------------------------------------"
-  log "-------------------------------------------------------------------------"
-  log "-------------------------------------------------------------------------"
-  log -l "WARNING" "${1}"
-  log "-------------------------------------------------------------------------"
-  log "-------------------------------------------------------------------------"
-  log "-------------------------------------------------------------------------"
+  log "WARNING: ${1}"
   log "-------------------------------------------------------------------------"
 }
 
-
+# Function to initialize the server with a log message
 initialize() {
-  line
+  log "-------------------------------------------------------------"
   log "Valheim Server - $(date)"
-  log "STEAM_UID ${STEAM_UID} - STEAM_GUID ${STEAM_GID}"
+  log "STEAM_UID ${STEAM_UID} - STEAM_GID ${STEAM_GID}"
   log "$1"
-  line
+  log "-------------------------------------------------------------"
 }
 
+# Function to clean up on exit
 cleanup() {
   log "Halting server! Received interrupt!"
   odin stop
@@ -51,39 +32,59 @@ cleanup() {
     log "Backup on shutdown triggered! Running backup tool..."
     /bin/bash /home/steam/scripts/auto_backup.sh "shutdown"
   fi
-  if [[ -n $TAIL_PID ]]; then
-    kill "$TAIL_PID"
-  fi
-  if [[ -n $ODIN_HTTP_SERVER_PID ]]; then
-    kill "$ODIN_HTTP_SERVER_PID"
-  fi
+  [[ -n $TAIL_PID ]] && kill "$TAIL_PID"
+  [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID"
 }
 
+# Function to handle Valheim Plus installation (deprecated)
 install_valheim_plus() {
   deprecation_notice "ValheimPlus has been deprecated!!!!!! Please use BepInEx instead!"
 }
 
+# Function to handle BepInEx installation
 install_bepinex() {
-    log "Installing BepInEx"
-    BEPINEX_DOWNLOAD_URL="${BEPINEX_DOWNLOAD_URL:-""}"
-    if [ -z "${BEPINEX_DOWNLOAD_URL}" ]; then
-      echo "Calling: curl -L ${BEPINEX_RELEASES_URL} | jq -r '.latest.download_url'"
-      BEPINEX_DOWNLOAD_URL="$(curl -L "${BEPINEX_RELEASES_URL}" | jq -r '.latest.download_url')"
-    fi
-    log "Pulling BepInEx from ${BEPINEX_DOWNLOAD_URL}"
-    odin mod:install "${BEPINEX_DOWNLOAD_URL}"
+  log "Installing BepInEx"
+  if [ -z "${BEPINEX_DOWNLOAD_URL}" ]; then
+    log "Fetching BepInEx download URL..."
+    BEPINEX_DOWNLOAD_URL="$(curl -L "${BEPINEX_RELEASES_URL}" | jq -r '.latest.download_url')"
+  fi
+  log "Pulling BepInEx from ${BEPINEX_DOWNLOAD_URL}"
+  odin mod:install "${BEPINEX_DOWNLOAD_URL}"
 }
 
+# Function to handle full BepInEx installation (deprecated)
 install_bepinex_full() {
-    deprecation_notice "BepInExFull has been deprecated!!!!!! Please use BepInEx instead!"
+  deprecation_notice "BepInExFull has been deprecated!!!!!! Please use BepInEx instead!"
 }
 
-has_webhook="true"
-if [ -z "$WEBHOOK_URL" ]; then
-  has_webhook="false"
+# Navigate to the Valheim directory or exit if it fails
+cd /home/steam/valheim
+
+# Set default values for Steam user and group IDs if not provided
+STEAM_UID=${PUID:=1000}
+STEAM_GID=${PGID:=1000}
+
+# Source utility scripts if they exist
+[ -f "/home/steam/scripts/utils.sh" ] && source "/home/steam/scripts/utils.sh"
+
+# Source environment variables if env.sh exists
+[ -f "/env.sh" ] && source "/env.sh"
+
+# Warn if running as root
+if [ "${STEAM_UID}" -eq 0 ] || [ "${STEAM_GID}" -eq 0 ]; then
+  log "WARNING: You should not run the server as root! Please use a non-root user!"
 fi
 
+# Warn if .bashrc is missing
+if [ ! -f "/home/steam/.bashrc" ]; then
+  log "WARNING: You should not run the server without a .bashrc! Please use a non-root user!"
+fi
 
+# Check if webhook URL is provided
+has_webhook="true"
+[ -z "$WEBHOOK_URL" ] && has_webhook="false"
+
+# Initialize server with a message
 initialize "Installing Valheim via $(odin --version)..."
 log "Variables loaded....."
 log "Port: ${PORT}"
@@ -107,9 +108,9 @@ log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
 log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"
 log "Update On Startup: ${UPDATE_ON_STARTUP}"
 log "Mods: ${MODS}"
-line
+log "-------------------------------------------------------------"
 
-
+# Export Steam App ID
 export SteamAppId=${APPID:-896660}
 
 # Setting up server
@@ -119,29 +120,27 @@ log -l "DEBUG" "Current User: $(whoami)"
 log -l "DEBUG" "Current UID: ${UID}"
 log -l "DEBUG" "Current GID: ${PGID}"
 log -l "DEBUG" "Home Directory: ${HOME}"
-if [ ! -f "./valheim_server.x86_64" ] ||
-  [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+
+# Install or update the server if necessary
+if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
   odin install || exit 1
 elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
   log "Attempting to update before launching the server!"
-  if [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ]; then
-    /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
-  fi
-
+  [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ] && /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
   log "Installing Updates..."
   odin install || exit 1
 else
   log "Skipping install process, looks like valheim_server is already installed :)"
 fi
 
-if [ -f "/home/steam/steamcmd/linux64/steamclient.so" ]; then 
-  cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
-fi
+# Copy steamclient.so if it exists
+[ -f "/home/steam/steamcmd/linux64/steamclient.so" ] && cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
 
-# Setting up server
+# Configure the server
 log "Initializing Variables...."
 odin configure || exit 1
 
+# Check the server type and handle mod installations
 log "Checking for TYPE flag"
 export TYPE="${TYPE:="vanilla"}"
 log "Found Type ${TYPE}"
@@ -149,73 +148,75 @@ log "Running with ${TYPE} Valheim <3"
 export TYPE="${TYPE,,}"
 export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
 
-if [ "${TYPE}" = "vanilla" ] && [ -n "${MODS:=""}" ]; then
-  log "Mods supplied but you are running with Vanilla!!!"
-  log "Mods will NOT be installed!."
-elif
-  # ValheimPlus not yet installed
-  { [ "${TYPE}" = "valheimplus" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ]; } ||
-    # ValheimPlus with update on startup or force install
-    { [ "${TYPE}" = "valheimplus" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
-then
-  install_valheim_plus
-elif
-  # BepInEx not yet installed
-  { [ "${TYPE}" = "bepinex" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } ||
-    # BepInEx with update on startup or force install
-    { [ "${TYPE}" = "bepinex" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
-then
-  install_bepinex
-elif
-  # BepInEx not yet installed
-  { [ "${TYPE}" = "bepinexfull" ] && [ ! -d "${GAME_LOCATION}/BepInEx" ] && [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ]; } ||
-    # BepInEx with update on startup or force install
-    { [ "${TYPE}" = "bepinexfull" ] && { [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; }; }
-then
-  install_bepinex_full
-fi
+case "${TYPE}" in
+  "vanilla")
+    if [ -n "${MODS:=""}" ]; then
+      log "Mods supplied but you are running with Vanilla!!!"
+      log "Mods will NOT be installed!."
+    fi
+    ;;
+  "valheimplus")
+    if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+      install_valheim_plus
+    fi
+    ;;
+  "bepinex")
+    if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+      install_bepinex
+    fi
+    ;;
+  "bepinexfull")
+    if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+      install_bepinex_full
+    fi
+    ;;
+  *)
+    log "Unknown type: ${TYPE}"
+    exit 1
+    ;;
+esac
 
-if [ ! "${TYPE}" = "vanilla" ]; then
-  SAVE_IFS=$IFS      # Save current IFS
-  IFS=$',\n'         # Change IFS to new line
-  # shellcheck disable=SC2206
-  MODS=(${MODS:=""}) # split to array $names
-  IFS=$SAVE_IFS      # Restore IFS
-
+# Install additional mods if not running vanilla
+if [ "${TYPE}" != "vanilla" ]; then
+  IFS=$',\n'
+  MODS=(${MODS:=""})
+  IFS=$' \t\n'
   for mod in "${MODS[@]}"; do
     log "Installing Mod ${mod}"
     odin mod:install "${mod}"
   done
 fi
 
+# Execute post-install scripts if they exist
 if [ -d "/valheim-post-install.d/" ]; then
   log "Executing post-install scripts"
   find /valheim-post-install.d/ -type f -executable -exec {} \;
 fi
 
+# Start HTTP server if HTTP_PORT is specified
 if [ -n "${HTTP_PORT}" ]; then
   huginn &
   export ODIN_HTTP_SERVER_PID=$!
 fi
 
-# Setting up script traps
-trap 'cleanup' INT TERM
+# Set up traps for cleaning up on exit
+trap cleanup INT TERM
 
-# Starting server
+# Start the Valheim server
 log "Starting server..."
-odin start || exit 1
+odin start
 
 sleep 2
 
-# Initializing all logs
+# Initialize log files and start tailing them
 log "Herding Graydwarfs..."
 log_names=("valheim_server.log" "valheim_server.err" "output.log" "auto-update.out" "auto-backup.out")
 log_files=("${log_names[@]/#/\/home\/steam\/valheim\/logs/}")
-touch "${log_files[@]}" # Destroy logs on start up, this can be changed later to roll logs or archive them.
+touch "${log_files[@]}" # Create log files if they don't exist
 
-# shellcheck disable=SC2086
+# Tail the log files to keep the script running and to monitor the server
 tail -F "${log_files[@]}" &
 export TAIL_PID=$!
 
-# Waiting for logs.
+# Wait for the tail process to exit
 wait $TAIL_PID
