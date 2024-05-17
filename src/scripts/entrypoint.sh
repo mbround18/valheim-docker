@@ -139,6 +139,7 @@ setup_filesystem() {
   create_dir_with_ownership "$PUID" "$PGID" "$BACKUP_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION/logs"
+  create_dir_with_ownership "$PUID" "$PGID" "$HOME/cron.d"
   mkdir -p /home/steam/scripts
 
   sudo usermod -d /home/steam steam
@@ -168,6 +169,9 @@ setup_environment
 # Check system memory
 check_memory
 
+# Set up the filesystem
+setup_filesystem
+
 # Configure environment variables for cron jobs
 setup_cron_env
 
@@ -182,9 +186,6 @@ if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1
   sudo cron -f &
   export CRON_PID=$!
 fi
-
-# Set up the filesystem
-setup_filesystem
 
 # Navigate to the Valheim game directory
 log "Navigating to steam home..."
