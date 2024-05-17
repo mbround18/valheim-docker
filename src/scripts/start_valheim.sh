@@ -210,12 +210,7 @@ sleep 2
 
 # Initialize log files and start tailing them
 log "Herding Graydwarfs..."
-log_names=("valheim_server.log" "valheim_server.err" "output.log" "auto-update.out" "auto-backup.out")
-log_files=("${log_names[@]/#/\/home\/steam\/valheim\/logs/}")
-touch "${log_files[@]}" # Create log files if they don't exist
-
-# Tail the log files to keep the script running and to monitor the server
-tail -F "${log_files[@]}" &
+odin logs --watch &
 export TAIL_PID=$!
 
 # Wait for the tail process to exit

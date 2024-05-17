@@ -1,8 +1,9 @@
+ARG UBUNTU_VERSION=22
+ARG EXPECTED_OCTAL=775
+ARG ODIN_IMAGE_VERSION=latest
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-ARG ODIN_IMAGE_VERSION=latest
-ARG UBUNTU_VERSION=22
 FROM --platform=linux/amd64 mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
 
 # ------------------ #
@@ -60,6 +61,7 @@ ENV HOME /home/steam
 ENV USER steam
 
 ADD --chown=steam:steam https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz /home/steam/steamcmd.tar.gz
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam --from=root /home/steam/.version /home/steam/.version
 
 RUN mkdir -p /home/steam/.local/share/Steam/steamcmd && \
     tar -xvzf /home/steam/steamcmd.tar.gz -C /home/steam/.local/share/Steam/steamcmd/ && \
@@ -106,16 +108,17 @@ ENV PORT="2456" \
     WEBHOOK_STATUS_FAILED="1"
 
 # Copy scripts and set permissions
-COPY --chmod=755 --chown=steam:steam ./src/scripts/*.sh /home/steam/scripts/
-COPY --chmod=755 --chown=steam:steam ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY --chmod=755 --chown=steam:steam ./src/scripts/env.sh /env.sh
-COPY --chmod=755 --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/*.sh /home/steam/scripts/
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/entrypoint.sh /entrypoint.sh
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/env.sh /env.sh
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
 # Convert scripts to Unix format
-RUN dos2unix /entrypoint.sh /home/steam/.bashrc /home/steam/scripts/*.sh || true
-
-# Ensure permissions for the .steam directory
-RUN chown -R steam:steam /home/steam/.steam
+RUN dos2unix /entrypoint.sh /home/steam/.bashrc /home/steam/scripts/*.sh || true \
+    && chmod +x /entrypoint.sh /home/steam/.bashrc /home/steam/scripts/*.sh \
+    && chmod ug+rw /home/steam/ \
+    && chown -R steam:steam /home/steam/.steam \
+    && steamcmd +quit
 
 # Set the working directory to the game directory
 WORKDIR /home/steam/valheim
