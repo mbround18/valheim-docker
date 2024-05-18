@@ -20,8 +20,8 @@ impl log::Log for OdinLogger {
       );
       // This creates text blocks of logs if they include a new line.
       // I think it looks good <3
-      let message = format!("{} - {}", prefix, record.args())
-        .replace('\n', format!("\n{} - ", prefix).as_str());
+      let message =
+        format!("{}: {}", prefix, record.args()).replace('\n', format!("\n{} - ", prefix).as_str());
       println!("{}", message);
     }
   }

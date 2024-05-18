@@ -103,6 +103,8 @@ setup_cron() {
   local script=$2
   local schedule=$3
 
+  echo "Setting up cron job: $name"
+
   local cron_folder="$HOME/cron.d"
   local log_folder="$HOME/valheim/logs"
   local log_location="$log_folder/$name.out"
@@ -180,11 +182,17 @@ setup_cron_env
 [[ "$AUTO_BACKUP" -eq 1 ]] && setup_cron "auto-backup" "auto_backup.sh" "$AUTO_BACKUP_SCHEDULE"
 [[ "$SCHEDULED_RESTART" -eq 1 ]] && setup_cron "scheduled-restart" "scheduled_restart.sh" "$SCHEDULED_RESTART_SCHEDULE"
 
-# Apply cron jobs and start cron daemon if any cron jobs are enabled
+# Verify the cron directory and its contents
 if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1 ]]; then
-  crontab "$HOME/cron.d/*"
-  sudo cron -f &
-  export CRON_PID=$!
+  log "Checking if cron directory and files exist..."
+  if [[ -d "$HOME/cron.d" && $(ls -A "$HOME/cron.d") ]]; then
+    cat /home/steam/cron.d/* | crontab -
+    sudo cron -f &
+    export CRON_PID=$!
+  else
+    log "Error: Cron directory or files are missing."
+    exit 1
+  fi
 fi
 
 # Navigate to the Valheim game directory
