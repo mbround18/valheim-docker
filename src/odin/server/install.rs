@@ -20,22 +20,35 @@ pub fn is_installed() -> bool {
     .exists()
 }
 
+pub fn add_beta_args(args: &mut Vec<String>) {
+  let use_public_beta = environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1");
+  let beta_branch = env::var("BETA_BRANCH").unwrap_or(BETA_BRANCH.to_string());
+  let is_backwards_compatible_branch =
+    !["default_preal", "default_old", "default_preml"].contains(&beta_branch.as_str());
+
+  if is_backwards_compatible_branch || use_public_beta {
+    debug!("Using {} beta branch", beta_branch);
+    args.push(format!("-beta {}", beta_branch));
+  }
+
+  if use_public_beta {
+    let beta_password =
+      env::var("BETA_BRANCH_PASSWORD").unwrap_or(BETA_BRANCH_PASSWORD.to_string());
+    if is_backwards_compatible_branch {
+      args.push(format!("-betapassword {}", beta_password));
+    }
+  }
+
+  args.push(String::from("validate"));
+}
+
 fn add_additional_args(args: &mut Vec<String>) {
   if let Ok(extra_args) = env::var("ADDITIONAL_STEAMCMD_ARGS") {
     let additional_args = String::from(extra_args.trim_start_matches('"').trim_end_matches('"'));
     debug!("Adding additional arguments! {}", additional_args);
     args.push(additional_args)
   }
-  if environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1") {
-    debug!("Using public beta branch");
-    args.push(format!("-beta {}", {
-      env::var("BETA_BRANCH").unwrap_or(BETA_BRANCH.to_string())
-    }));
-    args.push(format!("-betapassword {}", {
-      env::var("BETA_BRANCH_PASSWORD").unwrap_or(BETA_BRANCH_PASSWORD.to_string())
-    }));
-    args.push(String::from("validate"));
-  }
+  add_beta_args(args);
 }
 
 pub fn install(app_id: i64) -> io::Result<ExitStatus> {

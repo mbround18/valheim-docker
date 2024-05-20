@@ -1,30 +1,61 @@
 use crate::notifications::enums::notification_event::NotificationEvent;
 use crate::utils::common_paths::log_directory;
-use log::{error, info};
+use log::{error, info, warn};
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::fs::read_to_string;
-use std::path::PathBuf;
+use std::fs::{read_to_string, File};
+use std::io::{BufRead, Read};
+use std::path::{Path, PathBuf};
 use std::{error, fs};
 use tokio::task;
 
-fn handle_line(path: PathBuf, line: &str) {
+/// Processes a line of text and generates appropriate log messages and notifications.
+///
+/// # Arguments
+///
+/// * `path` - A `PathBuf` representing the path of the file being processed.
+/// * `line` - A `String` containing the line of text to be processed.
+fn handle_line(path: PathBuf, line: String) {
   if line.is_empty() {
     return;
   }
 
-  let file_name = std::path::Path::new(&path)
-    .file_name()
-    .unwrap()
-    .to_str()
-    .unwrap();
+  if line.contains("[Info   : Unity Log]") {
+    // skipping duplicate lines
+    return;
+  }
 
-  info!("[{}]: {}", file_name, line);
+  let file_name = Path::new(&path).file_name().unwrap().to_str().unwrap();
+
+  if line.contains("WARNING") {
+    warn!("[{}]: {}", file_name, line);
+  } else if line.contains("ERROR") {
+    error!("[{}]: {}", file_name, line);
+  } else {
+    info!("[{}]: {}", file_name, line);
+  }
 
   if line.contains("Game server connected") {
     NotificationEvent::Start(crate::notifications::enums::event_status::EventStatus::Successful)
       .send_notification();
   }
+
+  if line.contains("Steam manager on destroy") {
+    NotificationEvent::Stop(crate::notifications::enums::event_status::EventStatus::Successful)
+      .send_notification();
+    info!("The game server has been stopped");
+  }
+}
+
+fn read_file(file_name: String) -> Vec<u8> {
+  let path = Path::new(&file_name);
+  if !path.exists() {
+    return String::from("Not Found!").into();
+  }
+  let mut file_content = Vec::new();
+  let mut file = File::open(&file_name).expect("Unable to open file");
+  file.read_to_end(&mut file_content).expect("Unable to read");
+  file_content
 }
 
 async fn tail_file(path: PathBuf) -> Result<(), Box<dyn error::Error>> {
@@ -32,14 +63,14 @@ async fn tail_file(path: PathBuf) -> Result<(), Box<dyn error::Error>> {
   let file = path.to_str().ok_or("Invalid file path")?;
 
   loop {
-    let content = read_to_string(file)?;
+    let content = read_file(file.to_string());
     let current_line = content.lines().count();
 
     if current_line > last_line {
       content
         .lines()
         .skip(last_line)
-        .for_each(|line| handle_line(path.clone(), line));
+        .for_each(|line| handle_line(path.clone(), line.unwrap_or_default()));
 
       last_line = current_line;
     }
@@ -77,7 +108,7 @@ pub async fn watch_logs(log_path: String) {
 }
 
 pub fn print_logs(log_path: String, lines: Option<u16>) {
-  let paths = fs::read_dir(&log_path)
+  let paths = fs::read_dir(log_path)
     .expect("Could not read log directory")
     .filter_map(Result::ok)
     .map(|entry| entry.path())
@@ -92,7 +123,7 @@ pub fn print_logs(log_path: String, lines: Option<u16>) {
         .take(lines.unwrap_or(10) as usize)
         .collect::<Vec<_>>();
       for line in lines.iter().rev() {
-        handle_line(path.clone(), line);
+        handle_line(path.clone(), line.to_string());
       }
     }
   }

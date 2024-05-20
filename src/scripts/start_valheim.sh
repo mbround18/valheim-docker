@@ -46,6 +46,7 @@ install_bepinex() {
   log "Installing BepInEx"
   if [ -z "${BEPINEX_DOWNLOAD_URL}" ]; then
     log "Fetching BepInEx download URL..."
+    log "BepInEx Releases URL: ${BEPINEX_RELEASES_URL}"
     BEPINEX_DOWNLOAD_URL="$(curl -L "${BEPINEX_RELEASES_URL}" | jq -r '.latest.download_url')"
   fi
   log "Pulling BepInEx from ${BEPINEX_DOWNLOAD_URL}"
