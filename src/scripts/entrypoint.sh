@@ -1,235 +1,204 @@
 #!/usr/bin/env bash
 
-if [ -f "/home/steam/scripts/utils.sh" ]; then
-  source "/home/steam/scripts/utils.sh"
-fi
+# Exit immediately if a command exits with a non-zero status
+set -e
 
-# Set up variables
-# shellcheck disable=SC2155
-export NAME="$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")"
-# shellcheck disable=SC2155
-export WORLD="$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")"
-# shellcheck disable=SC2155
-export PASSWORD="$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")"
-export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
-export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
+# Logging function to prepend timestamps to log messages
+log() {
+  echo "$(date) - $*"
+}
 
-# Set up timezone
-sudo ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime && echo "$TZ" | sudo tee -a /etc/timezone
+# Function to check and log the current user and steam user's ID and group ID
+check_user_and_group() {
+  whoami
+  id -u steam
+  id -g steam
+}
 
+# Function to set up the environment, including sourcing utility scripts and setting environment variables
+setup_environment() {
+  if [ -f "/home/steam/scripts/utils.sh" ]; then
+    source "/home/steam/scripts/utils.sh"
+  fi
+
+  export NAME=$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")
+  export WORLD=$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")
+  export PASSWORD=$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")
+  export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
+  export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
+
+  # Set timezone
+  sudo ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  echo "$TZ" | sudo tee -a /etc/timezone
+}
+
+# Function to safely shut down the server and terminate cron jobs
 clean_up() {
-  echo "Safely shutting down..." >>/home/steam/output.log
+  log "Safely shutting down..."
   if [[ -n $CRON_PID ]]; then
     kill "$CRON_PID"
   fi
 }
 
-trap 'clean_up' INT TERM
+# Trap signals for safe shutdown
+trap clean_up INT TERM
 
+# Function to set up environment variables for cron jobs
 setup_cron_env() {
-  echo "Configuring Preset Env"
-  echo "
-    DEBUG_MODE=${DEBUG_MODE:=0}
-    ODIN_CONFIG_FILE=\"${ODIN_CONFIG_FILE}\"
-    ODIN_DISCORD_FILE=\"${ODIN_DISCORD_FILE}\"
-    ODIN_WORKING_DIR=\"${ODIN_WORKING_DIR}\"
-    SAVE_LOCATION=\"${SAVE_LOCATION}\"
-    MODS_LOCATION=\"${MODS_LOCATION}\"
-    GAME_LOCATION=\"${GAME_LOCATION}\"
-    BACKUP_LOCATION=\"${BACKUP_LOCATION}\"
+  log "Configuring Preset Env"
+  # shellcheck disable=SC2054
+  env_vars=(
+    "DEBUG_MODE"
+    "ODIN_CONFIG_FILE"
+    "ODIN_DISCORD_FILE"
+    "ODIN_WORKING_DIR"
+    "SAVE_LOCATION"
+    "MODS_LOCATION"
+    "GAME_LOCATION"
+    "BACKUP_LOCATION"
+    "NAME"
+    "ADDRESS"
+    "PORT"
+    "PUBLIC"
+    "ENABLE_CROSSPLAY"
+    "UPDATE_ON_STARTUP"
+    "SERVER_EXTRA_LAUNCH_ARGS"
+    "PRESET"
+    "MODIFIERS"
+    "SET_KEY"
+    "WEBHOOK_URL"
+    "WEBHOOK_STATUS_SUCCESSFUL"
+    "WEBHOOK_STATUS_FAILED"
+    "WEBHOOK_STATUS_RUNNING"
+    "WEBHOOK_INCLUDE_PUBLIC_IP"
+    "AUTO_UPDATE"
+    "AUTO_UPDATE_PAUSE_WITH_PLAYERS"
+    "AUTO_BACKUP"
+    "AUTO_BACKUP_NICE_LEVEL"
+    "AUTO_BACKUP_REMOVE_OLD"
+    "AUTO_BACKUP_DAYS_TO_LIVE"
+    "AUTO_BACKUP_ON_UPDATE"
+    "AUTO_BACKUP_ON_SHUTDOWN"
+    "AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS"
+    "VALHEIM_PLUS_RELEASES_URL"
+    "VALHEIM_PLUS_DOWNLOAD_URL"
+    "BEPINEX_RELEASES_URL"
+    "BEPINEX_DOWNLOAD_URL"
+    "BEPINEX_FULL_RELEASES_URL"
+    "BETA_BRANCH"
+    "BETA_BRANCH_PASSWORD"
+  )
 
-    NAME=\"${NAME}\"
-    ADDRESS=\"${ADDRESS}\"
-    PORT=${PORT}
-    PUBLIC=${PUBLIC}
-    ENABLE_CROSSPLAY=${ENABLE_CROSSPLAY:-"0"}
-    UPDATE_ON_STARTUP=${UPDATE_ON_STARTUP}
-    SERVER_EXTRA_LAUNCH_ARGS=\"${SERVER_EXTRA_LAUNCH_ARGS}\"
-    PRESET=${PRESET}
-    MODIFIERS=$(echo "${MODIFIERS}" | xargs echo -n | tr ' ' ',' | sed 's/,,/,/g')
-    SET_KEY=${SET_KEY}
+  for var in "${env_vars[@]}"; do
+    value="${!var}"
+    [[ -n "$value" ]] && echo "export ${var}=\"$value\"" | sudo tee -a /env.sh
+  done
 
-    WEBHOOK_URL=\"${WEBHOOK_URL:-""}\"
-    WEBHOOK_STATUS_SUCCESSFUL=${WEBHOOK_STATUS_SUCCESSFUL:-"1"}
-    WEBHOOK_STATUS_FAILED=${WEBHOOK_STATUS_FAILED:-"1"}
-    WEBHOOK_STATUS_RUNNING=${WEBHOOK_STATUS_RUNNING:-"1"}
-    WEBHOOK_INCLUDE_PUBLIC_IP=${WEBHOOK_INCLUDE_PUBLIC_IP:-"0"}
-
-    AUTO_UPDATE=${AUTO_UPDATE}
-    AUTO_UPDATE_PAUSE_WITH_PLAYERS=${AUTO_UPDATE_PAUSE_WITH_PLAYERS}
-
-    AUTO_BACKUP=${AUTO_BACKUP}
-    AUTO_BACKUP_NICE_LEVEL=${AUTO_BACKUP_NICE_LEVEL}
-    AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD}
-    AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE}
-    AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE}
-    AUTO_BACKUP_ON_SHUTDOWN=${AUTO_BACKUP_ON_SHUTDOWN}
-    AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS=${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}
-
-    VALHEIM_PLUS_RELEASES_URL=\"${VALHEIM_PLUS_RELEASES_URL:-""}\"
-    VALHEIM_PLUS_DOWNLOAD_URL=\"${VALHEIM_PLUS_DOWNLOAD_URL}\"
-
-    BEPINEX_RELEASES_URL=\"${BEPINEX_RELEASES_URL:-"https://thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"}\"
-    BEPINEX_DOWNLOAD_URL=\"${BEPINEX_DOWNLOAD_URL}\"
-
-    BEPINEX_FULL_RELEASES_URL=\"${BEPINEX_FULL_RELEASES_URL:-""}\"
-    " | \
-    while read -r line; do
-       if [[ "${line}" == *"="* ]]; then
-         CONTENT="export ${line}"
-         if ! grep -q -F "${CONTENT}" "/env.sh" && [[ ! "${CONTENT}" =~ =$ ]]; then
-            echo "${CONTENT}" | sudo tee -a /env.sh
-         fi
-       fi
-    done
-    echo "Preset Env Configured"
+  log "Preset Env Configured"
 }
 
+# Function to set up cron jobs
 setup_cron() {
-  set -f
-  CRON_NAME=$1
-  CRON_FOLDER="$HOME/cron.d/"
-  CRON_SCHEDULE=$3
+  local name=$1
+  local script=$2
+  local schedule=$3
 
-  SCRIPT_PATH="$HOME/scripts/$2"
-  LOG_FOLDER="$HOME/valheim/logs"
-  LOG_LOCATION="$LOG_FOLDER/$CRON_NAME.out"
+  echo "Setting up cron job: $name"
 
-  # Create the logs folders
-  if [ ! -d "$LOG_FOLDER" ]; then
-    mkdir -p "$LOG_FOLDER"
-  fi
+  local cron_folder="$HOME/cron.d"
+  local log_folder="$HOME/valheim/logs"
+  local log_location="$log_folder/$name.out"
 
-  # Create cron folder
-  if [ ! -d "$CRON_FOLDER" ]; then
-    mkdir -p "$CRON_FOLDER"
-  fi
-  [ -f "$LOG_LOCATION" ] && rm "$LOG_LOCATION"
+  # Create necessary directories
+  mkdir -p "$log_folder" "$cron_folder"
+  rm -f "$log_location"
 
   # Create the cron job
-  printf "%s %s /bin/bash %s >> %s 2>&1" \
-    "${CRON_SCHEDULE}" \
-    "BASH_ENV=/env.sh" \
-    "${SCRIPT_PATH}" \
-    "${LOG_LOCATION}" \
-    | tee "$CRON_FOLDER/${CRON_NAME}"
-  echo "" | tee -a "$CRON_FOLDER/${CRON_NAME}"
-
-  # Give execution rights on the cron job
-  chmod 0644 "$CRON_FOLDER/${CRON_NAME}"
-  set +f
+  echo "${schedule} BASH_ENV=/env.sh /bin/bash $HOME/scripts/$script >> $log_location 2>&1" | tee "$cron_folder/$name"
+  chmod 0644 "$cron_folder/$name"
 }
 
+# Function to create directories with specified ownership and permissions
+create_dir_with_ownership() {
+  local user=$1
+  local group=$2
+  local dir=$3
+
+  mkdir -p "${dir}"
+  sudo chown -R "${user}:${group}" "${dir}"
+  sudo chmod -R ug+rw "${dir}"
+}
+
+# Function to set up the filesystem, ensuring correct ownership and permissions
 setup_filesystem() {
   log "Setting up file systems"
-  STEAM_UID=1000
-  STEAM_GID=${PGID:=1000}
 
-  mkdir -p "/home/steam/.steam/root"
-  mkdir -p "/home/steam/.steam/steam"
+  sudo chown -R "$PUID:$PGID" /home/steam /home/steam/.*
+  sudo chmod -R ug+rwx /home/steam
 
-  # Save Files
-  mkdir -p "${SAVE_LOCATION}"
-
-  # Mod staging location
-  mkdir -p "${MODS_LOCATION}"
-
-  # Backups
-  mkdir -p "${BACKUP_LOCATION}"
-
-  # Valheim Server
-  mkdir -p "${GAME_LOCATION}"
-  mkdir -p "${GAME_LOCATION}/logs"
-  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
-  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" "${GAME_LOCATION}"
-
-  # Other
+  create_dir_with_ownership "$PUID" "$PGID" "$SAVE_LOCATION"
+  create_dir_with_ownership "$PUID" "$PGID" "$MODS_LOCATION"
+  create_dir_with_ownership "$PUID" "$PGID" "$BACKUP_LOCATION"
+  create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION"
+  create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION/logs"
+  create_dir_with_ownership "$PUID" "$PGID" "$HOME/cron.d"
   mkdir -p /home/steam/scripts
-  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/scripts
-  sudo chown -R "${STEAM_UID}":"${STEAM_GID}" /home/steam/
 
-  # Enforce steam home
   sudo usermod -d /home/steam steam
-  cd /home/steam || exit 1
 }
 
+# Function to check if the system has sufficient memory
 check_memory() {
-#  MEMORY=$(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024)))
-  MESSAGE="Your system has less than 2GB of ram!!\nValheim might not run on your system!!"
-
-  # Get the total memory in GB
-  total_memory=$(free -h | grep Mem: | awk '{print $2}' | tr -d GiM)
-
-  # Check if total memory is less than 2GB
+  local total_memory
+  total_memory=$(free -h | awk '/^Mem:/ {print $2}' | tr -d 'G')
   if (( $(echo "$total_memory < 2" | bc -l) )); then
-    line
-    log "${MESSAGE^^}"
-    line
-    line
+    log "Your system has less than 2GB of RAM! Valheim might not run on your system."
   else
-    log "Total memory: ${total_memory}GB"
+    log "Total memory: ${total_memory} GB"
   fi
 }
 
-line
+# Main script execution
 log "Valheim Server - $(date)"
 log "Initializing your container..."
-#check_version
+
+# Check current user and steam user details
+check_user_and_group
+
+# Set up environment
+setup_environment
+
+# Check system memory
 check_memory
-line
 
-# Configure Cron
-AUTO_UPDATE="${AUTO_UPDATE:=0}"
-AUTO_BACKUP="${AUTO_BACKUP:=0}"
-SCHEDULED_RESTART="${SCHEDULED_RESTART:=0}" 
-
-setup_cron_env
-
-if [ "${AUTO_UPDATE}" -eq 1 ]; then
-  log "Auto Update Enabled..."
-  log "Auto Update Schedule: ${AUTO_UPDATE_SCHEDULE}"
-  AUTO_UPDATE_SCHEDULE=$(echo "$AUTO_UPDATE_SCHEDULE" | tr -d '"')
-  setup_cron \
-    "auto-update" \
-    "auto_update.sh" \
-    "${AUTO_UPDATE_SCHEDULE}" \
-    "AUTO_BACKUP_ON_UPDATE=${AUTO_BACKUP_ON_UPDATE:=0}"
-fi
-
-if [ "${AUTO_BACKUP}" -eq 1 ]; then
-  log "Auto Backup Enabled..."
-  log "Auto Backup Schedule: ${AUTO_BACKUP_SCHEDULE}"
-  AUTO_BACKUP_SCHEDULE=$(echo "$AUTO_BACKUP_SCHEDULE" | tr -d '"')
-  setup_cron \
-    "auto-backup" \
-    "auto_backup.sh" \
-    "${AUTO_BACKUP_SCHEDULE}" \
-    "AUTO_BACKUP_REMOVE_OLD=${AUTO_BACKUP_REMOVE_OLD} AUTO_BACKUP_DAYS_TO_LIVE=${AUTO_BACKUP_DAYS_TO_LIVE}"
-fi
-
-if [ "${SCHEDULED_RESTART}" -eq 1 ]; then
-  log "Scheduled Restarts Enabled..."
-  log "Scheduled Restart Schedule: ${SCHEDULED_RESTART_SCHEDULE}"
-  SCHEDULED_RESTART_SCHEDULE=$(echo "$SCHEDULED_RESTART_SCHEDULE" | tr -d '"')
-  setup_cron \
-    "scheduled-restart" \
-    "scheduled_restart.sh" \
-    "${SCHEDULED_RESTART_SCHEDULE}"
-fi
-
-# Apply cron job
-if [ "${AUTO_BACKUP}" -eq 1 ] || [ "${AUTO_UPDATE}" -eq 1 ] || [ "${SCHEDULED_RESTART}" -eq 1 ]; then
-  cat "$HOME"/cron.d/* | crontab -
-  sudo /usr/sbin/cron -f &
-  export CRON_PID=$!
-fi
-
-# Configure filesystem
+# Set up the filesystem
 setup_filesystem
 
-# Launch as steam user :)
+# Configure environment variables for cron jobs
+setup_cron_env
+
+# Set up cron jobs if enabled
+[[ "$AUTO_UPDATE" -eq 1 ]] && setup_cron "auto-update" "auto_update.sh" "$AUTO_UPDATE_SCHEDULE"
+[[ "$AUTO_BACKUP" -eq 1 ]] && setup_cron "auto-backup" "auto_backup.sh" "$AUTO_BACKUP_SCHEDULE"
+[[ "$SCHEDULED_RESTART" -eq 1 ]] && setup_cron "scheduled-restart" "scheduled_restart.sh" "$SCHEDULED_RESTART_SCHEDULE"
+
+# Verify the cron directory and its contents
+if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1 ]]; then
+  log "Checking if cron directory and files exist..."
+  if [[ -d "$HOME/cron.d" && $(ls -A "$HOME/cron.d") ]]; then
+    cat /home/steam/cron.d/* | crontab -
+    sudo cron -f &
+    export CRON_PID=$!
+  else
+    log "Error: Cron directory or files are missing."
+    exit 1
+  fi
+fi
+
+# Navigate to the Valheim game directory
 log "Navigating to steam home..."
 cd /home/steam/valheim || exit 1
 
-log "Launching as server..."
-. /home/steam/scripts/start_valheim.sh
+# Launch the Valheim server
+log "Launching server..."
+exec /home/steam/scripts/start_valheim.sh

@@ -16,13 +16,21 @@ impl log::Log for OdinLogger {
       let prefix = format!(
         "{:width$}",
         format!("[ODIN][{}]", record.level()),
-        width = 13
+        width = 12
       );
-      // This creates text blocks of logs if they include a new line.
-      // I think it looks good <3
-      let message = format!("{} - {}", prefix, record.args())
-        .replace('\n', format!("\n{} - ", prefix).as_str());
-      println!("{}", message);
+
+      let args = record
+        .args()
+        .to_string()
+        .replace('\n', &format!("\n{} - ", prefix));
+
+      if args.contains("WARN") {
+        println!("\x1b[33m{}: {}\x1b[0m", prefix, record.args());
+      } else if args.contains("ERROR") {
+        println!("\x1b[31m{}: {}\x1b[0m", prefix, record.args());
+      } else {
+        println!("{}: {}", prefix, record.args());
+      }
     }
   }
 

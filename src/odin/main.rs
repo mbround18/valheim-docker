@@ -2,6 +2,7 @@ use clap::Parser;
 use dotenv::dotenv;
 use log::debug;
 
+use crate::cli::{Cli, Commands};
 use commands::configure::Configuration;
 
 use crate::commands::configure::Modifiers;
@@ -24,18 +25,28 @@ mod steamcmd;
 pub mod traits;
 pub mod utils;
 
-fn main() {
+#[tokio::main]
+async fn main() {
   dotenv().ok();
-
-  use cli::{Cli, Commands};
-  let cli = Cli::parse();
-
-  logger::initialize_logger(cli.debug || debug_mode()).unwrap();
+  let cli = initialize_cli();
+  initialize_logger(&cli);
 
   if cli.debug {
     debug!("Debug mode enabled!");
   }
 
+  handle_commands(cli).await;
+}
+
+fn initialize_cli() -> Cli {
+  Cli::parse()
+}
+
+fn initialize_logger(cli: &Cli) {
+  logger::initialize_logger(cli.debug || debug_mode()).unwrap();
+}
+
+async fn handle_commands(cli: Cli) {
   match cli.commands {
     Commands::Configure {
       name,
@@ -54,20 +65,19 @@ fn main() {
       port,
       world,
       password,
-      { public.eq("1") }.to_owned(),
+      public.eq("1"),
       preset,
-      {
-        modifiers.map(|modifiers| {
-          modifiers
-            .split(',')
-            .map(|modifier| Modifiers::from(modifier.to_string()))
-            .collect()
-        })
-      },
+      modifiers.map(|m| {
+        m.split(',')
+          .map(|modifier| Modifiers::from(modifier.to_string()))
+          .collect()
+      }),
       set_key,
       save_interval,
     )
-    .invoke(),
+    .invoke()
+    .await
+    .expect("Failed to configure server"),
     Commands::Install {} => handle_exit_status(
       commands::install::invoke(constants::GAME_ID),
       "Successfully installed Valheim!".to_string(),
@@ -90,9 +100,8 @@ fn main() {
       local,
       address,
     } => commands::status::invoke(json, local, address),
-    Commands::About {} => {
-      about(env!("GIT_HASH"));
-    }
+    Commands::About {} => about(env!("GIT_HASH")),
+    Commands::Logs { lines, watch } => commands::logs::invoke(lines, watch).await,
   }
 }
 

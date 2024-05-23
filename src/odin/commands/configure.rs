@@ -1,5 +1,8 @@
-use log::debug;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
+use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
+use std::{fs, io};
 
 use crate::files::config::{config_file, write_config};
 use crate::files::discord::{discord_file, write_discord};
@@ -86,8 +89,60 @@ impl Configuration {
     }
   }
 
+  fn check_permissions(&self, path: &Path) -> io::Result<()> {
+    let metadata = fs::metadata(path)?;
+    let permissions = metadata.permissions();
+
+    if metadata.is_dir() {
+      info!("Checking directory permissions: {:?}", path);
+      if permissions.mode() & 0o700 == 0o700 {
+        Ok(())
+      } else {
+        Err(io::Error::new(
+          io::ErrorKind::PermissionDenied,
+          "Directory does not have adequate permissions",
+        ))
+      }
+    } else {
+      info!("Checking file permissions: {:?}", path);
+      if permissions.mode() & 0o600 == 0o600 {
+        Ok(())
+      } else {
+        Err(io::Error::new(
+          io::ErrorKind::PermissionDenied,
+          "File does not have adequate permissions",
+        ))
+      }
+    }
+  }
+
+  fn perform_preflight_checks(&self) -> Result<(), Box<dyn std::error::Error>> {
+    let paths_to_check = vec![
+      Path::new("/home/steam/valheim"),
+      Path::new("/home/steam/scripts"),
+      Path::new("/home/steam/.bashrc"),
+    ];
+
+    for path in paths_to_check {
+      if !path.exists() {
+        return Err(Box::new(io::Error::new(
+          io::ErrorKind::NotFound,
+          format!("Path does not exist: {:?}", path),
+        )));
+      }
+
+      if let Err(e) = self.check_permissions(path) {
+        return Err(Box::new(e));
+      }
+    }
+
+    Ok(())
+  }
+
   /// Invokes the configuration by writing the config file
-  pub fn invoke(self) {
+  pub async fn invoke(self) -> Result<(), Box<dyn std::error::Error>> {
+    self.perform_preflight_checks()?;
+
     debug!("Pulling config file...");
     let config = config_file();
     debug!("Writing config file...");
@@ -96,5 +151,7 @@ impl Configuration {
     let discord = discord_file();
     debug!("Writing Discord config file...");
     write_discord(discord);
+
+    Ok(())
   }
 }
