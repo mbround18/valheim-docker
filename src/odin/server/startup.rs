@@ -85,13 +85,13 @@ fn configure_server_options(command: &mut Command, config: &ValheimArguments) {
   // Add set_key to the command
   if let Some(set_key) = &config.set_key {
     debug!("Setting set_key to: {}", &set_key);
-    command.args(["-setkey", &set_key]);
+    command.args(["-setkey", set_key]);
   };
 
   // Add preset to the command
   if let Some(preset) = &config.preset {
     debug!("Setting preset to: {}", &preset);
-    command.args(["-preset", &preset]);
+    command.args(["-preset", preset]);
   };
 
   // Add modifiers to the command

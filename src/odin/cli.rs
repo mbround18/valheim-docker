@@ -149,4 +149,14 @@ pub enum Commands {
   },
   /// Prints out information about Odin
   About,
+
+  Logs {
+    /// Print out as json
+    #[arg(long, short = 'w')]
+    watch: bool,
+
+    /// N number of lines to print out
+    #[arg(long, short = 'l', conflicts_with = "watch")]
+    lines: Option<u16>,
+  },
 }
