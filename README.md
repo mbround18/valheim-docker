@@ -18,9 +18,7 @@
 </a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
 [![All Contributors](https://img.shields.io/badge/all_contributors-14-orange.svg?style=flat-square)](#contributors-)
-
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -330,29 +328,28 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="http://arneman.me/"><img src="https://avatars.githubusercontent.com/u/3298808?v=4?s=100" width="100px;" alt="Mark"/><br /><sub><b>Mark</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=bearlikelion" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://m.bruno.fyi/"><img src="https://avatars.githubusercontent.com/u/12646562?v=4?s=100" width="100px;" alt="Michael"/><br /><sub><b>Michael</b></sub></a><br /><a href="#infra-mbround18" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Code">💻</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/apps/imgbot"><img src="https://avatars.githubusercontent.com/in/4706?v=4?s=100" width="100px;" alt="imgbot[bot]"/><br /><sub><b>imgbot[bot]</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=imgbot[bot]" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/AGhost-7"><img src="https://avatars.githubusercontent.com/u/6957411?v=4?s=100" width="100px;" alt="Jonathan Boudreau"/><br /><sub><b>Jonathan Boudreau</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=AGhost-7" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/Kellei2983"><img src="https://avatars.githubusercontent.com/u/32897629?v=4?s=100" width="100px;" alt="Lukáš Hruška"/><br /><sub><b>Lukáš Hruška</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=Kellei2983" title="Documentation">📖</a></td>
-    <td align="center"><a href="http://vallee-design.de/"><img src="https://avatars.githubusercontent.com/u/6720458?v=4?s=100" width="100px;" alt="Julian Vallée"/><br /><sub><b>Julian Vallée</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=JulianVallee" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/Finomnis"><img src="https://avatars.githubusercontent.com/u/3129043?v=4?s=100" width="100px;" alt="Finomnis"/><br /><sub><b>Finomnis</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=Finomnis" title="Code">💻</a></td>
+    <td align="center"><a href="http://arneman.me/"><img src="https://avatars.githubusercontent.com/u/3298808?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Mark</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=bearlikelion" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://m.bruno.fyi/"><img src="https://avatars.githubusercontent.com/u/12646562?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael</b></sub></a><br /><a href="#infra-mbround18" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Code">💻</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=mbround18" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/apps/imgbot"><img src="https://avatars.githubusercontent.com/in/4706?v=4?s=100" width="100px;" alt=""/><br /><sub><b>imgbot[bot]</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=imgbot[bot]" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/AGhost-7"><img src="https://avatars.githubusercontent.com/u/6957411?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jonathan Boudreau</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=AGhost-7" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Kellei2983"><img src="https://avatars.githubusercontent.com/u/32897629?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Lukáš Hruška</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=Kellei2983" title="Documentation">📖</a></td>
+    <td align="center"><a href="http://vallee-design.de/"><img src="https://avatars.githubusercontent.com/u/6720458?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Julian Vallée</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=JulianVallee" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/Finomnis"><img src="https://avatars.githubusercontent.com/u/3129043?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Finomnis</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=Finomnis" title="Code">💻</a></td>
   </tr>
   <tr>
-    <td align="center"><a href="https://tech.jrlbyrne.com/"><img src="https://avatars.githubusercontent.com/u/14056930?v=4?s=100" width="100px;" alt="Justin Byrne"/><br /><sub><b>Justin Byrne</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=JustinByrne" title="Documentation">📖</a></td>
-    <td align="center"><a href="http://blog.andrewpeabody.com/"><img src="https://avatars.githubusercontent.com/u/14035345?v=4?s=100" width="100px;" alt="Andrew Peabody"/><br /><sub><b>Andrew Peabody</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=apeabody" title="Documentation">📖</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=apeabody" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/morales2k"><img src="https://avatars.githubusercontent.com/u/1074855?v=4?s=100" width="100px;" alt="Jorge Morales"/><br /><sub><b>Jorge Morales</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=morales2k" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/spannerman79"><img src="https://avatars.githubusercontent.com/u/7542384?v=4?s=100" width="100px;" alt="Spanner_Man"/><br /><sub><b>Spanner_Man</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=spannerman79" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://hurtlingthrough.space/"><img src="https://avatars.githubusercontent.com/u/5186335?v=4?s=100" width="100px;" alt="Cameron Pittman"/><br /><sub><b>Cameron Pittman</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=cameronwp" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/apps/kodiakhq"><img src="https://avatars.githubusercontent.com/in/29196?v=4?s=100" width="100px;" alt="kodiakhq[bot]"/><br /><sub><b>kodiakhq[bot]</b></sub></a><br /><a href="#infra-kodiakhq[bot]" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=kodiakhq[bot]" title="Documentation">📖</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=kodiakhq[bot]" title="Code">💻</a></td>
-    <td align="center"><a href="https://github.com/andjo"><img src="https://avatars.githubusercontent.com/u/665563?v=4?s=100" width="100px;" alt="Anders Johansson"/><br /><sub><b>Anders Johansson</b></sub></a><br
-
-/><a href="https://github.com/mbround18/valheim-docker/commits?author=andjo" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://tech.jrlbyrne.com/"><img src="https://avatars.githubusercontent.com/u/14056930?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Justin Byrne</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=JustinByrne" title="Documentation">📖</a></td>
+    <td align="center"><a href="http://blog.andrewpeabody.com/"><img src="https://avatars.githubusercontent.com/u/14035345?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Andrew Peabody</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=apeabody" title="Documentation">📖</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=apeabody" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/morales2k"><img src="https://avatars.githubusercontent.com/u/1074855?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jorge Morales</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=morales2k" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/spannerman79"><img src="https://avatars.githubusercontent.com/u/7542384?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Spanner_Man</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=spannerman79" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://hurtlingthrough.space/"><img src="https://avatars.githubusercontent.com/u/5186335?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Cameron Pittman</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=cameronwp" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://github.com/apps/kodiakhq"><img src="https://avatars.githubusercontent.com/in/29196?v=4?s=100" width="100px;" alt=""/><br /><sub><b>kodiakhq[bot]</b></sub></a><br /><a href="#infra-kodiakhq[bot]" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=kodiakhq[bot]" title="Documentation">📖</a> <a href="https://github.com/mbround18/valheim-docker/commits?author=kodiakhq[bot]" title="Code">💻</a></td>
+    <td align="center"><a href="https://github.com/andjo"><img src="https://avatars.githubusercontent.com/u/665563?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anders Johansson</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=andjo" title="Documentation">📖</a></td>
   </tr>
 </table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind are welcome!
