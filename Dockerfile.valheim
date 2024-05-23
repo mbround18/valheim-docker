@@ -1,116 +1,137 @@
+ARG UBUNTU_VERSION=22
+ARG EXPECTED_OCTAL=775
+ARG ODIN_IMAGE_VERSION=latest
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-ARG ODIN_IMAGE_VERSION=latest
 FROM --platform=linux/amd64 mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
 
-# --------------- #
-# -- Steam CMD -- #
-# --------------- #
-FROM steamcmd/steamcmd:ubuntu
+# ------------------ #
+# -- Steam Setup -- #
+# ------------------ #
+FROM steamcmd/steamcmd:ubuntu-${UBUNTU_VERSION} as root
 
-ENV TZ=America/Los_Angeles
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+USER root
 
-RUN apt-get update                        \
-    && apt-get upgrade -y                 \
-    && apt-get install -y -qq             \
-    build-essential                       \
-    htop net-tools nano gcc g++ gdb       \
-    netcat curl wget zip unzip            \
-    cron sudo gosu dos2unix               \
-    libsdl2-2.0-0  jq  libc6 libc6-dev    \
-    libpulse-dev libatomic1               \
-    tzdata bc                             \
-    && rm -rf /var/lib/apt/lists/*        \
-    && gosu nobody true                   \
-    && dos2unix
+# Set environment variables
+ENV TZ=America/Los_Angeles \
+    PUID=111 \
+    PGID=1000
 
-RUN addgroup --system steam     \
-    && adduser --system         \
-      --home /home/steam        \
-      --shell /bin/bash         \
-      steam                     \
-    && usermod -aG steam steam  \
-    && chmod ugo+rw /tmp/dumps
+# Set timezone and install necessary packages
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y -qq \
+    build-essential procps htop net-tools nano gcc g++ gdb \
+    netcat-traditional curl wget zip unzip cron sudo gosu dos2unix \
+    libsdl2-2.0-0 jq libc6 libc6-dev libpulse-dev libatomic1 \
+    tzdata bc && \
+    rm -rf /var/lib/apt/lists/* && \
+    gosu nobody true && \
+    dos2unix && \
+    groupadd -g ${PGID} steam && \
+    useradd -u ${PUID} -g steam -d /home/steam -m -s /bin/bash steam
 
+# Create necessary directories and set permissions
+RUN mkdir -p /home/steam/.steam/steam/package && \
+    mkdir -p /home/{steam,steam/{valheim,.steam}} && \
+    chmod ugo+rw /tmp/dumps && \
+    chown -R ${PUID}:${PGID} /home/steam
 
-# Container informaiton
+# Container information
 ARG GITHUB_SHA="not-set"
 ARG GITHUB_REF="not-set"
 ARG GITHUB_REPOSITORY="not-set"
 
-# User config
-ENV PUID=1000                                                     \
-    PGID=1000                                                     \
-    # Set up timezone information
-    TZ=America/Los_Angeles                                        \
-    # Server Specific env variables.
-    PORT="2456"                                                   \
-    NAME="Valheim Docker"                                         \
-    WORLD="Dedicated"                                             \
-    PUBLIC="1"                                                    \
-    PASSWORD=""                                                   \
-    TYPE="Vanilla"                                                \
-    UPDATE_ON_STARTUP="1"                                         \
-    # Auto Update Configs
-    AUTO_UPDATE="0"                                               \
-    AUTO_UPDATE_SCHEDULE="0 1 * * *"                              \
-    # Auto Backup Configs
-    AUTO_BACKUP="0"                                               \
-    AUTO_BACKUP_SCHEDULE="*/15 * * * *"                           \
-    AUTO_BACKUP_REMOVE_OLD="1"                                    \
-    AUTO_BACKUP_DAYS_TO_LIVE="3"                                  \
-    AUTO_BACKUP_ON_UPDATE="0"                                     \
-    AUTO_BACKUP_ON_SHUTDOWN="0"                                   \
-    AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS="0"                         \
-    SCHEDULED_RESTART="0"                                         \
-    SCHEDULED_RESTART_SCHEDULE="0 2 * * *"                        \
-    # Folders and file system related
-    SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim"  \
-    MODS_LOCATION="/home/steam/staging/mods"                      \
-    GAME_LOCATION="/home/steam/valheim"                           \
-    BACKUP_LOCATION="/home/steam/backups"                         \
-    # Webhook Information
-    WEBHOOK_STATUS_SUCCESSFUL="1"                                 \
-    WEBHOOK_STATUS_FAILED="1"
+COPY --from=runtime --chmod=755 /apps/odin /apps/huginn /usr/local/bin/
 
-COPY ./src/scripts/*.sh /home/steam/scripts/
-COPY ./src/scripts/entrypoint.sh /entrypoint.sh
-COPY ./src/scripts/env.sh /env.sh
-COPY --from=runtime /apps/odin /apps/huginn /usr/local/bin/
-COPY ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
+# Set version information and configure sudoers
+RUN printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version && \
+    echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    echo "steam ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-RUN usermod -u ${PUID} steam                            \
-    && groupmod -g ${PGID} steam                        \
-    && printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version \
-    && chmod 755 -R /home/steam/scripts/                \
-    && chmod 755 /entrypoint.sh                         \
-    && chmod 755 /env.sh                                \
-    && chmod 755 /usr/local/bin/odin                    \
-    && dos2unix /entrypoint.sh /home/steam/.bashrc  /home/steam/scripts/*.sh \
-    && echo "root ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
-    && echo "steam ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# --------------- #
+# -- Steam CMD -- #
+# --------------- #
+FROM root as steamcmd
 
-
-# Set the steam user as the active user
 USER steam
-
-# Set the HOME environment variable to the steam user's home directory
 ENV HOME /home/steam
 ENV USER steam
+
+ADD --chown=steam:steam https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz /home/steam/steamcmd.tar.gz
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam --from=root /home/steam/.version /home/steam/.version
+
+RUN mkdir -p /home/steam/.local/share/Steam/steamcmd && \
+    tar -xvzf /home/steam/steamcmd.tar.gz -C /home/steam/.local/share/Steam/steamcmd/ && \
+    rm /home/steam/steamcmd.tar.gz && \
+    mkdir -p $HOME/.steam && \
+    ln -s $HOME/.local/share/Steam/steamcmd/linux32 $HOME/.steam/sdk32 && \
+    ln -s $HOME/.local/share/Steam/steamcmd/linux64 $HOME/.steam/sdk64 && \
+    ln -s $HOME/.steam/sdk32/steamclient.so $HOME/.steam/sdk32/steamservice.so && \
+    steamcmd +quit
+
+# --------------- #
+# -- Valheim   -- #
+# --------------- #
+FROM steamcmd as valheim
+
+USER steam
+ENV HOME /home/steam
+ENV USER steam
+
+# Set environment variables for Valheim server
+ENV PORT="2456" \
+    NAME="Valheim Docker" \
+    WORLD="Dedicated" \
+    PUBLIC="1" \
+    PASSWORD="" \
+    TYPE="Vanilla" \
+    UPDATE_ON_STARTUP="1" \
+    AUTO_UPDATE="0" \
+    AUTO_UPDATE_SCHEDULE="0 1 * * *" \
+    AUTO_BACKUP="0" \
+    AUTO_BACKUP_SCHEDULE="*/15 * * * *" \
+    AUTO_BACKUP_REMOVE_OLD="1" \
+    AUTO_BACKUP_DAYS_TO_LIVE="3" \
+    AUTO_BACKUP_ON_UPDATE="0" \
+    AUTO_BACKUP_ON_SHUTDOWN="0" \
+    AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS="0" \
+    SCHEDULED_RESTART="0" \
+    SCHEDULED_RESTART_SCHEDULE="0 2 * * *" \
+    SAVE_LOCATION="/home/steam/.config/unity3d/IronGate/Valheim" \
+    MODS_LOCATION="/home/steam/staging/mods" \
+    GAME_LOCATION="/home/steam/valheim" \
+    BACKUP_LOCATION="/home/steam/backups" \
+    WEBHOOK_STATUS_SUCCESSFUL="1" \
+    WEBHOOK_STATUS_FAILED="1" \
+    BEPINEX_RELEASES_URL="https://thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"
+
+# Copy scripts and set permissions
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/*.sh /home/steam/scripts/
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/entrypoint.sh /entrypoint.sh
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/env.sh /env.sh
+COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
+
+# Convert scripts to Unix format
+RUN dos2unix /entrypoint.sh /home/steam/.bashrc /home/steam/scripts/*.sh || true \
+    && chmod +x /entrypoint.sh /home/steam/.bashrc /home/steam/scripts/*.sh \
+    && chmod ug+rw /home/steam/ \
+    && chown -R steam:steam /home/steam/.steam \
+    && steamcmd +quit
 
 # Set the working directory to the game directory
 WORKDIR /home/steam/valheim
 
-# Expose the ports for the server
+# Expose the necessary ports
 EXPOSE 2456/udp 2457/udp 2458/udp
 EXPOSE 2456/tcp 2457/tcp 2458/tcp
-# Expose ports for huginn
 EXPOSE 3000/tcp
 
-HEALTHCHECK --interval=1m --timeout=3s \
-    CMD pidof valheim_server.x86_64 || exit 1
+# Healthcheck to ensure the Valheim server is running
+HEALTHCHECK --interval=1m --timeout=3s CMD pidof valheim_server.x86_64 || exit 1
 
-ENTRYPOINT ["/bin/bash","/entrypoint.sh"]
+# Define the entrypoint and command
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 CMD ["/bin/bash", "/home/steam/scripts/start_valheim.sh"]
