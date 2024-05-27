@@ -323,6 +323,8 @@ If you would like to have release notifications tied into your Discord server, c
 
 ## Sponsors
 
+Looking for sponsors!
+
 ## Contributors ✨
 
 Thanks go to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
