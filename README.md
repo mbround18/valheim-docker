@@ -287,6 +287,10 @@ This is a tutorial of a recommended path to transferring files. This can be done
 docker exec -it $CONTAINER_NAME gosu steam bash
 ```
 
+### How to Restore a backup
+
+[Click this link to see the guide for restoring a backup](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-transfer-files.md)
+
 ## Additional Information
 
 ### Discord Release Notifications
