@@ -186,7 +186,9 @@ setup_cron_env
 if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1 ]]; then
   log "Checking if cron directory and files exist..."
   if [[ -d "$HOME/cron.d" && $(ls -A "$HOME/cron.d") ]]; then
-    cat /home/steam/cron.d/* | crontab -
+    for file in /home/steam/cron.d/*; do 
+      crontab $file 
+    done
     sudo cron -f &
     export CRON_PID=$!
   else
