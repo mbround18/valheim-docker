@@ -7,6 +7,7 @@ Before making any changes to the server files, you need to stop the Valheim serv
 ### How to Stop the Valheim Server
 
 1. **Access the Server Console:**
+
    - If you're using a hosting service, log in to your control panel and find the console or command-line interface.
    - If you're hosting the server locally, open the terminal or command prompt on the machine running the server.
 
@@ -28,6 +29,7 @@ Now that the server is stopped, you can delete the existing save files.
 ### How to Delete Save Files
 
 1. **Navigate to the Saves Directory:**
+
    - The saves directory is mapped to a local path using Docker volumes. Based on your `docker-compose.yml`, the path is:
      ```
      /path/to/saves
@@ -46,6 +48,7 @@ You need to extract the desired save file tar archive into the saves folder.
 ### How to Untar the File
 
 1. **Navigate to the Directory Containing the Tar File:**
+
    - Use the terminal or command prompt to navigate to the directory where your tar file is located.
 
 2. **Untar the File:**
@@ -99,7 +102,4 @@ services:
       - /path/to/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - /path/to/backups:/home/steam/backups
       - odin-output:/home/steam/.odin
-
 ```
-
- 
