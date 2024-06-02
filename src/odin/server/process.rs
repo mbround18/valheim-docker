@@ -32,8 +32,13 @@ impl ServerProcess {
       .processes()
       .values()
       .filter(|process| {
-        let path = process.exe().unwrap().to_str().unwrap();
-        path.contains(constants::VALHEIM_EXECUTABLE_NAME)
+        process.exe().is_some()
+          && process
+            .exe()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .contains(constants::VALHEIM_EXECUTABLE_NAME)
       })
       .collect()
   }

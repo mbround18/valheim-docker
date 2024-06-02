@@ -18,7 +18,9 @@
 </a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-14-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -289,7 +291,7 @@ docker exec -it $CONTAINER_NAME gosu steam bash
 
 ### How to Restore a backup
 
-[Click this link to see the guide for restoring a backup]([https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-transfer-files.md](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-restore.md))
+[Click this link to see the guide for restoring a backup](<[https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-transfer-files.md](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-restore.md)>)
 
 ## Additional Information
 
