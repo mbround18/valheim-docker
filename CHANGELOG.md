@@ -1,3 +1,20 @@
+# v3.0.1 (Sun Jun 02 2024)
+
+#### 🐛 Bug Fix
+
+- Update entrypoint.sh [#857](https://github.com/mbround18/valheim-docker/pull/857) ([@mbround18](https://github.com/mbround18))
+
+#### ⚠️ Pushed to `main`
+
+- Update README.md ([@mbround18](https://github.com/mbround18))
+- Create how-to-restore.md ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.0.0 (Thu May 23 2024)
 
 #### 💥 Breaking Change
