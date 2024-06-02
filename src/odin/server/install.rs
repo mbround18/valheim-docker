@@ -20,23 +20,22 @@ pub fn is_installed() -> bool {
     .exists()
 }
 
-pub fn add_beta_args(args: &mut Vec<String>) {
-  let use_public_beta = environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1");
-  let beta_branch = env::var("BETA_BRANCH").unwrap_or(BETA_BRANCH.to_string());
+pub fn add_beta_args(
+  args: &mut Vec<String>,
+  use_public_beta: bool,
+  beta_branch: String,
+  beta_password: String,
+) {
   let is_backwards_compatible_branch =
-    !["default_preal", "default_old", "default_preml"].contains(&beta_branch.as_str());
+    ["default_preal", "default_old", "default_preml"].contains(&beta_branch.as_str());
 
   if is_backwards_compatible_branch || use_public_beta {
     debug!("Using {} beta branch", beta_branch);
     args.push(format!("-beta {}", beta_branch));
   }
 
-  if use_public_beta {
-    let beta_password =
-      env::var("BETA_BRANCH_PASSWORD").unwrap_or(BETA_BRANCH_PASSWORD.to_string());
-    if is_backwards_compatible_branch {
-      args.push(format!("-betapassword {}", beta_password));
-    }
+  if use_public_beta && !is_backwards_compatible_branch {
+    args.push(format!("-betapassword {}", beta_password));
   }
 
   args.push(String::from("validate"));
@@ -48,7 +47,12 @@ fn add_additional_args(args: &mut Vec<String>) {
     debug!("Adding additional arguments! {}", additional_args);
     args.push(additional_args)
   }
-  add_beta_args(args);
+
+  let use_public_beta = environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1");
+  let beta_branch = env::var("BETA_BRANCH").unwrap_or(BETA_BRANCH.to_string());
+  let beta_password = env::var("BETA_BRANCH_PASSWORD").unwrap_or(BETA_BRANCH_PASSWORD.to_string());
+
+  add_beta_args(args, use_public_beta, beta_branch, beta_password);
 }
 
 pub fn install(app_id: i64) -> io::Result<ExitStatus> {
@@ -79,28 +83,50 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
 #[cfg(test)]
 mod tests {
-  use crate::server::install::{add_additional_args, BETA_BRANCH, BETA_BRANCH_PASSWORD};
+  use super::*;
+  use std::env;
+  use test_case::test_case;
 
-  //   #[test]
-  //   fn add_custom_args() {
-  //     let mut args = vec!["example".to_string()];
-  //     let extra_args = "-i -am -some -extra -args";
-  //     std::env::set_var("ADDITIONAL_STEAMCMD_ARGS", format!("\"{}\"", extra_args));
-  //     add_additional_args(&mut args);
-  //     assert_eq!(
-  //       args.join(" "),
-  //       format!(
-  //         "example {} -beta {} -betapassword \"{}\"",
-  //         extra_args, BETA_BRANCH, BETA_BRANCH_PASSWORD
-  //       )
-  //     );
-  //     std::env::remove_var("ADDITIONAL_STEAMCMD_ARGS");
-  //   }
+  #[test_case(
+    false,
+    "default_beta_branch".to_string(),
+    "default_beta_password".to_string(),
+    vec!["validate"]
+  )]
+  #[test_case(
+    true,
+    "public-test".to_string(),
+    "yesimadebackups".to_string(),
+    vec!["-beta public-test", "-betapassword yesimadebackups", "validate"]
+  )]
+  #[test_case(
+    false,
+    "default_preml".to_string(),
+    "default_beta_password".to_string(),
+    vec!["-beta default_preml", "validate"]
+  )]
+  #[test_case(
+    true,
+    "default_old".to_string(),
+    "default_beta_password".to_string(),
+    vec!["-beta default_old","validate"]
+  )]
+  fn test_no_beta(
+    use_public_beta: bool,
+    beta_branch: String,
+    beta_password: String,
+    expected: Vec<&str>,
+  ) {
+    let mut args = vec![];
+    add_beta_args(&mut args, use_public_beta, beta_branch, beta_password);
+    assert_eq!(args, expected);
+  }
+
   #[test]
-  fn add_beta_args() {
+  fn test_add_beta_args() {
     let mut args = vec!["example".to_string()];
-    std::env::set_var("ADDITIONAL_STEAMCMD_ARGS", "".to_string());
-    std::env::set_var("USE_PUBLIC_BETA", "1");
+    env::set_var("ADDITIONAL_STEAMCMD_ARGS", "".to_string());
+    env::set_var("USE_PUBLIC_BETA", "1");
     add_additional_args(&mut args);
     assert_eq!(
       args.join(" "),
@@ -109,6 +135,6 @@ mod tests {
         BETA_BRANCH, BETA_BRANCH_PASSWORD
       )
     );
-    std::env::remove_var("USE_PUBLIC_BETA");
+    env::remove_var("USE_PUBLIC_BETA");
   }
 }
