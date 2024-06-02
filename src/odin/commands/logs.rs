@@ -91,7 +91,7 @@ pub async fn watch_logs(log_path: String) {
       .collect::<Vec<_>>();
 
     for path in paths {
-      if path.is_file() && path.extension().and_then(OsStr::to_str) == Some("log") {
+      if path.is_file() {
         watched_files.entry(path.clone()).or_insert_with(|| {
           let handle = task::spawn(async move {
             if let Err(e) = tail_file(path).await {
