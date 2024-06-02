@@ -80,6 +80,7 @@ setup_cron_env() {
     "AUTO_BACKUP_ON_UPDATE"
     "AUTO_BACKUP_ON_SHUTDOWN"
     "AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS"
+    "AUTO_BACKUP_SCHEDULE"
     "VALHEIM_PLUS_RELEASES_URL"
     "VALHEIM_PLUS_DOWNLOAD_URL"
     "BEPINEX_RELEASES_URL"
@@ -87,10 +88,20 @@ setup_cron_env() {
     "BEPINEX_FULL_RELEASES_URL"
     "BETA_BRANCH"
     "BETA_BRANCH_PASSWORD"
+    "HTTP_PORT"
+    "SCHEDULED_RESTART_SCHEDULE"
+    "WORLD"
+    "PASSWORD"
+    "TYPE"
+    "MODS"
+    "ADDITIONAL_STEAMCMD_ARGS"
+    "TZ"
+    "PUID"
+    "PGID"
   )
 
   for var in "${env_vars[@]}"; do
-    value="${!var}"
+    value="${!var//\"/}"
     [[ -n "$value" ]] && echo "export ${var}=\"$value\"" | sudo tee -a /env.sh
   done
 
@@ -105,7 +116,7 @@ setup_cron() {
 
   echo "Setting up cron job: $name"
 
-  local cron_folder="$HOME/cron.d"
+  local cron_folder="$HOME/valheim/cron.d"
   local log_folder="$HOME/valheim/logs"
   local log_location="$log_folder/$name.out"
 
@@ -114,7 +125,8 @@ setup_cron() {
   rm -f "$log_location"
 
   # Create the cron job
-  echo "${schedule} BASH_ENV=/env.sh /bin/bash $HOME/scripts/$script >> $log_location 2>&1" | tee "$cron_folder/$name"
+  # shellcheck disable=SC2086
+  echo "${schedule//\"/} BASH_ENV=/env.sh /bin/bash $HOME/scripts/$script >> $log_location 2>&1" | tee "$cron_folder/$name"
   chmod 0644 "$cron_folder/$name"
 }
 
@@ -185,10 +197,13 @@ setup_cron_env
 # Verify the cron directory and its contents
 if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1 ]]; then
   log "Checking if cron directory and files exist..."
-  if [[ -d "$HOME/cron.d" && $(ls -A "$HOME/cron.d") ]]; then
-    for file in /home/steam/cron.d/*; do 
-      crontab $file 
+  if [[ -d "$HOME/valheim/cron.d" && $(ls -A "$HOME/valheim/cron.d") ]]; then
+    touch /tmp/master-cron
+    for file in /home/steam/valheim/cron.d/*; do
+       cat "$file" >> /tmp/master-cron
     done
+    crontab /tmp/master-cron
+    rm -f /tmp/master-cron
     sudo cron -f &
     export CRON_PID=$!
   else
