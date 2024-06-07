@@ -3,6 +3,15 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
+
+export HOME="/home/steam"
+export GAME_LOCATION=${GAME_LOCATION:-"${HOME}/valheim"}
+export SAVE_LOCATION=${SAVE_LOCATION:-"${GAME_LOCATION}/saves"}
+export MODS_LOCATION=${MODS_LOCATION:-"${GAME_LOCATION}/BepInEx/plugins"}
+export BACKUP_LOCATION=${BACKUP_LOCATION:-"${GAME_LOCATION}/backups"}
+export CRON_LOCATION="${HOME}/cron.d"
+export LOG_LOCATION="${GAME_LOCATION}/logs"
+
 # Logging function to prepend timestamps to log messages
 log() {
   echo "$(date) - $*"
@@ -21,9 +30,12 @@ setup_environment() {
     source "/home/steam/scripts/utils.sh"
   fi
 
-  export NAME=$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")
-  export WORLD=$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")
-  export PASSWORD=$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")
+  export NAME
+  NAME=$(sed -e 's/^"//' -e 's/"$//' <<<"$NAME")
+  export WORLD
+  WORLD=$(sed -e 's/^"//' -e 's/"$//' <<<"$WORLD")
+  export PASSWORD
+  PASSWORD=$(sed -e 's/^"//' -e 's/"$//' <<<"$PASSWORD")
   export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
   export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
 
@@ -116,8 +128,8 @@ setup_cron() {
 
   echo "Setting up cron job: $name"
 
-  local cron_folder="$HOME/valheim/cron.d"
-  local log_folder="$HOME/valheim/logs"
+  local cron_folder="$CRON_LOCATION"
+  local log_folder="$LOG_LOCATION"
   local log_location="$log_folder/$name.out"
 
   # Create necessary directories
@@ -145,8 +157,8 @@ create_dir_with_ownership() {
 setup_filesystem() {
   log "Setting up file systems"
 
-  sudo chown -R "$PUID:$PGID" /home/steam /home/steam/.*
-  sudo chmod -R ug+rwx /home/steam
+  sudo chown -R "$PUID:$PGID" "$HOME" /home/steam/.*
+  sudo chmod -R ug+rwx "$HOME"
 
   create_dir_with_ownership "$PUID" "$PGID" "$SAVE_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$MODS_LOCATION"
@@ -197,9 +209,9 @@ setup_cron_env
 # Verify the cron directory and its contents
 if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1 ]]; then
   log "Checking if cron directory and files exist..."
-  if [[ -d "$HOME/valheim/cron.d" && $(ls -A "$HOME/valheim/cron.d") ]]; then
+  if [[ -d "$CRON_LOCATION" && $(ls -A "$CRON_LOCATION") ]]; then
     touch /tmp/master-cron
-    for file in /home/steam/valheim/cron.d/*; do
+    for file in "$CRON_LOCATION"/*; do
        cat "$file" >> /tmp/master-cron
     done
     crontab /tmp/master-cron
