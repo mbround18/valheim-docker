@@ -1,3 +1,26 @@
+# v3.0.2 (Tue Jun 11 2024)
+
+#### 🐛 Bug Fix
+
+- Fix Cron' [#867](https://github.com/mbround18/valheim-docker/pull/867) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate clap to v4.5.7 [#871](https://github.com/mbround18/valheim-docker/pull/871) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate regex to v1.10.5 [#869](https://github.com/mbround18/valheim-docker/pull/869) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to v4.5.6 [#868](https://github.com/mbround18/valheim-docker/pull/868) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate zip to v2.1.3 [#863](https://github.com/mbround18/valheim-docker/pull/863) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to v4.5.5 [#866](https://github.com/mbround18/valheim-docker/pull/866) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate tar to v0.4.41 [#862](https://github.com/mbround18/valheim-docker/pull/862) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate zip to v2.1.2 [#859](https://github.com/mbround18/valheim-docker/pull/859) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]) [@mbround18](https://github.com/mbround18))
+- Update README.md [#858](https://github.com/mbround18/valheim-docker/pull/858) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate serde to v1.0.203 - abandoned [#842](https://github.com/mbround18/valheim-docker/pull/842) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.0.1 (Sun Jun 02 2024)
 
 #### 🐛 Bug Fix
