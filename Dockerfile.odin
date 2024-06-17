@@ -1,5 +1,5 @@
 ARG DEBIAN_VERSION=12
-ARG RUST_VERSION=1.78
+ARG RUST_VERSION=1.79
 
 # ------------------ #
 # -- Odin Planner -- #
