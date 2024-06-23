@@ -1,7 +1,7 @@
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use std::os::unix::fs::PermissionsExt;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{fs, io};
 
 use crate::files::config::{config_file, write_config};
@@ -58,6 +58,9 @@ pub struct Configuration {
 
   /// Sets the save interval in seconds
   pub save_interval: Option<u16>,
+
+  /// Steam home dirname
+  pub steam_home_dirname: String,
 }
 
 impl Configuration {
@@ -74,6 +77,7 @@ impl Configuration {
     modifiers: Option<Vec<Modifiers>>,
     set_key: Option<String>,
     save_interval: Option<u16>,
+    steam_home_dirname: String,
   ) -> Self {
     Configuration {
       name,
@@ -86,6 +90,7 @@ impl Configuration {
       modifiers,
       set_key,
       save_interval,
+      steam_home_dirname
     }
   }
 
@@ -118,12 +123,12 @@ impl Configuration {
 
   fn perform_preflight_checks(&self) -> Result<(), Box<dyn std::error::Error>> {
     let paths_to_check = vec![
-      Path::new("/home/steam/valheim"),
-      Path::new("/home/steam/scripts"),
-      Path::new("/home/steam/.bashrc"),
+      PathBuf::from_iter([&self.steam_home_dirname, "valheim"]),
+      PathBuf::from_iter([&self.steam_home_dirname, "scripts"]),
+      PathBuf::from_iter([&self.steam_home_dirname, ".bashrc"])
     ];
 
-    for path in paths_to_check {
+    for path in &paths_to_check {
       if !path.exists() {
         return Err(Box::new(io::Error::new(
           io::ErrorKind::NotFound,

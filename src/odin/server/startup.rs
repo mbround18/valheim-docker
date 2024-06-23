@@ -26,7 +26,7 @@ fn create_log_files() -> Result<(File, File), Error> {
   let stderr = create_file(format!("{}/logs/valheim_server.err", game_dir).as_str());
   Ok((stdout, stderr))
 }
-pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error> {
+pub fn start_daemonized(config: &ValheimArguments) -> Result<CommandResult, Error> {
   debug!("Starting server daemonized...");
   let (stdout, stderr) = create_log_files().unwrap();
   let command = start(config);
@@ -143,7 +143,7 @@ fn configure_server_options(command: &mut Command, config: &ValheimArguments) {
   command.args(["-savedir", &saves_directory()]);
 }
 
-pub fn start(config: ValheimArguments) -> CommandResult {
+pub fn start(config: &ValheimArguments) -> CommandResult {
   let mut command = create_execution(&config.command);
   debug!("--------------------------------------------------------------------------------------------------------------");
   let (stdout, stderr) = create_log_files().unwrap();
@@ -160,7 +160,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   base_command.stdout(stdout);
   base_command.stderr(stderr);
   debug!("Base Command: {:#?}", base_command);
-  configure_server_options(base_command, &config);
+  configure_server_options(base_command, config);
   debug!("Executable: {}", &config.command);
   info!("Launching Command...");
   let ld_library_path_value = environment::fetch_multiple_var(

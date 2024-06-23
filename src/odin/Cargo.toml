@@ -31,6 +31,7 @@ handlebars = "5.1.2"
 dotenv = "0.15"
 log = "0.4.21"
 clap = { version = "4.5.4", features = [ "derive", "env" ] }
+pcap = "2.0.0"
 which = "*"
 serde = { version = "1.0.200", features = ["derive"], default_features = false  }
 sysinfo = { version = "0.30.11", default_features = false }

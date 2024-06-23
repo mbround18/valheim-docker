@@ -74,6 +74,7 @@ async fn handle_commands(cli: Cli) {
       }),
       set_key,
       save_interval,
+      std::env::var("STEAM_HOME_DIRNAME").unwrap_or("/home/steam".to_string())
     )
     .invoke()
     .await
@@ -82,7 +83,7 @@ async fn handle_commands(cli: Cli) {
       commands::install::invoke(constants::GAME_ID),
       "Successfully installed Valheim!".to_string(),
     ),
-    Commands::Start {} => commands::start::invoke(cli.dry_run),
+    Commands::Start {} => commands::start::invoke(cli.dry_run, cli.pause_on_idle_s),
     Commands::Stop {} => commands::stop::invoke(cli.dry_run),
     Commands::Backup {
       input_directory,

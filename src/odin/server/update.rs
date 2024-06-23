@@ -71,7 +71,7 @@ pub fn update_server() {
   // Bring the server up if it was running before
   if server_was_running {
     let config = load_config();
-    match server::start_daemonized(config) {
+    match server::start_daemonized(&config) {
       Ok(_) => info!("Server daemon started"),
       Err(e) => {
         error!("Error daemonizing: {e}");
