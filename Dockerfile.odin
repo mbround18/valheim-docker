@@ -36,6 +36,7 @@ RUN make release PROFILE=production
 # ------------------ #
 FROM debian:${DEBIAN_VERSION}-slim as runtime
 WORKDIR /apps
+RUN apt-get update && apt-get install -y libpcap0.8
 COPY --from=builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
 ENTRYPOINT ["/apps/odin"]
 CMD ["--version"]

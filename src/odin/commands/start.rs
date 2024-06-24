@@ -24,16 +24,17 @@ pub fn invoke(dry_run: bool, pause_on_idle_s: u32) {
   debug!(target: "commands_start", "Loading config file...");
   let config = load_config();
   debug!(target: "commands_start", "Dry run condition: {}", dry_run);
-  info!(target: "commands_start", "Looking for burial mounds...");
+  info!(target: "commands_start", "Looking for burial mounds ZZZ...");
   if !dry_run {
     match pause_on_idle_s > 0 {
-      true => loop {
+      true => {
+        info!(target: "commands_start", "Starting server with idle pausing ({} seconds)", pause_on_idle_s);
         let mut child = run_server(&config);
-        let _ = server::spawn_kill_on_idle(&mut child, pause_on_idle_s).map_err(|err| {
+        let _ = server::handle_idle(&mut child, pause_on_idle_s, &config.port).map_err(|err| {
           println!("failed to monitor game process: ${}", &err);
           exit(1);
         });
-      },
+      }
       false => {
         run_server(&config)
           .wait()

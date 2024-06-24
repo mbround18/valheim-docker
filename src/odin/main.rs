@@ -74,7 +74,7 @@ async fn handle_commands(cli: Cli) {
       }),
       set_key,
       save_interval,
-      std::env::var("STEAM_HOME_DIRNAME").unwrap_or("/home/steam".to_string())
+      std::env::var("STEAM_HOME_DIRNAME").unwrap_or("/home/steam".to_string()),
     )
     .invoke()
     .await

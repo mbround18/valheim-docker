@@ -90,7 +90,7 @@ impl Configuration {
       modifiers,
       set_key,
       save_interval,
-      steam_home_dirname
+      steam_home_dirname,
     }
   }
 
@@ -125,7 +125,7 @@ impl Configuration {
     let paths_to_check = vec![
       PathBuf::from_iter([&self.steam_home_dirname, "valheim"]),
       PathBuf::from_iter([&self.steam_home_dirname, "scripts"]),
-      PathBuf::from_iter([&self.steam_home_dirname, ".bashrc"])
+      PathBuf::from_iter([&self.steam_home_dirname, ".bashrc"]),
     ];
 
     for path in &paths_to_check {
