@@ -2,6 +2,7 @@ version: "3"
 services:
   odin:
     image: mbround18/odin:latest
+    platform: "linux/amd64"
     build:
       context: .
       dockerfile: ./Dockerfile.odin
@@ -20,6 +21,7 @@ services:
       UPDATE_ON_START: 0
       AUTO_UPDATE_SCHEDULE: "0 1 * * *"
       TYPE: Vanilla
+      PAUSE_ON_IDLE_SECONDS: 0
     build:
       context: .
       dockerfile: ./Dockerfile.valheim

@@ -19,6 +19,9 @@ pub struct Cli {
   #[arg(short = 'r', long, env = "DRY_RUN", value_parser  = parse_truthy)]
   pub dry_run: bool,
 
+  #[arg(short = 'p', long, env = "PAUSE_ON_IDLE_SECONDS", value_parser = clap::value_parser!(u32), default_value_t = 0)]
+  pub pause_on_idle_s: u32,
+
   #[command(subcommand)]
   pub commands: Commands,
 }

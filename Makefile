@@ -21,10 +21,10 @@ member_clippy:
 	cargo clippy
 
 docker-build: setup
-	docker compose -f ./docker-compose.dev.yml build
+	docker compose -f ./docker-compose.dev.yml build --progress=plain
 
 docker-up: setup
-	docker compose -f ./docker-compose.dev.yml up
+	docker compose -f ./docker-compose.dev.yml up --force-recreate
 
 docker-down: setup
 	docker compose -f ./docker-compose.dev.yml down

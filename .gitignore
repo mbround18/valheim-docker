@@ -10,6 +10,7 @@ node_modules/
 !.yarn/plugins
 !.yarn/sdks
 !.yarn/versions
+.tmp
 .pnp.*
 *.bak
 
