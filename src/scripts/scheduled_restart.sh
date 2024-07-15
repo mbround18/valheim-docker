@@ -2,7 +2,7 @@
 # Cron uses blank env and does not pick up /usr/local/bin files.
 export PATH="/usr/local/bin:$PATH"
 
-if [ "${USER}" != "steam" ]; then
+if [ "$(whoami)" != "steam" ]; then
   echo "You must run this script as the steam user!"
   exit 1
 fi
