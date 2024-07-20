@@ -27,7 +27,7 @@ path = "lib.rs"
 
 
 [dependencies]
-handlebars = "5.1.2"
+handlebars = "6.0.0"
 dotenv = "0.15"
 log = "0.4.21"
 clap = { version = "4.5.4", features = [ "derive", "env" ] }
