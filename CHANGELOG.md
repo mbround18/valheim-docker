@@ -1,3 +1,27 @@
+# v3.0.4 (Wed Jul 31 2024)
+
+#### 🐛 Bug Fix
+
+- Maintenance July 30th, 2024 [#907](https://github.com/mbround18/valheim-docker/pull/907) ([@mbround18](https://github.com/mbround18))
+- Update Rust crate which to v6.0.2 [#905](https://github.com/mbround18/valheim-docker/pull/905) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serde_json to v1.0.121 [#904](https://github.com/mbround18/valheim-docker/pull/904) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update rust Docker tag to v1.80 [#902](https://github.com/mbround18/valheim-docker/pull/902) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate clap to v4.5.11 [#900](https://github.com/mbround18/valheim-docker/pull/900) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate tokio to v1.39.2 [#901](https://github.com/mbround18/valheim-docker/pull/901) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate zip to v2.1.5 [#898](https://github.com/mbround18/valheim-docker/pull/898) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate handlebars to v6 [#897](https://github.com/mbround18/valheim-docker/pull/897) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate tokio to v1.38.1 [#895](https://github.com/mbround18/valheim-docker/pull/895) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate zip to v2.1.4 [#896](https://github.com/mbround18/valheim-docker/pull/896) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serde_with to v3.9.0 [#893](https://github.com/mbround18/valheim-docker/pull/893) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.0.3 (Mon Jul 15 2024)
 
 #### 🐛 Bug Fix
