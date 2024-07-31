@@ -18,18 +18,17 @@ jobs:
         image: [odin, valheim]
 
     steps:
-      - uses: actions/checkout@v4 # v4
+      # Check out the repository
+      - uses: actions/checkout@v4
 
+      # Generate Docker metadata
       - name: Docker meta
         id: meta
         uses: crazy-max/ghaction-docker-meta@v5
         with:
-          # list of Docker images to use as base name for tags
           images: |
             mbround18/${{ matrix.image }}
             ghcr.io/mbround18/${{ matrix.image }}
-
-          # generate Docker tags based on the following events/attributes
           tags: |
             type=schedule
             type=ref,event=branch
@@ -39,15 +38,18 @@ jobs:
             type=semver,pattern={{major}}
             type=sha
 
+      # Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Log in to DockerHub
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: mbround18
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      # Log in to GitHub Container Registry
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -56,15 +58,11 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      # Install jq for JSON parsing
       - name: "JQ: Install"
-        run: |
-          sudo apt-get install -y jq
+        run: sudo apt-get install -y jq
 
-      - name: "Cargo Make: Get Latest Version"
-        id: cargo-make
-        run: |
-          echo "version=$(curl -s https://api.github.com/repos/sagiegurari/cargo-make/releases/latest | jq -r '.tag_name')" >> $GITHUB_OUTPUT
-
+      # Build and push Docker images
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -79,4 +77,3 @@ jobs:
             "GITHUB_SHA=${GITHUB_SHA}"
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-            "CARGO_MAKE_VERSION=${{ steps.cargo-make.outputs.version }}"
