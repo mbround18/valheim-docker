@@ -15,17 +15,21 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build-nd-test:
+  build-and-test:
     name: Build & Test
     runs-on: arc
     steps:
-      - uses: actions/checkout@v4 # v4
-      - name: Setup | Rust | Nightly
+      # Check out the repository
+      - uses: actions/checkout@v4
+
+      # Set up Rust with the stable toolchain
+      - name: Setup | Rust | Stable
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
           components: clippy rustfmt
 
+      # Cache Cargo build files to speed up builds
       - uses: actions/cache@v4
         name: Cache Cargo Files
         with:
@@ -34,9 +38,14 @@ jobs:
             target/debug
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
+      # Build the Rust project
       - name: Build
         run: cargo build --verbose
+
+      # Run tests
       - name: Run tests
         run: cargo test --verbose
+
+      # Check formatting
       - name: Lint
         run: cargo fmt -- --check

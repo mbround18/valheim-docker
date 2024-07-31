@@ -15,17 +15,19 @@ jobs:
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
-      - uses: actions/checkout@v4 # v4
+      # Check out the repository
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup | Rust | Nightly
+      # Set up Rust with the stable toolchain
+      - name: Setup | Rust | Stable
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
           components: clippy rustfmt
 
+      # Cache Cargo build files to speed up builds
       - uses: actions/cache@v4
         name: Cache Cargo Files
         with:
@@ -34,14 +36,17 @@ jobs:
             target/debug
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
+      # Build the project with the release profile
       - name: Build Release
         run: make release PROFILE=production
 
+      # Create a ZIP archive of the release binaries
       - uses: vimtor/action-zip@v1
         with:
           files: target/release/odin target/release/huginn
           dest: tmp/bundle.zip
 
+      # Use the Auto Release Tool by Intuit
       - name: Auto Release Tool by Intuit
         uses: mbround18/auto@v1.5.0
         with:
