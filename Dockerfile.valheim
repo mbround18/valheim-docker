@@ -4,12 +4,12 @@ ARG ODIN_IMAGE_VERSION=latest
 # ------------------ #
 # -- Odin Builder -- #
 # ------------------ #
-FROM --platform=linux/amd64 mbround18/odin:${ODIN_IMAGE_VERSION} as runtime
+FROM --platform=linux/amd64 mbround18/odin:${ODIN_IMAGE_VERSION} AS runtime
 
 # ------------------ #
 # -- Steam Setup -- #
 # ------------------ #
-FROM steamcmd/steamcmd:ubuntu-${UBUNTU_VERSION} as root
+FROM steamcmd/steamcmd:ubuntu-${UBUNTU_VERSION} AS root
 
 USER root
 
@@ -19,7 +19,9 @@ ENV TZ=America/Los_Angeles \
     PGID=1000
 
 # Set timezone and install necessary packages
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
     apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y -qq \
@@ -54,7 +56,7 @@ RUN printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.
 # --------------- #
 # -- Steam CMD -- #
 # --------------- #
-FROM root as steamcmd
+FROM root AS steamcmd
 
 USER steam
 ENV HOME /home/steam
@@ -75,7 +77,7 @@ RUN mkdir -p /home/steam/.local/share/Steam/steamcmd && \
 # --------------- #
 # -- Valheim   -- #
 # --------------- #
-FROM steamcmd as valheim
+FROM steamcmd AS valheim
 
 USER steam
 ENV HOME /home/steam

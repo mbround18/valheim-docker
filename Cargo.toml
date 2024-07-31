@@ -4,9 +4,7 @@ members = [
   "src/huginn"
 ]
 resolver = "2"
-
-
-
+main
 [profile.dev]
 opt-level = 0
 
