@@ -1,4 +1,3 @@
-version: "3"
 services:
   odin:
     image: mbround18/odin:latest
