@@ -1,4 +1,4 @@
-name: Format Check and Build
+name: Build & Check
 
 on:
   pull_request:
