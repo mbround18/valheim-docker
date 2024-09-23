@@ -1,4 +1,4 @@
-name: Docker Build
+name: Format Check and Build
 
 on:
   pull_request:
@@ -19,6 +19,7 @@ concurrency:
 
 jobs:
   lint:
+    name: Linting
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -39,10 +40,10 @@ jobs:
             echo "> These are development images, expect bugs!!"
           fi
 
-  build_rust: 
+  build_rust:
     name: Build Rust
     uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@main
-  
+
   build_docker:
     name: "Build Docker"
     runs-on: ubuntu-latest
