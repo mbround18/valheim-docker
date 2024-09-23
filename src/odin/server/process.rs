@@ -21,7 +21,7 @@ impl ServerProcess {
   }
 
   pub fn valheim_processes(&mut self) -> Vec<&sysinfo::Process> {
-    self.system.refresh_processes();
+    self.system.refresh_all();
     debug!(
       "Scanning for Valheim processes via system module. Number of processes: {}",
       self.system.processes().len()
