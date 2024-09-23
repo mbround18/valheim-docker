@@ -33,7 +33,7 @@ pub fn invoke(input: String, output: String) {
           name.replace(&input, "")
         );
 
-        match tar.append_path_with_name(&name, &name.replace(&format!("{input}/"), "")) {
+        match tar.append_path_with_name(&name, name.replace(&format!("{input}/"), "")) {
           Ok(_) => debug!("Successfully added {name} to backup file"),
           Err(err) => {
             error!("Failed to add {name} to backup file");
