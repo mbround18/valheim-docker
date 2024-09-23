@@ -39,7 +39,12 @@ jobs:
             echo "> These are development images, expect bugs!!"
           fi
 
-  build:
+  build_rust: 
+    name: Build Rust
+    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@main
+  
+  build_docker:
+    name: "Build Docker"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
