@@ -3,9 +3,10 @@ services:
     image: mbround18/odin:latest
     build:
       context: .
-      dockerfile: ./Dockerfile.odin
+      dockerfile: ./Dockerfile  # Combined Dockerfile
+      target: odin_runtime      # Build up to the odin_runtime stage
     volumes:
-      - odin-output:/data/odin/target/release
+      - odin-output:/apps
   valheim:
     depends_on:
       - odin
@@ -21,7 +22,8 @@ services:
       TYPE: Vanilla
     build:
       context: .
-      dockerfile: ./Dockerfile.valheim
+      dockerfile: ./Dockerfile  # Combined Dockerfile
+      target: valheim_final     # Build up to the valheim_final stage
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"
