@@ -49,8 +49,11 @@ jobs:
         include:
           - image: odin
             push: true
+            target: odin_runtime
           - image: valheim
             push: ${{ contains(github.event.pull_request.labels.*.name, 'canary') }}
+            target: valheim_final
+
     steps:
       - uses: actions/checkout@v4
 
@@ -76,7 +79,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          file: ./Dockerfile.${{ matrix.image }}
+          file: ./Dockerfile
+          target: ${{matrix.target}}
           push: ${{ matrix.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
