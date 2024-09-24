@@ -150,31 +150,31 @@ export TYPE="${TYPE,,}"
 export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
 
 case "${TYPE}" in
-  "vanilla")
-    if [ -n "${MODS:=""}" ]; then
-      log "Mods supplied but you are running with Vanilla!!!"
-      log "Mods will NOT be installed!."
-    fi
-    ;;
-  "valheimplus")
-    if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
-      install_valheim_plus
-    fi
-    ;;
-  "bepinex")
-    if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
-      install_bepinex
-    fi
-    ;;
-  "bepinexfull")
-    if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
-      install_bepinex_full
-    fi
-    ;;
-  *)
-    log "Unknown type: ${TYPE}"
-    exit 1
-    ;;
+"vanilla")
+  if [ -n "${MODS:=""}" ]; then
+    log "Mods supplied but you are running with Vanilla!!!"
+    log "Mods will NOT be installed!."
+  fi
+  ;;
+"valheimplus")
+  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+    install_valheim_plus
+  fi
+  ;;
+"bepinex")
+  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+    install_bepinex
+  fi
+  ;;
+"bepinexfull")
+  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+    install_bepinex_full
+  fi
+  ;;
+*)
+  log "Unknown type: ${TYPE}"
+  exit 1
+  ;;
 esac
 
 # Install additional mods if not running vanilla
