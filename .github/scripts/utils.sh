@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 parse_version() {
   # Strip git ref prefix from version
   VERSION="${VERSION:-latest}"

@@ -3,7 +3,6 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-
 export HOME="/home/steam"
 export GAME_LOCATION=${GAME_LOCATION:-"${HOME}/valheim"}
 export SAVE_LOCATION=${SAVE_LOCATION:-"${GAME_LOCATION}/saves"}
@@ -175,7 +174,7 @@ setup_filesystem() {
 check_memory() {
   local total_memory
   total_memory=$(free -h | awk '/^Mem:/ {print $2}' | tr -d 'G')
-  if (( $(echo "$total_memory < 2" | bc -l) )); then
+  if (($(echo "$total_memory < 2" | bc -l))); then
     log "Your system has less than 2GB of RAM! Valheim might not run on your system."
   else
     log "Total memory: ${total_memory} GB"
@@ -212,7 +211,7 @@ if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1
   if [[ -d "$CRON_LOCATION" && $(ls -A "$CRON_LOCATION") ]]; then
     touch /tmp/master-cron
     for file in "$CRON_LOCATION"/*; do
-       cat "$file" >> /tmp/master-cron
+      cat "$file" >>/tmp/master-cron
     done
     crontab /tmp/master-cron
     rm -f /tmp/master-cron

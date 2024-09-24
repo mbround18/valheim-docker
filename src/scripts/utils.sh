@@ -9,18 +9,18 @@ log() {
   # Parse arguments
   while [ "$#" -gt 0 ]; do
     case "$1" in
-      -p|--prefix)
-        prefix="$2"
-        shift 2
-        ;;
-      -l|--level)
-        level="$2"
-        shift 2
-        ;;
-      *)
-        line="$1"
-        shift 1
-        ;;
+    -p | --prefix)
+      prefix="$2"
+      shift 2
+      ;;
+    -l | --level)
+      level="$2"
+      shift 2
+      ;;
+    *)
+      line="$1"
+      shift 1
+      ;;
     esac
   done
 
