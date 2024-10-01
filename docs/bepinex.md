@@ -1,6 +1,6 @@
 # BepInEx Support
 
-> [As of March 2021, this repo now has an env flag to run with BepInEx or ValheimPlus Click Here to find out more](tutorials/getting_started_with_mods.md)
+> [As of March 2021, this repo now has an env flag to run with BepInEx, Click Here to find out more](tutorials/getting_started_with_mods.md)
 
 ## Installing BepInEx
 
