@@ -1,17 +1,13 @@
 # Getting started with Mods
 
-> For this example we will be going over installing ValheimPlus. There is a lot of mysteries when it comes to modding but this should help you get started.
-
 ## Steps
 
 1. Set the variable `TYPE` to be one of the following:
 
-   | Type        | What it installs                                                                                                                                                                                                 |
-   | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | Vanilla     | Default value and the most common installation type. This will run Valheim normally.                                                                                                                             |
-   | BepInEx     | This will install [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/) and is purely just BepInEx with minimally needed components.                                |
-   | BepInExFull | This will install [BepInEx Full from this package](https://valheim.thunderstore.io/package/1F31A/BepInEx_Valheim_Full/) and contains a modern set of components with some extras for expanded mod compatibility. |
-   | ValheimPlus | This will install [Valheim Plus from this repository](https://github.com/valheimPlus/ValheimPlus) and included BepInEx as a basic version with the most common set of components                                 |
+   | Type    | What it installs                                                                                                                                                                  |
+   | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Vanilla | Default value and the most common installation type. This will run Valheim normally.                                                                                              |
+   | BepInEx | This will install [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/) and is purely just BepInEx with minimally needed components. |
 
 2. If you wish do not with to use additional mods, you can skip this step. Otherwise, in order to install additional mods you can use the `MODS` variable.
 
@@ -24,7 +20,7 @@
        image: mbround18/valheim:latest
        environment:
          # The Type variable is used to set which type of server you would like to run.
-         - TYPE=ValheimPlus
+         - TYPE=BepinEx
          # The Mods variable is a comma and newline separated string.
          # It MUST be a link with a command and a new line at the end to be valid.
          - "MODS=

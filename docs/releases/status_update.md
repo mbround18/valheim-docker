@@ -16,11 +16,10 @@ Without `--json`
 [ODIN][INFO]  - Players: 0/10
 [ODIN][INFO]  - Map: Creative Update
 [ODIN][INFO]  - BepInEx Enabled: true
-[ODIN][INFO]  - BepInEx Mods: ValheimPlus.dll
+[ODIN][INFO]  - BepInEx Mods: Example.dll
 ```
 
 With `--json`
-(with ValheimPlus for example)
 
 ```json
 {
@@ -32,12 +31,7 @@ With `--json`
   "online": true,
   "bepinex": {
     "enabled": true,
-    "mods": [
-      {
-        "name": "ValheimPlus.dll",
-        "location": "/home/steam/valheim/BepInEx/plugins/ValheimPlus.dll"
-      }
-    ]
+    "mods": []
   },
   "jobs": [
     {
@@ -77,10 +71,6 @@ You are responsible for putting your status endpoint behind SSL or authenticatio
       {
         "name": "BetterUI.dll",
         "location": "/home/steam/valheim/BepInEx/plugins/BetterUI/plugins/BetterUI/BetterUI.dll"
-      },
-      {
-        "name": "ValheimPlus.dll",
-        "location": "/home/steam/valheim/BepInEx/plugins/ValheimPlus.dll"
       }
     ]
   },
