@@ -1,6 +1,6 @@
 # BepInEx Support
 
-> [As of March 2021, this repo now has an env flag to run with BepInEx or ValheimPlus Click Here to find out more](tutorials/getting_started_with_mods.md)
+> [As of March 2021, this repo now has an env flag to run with BepInEx, Click Here to find out more](tutorials/getting_started_with_mods.md)
 
 ## Installing BepInEx
 
@@ -23,7 +23,7 @@
 3. Download BepInEx
 
    ```sh
-   wget -O /home/steam/tmp/bepinex.zip https://github.com/valheimPlus/ValheimPlus/releases/download/0.9.7/UnixServer.zip
+   wget -O /home/steam/tmp/bepinex.zip https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.2/BepInEx_linux_x64_5.4.23.2.zip
    ```
 
 4. Extract the BepInEx zip file

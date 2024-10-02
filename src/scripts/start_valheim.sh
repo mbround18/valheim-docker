@@ -36,11 +36,6 @@ cleanup() {
   [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID"
 }
 
-# Function to handle Valheim Plus installation (deprecated)
-install_valheim_plus() {
-  deprecation_notice "ValheimPlus has been deprecated!!!!!! Please use BepInEx instead!"
-}
-
 # Function to handle BepInEx installation
 install_bepinex() {
   log "Installing BepInEx"
@@ -51,11 +46,6 @@ install_bepinex() {
   fi
   log "Pulling BepInEx from ${BEPINEX_DOWNLOAD_URL}"
   odin mod:install "${BEPINEX_DOWNLOAD_URL}"
-}
-
-# Function to handle full BepInEx installation (deprecated)
-install_bepinex_full() {
-  deprecation_notice "BepInExFull has been deprecated!!!!!! Please use BepInEx instead!"
 }
 
 # Navigate to the Valheim directory or exit if it fails
@@ -156,19 +146,9 @@ case "${TYPE}" in
     log "Mods will NOT be installed!."
   fi
   ;;
-"valheimplus")
-  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
-    install_valheim_plus
-  fi
-  ;;
 "bepinex")
   if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
     install_bepinex
-  fi
-  ;;
-"bepinexfull")
-  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
-    install_bepinex_full
   fi
   ;;
 *)
@@ -180,6 +160,7 @@ esac
 # Install additional mods if not running vanilla
 if [ "${TYPE}" != "vanilla" ]; then
   IFS=$',\n'
+  # shellcheck disable=SC2206
   MODS=(${MODS:=""})
   IFS=$' \t\n'
   for mod in "${MODS[@]}"; do
