@@ -1,5 +1,6 @@
 use crate::errors::VariantNotFound;
 use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::player::PlayerStatus;
 use crate::notifications::{
   discord::{is_discord_webhook, DiscordWebHookBody},
   NotificationMessage, WEBHOOK_INCLUDE_PUBLIC_IP, WEBHOOK_URL,
@@ -19,6 +20,7 @@ pub enum NotificationEvent {
   Update(EventStatus),
   Start(EventStatus),
   Stop(EventStatus),
+  Player(PlayerStatus),
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -165,11 +167,14 @@ impl fmt::Display for NotificationEvent {
 impl std::str::FromStr for NotificationEvent {
   type Err = VariantNotFound;
   fn from_str(s: &str) -> core::result::Result<NotificationEvent, Self::Err> {
-    use NotificationEvent::{Broadcast, Start, Stop, Update};
+    use NotificationEvent::{Broadcast, Player, Start, Stop, Update};
     let parts: Vec<&str> = s.split(' ').collect();
     let event = parts[0];
     if event.eq(Broadcast.to_string().as_str()) {
       ::std::result::Result::Ok(Broadcast)
+    } else if event.eq("Player") {
+      let player_status = PlayerStatus::from_str(parts[1]).unwrap();
+      ::std::result::Result::Ok(Player(player_status))
     } else {
       let status = parts[1];
       let event_status = EventStatus::from_str(status).unwrap();
@@ -188,12 +193,25 @@ impl std::str::FromStr for NotificationEvent {
 #[cfg(test)]
 mod notification_event_tests {
   use super::*;
+  use crate::notifications::enums::player::PlayerStatus;
   use std::str::FromStr;
-  use NotificationEvent::Broadcast;
+  use NotificationEvent::{Broadcast, Player};
 
   #[test]
   fn parse_enum_from_string() {
     assert_eq!(NotificationEvent::from_str("Broadcast").unwrap(), Broadcast);
+  }
+
+  #[test]
+  fn parse_player_enum_from_string() {
+    assert_eq!(
+      NotificationEvent::from_str("Player Joined").unwrap(),
+      Player(PlayerStatus::Joined)
+    );
+    assert_eq!(
+      NotificationEvent::from_str("Player Left").unwrap(),
+      Player(PlayerStatus::Left)
+    );
   }
 }
 
@@ -250,6 +268,21 @@ mod enum_tests {
   fn parse_enum_create_notification() {
     set_var("NAME", "parse_enum_create_notification");
     let event = NotificationEvent::Stop(EventStatus::Running);
+    let notification = event.create_notification_message();
+    assert_eq!(
+      format!(
+        "{} {}",
+        notification.event_type.name, notification.event_type.status
+      ),
+      event.to_string()
+    );
+    assert!(notification.event_message.contains(&event.to_string()));
+  }
+
+  #[test]
+  fn parse_player_enum_create_notification() {
+    set_var("NAME", "parse_player_enum_create_notification");
+    let event = NotificationEvent::Player(PlayerStatus::Joined);
     let notification = event.create_notification_message();
     assert_eq!(
       format!(
