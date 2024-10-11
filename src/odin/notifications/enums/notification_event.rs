@@ -131,12 +131,17 @@ impl NotificationEvent {
     };
     self.handle_request(req);
   }
-  pub fn send_notification(&self) {
+  pub fn send_notification(&self, message: Option<String>) {
     debug!("Checking for notification information...");
     if is_webhook_enabled() {
       debug!("Webhook found! Starting notification process...");
-      let event = self.create_notification_message();
+      let mut event = self.create_notification_message();
       let enabled_var = format!("WEBHOOK_STATUS_{}", event.event_type.status).to_uppercase();
+
+      if let Some(msg) = message {
+        event.event_message = msg;
+      }
+
       debug!("Checking ENV Var: {}", &enabled_var);
       if fetch_var(&enabled_var, "0").eq("1") {
         self.send_custom_notification(&fetch_webhook_url(), &event);
@@ -147,6 +152,7 @@ impl NotificationEvent {
       debug!("Skipping notification, no webhook supplied!");
     }
   }
+
   pub(crate) fn to_event_type(&self) -> EventType {
     let event = self.to_string();
     let parsed_event: Vec<&str> = event.split(' ').collect();
@@ -166,23 +172,23 @@ impl fmt::Display for NotificationEvent {
 
 impl std::str::FromStr for NotificationEvent {
   type Err = VariantNotFound;
-  fn from_str(s: &str) -> core::result::Result<NotificationEvent, Self::Err> {
+  fn from_str(s: &str) -> Result<NotificationEvent, Self::Err> {
     use NotificationEvent::{Broadcast, Player, Start, Stop, Update};
     let parts: Vec<&str> = s.split(' ').collect();
     let event = parts[0];
     if event.eq(Broadcast.to_string().as_str()) {
-      ::std::result::Result::Ok(Broadcast)
+      Ok(Broadcast)
     } else if event.eq("Player") {
-      let player_status = PlayerStatus::from_str(parts[1]).unwrap();
-      ::std::result::Result::Ok(Player(player_status))
+      let player_status = PlayerStatus::from_str(parts[1])?;
+      Ok(Player(player_status))
     } else {
       let status = parts[1];
-      let event_status = EventStatus::from_str(status).unwrap();
+      let event_status = EventStatus::from_str(status)?;
       match event {
-        "Update" => ::std::result::Result::Ok(Update(event_status)),
-        "Start" => ::std::result::Result::Ok(Start(event_status)),
-        "Stop" => ::std::result::Result::Ok(Stop(event_status)),
-        _ => ::std::result::Result::Err(VariantNotFound {
+        "Update" => Ok(Update(event_status)),
+        "Start" => Ok(Start(event_status)),
+        "Stop" => Ok(Stop(event_status)),
+        _ => Err(VariantNotFound {
           v: String::from("Failed to find Notification Event"),
         }),
       }
@@ -225,28 +231,28 @@ mod webhook_tests {
   #[serial]
   fn is_webhook_enabled_found_var_valid_url() {
     set_var("WEBHOOK_URL", "http://127.0.0.1:3000/dummy-url");
-    assert_eq!(is_webhook_enabled(), true);
+    assert!(is_webhook_enabled());
   }
 
   #[test]
   #[serial]
   fn is_webhook_enabled_found_var_invalid_url() {
     set_var("WEBHOOK_URL", "LOCALHOST");
-    assert_eq!(is_webhook_enabled(), false);
+    assert!(!is_webhook_enabled());
   }
 
   #[test]
   #[serial]
   fn is_webhook_enabled_not_found_var() {
     remove_var("WEBHOOK_URL");
-    assert_eq!(is_webhook_enabled(), false);
+    assert!(!is_webhook_enabled());
   }
 
   #[test]
   #[serial]
   fn is_webhook_enabled_empty_var() {
     set_var("WEBHOOK_URL", "");
-    assert_eq!(is_webhook_enabled(), false);
+    assert!(!is_webhook_enabled());
   }
 }
 

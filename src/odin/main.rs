@@ -24,6 +24,7 @@ pub mod server;
 mod steamcmd;
 pub mod traits;
 pub mod utils;
+mod log_filters;
 
 #[tokio::main]
 async fn main() {

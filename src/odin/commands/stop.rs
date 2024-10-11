@@ -7,7 +7,7 @@ use crate::notifications::enums::notification_event::NotificationEvent;
 use crate::{constants, server, utils::get_working_dir};
 
 pub fn invoke(dry_run: bool) {
-  NotificationEvent::Stop(EventStatus::Running).send_notification();
+  NotificationEvent::Stop(EventStatus::Running).send_notification(None);
   debug!("Stopping server, directory needs to be where the server executable is located.");
   info!(
     "Stopping server, using working directory {}",
@@ -23,5 +23,5 @@ pub fn invoke(dry_run: bool) {
     }
     server::blocking_shutdown();
   }
-  NotificationEvent::Stop(EventStatus::Successful).send_notification();
+  NotificationEvent::Stop(EventStatus::Successful).send_notification(None);
 }

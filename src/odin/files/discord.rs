@@ -1,6 +1,6 @@
 use crate::{
   files::{FileManager, ManagedFile},
-  notifications::discord::{DiscordWebHookBody},
+  notifications::discord::DiscordWebHookBody,
   utils::{environment::fetch_var, path_exists},
 };
 
@@ -80,7 +80,7 @@ pub fn read_discord(discord: &dyn FileManager) -> DiscordConfig {
 pub fn write_discord(discord: &dyn FileManager) -> bool {
   if path_exists(&discord.path()) {
     debug!("Discord config file already exists, doing nothing.");
-    return true; 
+    return true;
   }
 
   let template_notification = basic_template();
@@ -205,14 +205,15 @@ mod tests {
   fn test_read_discord_without_events_key() {
     let mut mock_file = MockManagedFile::new();
     let no_events_content = r#"{}"#;
-    mock_file.expect_read().return_const(String::from(no_events_content));
+    mock_file
+      .expect_read()
+      .return_const(String::from(no_events_content));
 
     let config = read_discord(&mock_file);
 
     assert!(config.events.contains_key("broadcast"));
     assert!(config.events.contains_key("start"));
   }
-
 
   #[test]
   fn test_read_discord_with_extra_event_keys() {
@@ -231,28 +232,35 @@ mod tests {
             }
         }
     }"#;
-    mock_file.expect_read().return_const(String::from(extra_keys_content));
+    mock_file
+      .expect_read()
+      .return_const(String::from(extra_keys_content));
 
     let config = read_discord(&mock_file);
 
-    assert!(!config.events.contains_key("extra_event"), "Unexpected key should be ignored");
+    assert!(
+      !config.events.contains_key("extra_event"),
+      "Unexpected key should be ignored"
+    );
     assert!(config.events.contains_key("broadcast"));
     assert!(config.events.contains_key("start"));
   }
-
-
 
   #[test]
   fn test_read_discord_with_malformed_json() {
     let mut mock_file = MockManagedFile::new();
     let malformed_json = r#"{ "events": { "broadcast": { "content": "test_broadcast""#;
-    mock_file.expect_read().return_const(String::from(malformed_json));
+    mock_file
+      .expect_read()
+      .return_const(String::from(malformed_json));
 
     let result = std::panic::catch_unwind(|| read_discord(&mock_file));
 
-    assert!(result.is_err(), "Expected a panic when the JSON is malformed");
+    assert!(
+      result.is_err(),
+      "Expected a panic when the JSON is malformed"
+    );
   }
-
 
   #[test]
   fn test_discord_file() {
