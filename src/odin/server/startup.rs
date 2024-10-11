@@ -44,7 +44,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
       }
       info!("Server has been started and Daemonize. It should be online shortly!");
       info!("Keep an eye out for 'Game server connected' in the log!");
-      NotificationEvent::Start(EventStatus::Successful).send_notification();
+      NotificationEvent::Start(EventStatus::Successful).send_notification(None);
       info!("(this indicates its online without any errors.)")
     })
     .privileged_action(|| command)

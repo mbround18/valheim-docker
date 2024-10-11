@@ -1,6 +1,8 @@
 use crate::notifications::enums::notification_event::NotificationEvent;
+use crate::notifications::enums::player::PlayerStatus::{Joined, Left};
 use crate::utils::common_paths::log_directory;
 use log::{error, info, warn};
+use crate::utils::environment::is_env_var_truthy;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs::{read_to_string, File};
@@ -25,6 +27,18 @@ fn handle_line(path: PathBuf, line: String) {
     return;
   }
 
+  if is_env_var_truthy("PLAYER_EVENT_NOTIFICATIONS") {
+    if line.contains("I HAVE ARRIVED!") {
+      
+      
+      NotificationEvent::Player(Joined).send_notification(None);
+    }
+
+    if line.contains("Player disconnected") {
+      NotificationEvent::Player(Left).send_notification(None);
+    }
+  }
+
   let file_name = Path::new(&path).file_name().unwrap().to_str().unwrap();
 
   if line.contains("WARNING") {
@@ -37,12 +51,12 @@ fn handle_line(path: PathBuf, line: String) {
 
   if line.contains("Game server connected") {
     NotificationEvent::Start(crate::notifications::enums::event_status::EventStatus::Successful)
-      .send_notification();
+      .send_notification(None);
   }
 
   if line.contains("Steam manager on destroy") {
     NotificationEvent::Stop(crate::notifications::enums::event_status::EventStatus::Successful)
-      .send_notification();
+      .send_notification(None);
     info!("The game server has been stopped");
   }
 }
