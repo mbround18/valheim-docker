@@ -1,5 +1,5 @@
-use cached::proc_macro::cached;
 use crate::utils::parse_truthy::parse_truthy;
+use cached::proc_macro::cached;
 use std::env;
 
 pub fn fetch_var(name: &str, default: &str) -> String {
@@ -11,9 +11,7 @@ pub fn fetch_var(name: &str, default: &str) -> String {
         value
       }
     }
-    Err(_) => {
-      String::from(default)
-    }
+    Err(_) => String::from(default),
   }
 }
 

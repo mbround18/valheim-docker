@@ -16,6 +16,7 @@ mod constants;
 mod errors;
 mod executable;
 mod files;
+pub mod log_filters;
 mod logger;
 mod messages;
 mod mods;
@@ -24,7 +25,6 @@ pub mod server;
 mod steamcmd;
 pub mod traits;
 pub mod utils;
-mod log_filters;
 
 #[tokio::main]
 async fn main() {
