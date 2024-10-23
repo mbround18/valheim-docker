@@ -108,7 +108,9 @@ ENV PORT="2456" \
     BACKUP_LOCATION="/home/steam/backups" \
     WEBHOOK_STATUS_SUCCESSFUL="1" \
     WEBHOOK_STATUS_FAILED="1" \
-    BEPINEX_RELEASES_URL="https://thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/"
+    BEPINEX_RELEASES_URL="https://thunderstore.io/api/experimental/package/denikson/BepInExPack_Valheim/" \
+    WEBHOOK_STATUS_JOINED="1" \
+    WEBHOOK_STATUS_LEFT="1"
 
 # Copy scripts and set permissions
 COPY --chmod=${EXPECTED_OCTAL} --chown=steam:steam ./src/scripts/*.sh /home/steam/scripts/

@@ -26,18 +26,6 @@ pub trait FileManager {
   fn exists(&self) -> bool {
     Path::new(self.path().as_str()).exists()
   }
-  // fn remove(&self) -> bool {
-  //   match remove_file(self.path()) {
-  //     Ok(_) => {
-  //       info!("Successfully deleted {}", self.path());
-  //       true
-  //     }
-  //     Err(_) => {
-  //       error!("Did not find or could not delete {}", self.path());
-  //       false
-  //     }
-  //   }
-  // }
   fn read(&self) -> String {
     if self.exists() {
       fs::read_to_string(self.path()).unwrap()
@@ -60,18 +48,6 @@ pub trait FileManager {
       }
     }
   }
-  // fn set_executable(&self) -> bool {
-  //   if let Ok(_output) = create_execution("chmod")
-  //     .args(["+x", self.path().as_str()])
-  //     .output()
-  //   {
-  //     info!("Successfully set {} to executable", self.path());
-  //     true
-  //   } else {
-  //     error!("Unable to set {} to executable", self.path());
-  //     false
-  //   }
-  // }
 }
 
 pub struct ManagedFile {

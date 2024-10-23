@@ -1,5 +1,6 @@
 use crate::errors::VariantNotFound;
 use crate::notifications::enums::event_status::EventStatus;
+use crate::notifications::enums::player::PlayerStatus;
 use crate::notifications::{
   discord::{is_discord_webhook, DiscordWebHookBody},
   NotificationMessage, WEBHOOK_INCLUDE_PUBLIC_IP, WEBHOOK_URL,
@@ -19,6 +20,7 @@ pub enum NotificationEvent {
   Update(EventStatus),
   Start(EventStatus),
   Stop(EventStatus),
+  Player(PlayerStatus),
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -129,12 +131,17 @@ impl NotificationEvent {
     };
     self.handle_request(req);
   }
-  pub fn send_notification(&self) {
+  pub fn send_notification(&self, message: Option<String>) {
     debug!("Checking for notification information...");
     if is_webhook_enabled() {
       debug!("Webhook found! Starting notification process...");
-      let event = self.create_notification_message();
+      let mut event = self.create_notification_message();
       let enabled_var = format!("WEBHOOK_STATUS_{}", event.event_type.status).to_uppercase();
+
+      if let Some(msg) = message {
+        event.event_message = msg;
+      }
+
       debug!("Checking ENV Var: {}", &enabled_var);
       if fetch_var(&enabled_var, "0").eq("1") {
         self.send_custom_notification(&fetch_webhook_url(), &event);
@@ -145,6 +152,7 @@ impl NotificationEvent {
       debug!("Skipping notification, no webhook supplied!");
     }
   }
+
   pub(crate) fn to_event_type(&self) -> EventType {
     let event = self.to_string();
     let parsed_event: Vec<&str> = event.split(' ').collect();
@@ -164,20 +172,23 @@ impl fmt::Display for NotificationEvent {
 
 impl std::str::FromStr for NotificationEvent {
   type Err = VariantNotFound;
-  fn from_str(s: &str) -> core::result::Result<NotificationEvent, Self::Err> {
-    use NotificationEvent::{Broadcast, Start, Stop, Update};
+  fn from_str(s: &str) -> Result<NotificationEvent, Self::Err> {
+    use NotificationEvent::{Broadcast, Player, Start, Stop, Update};
     let parts: Vec<&str> = s.split(' ').collect();
     let event = parts[0];
     if event.eq(Broadcast.to_string().as_str()) {
-      ::std::result::Result::Ok(Broadcast)
+      Ok(Broadcast)
+    } else if event.eq("Player") {
+      let player_status = PlayerStatus::from_str(parts[1])?;
+      Ok(Player(player_status))
     } else {
       let status = parts[1];
-      let event_status = EventStatus::from_str(status).unwrap();
+      let event_status = EventStatus::from_str(status)?;
       match event {
-        "Update" => ::std::result::Result::Ok(Update(event_status)),
-        "Start" => ::std::result::Result::Ok(Start(event_status)),
-        "Stop" => ::std::result::Result::Ok(Stop(event_status)),
-        _ => ::std::result::Result::Err(VariantNotFound {
+        "Update" => Ok(Update(event_status)),
+        "Start" => Ok(Start(event_status)),
+        "Stop" => Ok(Stop(event_status)),
+        _ => Err(VariantNotFound {
           v: String::from("Failed to find Notification Event"),
         }),
       }
@@ -188,12 +199,25 @@ impl std::str::FromStr for NotificationEvent {
 #[cfg(test)]
 mod notification_event_tests {
   use super::*;
+  use crate::notifications::enums::player::PlayerStatus;
   use std::str::FromStr;
-  use NotificationEvent::Broadcast;
+  use NotificationEvent::{Broadcast, Player};
 
   #[test]
   fn parse_enum_from_string() {
     assert_eq!(NotificationEvent::from_str("Broadcast").unwrap(), Broadcast);
+  }
+
+  #[test]
+  fn parse_player_enum_from_string() {
+    assert_eq!(
+      NotificationEvent::from_str("Player Joined").unwrap(),
+      Player(PlayerStatus::Joined)
+    );
+    assert_eq!(
+      NotificationEvent::from_str("Player Left").unwrap(),
+      Player(PlayerStatus::Left)
+    );
   }
 }
 
@@ -207,28 +231,28 @@ mod webhook_tests {
   #[serial]
   fn is_webhook_enabled_found_var_valid_url() {
     set_var("WEBHOOK_URL", "http://127.0.0.1:3000/dummy-url");
-    assert_eq!(is_webhook_enabled(), true);
+    assert!(is_webhook_enabled());
   }
 
   #[test]
   #[serial]
   fn is_webhook_enabled_found_var_invalid_url() {
     set_var("WEBHOOK_URL", "LOCALHOST");
-    assert_eq!(is_webhook_enabled(), false);
+    assert!(!is_webhook_enabled());
   }
 
   #[test]
   #[serial]
   fn is_webhook_enabled_not_found_var() {
     remove_var("WEBHOOK_URL");
-    assert_eq!(is_webhook_enabled(), false);
+    assert!(!is_webhook_enabled());
   }
 
   #[test]
   #[serial]
   fn is_webhook_enabled_empty_var() {
     set_var("WEBHOOK_URL", "");
-    assert_eq!(is_webhook_enabled(), false);
+    assert!(!is_webhook_enabled());
   }
 }
 
@@ -250,6 +274,21 @@ mod enum_tests {
   fn parse_enum_create_notification() {
     set_var("NAME", "parse_enum_create_notification");
     let event = NotificationEvent::Stop(EventStatus::Running);
+    let notification = event.create_notification_message();
+    assert_eq!(
+      format!(
+        "{} {}",
+        notification.event_type.name, notification.event_type.status
+      ),
+      event.to_string()
+    );
+    assert!(notification.event_message.contains(&event.to_string()));
+  }
+
+  #[test]
+  fn parse_player_enum_create_notification() {
+    set_var("NAME", "parse_player_enum_create_notification");
+    let event = NotificationEvent::Player(PlayerStatus::Joined);
     let notification = event.create_notification_message();
     assert_eq!(
       format!(

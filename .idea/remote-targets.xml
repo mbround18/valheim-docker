@@ -5,7 +5,7 @@
     <targets>
       <target name="WSL - Ubuntu-22.04" type="wsl" uuid="af4ba5d3-9923-40ed-a296-b27f43a88e09">
         <config>
-          <option name="distributionMsId" value="Ubuntu-22.04" />
+          <option name="distributionMsId" value="Ubuntu" />
           <option name="projectRootOnTarget" value="/mnt/c/Users/micha/AppData/Local/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52/jbr/bin&#10;/valheim-docker" />
         </config>
         <ContributedStateBase type="RsLanguageRuntime">

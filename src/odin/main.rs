@@ -16,6 +16,7 @@ mod constants;
 mod errors;
 mod executable;
 mod files;
+pub mod log_filters;
 mod logger;
 mod messages;
 mod mods;
