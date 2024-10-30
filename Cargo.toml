@@ -5,8 +5,13 @@ members = [
 ]
 resolver = "2"
 
+[workspace.dependencies]
+odin = { path = "src/odin" }
+huginn = { path = "src/huginn" }
+
 [profile.dev]
 opt-level = 0
 
 [profile.release]
 opt-level = 3
+

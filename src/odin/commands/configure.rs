@@ -150,7 +150,7 @@ impl Configuration {
     debug!("Pulling Discord config file...");
     let discord = discord_file();
     debug!("Writing Discord config file...");
-    write_discord(discord);
+    write_discord(&discord);
 
     Ok(())
   }
