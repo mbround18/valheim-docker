@@ -11,3 +11,5 @@ pub mod server;
 pub mod steamcmd;
 pub mod traits;
 pub mod utils;
+
+mod log_filters;
