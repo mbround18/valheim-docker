@@ -1,3 +1,20 @@
+# v3.0.6 (Wed Oct 30 2024)
+
+#### 🐛 Bug Fix
+
+- Player join/leave webhook [#973](https://github.com/mbround18/valheim-docker/pull/973) ([@mbround18](https://github.com/mbround18))
+- Feat/remove valheimplus as option [#969](https://github.com/mbround18/valheim-docker/pull/969) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate clap to v4.5.19 - autoclosed [#970](https://github.com/mbround18/valheim-docker/pull/970) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serde_with to v3.10.0 [#971](https://github.com/mbround18/valheim-docker/pull/971) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.0.3 (Mon Jul 15 2024)
 
 #### 🐛 Bug Fix
