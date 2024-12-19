@@ -4,6 +4,7 @@ use crate::{
   server,
 };
 
+use crate::log_filters::player::PlayerList;
 use log::{debug, error, info};
 use std::process::exit;
 
@@ -14,6 +15,9 @@ pub fn invoke(dry_run: bool) {
   let config = load_config();
   debug!(target: "commands_start", "Dry run condition: {}", dry_run);
   info!(target: "commands_start", "Looking for burial mounds...");
+
+  PlayerList::new();
+
   if !dry_run {
     match server::start_daemonized(config) {
       Ok(_) => info!(target: "commands_start", "Success, daemonized"),

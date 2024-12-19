@@ -134,7 +134,7 @@ fn extract_build_id_from_manifest(manifest: &str) -> &str {
   let re = Regex::new(r"(buildid)\W+(\d+)\W").unwrap();
   // return group 2
   if let Some(captures) = re.captures(manifest) {
-    return captures.get(2).map_or("", |m| m.as_str());
+    captures.get(2).map_or("", |m| m.as_str())
   } else {
     panic!("Unexpected manifest format:\n{}", manifest);
   }
