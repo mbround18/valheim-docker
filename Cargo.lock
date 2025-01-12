@@ -1344,9 +1344,9 @@ checksum = "9374ef4228402d4b7e403e5838cb880d9ee663314b0a900d5a6aabf0c213552e"
 
 [[package]]
 name = "log"
-version = "0.4.23"
+version = "0.4.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66182751e71089c2bc2045e441ba6c248d1a468f889bc3a6e316c3e213aa2611"
+checksum = "3d6ea2a48c204030ee31a7d7fc72c93294c92fe87ecb1789881c9543516e1a0d"
 
 [[package]]
 name = "lzma-rs"
