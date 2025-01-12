@@ -51,7 +51,7 @@ a2s = "0.5.2"
 serde_with = "3.8.1"
 regex = "1.10.4"
 tokio = { version = "1", features = ["full"] }
-notify = "7.0.0"
+notify = "8.0.0"
 json-patch = "*"
 cached = "0"
 anyhow = "1.0.91"
