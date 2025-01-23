@@ -47,9 +47,10 @@ fn is_webhook_enabled() -> bool {
         url
       )
     }
-    return is_valid;
+    is_valid
+  } else {
+    false
   }
-  false
 }
 
 fn is_webhook_include_public_ip() -> bool {
@@ -59,9 +60,10 @@ fn is_webhook_include_public_ip() -> bool {
     .eq("1")
   {
     debug!("Webhook Include Public IP found!");
-    return true;
+    true
+  } else {
+    false
   }
-  false
 }
 
 pub fn parse_server_name_for_notification() -> String {
