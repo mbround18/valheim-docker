@@ -2,6 +2,7 @@ use crate::files::FileManager;
 use crate::notifications::enums::notification_event::NotificationEvent;
 use crate::notifications::enums::player::PlayerStatus::{Joined, Left};
 use chrono::Utc;
+use log::debug;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -25,6 +26,11 @@ impl Default for Player {
   }
 }
 
+enum PlayerStatus {
+  Existing,
+  Added,
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlayerList {
   players: Vec<Player>,
@@ -37,19 +43,24 @@ impl PlayerList {
     pl
   }
 
-  fn update_or_add_player(&mut self, id: i64, name: &str, timestamp: i64) {
-    if let Some(player) = self.players.iter_mut().find(|p| p.id == id) {
-      if timestamp > player.last_seen {
-        player.last_seen = timestamp;
-        player.online = true;
+  fn update_or_add_player(&mut self, id: i64, name: &str, timestamp: i64) -> PlayerStatus {
+    match self.players.iter_mut().find(|p| p.id == id) {
+      Some(player) => {
+        if timestamp > player.last_seen {
+          player.last_seen = timestamp;
+          player.online = true;
+        }
+        PlayerStatus::Existing
       }
-    } else {
-      self.players.push(Player {
-        id,
-        name: name.to_string(),
-        last_seen: timestamp,
-        online: true,
-      });
+      None => {
+        self.players.push(Player {
+          id,
+          name: name.to_string(),
+          last_seen: timestamp,
+          online: true,
+        });
+        PlayerStatus::Added
+      }
     }
   }
 
@@ -60,10 +71,10 @@ impl PlayerList {
   pub fn joined_event(id: i64, name: String) {
     let mut list = Self::load_player_list();
     let now = Utc::now().timestamp();
-
-    list.update_or_add_player(id, &name, now);
+    if let PlayerStatus::Added = list.update_or_add_player(id, &name, now) {
+      send_player_notification(Joined, Some(&name))
+    }
     list.save_player_list();
-    send_player_notification(Joined, Some(&name));
   }
 
   pub fn left_event(id: i64) {
@@ -141,26 +152,34 @@ pub enum EventType {
 
 pub fn match_event(line: &str) -> Option<EventType> {
   let joined_regex = Regex::new(r"Got character ZDOID from (.*) : (-?\d+:\d+)").unwrap();
-  let left_regex =
-    Regex::new(r"Destroying abandoned non persistent zdo (-?\d+:\d+) owner").unwrap();
+  let left_regex = Regex::new(r"Destroying abandoned non persistent zdo (-?\d+:\d+) owner").unwrap();
 
+  // Check for joined event
   if let Some(captures) = joined_regex.captures(line) {
-    // Debugging output to check the captured groups
-    println!("Matched joined event: {:?}", captures);
+    debug!("Matched joined event: {:?}", captures);
     let name = captures.get(1)?.as_str().to_string();
-    let id: i64 = captures.get(2)?.as_str().split(':').next()?.parse().ok()?;
+    let id = captures.get(2)?
+      .as_str()
+      .split(':')
+      .next()
+      .and_then(|s| s.parse().ok())?;
     return Some(EventType::Joined { id, name });
   }
 
+  // Check for left event
   if let Some(captures) = left_regex.captures(line) {
-    // Debugging output to check the captured groups
-    println!("Matched left event: {:?}", captures);
-    let id: i64 = captures.get(1)?.as_str().split(':').next()?.parse().ok()?;
+    debug!("Matched left event: {:?}", captures);
+    let id = captures.get(1)?
+      .as_str()
+      .split(':')
+      .next()
+      .and_then(|s| s.parse().ok())?;
     return Some(EventType::Left { id });
   }
 
   None
 }
+
 
 pub fn handle_player_events(line: &str) {
   if let Some(event) = match_event(line) {
