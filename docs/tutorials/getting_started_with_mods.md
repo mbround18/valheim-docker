@@ -9,7 +9,7 @@
    | Vanilla | Default value and the most common installation type. This will run Valheim normally.                                                                                              |
    | BepInEx | This will install [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/) and is purely just BepInEx with minimally needed components. |
 
-2. If you wish do not with to use additional mods, you can skip this step. Otherwise, in order to install additional mods you can use the `MODS` variable.
+2. If you do not wish to use additional mods, you can skip this step. Otherwise, in order to install additional mods you can use the `MODS` variable.
 
    Example of MODS, this example is slimmed down to go over the `TYPE` and `MODS` variable.
 
