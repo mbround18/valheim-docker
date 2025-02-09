@@ -128,8 +128,8 @@ mod tests {
     expected = "Please initialize odin with `odin configure`. See `odin configure --help`"
   )]
   fn can_read_config_panic() {
-    let mut rng = rand::thread_rng();
-    let n1: u8 = rng.gen();
+    let mut rng = rand::rng();
+    let n1: u8 = rng.random();
     env::set_var(
       ODIN_CONFIG_FILE_VAR,
       format!(
