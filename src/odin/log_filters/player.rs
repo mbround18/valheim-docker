@@ -152,13 +152,15 @@ pub enum EventType {
 
 pub fn match_event(line: &str) -> Option<EventType> {
   let joined_regex = Regex::new(r"Got character ZDOID from (.*) : (-?\d+:\d+)").unwrap();
-  let left_regex = Regex::new(r"Destroying abandoned non persistent zdo (-?\d+:\d+) owner").unwrap();
+  let left_regex =
+    Regex::new(r"Destroying abandoned non persistent zdo (-?\d+:\d+) owner").unwrap();
 
   // Check for joined event
   if let Some(captures) = joined_regex.captures(line) {
     debug!("Matched joined event: {:?}", captures);
     let name = captures.get(1)?.as_str().to_string();
-    let id = captures.get(2)?
+    let id = captures
+      .get(2)?
       .as_str()
       .split(':')
       .next()
@@ -169,7 +171,8 @@ pub fn match_event(line: &str) -> Option<EventType> {
   // Check for left event
   if let Some(captures) = left_regex.captures(line) {
     debug!("Matched left event: {:?}", captures);
-    let id = captures.get(1)?
+    let id = captures
+      .get(1)?
       .as_str()
       .split(':')
       .next()
@@ -179,7 +182,6 @@ pub fn match_event(line: &str) -> Option<EventType> {
 
   None
 }
-
 
 pub fn handle_player_events(line: &str) {
   if let Some(event) = match_event(line) {
