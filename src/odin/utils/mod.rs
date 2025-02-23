@@ -5,6 +5,12 @@ pub mod parse_truthy;
 
 pub use fetch_public_ip_address::fetch_public_address;
 
+pub mod is_valid_url;
+pub mod parse_mod_string;
+
+pub use is_valid_url::is_valid_url;
+pub use parse_mod_string::parse_mod_string;
+
 use log::debug;
 use std::env;
 use std::path::Path;
