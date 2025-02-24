@@ -11,7 +11,7 @@ fn process_mod(input: &str) -> Result<(), ValheimModError> {
       debug!("Mod URL: {}", valheim_mod.url);
       match valheim_mod.download() {
         Ok(_) => {
-          valheim_mod.install();
+          valheim_mod.install()?;
           Ok(())
         }
         Err(message) => {

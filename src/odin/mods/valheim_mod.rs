@@ -9,10 +9,10 @@ use crate::{
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info};
 use reqwest::Url;
+use std::convert::TryFrom;
 use std::fs::{self, create_dir_all, File};
-use std::io::prelude::*;
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::exit;
 use zip::{result::ZipError, ZipArchive};
 
 pub struct ValheimMod {
@@ -21,13 +21,14 @@ pub struct ValheimMod {
   pub(crate) staging_location: PathBuf,
   pub(crate) installed: bool,
   pub(crate) downloaded: bool,
+  // Optionally, add fields like author or mod_name if needed later.
 }
 
 impl ValheimMod {
-  pub fn new(url: &str) -> ValheimMod {
+  pub fn new(url: &str) -> Self {
     let file_type = url_parse_file_type(url);
     ValheimMod {
-      url: String::from(url),
+      url: url.to_string(),
       file_type,
       staging_location: common_paths::mods_directory().into(),
       installed: false,
@@ -37,91 +38,76 @@ impl ValheimMod {
 
   fn try_parse_manifest(&self, archive: &mut ZipArchive<File>) -> Result<Manifest, ZipError> {
     debug!("Parsing 'manifest.json' ...");
-    match archive.by_name("manifest.json") {
-      Ok(mut manifest) => {
-        debug!("'manifest.json' successfully loaded");
-        let mut json_data = String::new();
-        manifest.read_to_string(&mut json_data).unwrap();
+    let mut manifest_file = archive.by_name("manifest.json")?;
+    debug!("'manifest.json' successfully loaded");
+    let mut json_data = String::new();
+    manifest_file
+      .read_to_string(&mut json_data)
+      .map_err(|_e| ZipError::FileNotFound)?; // Map I/O error to ZipError (or create a custom error)
 
-        // Some manifest files include a UTF-8 BOM sequence, breaking serde json parsing
-        // See https://github.com/serde-rs/serde/issues/1753
-        json_data = self.remove_byte_order_mark(json_data);
+    // Remove UTF-8 BOM if present
+    let json_data = self.remove_byte_order_mark(json_data);
 
-        Ok(serde_json::from_str(&json_data).expect("Failed to deserialize manifest file."))
-      }
-      Err(error) => {
-        error!("Failed to deserialize manifest file: {:?}", error);
-        Err(error)
-      }
-    }
+    serde_json::from_str(&json_data).map_err(|e| {
+      error!("Failed to deserialize manifest file: {:?}", e);
+      ZipError::FileNotFound
+    })
   }
 
   fn remove_byte_order_mark(&self, value: String) -> String {
-    if value.contains('\u{feff}') {
+    if value.starts_with('\u{feff}') {
       debug!("Found and removed UTF-8 BOM");
-      return value.trim_start_matches('\u{feff}').to_string();
+      value.trim_start_matches('\u{feff}').to_string()
+    } else {
+      value
     }
-
-    value
   }
 
-  fn copy_single_file<P1, P2>(&self, from: P1, to: P2)
+  fn copy_single_file<P1, P2>(&self, from: P1, to: P2) -> Result<(), ValheimModError>
   where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
   {
-    let to = to.as_ref();
     let from = from.as_ref();
+    let to = to.as_ref();
 
-    let mut dir_options = CopyOptions::new();
-    dir_options.overwrite = true;
-    match fs_extra::copy_items(&[&from], to, &dir_options) {
-      Ok(_) => debug!("Successfully copied {:?} to {:?}", from, to),
-      Err(_) => {
-        error!("Failed to install {}", self.url);
-        error!(
-          "File failed to copy from: \n{:?}To Destination:{:?}",
-          from, to
-        );
-        // TODO: Remove Exit Code and provide an Ok or Err.
-        exit(1);
-      }
-    };
+    let mut options = CopyOptions::new();
+    options.overwrite = true;
+    fs_extra::copy_items(&[from], to, &options).map_err(|e| {
+      error!("Failed to copy file from {:?} to {:?}: {}", from, to, e);
+      ValheimModError::FileCopyError(e.to_string())
+    })?;
+    debug!("Successfully copied {:?} to {:?}", from, to);
+    Ok(())
   }
 
   fn is_mod_framework(&self, archive: &mut ZipArchive<File>) -> bool {
-    if let Ok(maybe_manifest) = self.try_parse_manifest(archive) {
-      let name = maybe_manifest.name;
-      let mod_dir = format!("{}/", name);
-
+    if let Ok(manifest) = self.try_parse_manifest(archive) {
+      let mod_dir = format!("{}/", manifest.name);
       let mod_dir_exists = archive
         .file_names()
         .any(|file_name| file_name.starts_with(&mod_dir));
 
-      // It's a mod framework based on a specific name and if it has a matching directory in the
-      // archive
       debug!("Validating if file is a framework");
-      mod_dir_exists && (name == "BepInExPack_Valheim" || name == "BepInEx_Valheim_Full")
+      mod_dir_exists
+        && (manifest.name == "BepInExPack_Valheim" || manifest.name == "BepInEx_Valheim_Full")
     } else {
+      // Fall back to checking for "winhttp.dll"
       archive
-        // If there is no manifest, fall back to checking for winhttp.dll as a heuristic
         .file_names()
         .any(|file_name| file_name.eq_ignore_ascii_case("winhttp.dll"))
     }
   }
 
-  fn extract_plugin(&self, archive: &mut ZipArchive<File>) {
-    // The output location to extract into and the directory to extract from the archive depends on
-    // if we're installing just a mod or a full framework, and if it is being downloaded from
-    // thunderstore where a manifest is provided, or not.
+  fn extract_plugin(&self, archive: &mut ZipArchive<File>) -> Result<(), ValheimModError> {
+    // Determine output directory and optional sub-directory based on whether it is a framework.
     let (output_dir, archive_dir) = if self.is_mod_framework(archive) {
       info!("Installing Framework...");
       debug!("Zip file is a framework, processing it in parts.");
       let output_dir = PathBuf::from(&common_paths::game_directory());
 
-      // All frameworks from thunderstore just need the directory matching the name extracted
-      let sub_dir = if let Ok(Manifest { name, .. }) = self.try_parse_manifest(archive) {
-        format!("{}/", name)
+      let sub_dir = if let Ok(manifest) = self.try_parse_manifest(archive) {
+        format!("{}/", manifest.name)
       } else {
         String::new()
       };
@@ -129,128 +115,116 @@ impl ValheimMod {
       (output_dir, sub_dir)
     } else {
       info!("Installing Mod...");
-      // ThunderStore mods are extracted into a subfolder in the plugin directory
       let mut output_dir = PathBuf::from(&common_paths::bepinex_plugin_directory());
-      if let Ok(Manifest {
-        name, ..
-      }) = self.try_parse_manifest(archive)
-      {
-        output_dir.push(name);
+      if let Ok(manifest) = self.try_parse_manifest(archive) {
+        output_dir.push(manifest.name);
       }
-      create_dir_all(&output_dir).unwrap_or_else(|_| {
-        error!("Failed to create mod directory! {:?}", output_dir);
-        // TODO: Remove Exit Code and provide an Ok or Err.
-        exit(1);
-      });
+      create_dir_all(&output_dir).map_err(|e| {
+        error!("Failed to create mod directory {:?}: {}", output_dir, e);
+        ValheimModError::DirectoryCreationError(e.to_string())
+      })?;
 
-      (output_dir, "".to_string())
+      (output_dir, String::new())
     };
 
-    match archive.extract_sub_dir_custom(output_dir, &archive_dir) {
-      Ok(_) => info!("Successfully installed {}", &self.url),
-      Err(msg) => {
+    archive
+      .extract_sub_dir_custom(output_dir.clone(), &archive_dir)
+      .map_err(|e| {
         error!(
-          "Failed to install: {}\nDownloaded Archive: {:?}\n{}",
-          self.url,
-          self.staging_location,
-          msg.to_string()
+          "Failed to install mod: {}\nDownloaded Archive: {:?}\nError: {}",
+          self.url, self.staging_location, e
         );
-        // TODO: Remove Exit Code and provide an Ok or Err.
-        exit(1);
-      }
-    };
+        ValheimModError::ExtractionError(e.to_string())
+      })?;
+    info!("Successfully installed {}", &self.url);
+    Ok(())
   }
 
-  pub fn install(&mut self) {
-    if Path::new(&self.staging_location).is_dir() {
+  pub fn install(&mut self) -> Result<(), ValheimModError> {
+    if self.staging_location.is_dir() {
       error!(
-        "Failed to install mod! Staging location is a directory! {:?}",
+        "Failed to install mod! Staging location is a directory: {:?}",
         self.staging_location
       );
-      // TODO: Remove Exit Code and provide an Ok or Err.
-      exit(1)
+      return Err(ValheimModError::InvalidStagingLocation);
     }
 
-    if self.file_type.eq("dll") {
+    if self.file_type == "dll" {
       debug!("Copying downloaded dll to BepInEx plugin directory...");
       self.copy_single_file(
         &self.staging_location,
         common_paths::bepinex_plugin_directory(),
-      );
-    } else if self.file_type.eq("cfg") {
+      )?;
+    } else if self.file_type == "cfg" {
       debug!("Copying single cfg into config directory");
-      let src_file_path = &self.staging_location;
-      let cfg_file_name = self.staging_location.file_name().unwrap();
+      let cfg_file_name = self
+        .staging_location
+        .file_name()
+        .ok_or_else(|| ValheimModError::FileNameError("Missing cfg file name".to_string()))?
+        .to_owned();
 
-      // If the cfg already exists in the output directory then append a ".new"
       let mut dst_file_path =
-        Path::new(&common_paths::bepinex_config_directory()).join(cfg_file_name);
+        Path::new(&common_paths::bepinex_config_directory()).join(&cfg_file_name);
       if dst_file_path.exists() {
         dst_file_path = dst_file_path.with_extension("cfg.new");
       }
-
-      fs::rename(src_file_path, dst_file_path).unwrap();
+      fs::rename(&self.staging_location, dst_file_path)
+        .map_err(|e| ValheimModError::FileRenameError(e.to_string()))?;
     } else {
-      let zip_file = File::open(&self.staging_location).unwrap();
-      let mut archive = match ZipArchive::new(zip_file) {
-        Ok(file_archive) => {
-          debug!("Successfully parsed zip file {:?}", self.staging_location);
-          file_archive
-        }
-        Err(_) => {
-          error!("Failed to parse zip file {:?}", self.staging_location);
-          // TODO: Remove Exit Code and provide an Ok or Err.
-          exit(1);
-        }
-      };
-      self.extract_plugin(&mut archive);
+      let zip_file = File::open(&self.staging_location)
+        .map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
+      let mut archive = ZipArchive::new(zip_file).map_err(|e| {
+        error!(
+          "Failed to parse zip file {:?}: {}",
+          self.staging_location, e
+        );
+        ValheimModError::ZipArchiveError(e.to_string())
+      })?;
+      self.extract_plugin(&mut archive)?;
     }
-    self.installed = true
+    self.installed = true;
+    Ok(())
   }
 
-  pub fn download(&mut self) -> Result<String, String> {
+  pub fn download(&mut self) -> Result<(), ValheimModError> {
     debug!("Initializing mod download...");
-    let download_url = &self.url.clone();
-    if !Path::new(&self.staging_location).exists() {
-      error!("Failed to download file to staging location!");
-      return Err(format!(
-        "Directory does not exist! {:?}",
+    if !self.staging_location.exists() {
+      error!(
+        "Staging location does not exist: {:?}",
         self.staging_location
-      ));
+      );
+      return Err(ValheimModError::DirectoryNotFound(format!(
+        "Directory does not exist: {:?}",
+        self.staging_location
+      )));
     }
-    if let Ok(parsed_url) = Url::parse(download_url) {
-      match reqwest::blocking::get(parsed_url) {
-        Ok(mut response) => {
-          if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
-            debug!("Using url (in case of redirect): {}", &self.url);
-            self.url = response.url().to_string();
-            self.file_type = url_parse_file_type(response.url().as_ref());
-          }
 
-          let file_name = parse_file_name(
-            &Url::parse(&self.url).unwrap(),
-            format!("{}.{}", get_md5_hash(download_url), &self.file_type).as_str(),
-          );
-          self.staging_location = self.staging_location.join(file_name);
-          debug!("Downloading to: {:?}", self.staging_location);
-          let mut file = File::create(&self.staging_location).unwrap();
-          response.copy_to(&mut file).expect("Failed saving mod file");
-          self.downloaded = true;
-          debug!("Download Complete!: {}", &self.url);
-          debug!("Download Output: {:?}", self.staging_location);
-          Ok(String::from("Successful"))
-        }
-        Err(err) => {
-          error!("Failed to download mod: {}", download_url);
-          Err(err.status().unwrap().to_string())
-        }
-      }
-    } else {
-      Err(format!(
-        "Failed to download mod with invalid url: {}",
-        &download_url
-      ))
+    let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
+    let mut response = reqwest::blocking::get(parsed_url)
+      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+
+    if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
+      debug!("Using redirect URL: {}", &self.url);
+      self.url = response.url().to_string();
+      self.file_type = url_parse_file_type(response.url().as_ref());
     }
+
+    let file_name = parse_file_name(
+      &Url::parse(&self.url).unwrap(),
+      &format!("{}.{}", get_md5_hash(&self.url), &self.file_type),
+    );
+    self.staging_location = self.staging_location.join(file_name);
+    debug!("Downloading to: {:?}", self.staging_location);
+
+    let mut file = File::create(&self.staging_location)
+      .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+    response
+      .copy_to(&mut file)
+      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    self.downloaded = true;
+    debug!("Download complete: {}", &self.url);
+    debug!("Download output: {:?}", self.staging_location);
+    Ok(())
   }
 }
 

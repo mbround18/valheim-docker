@@ -1,46 +1,93 @@
-# Getting started with Mods
+# Getting Started with Mods
 
-## Steps
+Follow these steps to configure and run mods on your Valheim server.
 
-1. Set the variable `TYPE` to be one of the following:
+## Step 1: Set the `TYPE` Variable
 
-   | Type    | What it installs                                                                                                                                                                  |
-   | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | Vanilla | Default value and the most common installation type. This will run Valheim normally.                                                                                              |
-   | BepInEx | This will install [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/) and is purely just BepInEx with minimally needed components. |
+Set the `TYPE` environment variable to one of the following options:
 
-2. If you do not wish to use additional mods, you can skip this step. Otherwise, in order to install additional mods you can use the `MODS` variable.
+| Type    | What It Installs                                                                                                                                                           |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vanilla | The default and most common installation type. This will run Valheim normally.                                                                                             |
+| BepInEx | Installs [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/). It includes only the minimal components required for BepInEx. |
 
-   Example of MODS, this example is slimmed down to go over the `TYPE` and `MODS` variable.
+## Step 2: Configuring Mods
 
-   ```yaml
-   version: "3"
-   services:
-     valheim:
-       image: mbround18/valheim:latest
-       environment:
-         # The Type variable is used to set which type of server you would like to run.
-         - TYPE=BepinEx
-         # The Mods variable is a comma and newline separated string.
-         # It MUST be a link with a command and a new line at the end to be valid.
-         - "MODS=
-           https://cdn.thunderstore.io/live/repository/packages/abearcodes-SimpleRecycling-0.0.10.zip,
-           https://cdn.thunderstore.io/live/repository/packages/abearcodes-CraftingWithContainers-1.0.9.zip
-           "
-   ```
+If you do not wish to install additional mods, you can skip this step. Otherwise, use the `MODS` environment variable to specify the mods you want to add. There are two options:
 
-3. Now that you have your compose setup, run `docker-compose up`
+### Option A: Using R2ModMan's Mod List Feature
 
-> Odin automatically detects if you are running with BepInEx and adds the environment variables appropriately.
+1. In R2ModMan, click **Settings**.
+2. Click **Mod Packs**.
+3. Click **Show Dependency Strings**.
+4. Copy everything except the BepInEx dependency (this will be installed via `TYPE`).
+
+![](../assets/installing-mods/r2modman-dep-strings.gif)
+
+Example configuration:
+
+```yaml
+version: "3"
+services:
+  valheim:
+    image: mbround18/valheim:latest
+    environment:
+      # The TYPE variable sets the server type.
+      - TYPE=BepInEx
+      # The MODS variable is a newline-separated list of mods.
+      - |
+        MODS=OdinPlus-OdinHorse-1.4.12
+        ValheimModding-Jotunn-2.23.2
+        zolantris-ValheimRAFT-2.5.3
+        turbero-KillMeForMyPower-1.1.2
+```
+
+### Option B: Using Mod URLs
+
+Specify mods by providing their URLs. Ensure that each URL is followed by a newline to be valid.
+
+Example configuration:
+
+```yaml
+version: "3"
+services:
+  valheim:
+    image: mbround18/valheim:latest
+    environment:
+      # The TYPE variable sets the server type.
+      - TYPE=BepInEx
+      # The MODS variable is a comma and newline separated list of mod URLs.
+      # Each mod URL must end with a newline.
+      - "MODS=
+        https://cdn.thunderstore.io/live/repository/packages/abearcodes-SimpleRecycling-0.0.10.zip,
+        https://cdn.thunderstore.io/live/repository/packages/abearcodes-CraftingWithContainers-1.0.9.zip
+        "
+```
+
+## Step 3: Run Docker Compose
+
+Once your configuration is set up, start your server by running:
+
+```bash
+docker-compose up
+```
+
+> **Note:** Odin automatically detects if you are running with BepInEx and adjusts the environment variables accordingly.
 >
-> DISCLAIMER! Modding your server can cause a lot of errors.
-> Please do NOT post an issue on the valheim-docker repo based on mod issues.
-> By installing mods, you agree that you will do a root cause analysis to why your server is failing before you make a post.
-> Modding is currently unsupported by the Valheim developers and limited support by the valheim-docker repo.
-> If you have issues please contact the MOD developer FIRST based on the output logs.
+> **DISCLAIMER:** Modding your server can cause unexpected errors.
+>
+> - **Do not** open an issue on the `valheim-docker` repository for mod-related problems.
+> - By installing mods, you agree to perform a root cause analysis on any server failures before reporting them.
+> - Modding is currently unsupported by the Valheim developers and receives only limited support from the `valheim-docker` repository.
+> - If you encounter issues, please contact the mod developer first, referring to the output logs for details.
 
-## Valheim Updated Help
+## Additional Help with Valheim Updates
 
-Mod development is slow, and the more mods you have the more complicated it will be to keep everything up to date.
-It is a suggestion that you turn off the AUTO_UPDATE variable when you are using mods and refrain from updating your local client until all your mods have been updated.
-Some mods break on new updates of Valheim while others do not. Be on the look out for mod issues if you update your server.
+Mod development can be slow, and having many mods installed may complicate updates. It is recommended that you:
+
+- Disable the `AUTO_UPDATE` variable when using mods.
+- Refrain from updating your local client until all your mods have been updated.
+
+Some mods may break with new Valheim updates, while others will not. Stay vigilant for mod-related issues when updating your server.
+
+---
