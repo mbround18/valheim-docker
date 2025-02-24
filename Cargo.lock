@@ -1402,9 +1402,9 @@ dependencies = [
 
 [[package]]
 name = "json-patch"
-version = "3.1.0"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c85d8cff9b870696e7c0260682ff488af3e3355cd197c2d11d3d6399843938c"
+checksum = "159294d661a039f7644cea7e4d844e6b25aaf71c1ffe9d73a96d768c24b0faf4"
 dependencies = [
  "jsonptr",
  "serde",
