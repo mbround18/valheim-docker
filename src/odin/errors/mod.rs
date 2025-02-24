@@ -13,3 +13,12 @@ impl Display for VariantNotFound {
     write!(f, "VariantNotFound: {}", &self.v)
   }
 }
+
+use thiserror::Error;
+#[derive(Debug, Error)]
+pub enum ValheimModError {
+  #[error("Invalid Valheim mod URL")]
+  InvalidUrl,
+  #[error("Failed to download the mod! Check logs!")]
+  DownloadFailed,
+}
