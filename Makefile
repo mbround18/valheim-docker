@@ -7,7 +7,9 @@ setup:
 		echo "Creating docker-compose.dev.yml for development"; \
 		cp "$$PWD/docker-compose.yml" "$$PWD/docker-compose.dev.yml"; \
 	fi
-	mkdir -p ./tmp/{saves,backups,server}
+	mkdir -p ./tmp/saves
+	mkdir -p ./tmp/backups
+	mkdir -p ./tmp/server
 
 lint: member_format
 		docker run --rm -v "$$PWD:/app" -w /app node:lts  sh -c 'npx -y prettier --write .'
