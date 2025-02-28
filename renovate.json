@@ -1,4 +1,10 @@
 {
-  "extends": ["config:base"],
-  "labels": ["dependencies", "patch", "automerge"]
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies",
+    "patch",
+    "automerge"
+  ]
 }
