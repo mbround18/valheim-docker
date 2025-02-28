@@ -2,15 +2,15 @@ use crate::log_filters::{handle_launch_probes, handle_player_events};
 use crate::utils::common_paths::log_directory;
 use crate::utils::environment::is_env_var_truthy;
 use anyhow::{Context, Result};
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
-use std::fs::{read_to_string, File};
-use std::io::prelude::*;
+use std::fs::File;
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::task;
 
 /// Struct to keep track of each file's state, including its last read line position.
@@ -34,7 +34,7 @@ fn handle_line(path: &PathBuf, line: &str) {
   if line.trim().is_empty() {
     return;
   }
-
+  let outline = line.trim_end();
   if line.contains("[Info   : Unity Log]") {
     return;
   }
@@ -51,18 +51,26 @@ fn handle_line(path: &PathBuf, line: &str) {
     }
   };
 
-  if line.contains("WARNING") {
-    warn!("[{}]: {}", file_name, line);
-  } else if line.contains("ERROR") {
-    error!("[{}]: {}", file_name, line);
-  } else {
-    info!("[{}]: {}", file_name, line);
+  if !is_env_var_truthy("SHOW_FALLBACK_HANDLER")
+    && line.contains("Fallback handler could not load library")
+  {
+    return;
   }
 
-  handle_launch_probes(line);
+  if line.contains("WARNING") {
+    warn!("[{}]: {}", file_name, outline);
+  } else if line.contains("ERROR") {
+    error!("[{}]: {}", file_name, outline);
+  } else if line.contains("Fallback handler could not load library") {
+    debug!("[{}]: {}", file_name, outline);
+  } else {
+    info!("[{}]: {}", file_name, outline);
+  }
+
+  handle_launch_probes(outline);
 }
 
-/// Tails the given log file asynchronously, processing new lines as they are written to the file.
+/// Tails the given log file asynchronously, processing new lines as they are written.
 async fn tail_file(mut file_tracker: FileTracker) -> Result<()> {
   let file = File::open(&file_tracker.path).context("Unable to open file for tailing")?;
   let mut reader = BufReader::new(file);
@@ -72,29 +80,30 @@ async fn tail_file(mut file_tracker: FileTracker) -> Result<()> {
 
   loop {
     let mut new_lines = Vec::new();
-    for line_result in reader.by_ref().lines() {
-      match line_result {
-        Ok(line) => {
-          new_lines.push(line);
-        }
-        Err(e) => {
-          error!(
-            "Failed to read line from file '{}': {}",
-            file_tracker.path.display(),
-            e
-          );
-        }
+    loop {
+      let mut buf = Vec::new();
+      // Read until newline. This returns raw bytes even if they are not valid UTF-8.
+      let bytes_read = reader
+        .read_until(b'\n', &mut buf)
+        .context("Failed to read from log file")?;
+      if bytes_read == 0 {
+        break;
       }
+      // Convert bytes to string lossily so any invalid UTF-8 is replaced.
+      let line = String::from_utf8_lossy(&buf).to_string();
+      new_lines.push(line);
     }
 
     if !new_lines.is_empty() {
-      file_tracker.last_position = reader.stream_position()?;
+      file_tracker.last_position = reader
+        .stream_position()
+        .context("Failed to get stream position")?;
       for line in new_lines {
         handle_line(&file_tracker.path, &line);
       }
     }
 
-    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    tokio::time::sleep(Duration::from_millis(100)).await;
   }
 }
 
@@ -121,7 +130,7 @@ pub async fn watch_logs(log_path: String) {
       }
     }
 
-    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    tokio::time::sleep(Duration::from_secs(2)).await;
   }
 }
 
@@ -134,13 +143,16 @@ pub fn print_logs(log_path: String, lines: Option<u16>) {
 
   for path in paths {
     if path.is_file() && path.extension().and_then(OsStr::to_str) == Some("log") {
-      let content = read_to_string(&path).expect("Could not read file");
-      let lines = content
+      // Read file as raw bytes
+      let bytes = fs::read(&path).expect("Could not read file");
+      // Convert bytes to string using lossy conversion
+      let content = String::from_utf8_lossy(&bytes);
+      let lines_to_print = content
         .lines()
         .rev()
         .take(lines.unwrap_or(10) as usize)
         .collect::<Vec<_>>();
-      for line in lines.iter().rev() {
+      for line in lines_to_print.iter().rev() {
         handle_line(&path, line);
       }
     }
