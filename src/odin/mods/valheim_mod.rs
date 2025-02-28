@@ -161,7 +161,7 @@ impl ValheimMod {
 
       // Path to the 'plugins' directory within the temp directory
       let plugins_path = temp_dir.path().join("plugins");
-      
+
       if temp_dir.path().join("Plugins").exists() {
         debug!("Looks like someone used Plugins instead of plugins, lets fix that.");
         dir::move_dir(temp_dir.path().join("Plugins"), &plugins_path, &options)
