@@ -12,6 +12,7 @@ node_modules/
 !.yarn/versions
 .pnp.*
 *.bak
+src/odin/BepInEx
 
 # Created by https://www.toptal.com/developers/gitignore/api/intellij+all,rust,node,yarn
 # Edit at https://www.toptal.com/developers/gitignore?templates=intellij+all,rust,node,yarn

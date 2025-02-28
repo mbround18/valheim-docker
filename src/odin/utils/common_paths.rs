@@ -26,6 +26,10 @@ pub fn mods_directory() -> String {
   env::var(MODS_LOCATION).unwrap_or_else(|_| format!("{}/mods", get_working_dir()))
 }
 
+pub fn mods_staging_directory() -> String {
+  format!("{}/.staging/mods", game_directory())
+}
+
 // pub fn backup_directory() -> String {
 //   env::var(BACKUP_LOCATION).unwrap_or_else(|_| format!("{}/backups", get_working_dir()))
 // }
