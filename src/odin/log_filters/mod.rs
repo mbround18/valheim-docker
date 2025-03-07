@@ -1,4 +1,4 @@
-mod player;
+pub(crate) mod player;
 mod probes;
 
 pub use player::handle_player_events;
