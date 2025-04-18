@@ -18,9 +18,7 @@
 </a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-
 [![All Contributors](https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square)](#contributors-)
-
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -381,6 +379,7 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
   <tr>
     <td align="center"><a href="https://imgbot.net/"><img src="https://avatars.githubusercontent.com/u/31427850?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Imgbot</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=ImgBotApp" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/travisbaars"><img src="https://avatars.githubusercontent.com/u/73616094?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Travis Baars</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=travisbaars" title="Documentation">📖</a></td>
+    <td align="center"><a href="https://timesplitters.dev/"><img src="https://avatars.githubusercontent.com/u/998920?v=4?s=100" width="100px;" alt=""/><br /><sub><b>StealthCT</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=Stealthii" title="Code">💻</a></td>
   </tr>
 </table>
 

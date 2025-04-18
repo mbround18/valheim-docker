@@ -1,3 +1,15 @@
+# v3.1.2 (Fri Apr 18 2025)
+
+#### 🐛 Bug Fix
+
+- Add CTX about rootless container [#1130](https://github.com/mbround18/valheim-docker/pull/1130) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 1
+
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.1.1 (Fri Apr 18 2025)
 
 #### 🐛 Bug Fix
