@@ -5,7 +5,7 @@ use std::process::{exit, Command, ExitStatus};
 pub fn find_command(executable: &str) -> Option<Command> {
   let script_file = Path::new(executable);
   if script_file.exists() {
-    info!("Executing: {} .....", executable.to_string());
+    info!("Executing: {} .....", executable);
     Option::from(Command::new(executable))
   } else {
     match which::which(executable) {

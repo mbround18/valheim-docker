@@ -79,12 +79,12 @@ async fn handle_commands(cli: Cli) {
     .invoke()
     .await
     .expect("Failed to configure server"),
-    Commands::Install {} => handle_exit_status(
+    Commands::Install => handle_exit_status(
       commands::install::invoke(constants::GAME_ID),
       "Successfully installed Valheim!".to_string(),
     ),
-    Commands::Start {} => commands::start::invoke(cli.dry_run),
-    Commands::Stop {} => commands::stop::invoke(cli.dry_run),
+    Commands::Start => commands::start::invoke(cli.dry_run),
+    Commands::Stop => commands::stop::invoke(cli.dry_run),
     Commands::Backup {
       input_directory,
       output_file,
@@ -101,7 +101,7 @@ async fn handle_commands(cli: Cli) {
       local,
       address,
     } => commands::status::invoke(json, local, address),
-    Commands::About {} => about(env!("GIT_HASH")),
+    Commands::About => about(env!("GIT_HASH")),
     Commands::Logs { lines, watch } => commands::logs::invoke(lines, watch).await,
   }
 }
