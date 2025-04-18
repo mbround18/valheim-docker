@@ -113,7 +113,7 @@ impl NotificationEvent {
     client.post(webhook_url)
   }
   pub fn send_custom_notification(&self, webhook_url: &str, notification: &NotificationMessage) {
-    debug!("Webhook enabled, sending notification {}", self.to_string());
+    debug!("Webhook enabled, sending notification {}", self);
     debug!(
       "Event Received: {}",
       serde_json::to_string_pretty(&notification).unwrap()
