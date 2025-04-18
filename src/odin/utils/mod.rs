@@ -59,7 +59,7 @@ pub fn parse_file_name(url: &Url, default: &str) -> String {
   String::from(
     url
       .path_segments()
-      .and_then(|segments| segments.last())
+      .and_then(|mut segments| segments.next_back())
       .and_then(|name| if name.is_empty() { None } else { Some(name) })
       .unwrap_or(default),
   )
@@ -83,5 +83,5 @@ mod tests {
 }
 
 pub fn url_parse_file_type(url: &str) -> String {
-  url.split('.').last().unwrap().to_string()
+  url.split('.').next_back().unwrap().to_string()
 }

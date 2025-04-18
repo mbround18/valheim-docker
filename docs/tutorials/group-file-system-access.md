@@ -41,8 +41,7 @@ services:
   valheim:
     image: mbround18/valheim:latest
     container_name: valheim
-    environment:
-      - PGID=1001 # Replace with the actual GID from step 4
+    user: "111:1001" # Replace with the actual GID from step 4
     volumes:
       - ./saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./server:/home/steam/valheim
