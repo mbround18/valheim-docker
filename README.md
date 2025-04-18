@@ -173,7 +173,7 @@ Scheduled restarts allow the operator to trigger restarts on a cron job
 
 ### Notes on Rootless Design
 
-This Docker image is designed to run as a rootless container by default, using the user `1000:1000`. If you need to run the container as a specific user, you can set the `--user` flag in the Docker CLI or configure the `user` field in your Docker Compose file.
+This Docker image is designed to run as a rootless container by default, using the user `111:1000`. If you need to run the container as a specific user, you can set the `--user` flag in the Docker CLI or configure the `user` field in your Docker Compose file.
 
 #### Example Docker CLI Usage
 
