@@ -35,6 +35,7 @@
       - [Container Env Variables](#container-env-variables)
       - [Auto Update](#auto-update)
       - [Auto Backup](#auto-backup)
+      - [Scheduled Restarts](#scheduled-restarts)
   - [Docker Compose](#docker-compose)
     - [Simple](#simple)
     - [Everything but the Kitchen Sink](#everything-but-the-kitchen-sink)
@@ -139,8 +140,6 @@ If you purely want to run this on a Linux-based system, without Docker, take a l
 | Variable | Default               | Required | Description                                                                                                                                                                                           |
 | -------- | --------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | TZ       | `America/Los_Angeles` | FALSE    | Sets what timezone your container is running on. This is used for timestamps and cron jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
-| PUID     | `1000`                | FALSE    | Sets the User Id of the steam user.                                                                                                                                                                   |
-| PGID     | `1000`                | FALSE    | Sets the Group Id of the steam user.                                                                                                                                                                  |
 
 #### Auto Update
 
@@ -171,6 +170,31 @@ Scheduled restarts allow the operator to trigger restarts on a cron job
 | -------------------------- | ----------- | -------- | ------------------------------------------------------------------ |
 | SCHEDULED_RESTART          | `0`         | FALSE    | Allows you to enable scheduled restarts                            |
 | SCHEDULED_RESTART_SCHEDULE | `0 2 * * *` | FALSE    | Defaults to everyday at 2 am but can be configured with valid cron |
+
+### Notes on Rootless Design
+
+This Docker image is designed to run as a rootless container by default, using the user `1000:1000`. If you need to run the container as a specific user, you can set the `--user` flag in the Docker CLI or configure the `user` field in your Docker Compose file.
+
+#### Example Docker CLI Usage
+
+```bash
+docker run --user 1001:1001 mbround18/valheim:latest
+```
+
+#### Example Docker Compose Configuration
+
+```yaml
+version: "3"
+services:
+  valheim:
+    image: mbround18/valheim:latest
+    user: "1001:1001"
+    ...
+```
+
+### Removed PUID and GUID
+
+References to `PUID` and `GUID` have been removed. Use the `--user` flag or `user` field as shown above to specify a user. If you, are migrating on the host you will have to stop the container when upgrading and check the folder permissions. Changing them to 1000:1000 before relaunching.
 
 ## Docker Compose
 
@@ -355,7 +379,6 @@ Thanks go to these wonderful people ([emoji key](https://allcontributors.org/doc
   <tr>
     <td align="center"><a href="https://imgbot.net/"><img src="https://avatars.githubusercontent.com/u/31427850?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Imgbot</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=ImgBotApp" title="Documentation">📖</a></td>
     <td align="center"><a href="https://github.com/travisbaars"><img src="https://avatars.githubusercontent.com/u/73616094?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Travis Baars</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=travisbaars" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://timesplitters.dev/"><img src="https://avatars.githubusercontent.com/u/998920?v=4?s=100" width="100px;" alt=""/><br /><sub><b>StealthCT</b></sub></a><br /><a href="https://github.com/mbround18/valheim-docker/commits?author=Stealthii" title="Code">💻</a></td>
   </tr>
 </table>
 
