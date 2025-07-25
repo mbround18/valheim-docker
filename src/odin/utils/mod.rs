@@ -69,6 +69,10 @@ pub fn get_md5_hash(context: &str) -> String {
   format!("{:x}", md5::compute(context.as_bytes()))
 }
 
+pub fn url_parse_file_type(url: &str) -> String {
+  url.split('.').next_back().unwrap().to_string()
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -80,8 +84,4 @@ mod tests {
       "c3fcd3d76192e4007dfb496cca67e13b"
     );
   }
-}
-
-pub fn url_parse_file_type(url: &str) -> String {
-  url.split('.').next_back().unwrap().to_string()
 }

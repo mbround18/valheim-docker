@@ -56,13 +56,13 @@ impl ServerProcess {
   pub fn send_interrupt_to_pid(pid: u32) {
     let s = System::new_all();
     if let Some(process) = s.process(Pid::from(pid as usize)) {
-      info!("Found process with PID: {}", pid);
+      info!("Found process with PID: {pid}");
       match process.kill_with(Signal::Interrupt) {
-        Some(_) => info!("Sent interrupt signal to PID: {}", pid),
-        None => error!("Failed to send interrupt signal to PID: {}.", pid),
+        Some(_) => info!("Sent interrupt signal to PID: {pid}"),
+        None => error!("Failed to send interrupt signal to PID: {pid}."),
       };
     } else {
-      debug!("[{}]: failed to find process with PID... This can be good and means we stopped it successfully.", pid);
+      debug!("[{pid}]: failed to find process with PID... This can be good and means we stopped it successfully.");
     }
   }
 

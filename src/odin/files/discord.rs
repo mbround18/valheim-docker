@@ -43,7 +43,7 @@ pub fn load_discord() -> DiscordConfig {
 
 pub fn discord_file() -> ManagedFile {
   let name = fetch_var(ODIN_DISCORD_FILE_VAR, "discord.json");
-  debug!("Config file set to: {}", name);
+  debug!("Config file set to: {name}");
   ManagedFile { name }
 }
 
@@ -85,7 +85,7 @@ pub fn write_discord(discord: &dyn FileManager) -> bool {
 
   let template_notification = basic_template();
   let content_to_write = serde_json::to_string_pretty(&template_notification).unwrap();
-  debug!("Writing discord config: \n{}", content_to_write);
+  debug!("Writing discord config: \n{content_to_write}");
 
   discord.write(content_to_write)
 }

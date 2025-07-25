@@ -30,12 +30,12 @@ pub fn add_beta_args(
     ["default_preal", "default_old", "default_preml"].contains(&beta_branch.as_str());
 
   if is_backwards_compatible_branch || use_public_beta {
-    debug!("Using {} beta branch", beta_branch);
-    args.push(format!("-beta {}", beta_branch));
+    debug!("Using {beta_branch} beta branch");
+    args.push(format!("-beta {beta_branch}"));
   }
 
   if use_public_beta && !is_backwards_compatible_branch {
-    args.push(format!("-betapassword {}", beta_password));
+    args.push(format!("-betapassword {beta_password}"));
   }
 
   args.push(String::from("validate"));
@@ -44,7 +44,7 @@ pub fn add_beta_args(
 fn add_additional_args(args: &mut Vec<String>) {
   if let Ok(extra_args) = env::var("ADDITIONAL_STEAMCMD_ARGS") {
     let additional_args = String::from(extra_args.trim_start_matches('"').trim_end_matches('"'));
-    debug!("Adding additional arguments! {}", additional_args);
+    debug!("Adding additional arguments! {additional_args}");
     args.push(additional_args)
   }
 
@@ -59,7 +59,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   info!("Installing {} to {}", app_id, get_working_dir());
   let login = "+login anonymous".to_string();
   let force_install_dir = format!("+force_install_dir {}", get_working_dir());
-  let app_update = format!("+app_update {}", app_id);
+  let app_update = format!("+app_update {app_id}");
   let mut steamcmd = steamcmd_command();
   let mut args = vec![force_install_dir, login];
 
@@ -76,7 +76,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
     .arg("+quit")
     .stdout(Stdio::inherit())
     .stderr(Stdio::inherit());
-  debug!("Launching install command: {:#?}", install_command);
+  debug!("Launching install command: {install_command:#?}");
 
   execute_mut(install_command)
 }
@@ -125,14 +125,13 @@ mod tests {
   #[test]
   fn test_add_beta_args() {
     let mut args = vec!["example".to_string()];
-    env::set_var("ADDITIONAL_STEAMCMD_ARGS", "".to_string());
+    env::set_var("ADDITIONAL_STEAMCMD_ARGS", "");
     env::set_var("USE_PUBLIC_BETA", "1");
     add_additional_args(&mut args);
     assert_eq!(
       args.join(" "),
       format!(
-        "example  -beta {} -betapassword {} validate",
-        BETA_BRANCH, BETA_BRANCH_PASSWORD
+        "example  -beta {BETA_BRANCH} -betapassword {BETA_BRANCH_PASSWORD} validate"
       )
     );
     env::remove_var("USE_PUBLIC_BETA");

@@ -132,7 +132,7 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
     );
     let rendered = match handlebars.render("notification", &values) {
       Ok(value) => {
-        debug!("Discord Notification Parsed: \n{}", value);
+        debug!("Discord Notification Parsed: \n{value}");
         value
       }
       Err(msg) => panic!("{}", msg.to_string()),
