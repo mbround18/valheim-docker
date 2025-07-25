@@ -22,7 +22,7 @@ impl log::Log for OdinLogger {
       let args = record
         .args()
         .to_string()
-        .replace('\n', &format!("\n{} - ", prefix));
+        .replace('\n', &format!("\n{prefix} - "));
 
       if args.contains("WARN") {
         println!("\x1b[33m{}: {}\x1b[0m", prefix, record.args());
@@ -48,7 +48,7 @@ pub fn initialize_logger(debug: bool) -> Result<(), SetLoggerError> {
   let result = log::set_logger(&LOGGER).map(|_| log::set_max_level(level));
   match result {
     Err(err) => {
-      println!("Error setting logger: {:?}", err);
+      println!("Error setting logger: {err:?}");
       Err(err)
     }
     Ok(_) => {

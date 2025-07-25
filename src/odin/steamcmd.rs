@@ -13,7 +13,7 @@ pub fn steamcmd_command() -> Command {
       error!("Checking for script under steam user.");
       match find_command(STEAMCMD_EXE) {
         Some(steamcmd) => {
-          info!("Using steamcmd script at {}", STEAMCMD_EXE);
+          info!("Using steamcmd script at {STEAMCMD_EXE}");
           steamcmd
         }
         None => {

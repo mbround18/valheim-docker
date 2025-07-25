@@ -15,13 +15,13 @@ fn process_mod(input: &str) -> Result<(), ValheimModError> {
           Ok(())
         }
         Err(message) => {
-          error!("Download failed: {}", message);
+          error!("Download failed: {message}");
           Err(ValheimModError::DownloadFailed)
         }
       }
     }
     Err(e) => {
-      error!("Invalid input: {}", e);
+      error!("Invalid input: {e}");
       Err(e)
     }
   }
@@ -29,7 +29,7 @@ fn process_mod(input: &str) -> Result<(), ValheimModError> {
 
 pub fn invoke(input: String) {
   if let Err(e) = process_mod(&input) {
-    error!("Failed to process mod: {}", e);
+    error!("Failed to process mod: {e}");
     exit(1);
   }
 }

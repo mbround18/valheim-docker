@@ -110,8 +110,7 @@ impl PlayerList {
         .send_notification(Some(format!("Player {name} has left the adventure")));
     } else {
       debug!(
-        "No player with ID '{}' and ZDO index '{}' found.",
-        id, zdo_index
+        "No player with ID '{id}' and ZDO index '{zdo_index}' found."
       );
     }
   }
@@ -183,30 +182,28 @@ pub fn handle_player_events(line: &str) {
 
   // Handle player joining event
   if let Some(captures) = joined_regex.captures(line) {
-    debug!("Matched joining event: '{:?}'", captures);
+    debug!("Matched joining event: '{captures:?}'");
     match extract_player_details(&captures) {
       Ok((name, id, zdo_index)) => {
         info!(
-          "Player '{}' with ID '{}' and ZDO index '{}' is joining",
-          name, id, zdo_index
+          "Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining"
         );
         PlayerList::joined_event(id, zdo_index, name);
       }
-      Err(e) => error!("Failed to process joining event line '{}': {}", line, e),
+      Err(e) => error!("Failed to process joining event line '{line}': {e}"),
     }
   }
 
   // Handle player leaving event
   if let Some(captures) = left_regex.captures(line) {
-    debug!("Matched leaving event: '{:?}'", captures);
+    debug!("Matched leaving event: '{captures:?}'");
     match extract_player_id_and_zdo_index(captures.get(1).map(|m| m.as_str())) {
       Ok((id, zdo_index)) => {
         // Check if the ZDO index matches before sending leave event
         if let Some(player) = PlayerList::get_player_by_id(id) {
           if player.zdo_index == zdo_index {
             info!(
-              "Player with ID '{}' and ZDO index '{}' is leaving",
-              id, zdo_index
+              "Player with ID '{id}' and ZDO index '{zdo_index}' is leaving"
             );
             PlayerList::left_event(id, zdo_index);
           } else {
@@ -216,17 +213,17 @@ pub fn handle_player_events(line: &str) {
             );
           }
         } else {
-          debug!("Player with ID '{}' not found", id);
+          debug!("Player with ID '{id}' not found");
         }
       }
-      Err(e) => error!("Failed to process leaving event line '{}': {}", line, e),
+      Err(e) => error!("Failed to process leaving event line '{line}': {e}"),
     }
   }
 }
 
 /// Extracts the player name, ID, and ZDO index from regex captures for a joining event.
 fn extract_player_details(captures: &regex::Captures) -> Result<(String, u64, u16), String> {
-  debug!("Extracting player details from captures: '{:?}'", captures);
+  debug!("Extracting player details from captures: '{captures:?}'");
   let name = captures
     .get(1)
     .ok_or("Missing player name")?
@@ -238,15 +235,14 @@ fn extract_player_details(captures: &regex::Captures) -> Result<(String, u64, u1
     .as_str();
   match extract_player_id_and_zdo_index(Some(id_str)) {
     Ok((id, zdo_index)) => Ok((name, id, zdo_index)),
-    Err(e) => Err(format!("Failed to parse player ID and ZDO index: {}", e)),
+    Err(e) => Err(format!("Failed to parse player ID and ZDO index: {e}")),
   }
 }
 
 /// Extracts the player ID and ZDO index from a string with the format `player_id:zdo_index`.
 fn extract_player_id_and_zdo_index(id_str: Option<&str>) -> Result<(u64, u16), String> {
   debug!(
-    "Extracting player ID and ZDO index from string: '{:?}'",
-    id_str
+    "Extracting player ID and ZDO index from string: '{id_str:?}'"
   );
   match id_str {
     Some(id) => {
@@ -256,10 +252,10 @@ fn extract_player_id_and_zdo_index(id_str: Option<&str>) -> Result<(u64, u16), S
       }
       let player_id = parts[0]
         .parse::<u64>()
-        .map_err(|e| format!("ID parsing failed: {}", e))?;
+        .map_err(|e| format!("ID parsing failed: {e}"))?;
       let zdo_index = parts[1]
         .parse::<u16>()
-        .map_err(|e| format!("ZDO index parsing failed: {}", e))?;
+        .map_err(|e| format!("ZDO index parsing failed: {e}"))?;
       Ok((player_id, zdo_index))
     }
     None => Err("Player ID and ZDO index not found".to_string()),

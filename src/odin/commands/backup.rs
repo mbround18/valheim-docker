@@ -37,13 +37,13 @@ pub fn invoke(input: String, output: String) {
           Ok(_) => debug!("Successfully added {name} to backup file"),
           Err(err) => {
             error!("Failed to add {name} to backup file");
-            error!("{:?}", err);
+            error!("{err:?}");
             remove_file(&output).unwrap();
             exit(1)
           }
         };
       }
-      Err(e) => println!("{:?}", e),
+      Err(e) => println!("{e:?}"),
     }
   }
   tar.finish().unwrap();

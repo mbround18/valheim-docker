@@ -22,8 +22,8 @@ type CommandResult = io::Result<Child>;
 
 fn create_log_files() -> Result<(File, File), Error> {
   let game_dir = game_directory();
-  let stdout = create_file(format!("{}/logs/valheim_server.log", game_dir).as_str());
-  let stderr = create_file(format!("{}/logs/valheim_server.err", game_dir).as_str());
+  let stdout = create_file(format!("{game_dir}/logs/valheim_server.log").as_str());
+  let stderr = create_file(format!("{game_dir}/logs/valheim_server.err").as_str());
   Ok((stdout, stderr))
 }
 pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error> {
@@ -40,7 +40,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
       if bepinex_env.is_installed() {
         info!("Server has been started with BepInEx! Keep in mind this may cause errors!!");
         messages::modding_disclaimer();
-        debug!("{:#?}", bepinex_env);
+        debug!("{bepinex_env:#?}");
       }
       info!("Server has been started and Daemonize. It should be online shortly!");
       info!("Keep an eye out for 'Game server connected' in the log!");
@@ -159,7 +159,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
 
   base_command.stdout(stdout);
   base_command.stderr(stderr);
-  debug!("Base Command: {:#?}", base_command);
+  debug!("Base Command: {base_command:#?}");
   configure_server_options(base_command, &config);
   debug!("Executable: {}", &config.command);
   info!("Launching Command...");
@@ -171,7 +171,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   let bepinex_env = BepInExEnvironment::new();
   if bepinex_env.is_installed() {
     info!("BepInEx detected! Switching to run with BepInEx...");
-    info!("BepInEx Environment: \n{:#?}", bepinex_env);
+    info!("BepInEx Environment: \n{bepinex_env:#?}");
     bepinex_env.launch(command)
   } else {
     info!("Everything looks good! Running normally!");

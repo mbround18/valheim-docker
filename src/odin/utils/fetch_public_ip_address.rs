@@ -68,12 +68,12 @@ impl IPConfig {
         Ok(response) => match response.json::<IPResponse>() {
           Ok(json) => return Ok(json.ip.to_string()),
           Err(e) => {
-            debug!("Failed to parse JSON: {}", e);
+            debug!("Failed to parse JSON: {e}");
             continue;
           }
         },
         Err(e) => {
-          debug!("Request failed: {}", e);
+          debug!("Request failed: {e}");
           continue;
         }
       }
@@ -93,17 +93,17 @@ pub fn fetch_public_address() -> IPConfig {
   debug!("Checking for address in env");
   match ip_config.to_string_from_env() {
     Ok(ip) => {
-      debug!("Fetched IP: {}", ip);
+      debug!("Fetched IP: {ip}");
       ip
     }
     Err(_) => match ip_config.fetch_ip_from_api(&client) {
       Ok(ip) => {
-        debug!("Fetched IP: {}", ip);
+        debug!("Fetched IP: {ip}");
         ip_config.ip = ip;
         ip_config
       }
       Err(e) => {
-        debug!("Failed to fetch IP: {}", e);
+        debug!("Failed to fetch IP: {e}");
         ip_config
       }
     },

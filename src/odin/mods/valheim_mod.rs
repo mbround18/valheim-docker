@@ -111,7 +111,7 @@ impl ValheimMod {
 
     // Create a temporary directory for extraction.
     let temp_dir = tempdir().map_err(|e| {
-      ValheimModError::TempDirCreationError(format!("Failed to create temp dir: {}", e))
+      ValheimModError::TempDirCreationError(format!("Failed to create temp dir: {e}"))
     })?;
     debug!("Created temporary directory at {:?}", temp_dir.path());
 
@@ -122,7 +122,7 @@ impl ValheimMod {
       let mut archive =
         ZipArchive::new(zip_file).map_err(|e| ValheimModError::ZipArchiveError(e.to_string()))?;
       archive.extract(temp_dir.path()).map_err(|e| {
-        error!("Failed to extract archive: {}", e);
+        error!("Failed to extract archive: {e}");
         ValheimModError::ExtractionError(e.to_string())
       })?;
 
@@ -144,7 +144,7 @@ impl ValheimMod {
     };
 
     let manifest = Manifest::try_from(temp_dir.path().join("manifest.json"))
-      .map_err(|e| ValheimModError::ManifestDeserializeError(format!("Ayyre buddy {}", e)))?;
+      .map_err(|e| ValheimModError::ManifestDeserializeError(format!("Ayyre buddy {e}")))?;
 
     // Move extracted files to the appropriate final destination.
     if is_framework {
@@ -195,8 +195,7 @@ impl TryFrom<String> for ValheimMod {
       Ok(ValheimMod::new(&url))
     } else if let Some((author, mod_name, version)) = parse_mod_string(&url) {
       let constructed_url = format!(
-        "https://gcdn.thunderstore.io/live/repository/packages/{}-{}-{}.zip",
-        author, mod_name, version
+        "https://gcdn.thunderstore.io/live/repository/packages/{author}-{mod_name}-{version}.zip"
       );
       Ok(ValheimMod::new(&constructed_url))
     } else {

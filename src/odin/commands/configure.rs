@@ -94,7 +94,7 @@ impl Configuration {
     let permissions = metadata.permissions();
 
     if metadata.is_dir() {
-      info!("Checking directory permissions: {:?}", path);
+      info!("Checking directory permissions: {path:?}");
       if permissions.mode() & 0o700 == 0o700 {
         Ok(())
       } else {
@@ -104,7 +104,7 @@ impl Configuration {
         ))
       }
     } else {
-      info!("Checking file permissions: {:?}", path);
+      info!("Checking file permissions: {path:?}");
       if permissions.mode() & 0o600 == 0o600 {
         Ok(())
       } else {
@@ -127,7 +127,7 @@ impl Configuration {
       if !path.exists() {
         return Err(Box::new(io::Error::new(
           io::ErrorKind::NotFound,
-          format!("Path does not exist: {:?}", path),
+          format!("Path does not exist: {path:?}"),
         )));
       }
 

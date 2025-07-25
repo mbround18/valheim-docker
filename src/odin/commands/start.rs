@@ -12,13 +12,13 @@ pub fn invoke(dry_run: bool) {
   NotificationEvent::Start(EventStatus::Running).send_notification(None);
   debug!(target: "commands_start", "Loading config file...");
   let config = load_config();
-  debug!(target: "commands_start", "Dry run condition: {}", dry_run);
+  debug!(target: "commands_start", "Dry run condition: {dry_run}");
   info!(target: "commands_start", "Looking for burial mounds...");
   if !dry_run {
     match server::start_daemonized(config) {
       Ok(_) => info!(target: "commands_start", "Success, daemonized"),
       Err(e) => {
-        error!(target: "commands_start", "Error: {}", e);
+        error!(target: "commands_start", "Error: {e}");
         exit(1);
       }
     }

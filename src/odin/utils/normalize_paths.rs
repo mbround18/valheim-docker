@@ -16,7 +16,7 @@ pub fn normalize_paths(src_dir: &Path) -> std::io::Result<()> {
   if !src_dir.is_dir() {
     return Err(std::io::Error::new(
       std::io::ErrorKind::NotFound,
-      format!("Source directory {:?} does not exist", src_dir),
+      format!("Source directory {src_dir:?} does not exist"),
     ));
   }
 
@@ -30,7 +30,7 @@ pub fn normalize_paths(src_dir: &Path) -> std::io::Result<()> {
     // Compute the path relative to src_dir
     let relative_path = src_path
       .strip_prefix(src_dir)
-      .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+      .map_err(std::io::Error::other)?;
     let normalized_relative_path = normalize_path(relative_path);
     let temp_dest_path = temp_root.join(&normalized_relative_path);
 
@@ -54,7 +54,7 @@ pub fn normalize_paths(src_dir: &Path) -> std::io::Result<()> {
     // Compute path relative to the temp_root
     let relative_path = entry_path
       .strip_prefix(temp_root)
-      .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+      .map_err(std::io::Error::other)?;
     let original_dest_path = src_dir.join(relative_path);
 
     if entry_path.is_dir() {

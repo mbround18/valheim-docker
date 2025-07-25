@@ -22,8 +22,8 @@ impl UpdateInfo {
 
   #[cfg(test)]
   pub fn new_testing(manifest_contents: &str, app_info_output: &str) -> Self {
-    debug!("Manifest contents:\n{}", manifest_contents);
-    debug!("App info output:\n{}", app_info_output);
+    debug!("Manifest contents:\n{manifest_contents}");
+    debug!("App info output:\n{app_info_output}");
     let current_build_id = extract_build_id_from_manifest(manifest_contents).to_string();
     let latest_build_id = extract_build_id_from_app_info(app_info_output).to_string();
 
@@ -50,7 +50,7 @@ impl Default for UpdateInfo {
 
 pub fn update_is_available() -> bool {
   let info = UpdateInfo::new();
-  debug!("{:#?}", info);
+  debug!("{info:#?}");
 
   info.update_available()
 }
@@ -64,7 +64,7 @@ pub fn update_server() {
 
   // Update the installation
   if let Err(e) = server::install(constants::GAME_ID) {
-    error!("Failed to install server: {}", e);
+    error!("Failed to install server: {e}");
     exit(1);
   }
 
@@ -136,7 +136,7 @@ fn extract_build_id_from_manifest(manifest: &str) -> &str {
   if let Some(captures) = re.captures(manifest) {
     captures.get(2).map_or("", |m| m.as_str())
   } else {
-    panic!("Unexpected manifest format:\n{}", manifest);
+    panic!("Unexpected manifest format:\n{manifest}");
   }
 }
 
