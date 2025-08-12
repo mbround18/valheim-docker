@@ -8,11 +8,13 @@ use crate::constants;
 use crate::utils::common_paths::{bepinex_directory, bepinex_plugin_directory, game_directory};
 use crate::utils::{environment, path_exists};
 
-const DYLD_LIBRARY_PATH_VAR: &str = "DYLD_LIBRARY_PATH";
-const DYLD_INSERT_LIBRARIES_VAR: &str = "DYLD_INSERT_LIBRARIES";
-const DOORSTOP_ENABLE_VAR: &str = "DOORSTOP_ENABLE";
 const DOORSTOP_LIB_VAR: &str = "DOORSTOP_LIB";
 const DOORSTOP_LIBS_VAR: &str = "DOORSTOP_LIBS";
+// Doorstop 4.x and above
+const DOORSTOP_ENABLED_VAR: &str = "DOORSTOP_ENABLED";
+const DOORSTOP_TARGET_ASSEMBLY_VAR: &str = "DOORSTOP_TARGET_ASSEMBLY";
+// Compatibility with older Doorstop versions
+const DOORSTOP_ENABLE_VAR: &str = "DOORSTOP_ENABLE";
 const DOORSTOP_INVOKE_DLL_PATH_VAR: &str = "DOORSTOP_INVOKE_DLL_PATH";
 const DOORSTOP_CORLIB_OVERRIDE_PATH_VAR: &str = "DOORSTOP_CORLIB_OVERRIDE_PATH";
 
@@ -33,13 +35,16 @@ pub struct ModInfo {
 
 #[derive(Debug)]
 pub struct BepInExEnvironment {
+  doorstop_lib: String,
   ld_preload: String,
   ld_library_path: String,
+  // Doorstop 4.x and above
+  doorstop_enabled: String,
+  doorstop_target_assembly: String,
+  // Compatibility with older Doorstop versions
   doorstop_enable: String,
   doorstop_invoke_dll: String,
   doorstop_corlib_override_path: String,
-  dyld_library_path: String,
-  dyld_insert_libraries: String,
 }
 impl Default for BepInExEnvironment {
   fn default() -> Self {
@@ -60,14 +65,15 @@ impl BepInExEnvironment {
       format!("{}/doorstop_libs", &game_dir),
       format!("{}/doorstop", &bepinex_dir),
     );
+    let doorstop_target_assembly =
+      environment::fetch_var(DOORSTOP_TARGET_ASSEMBLY_VAR, &bepinex_preloader_dll);
     let doorstop_invoke_dll =
       environment::fetch_var(DOORSTOP_INVOKE_DLL_PATH_VAR, &bepinex_preloader_dll);
     let doorstop_corlib_override_path = parse_path(
       DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
       format!("{}/unstripped_corlib", &game_dir),
       format!("{}/core_lib", &bepinex_dir),
-    );
-    let doorstop_base_dll = format!("{}/{}", &doorstop_libs, &doorstop_lib);
+    ); 
 
     debug!("Parsing LD locations.");
     let ld_preload = environment::fetch_var(constants::LD_PRELOAD_VAR, "").add(&doorstop_lib);
@@ -76,38 +82,41 @@ impl BepInExEnvironment {
       format!("./linux64:{}", &doorstop_libs).as_str(),
     );
 
-    debug!("Parsing LD locations.");
-    let dyld_library_path = environment::fetch_var(DYLD_LIBRARY_PATH_VAR, &doorstop_libs);
-    let dyld_insert_libraries =
-      environment::fetch_var(DYLD_INSERT_LIBRARIES_VAR, &doorstop_base_dll);
-
     debug!("Returning environment");
     BepInExEnvironment {
+      doorstop_lib,
       ld_preload,
       ld_library_path,
+      // Doorstop 4.x and above
+      doorstop_enabled: 1.to_string(),
+      doorstop_target_assembly,
+      // Compatibility with older Doorstop versions
       doorstop_enable: true.to_string().to_uppercase(),
       doorstop_invoke_dll,
       doorstop_corlib_override_path,
-      dyld_library_path,
-      dyld_insert_libraries,
     }
   }
   pub fn is_installed(&self) -> bool {
     debug!("Checking for BepInEx specific files...");
+    // Doorstop 4.x and above
     let checks = &[
-      // &self.doorstop_corlib_override_path,
-      &self.dyld_insert_libraries,
-      // &self.dyld_library_path,
+      &self.doorstop_lib,
+      &self.doorstop_target_assembly,
+    ];
+    // Compatibility with older Doorstop versions
+    let legacy_checks = &[
+      &self.doorstop_lib,
       &self.doorstop_invoke_dll,
     ];
     let expected_state = true;
     let output = checks.iter().all(|v| path_exists(v) == expected_state);
-    if output {
+    let legacy_output = legacy_checks.iter().all(|v| path_exists(v) == expected_state);
+    if output || legacy_output {
       debug!("Yay! looks like we found all the required files for BepInEx to run! <3")
     } else {
       debug!("We didn't find a modded instance! Launching a normal instance!")
     }
-    output
+    output || legacy_output
   }
 
   pub fn list_mods(&self) -> Vec<ModInfo> {
@@ -134,26 +143,20 @@ impl BepInExEnvironment {
 
   pub fn launch(&self, mut command: Command) -> std::io::Result<Child> {
     info!("BepInEx found! Setting up Environment...");
+    // The env variables must not have quotes around them
     command
-      // DOORSTOP_ENABLE must not have quotes around it.
+      .env(constants::LD_LIBRARY_PATH_VAR, &self.ld_library_path)
+      .env(constants::LD_PRELOAD_VAR, &self.ld_preload)
+      // Doorstop 4.x and above
+      .env(DOORSTOP_ENABLED_VAR, &self.doorstop_enabled)
+      .env(DOORSTOP_TARGET_ASSEMBLY_VAR, &self.doorstop_target_assembly)
+      // Compatibility with older Doorstop versions
       .env(DOORSTOP_ENABLE_VAR, &self.doorstop_enable)
-      // DOORSTOP_INVOKE_DLL_PATH must not have quotes around it.
       .env(DOORSTOP_INVOKE_DLL_PATH_VAR, &self.doorstop_invoke_dll)
       .env(
         DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
         &self.doorstop_corlib_override_path,
       )
-      // LD_LIBRARY_PATH must not have quotes around it.
-      .env(constants::LD_LIBRARY_PATH_VAR, &self.ld_library_path)
-      // LD_PRELOAD must not have quotes around it.
-      .env(constants::LD_PRELOAD_VAR, &self.ld_preload)
-      // DYLD_LIBRARY_PATH is weird af and MUST have quotes around it.
-      .env(
-        DYLD_LIBRARY_PATH_VAR,
-        format!("\"{}\"", &self.dyld_library_path),
-      )
-      // DYLD_INSERT_LIBRARIES must not have quotes around it.
-      .env(DYLD_INSERT_LIBRARIES_VAR, &self.dyld_insert_libraries)
       .spawn()
   }
 }
