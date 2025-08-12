@@ -4,8 +4,8 @@ use crate::notifications::enums::{
 use log::debug;
 
 pub fn handle_launch_probes(line: &str) {
-  if line.contains("Game server connected") {
-    debug!("Detected 'Game server connected'. Sending Start notification.");
+  if line.contains("Opened Steam server") {
+    debug!("Detected 'Opened Steam server'. Sending Start notification.");
     NotificationEvent::Start(EventStatus::Successful).send_notification(None);
   } else if line.contains("Steam manager on destroy") {
     debug!("Detected 'Steam manager on destroy'. Sending Stop notification.");
