@@ -22,16 +22,23 @@ async fn main() {
   let root = warp::path::end().map(routes::invoke);
   let status = warp::path!("status").map(routes::status::invoke);
   let metrics = warp::path!("metrics").map(routes::metrics::invoke);
-  let routes = warp::any().and(root.or(status).or(metrics));
+  let health = warp::path!("health").map(routes::health::invoke);
+  let players = warp::path!("players").map(routes::players::invoke);
+  let openapi = warp::path!("openapi.json").map(routes::openapi::invoke);
+  let routes = warp::any().and(
+    root
+      .or(status)
+      .or(metrics)
+      .or(health)
+      .or(players)
+      .or(openapi),
+  );
 
   // HTTP Server
   let http_port: u16 = fetch_var("HTTP_PORT", "3000").parse().unwrap();
 
   // Start server
   info!("Starting web server....");
-  info!(
-    "Navigate to http://127.0.0.1:{}/status to view the server status.",
-    http_port
-  );
+  info!("Navigate to http://127.0.0.1:{http_port}/status to view the server status.");
   warp::serve(routes).run(([0, 0, 0, 0], http_port)).await;
 }

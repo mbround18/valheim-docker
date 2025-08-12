@@ -11,7 +11,7 @@ fn parse_address(address: &str) -> SocketAddrV4 {
   match SocketAddrV4::from_str(address) {
     Ok(parsed_address) => parsed_address,
     Err(_) => {
-      error!("Failed to parse supplied address! {}", address);
+      error!("Failed to parse supplied address! {address}");
       exit(1)
     }
   }

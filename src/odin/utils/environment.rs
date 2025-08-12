@@ -20,7 +20,7 @@ pub fn fetch_multiple_var(name: &str, default: &str) -> String {
   if value.is_empty() {
     value
   } else {
-    format!("{}:", value)
+    format!("{value}:")
   }
 }
 

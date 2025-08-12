@@ -46,7 +46,7 @@ fn handle_line(path: &PathBuf, line: &str) {
   let file_name = match path.file_name().and_then(|name| name.to_str()) {
     Some(name) => name,
     None => {
-      error!("Failed to extract file name from path: {:?}", path);
+      error!("Failed to extract file name from path: {path:?}");
       return;
     }
   };
@@ -58,13 +58,13 @@ fn handle_line(path: &PathBuf, line: &str) {
   }
 
   if line.contains("WARNING") {
-    warn!("[{}]: {}", file_name, outline);
+    warn!("[{file_name}]: {outline}");
   } else if line.contains("ERROR") {
-    error!("[{}]: {}", file_name, outline);
+    error!("[{file_name}]: {outline}");
   } else if line.contains("Fallback handler could not load library") {
-    debug!("[{}]: {}", file_name, outline);
+    debug!("[{file_name}]: {outline}");
   } else {
-    info!("[{}]: {}", file_name, outline);
+    info!("[{file_name}]: {outline}");
   }
 
   handle_launch_probes(outline);
@@ -164,7 +164,7 @@ pub async fn invoke(lines: Option<u16>, watch: bool) {
   let log_dir = PathBuf::from(&log_path);
 
   if !log_dir.exists() || !log_dir.is_dir() {
-    error!("Log directory does not exist: {:?}", log_path);
+    error!("Log directory does not exist: {log_path:?}");
     return;
   }
 
