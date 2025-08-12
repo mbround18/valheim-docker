@@ -44,17 +44,38 @@
 
 ## BepInEx/Modded Variables
 
-> These are set automatically by [Odin] for a basic BepInEx installation;
-> you DO NOT need to set these and only mess with them if you Know what you are doing.
+> [Odin] auto-detects your BepInExPack_Valheim version from `BepInEx/manifest.json` and sets the correct environment for Doorstop 3.x (legacy) or 4.x+.
+> You rarely need to set these yourself—treat them as advanced overrides.
 
-| Variable                      | Default                                                  | Required | Description                                                                          |
-| ----------------------------- | -------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------ |
-| LD_PRELOAD                    | `libdoorstop_x64.so`                                     | TRUE     | Sets which library to preload on Valheim start.                                      |
-| LD_LIBRARY_PATH               | `./linux64:/home/steam/valheim/doorstop_libs`            | TRUE     | Sets which library paths it should look in for preload libs.                         |
-| DOORSTOP_ENABLE               | `TRUE`                                                   | TRUE     | Enables Doorstop or not.                                                             |
-| DOORSTOP_LIB                  | `libdoorstop_x64.so`                                     | TRUE     | Which doorstop lib to load                                                           |
-| DOORSTOP_LIBS                 | `/home/steam/valheim/doorstop_libs`                      | TRUE     | Where to look for doorstop libs.                                                     |
-| DOORSTOP_INVOKE_DLL_PATH      | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload dll to load.                                                         |
-| DOORSTOP_CORLIB_OVERRIDE_PATH | `/home/steam/valheim/unstripped_corlib`                  | TRUE     | Sets where the decompiled libraries containing base mono files are located at        |
+Threshold: Doorstop 4.x is used starting at version `5.4.2330` and newer. Versions `5.4.2202` and earlier use legacy (Doorstop 3.x) variables.
+
+Common (both modes)
+
+| Variable        | Default                     | Required | Description                                                     |
+| --------------- | --------------------------- | -------- | --------------------------------------------------------------- |
+| LD_PRELOAD      | `libdoorstop_x64.so`        | TRUE     | Library to preload on Valheim start.                            |
+| LD_LIBRARY_PATH | `./linux64:<doorstop_libs>` | TRUE     | Library search paths. `doorstop_libs` is resolved automatically |
+
+Doorstop 3.x (<= 5.4.2202)
+
+| Variable                      | Default                                                  | Required | Description                                                              |
+| ----------------------------- | -------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| DOORSTOP_ENABLE               | `TRUE`                                                   | TRUE     | Enables Doorstop (legacy).                                               |
+| DOORSTOP_INVOKE_DLL_PATH      | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | BepInEx preload DLL to invoke (legacy).                                  |
+| DOORSTOP_CORLIB_OVERRIDE_PATH | `/home/steam/valheim/unstripped_corlib`                  | TRUE     | Location of unstripped corlib (legacy); falls back to `BepInEx/core_lib` |
+
+Doorstop 4.x (>= 5.4.2330)
+
+| Variable                 | Default                                                  | Required | Description                                        |
+| ------------------------ | -------------------------------------------------------- | -------- | -------------------------------------------------- |
+| DOORSTOP_ENABLED         | `1`                                                      | TRUE     | Enables Doorstop (4.x+).                           |
+| DOORSTOP_TARGET_ASSEMBLY | `/home/steam/valheim/BepInEx/core/BepInEx.Preloader.dll` | TRUE     | Target assembly to load (replaces INVOKE_DLL_PATH) |
+
+Advanced (optional overrides)
+
+| Variable      | Default                                                                       | Required | Description                                                     |
+| ------------- | ----------------------------------------------------------------------------- | -------- | --------------------------------------------------------------- |
+| DOORSTOP_LIB  | `libdoorstop_x64.so`                                                          | Optional | Which Doorstop library to load; Odin uses this to build preload |
+| DOORSTOP_LIBS | `/home/steam/valheim/doorstop_libs` or `/home/steam/valheim/BepInEx/doorstop` | Optional | Where to look for Doorstop libs; Odin derives LD_LIBRARY_PATH   |
 
 [odin]: ../src/odin/README.md
