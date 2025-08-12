@@ -109,9 +109,7 @@ impl PlayerList {
       NotificationEvent::Player(Left)
         .send_notification(Some(format!("Player {name} has left the adventure")));
     } else {
-      debug!(
-        "No player with ID '{id}' and ZDO index '{zdo_index}' found."
-      );
+      debug!("No player with ID '{id}' and ZDO index '{zdo_index}' found.");
     }
   }
 }
@@ -185,9 +183,7 @@ pub fn handle_player_events(line: &str) {
     debug!("Matched joining event: '{captures:?}'");
     match extract_player_details(&captures) {
       Ok((name, id, zdo_index)) => {
-        info!(
-          "Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining"
-        );
+        info!("Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining");
         PlayerList::joined_event(id, zdo_index, name);
       }
       Err(e) => error!("Failed to process joining event line '{line}': {e}"),
@@ -202,9 +198,7 @@ pub fn handle_player_events(line: &str) {
         // Check if the ZDO index matches before sending leave event
         if let Some(player) = PlayerList::get_player_by_id(id) {
           if player.zdo_index == zdo_index {
-            info!(
-              "Player with ID '{id}' and ZDO index '{zdo_index}' is leaving"
-            );
+            info!("Player with ID '{id}' and ZDO index '{zdo_index}' is leaving");
             PlayerList::left_event(id, zdo_index);
           } else {
             debug!(
@@ -241,9 +235,7 @@ fn extract_player_details(captures: &regex::Captures) -> Result<(String, u64, u1
 
 /// Extracts the player ID and ZDO index from a string with the format `player_id:zdo_index`.
 fn extract_player_id_and_zdo_index(id_str: Option<&str>) -> Result<(u64, u16), String> {
-  debug!(
-    "Extracting player ID and ZDO index from string: '{id_str:?}'"
-  );
+  debug!("Extracting player ID and ZDO index from string: '{id_str:?}'");
   match id_str {
     Some(id) => {
       let parts: Vec<&str> = id.split(':').collect();

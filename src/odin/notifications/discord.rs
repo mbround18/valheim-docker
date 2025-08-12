@@ -44,6 +44,18 @@ pub fn is_discord_webhook(webhook_url: &str) -> bool {
   webhook_url.starts_with(DISCORD_WEBHOOK_BASE) || webhook_url.starts_with(DISCORDAPP_WEBHOOK_BASE)
 }
 
+fn determine_color_from_notification(notification: &NotificationMessage) -> Color {
+  // First try to determine color based on status
+  match notification.event_type.status.as_str() {
+    "Successful" => Color::Success,
+    "Failed" => Color::Failure,
+    "Running" => Color::Generic,
+    // For player events, the status contains the player action
+    "Joined" => Color::Join,
+    "Left" => Color::Leave,
+    _ => Color::Generic,
+  }
+}
 #[derive(Deserialize, Serialize)]
 pub struct DiscordWebHookEmbed {
   pub(crate) title: String,
@@ -83,7 +95,7 @@ impl Default for DiscordWebHookBody {
       embeds: vec![DiscordWebHookEmbed {
         title: "{{title}}".to_string(),
         description: "{{description}}".to_string(),
-        color: 16388413,
+        color: Color::Generic as i32,
       }],
     }
   }
@@ -132,12 +144,21 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
     );
     let rendered = match handlebars.render("notification", &values) {
       Ok(value) => {
-        debug!("Discord Notification Parsed: \n{value}");
+        debug!("Discord Notification Parsed: \n{}", value);
         value
       }
       Err(msg) => panic!("{}", msg.to_string()),
     };
-    serde_json::from_str(&rendered).unwrap()
+
+    let mut discord_body: DiscordWebHookBody = serde_json::from_str(&rendered).unwrap();
+
+    // Apply appropriate color based on the event
+    let color = determine_color_from_notification(event) as i32;
+    for embed in &mut discord_body.embeds {
+      embed.color = color;
+    }
+
+    discord_body
   }
 }
 
@@ -170,7 +191,7 @@ mod tests {
     assert_eq!(template.embeds.len(), 1);
     assert_eq!(template.embeds[0].title, "{{title}}");
     assert_eq!(template.embeds[0].description, "{{description}}");
-    assert_eq!(template.embeds[0].color, 16388413);
+    assert_eq!(template.embeds[0].color, Color::Generic as i32);
   }
 
   #[test]
@@ -189,5 +210,34 @@ mod tests {
       discord_body.embeds[0].description,
       "Player has joined the game."
     );
+  }
+
+  #[test]
+  fn test_color_application_for_player_join() {
+    let notification = NotificationMessage {
+      author: String::from("Test Author"),
+      event_type: NotificationEvent::Player(PlayerStatus::Joined).to_event_type(),
+      event_message: String::from("Player has joined the game."),
+      timestamp: Local::now().to_rfc3339(),
+    };
+
+    let discord_body: DiscordWebHookBody = (&notification).into();
+    assert_eq!(discord_body.embeds[0].color, Color::Join as i32);
+  }
+
+  #[test]
+  fn test_color_application_for_successful_status() {
+    let mut event_type = NotificationEvent::Start(EventStatus::Successful).to_event_type();
+    event_type.status = "Successful".to_string();
+
+    let notification = NotificationMessage {
+      author: String::from("Test Author"),
+      event_type,
+      event_message: String::from("Server started successfully."),
+      timestamp: Local::now().to_rfc3339(),
+    };
+
+    let discord_body: DiscordWebHookBody = (&notification).into();
+    assert_eq!(discord_body.embeds[0].color, Color::Success as i32);
   }
 }

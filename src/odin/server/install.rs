@@ -130,9 +130,7 @@ mod tests {
     add_additional_args(&mut args);
     assert_eq!(
       args.join(" "),
-      format!(
-        "example  -beta {BETA_BRANCH} -betapassword {BETA_BRANCH_PASSWORD} validate"
-      )
+      format!("example  -beta {BETA_BRANCH} -betapassword {BETA_BRANCH_PASSWORD} validate")
     );
     env::remove_var("USE_PUBLIC_BETA");
   }

@@ -29,8 +29,6 @@ async fn main() {
 
   // Start server
   info!("Starting web server....");
-  info!(
-    "Navigate to http://127.0.0.1:{http_port}/status to view the server status."
-  );
+  info!("Navigate to http://127.0.0.1:{http_port}/status to view the server status.");
   warp::serve(routes).run(([0, 0, 0, 0], http_port)).await;
 }
