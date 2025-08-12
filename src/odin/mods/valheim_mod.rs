@@ -8,10 +8,13 @@ use crate::{
 };
 use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
+use reqwest::blocking::Client;
 use reqwest::Url;
+use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
 use std::fs::{create_dir_all, File};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use tempfile::tempdir;
 use walkdir::WalkDir;
@@ -62,13 +65,113 @@ impl ValheimMod {
     }
   }
 
+  /// Compute SHA-256 of a file at the given path.
+  fn sha256_hex(path: &Path) -> Result<String, ValheimModError> {
+    let mut file = File::open(path).map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
+    let mut buf = [0u8; 8192];
+    let mut hasher = Sha256::new();
+    loop {
+      let n = file
+        .read(&mut buf)
+        .map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
+      if n == 0 {
+        break;
+      }
+      hasher.update(&buf[..n]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+  }
+
+  /// Try opening as a ZIP to validate integrity.
+  fn is_valid_zip(path: &Path) -> bool {
+    matches!(File::open(path).map(ZipArchive::new), Ok(Ok(_)))
+  }
+
+  /// Persist a sidecar .sha256 file next to the artifact.
+  fn write_sha_sidecar(path: &Path, sha: &str) {
+    if let Some(file_name) = path.file_name().and_then(|s| s.to_str()) {
+      let mut sidecar = path.to_path_buf();
+      sidecar.set_extension(format!(
+        "{}sha256",
+        path
+          .extension()
+          .and_then(|e| e.to_str())
+          .map(|e| format!("{}.", e))
+          .unwrap_or_default()
+      ));
+      // Fallback simple name if extension building is awkward
+      let sidecar = if sidecar
+        .extension()
+        .and_then(|e| e.to_str())
+        .filter(|e| e.ends_with("sha256"))
+        .is_some()
+      {
+        sidecar
+      } else {
+        let mut p = path.to_path_buf();
+        p.set_file_name(format!("{}.sha256", file_name));
+        p
+      };
+      if let Err(e) = std::fs::write(&sidecar, format!("{}  {}\n", sha, file_name)) {
+        warn!("Failed to write sha256 sidecar: {}", e);
+      }
+    }
+  }
+
   /// Download: Downloads the mod ZIP from the URL into the staging location.
   pub fn download(&mut self) -> Result<(), ValheimModError> {
     debug!("Initializing mod download...");
-    if !self.staging_location.exists() {
-      create_dir_all(&self.staging_location).unwrap();
+    // For Thunderstore download URLs, validate upfront that the URL isn't 404 to give fast feedback.
+    if Self::is_thunderstore_download_url(&self.url) {
+      let client = Client::new();
+      match client.head(&self.url).send() {
+        Ok(resp) => {
+          let status = resp.status();
+          if status.is_client_error() {
+            return Err(ValheimModError::DownloadError(format!(
+              "Thunderstore URL not reachable, status: {}",
+              status
+            )));
+          }
+        }
+        Err(e) => return Err(ValheimModError::DownloadError(e.to_string())),
+      }
+    }
+    // Always derive the staging directory from common paths to avoid stale file paths
+    let staging_dir: PathBuf = common_paths::mods_staging_directory().into();
+    if !staging_dir.exists() {
+      create_dir_all(&staging_dir).unwrap();
     }
 
+    // Pre-compute a likely cache path from the original URL before any network calls.
+    let orig_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
+    let mut orig_file_type = url_parse_file_type(&self.url);
+    if !SUPPORTED_FILE_TYPES.contains(&orig_file_type.as_str()) {
+      // Assume zip for mods when type cannot be parsed from URL.
+      orig_file_type = "zip".to_string();
+    }
+    let orig_file_name = parse_file_name(
+      &orig_url,
+      &format!("{}.{}", get_md5_hash(&self.url), &orig_file_type),
+    );
+    let orig_cache_path = staging_dir.join(&orig_file_name);
+
+    // Cache hit: URL unchanged and file is a valid ZIP, reuse it.
+    if orig_cache_path.exists() && Self::is_valid_zip(&orig_cache_path) {
+      debug!("Cache hit for URL; reusing {:?}", orig_cache_path);
+      self.staging_location = orig_cache_path;
+      self.file_type = orig_file_type;
+      self.downloaded = true;
+      return Ok(());
+    } else if orig_cache_path.exists() {
+      warn!(
+        "Cached file exists but is not a valid ZIP, removing: {:?}",
+        orig_cache_path
+      );
+      let _ = std::fs::remove_file(&orig_cache_path);
+    }
+
+    // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     let mut response = reqwest::blocking::get(parsed_url)
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
@@ -77,20 +180,55 @@ impl ValheimMod {
       debug!("Using redirect URL: {}", &self.url);
       self.url = response.url().to_string();
       self.file_type = url_parse_file_type(response.url().as_ref());
+      if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
+        // Default to zip for mods.
+        self.file_type = "zip".to_string();
+      }
     }
 
     let file_name = parse_file_name(
       &Url::parse(&self.url).unwrap(),
       &format!("{}.{}", get_md5_hash(&self.url), &self.file_type),
     );
-    self.staging_location = self.staging_location.join(file_name);
-    debug!("Downloading to: {:?}", self.staging_location);
+    let final_path = staging_dir.join(file_name);
+    debug!("Downloading to: {:?}", final_path);
 
-    let mut file = File::create(&self.staging_location)
-      .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+    // If the final computed path already exists and is valid, reuse and skip write.
+    if final_path.exists() && Self::is_valid_zip(&final_path) {
+      debug!("Cache hit after redirect; reusing {:?}", final_path);
+      self.staging_location = final_path;
+      self.downloaded = true;
+      return Ok(());
+    } else if final_path.exists() {
+      warn!(
+        "Existing file at destination is not a valid ZIP, overwriting: {:?}",
+        final_path
+      );
+    }
+
+    let mut file =
+      File::create(&final_path).map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
     response
       .copy_to(&mut file)
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+
+    // Validate it's a ZIP and compute SHA-256 sidecar.
+    if !Self::is_valid_zip(&final_path) {
+      error!("Downloaded file is not a valid ZIP: {:?}", final_path);
+      return Err(ValheimModError::ZipArchiveError(
+        "Invalid ZIP file after download".to_string(),
+      ));
+    }
+
+    match Self::sha256_hex(&final_path) {
+      Ok(sha) => {
+        Self::write_sha_sidecar(&final_path, &sha);
+        debug!("SHA-256: {}", sha);
+      }
+      Err(e) => warn!("Failed computing SHA-256: {}", e),
+    }
+
+    self.staging_location = final_path;
     self.downloaded = true;
     debug!("Download complete: {}", &self.url);
     debug!("Download output: {:?}", self.staging_location);
@@ -185,6 +323,10 @@ impl ValheimMod {
     self.installed = true;
     Ok(())
   }
+
+  fn is_thunderstore_download_url(url: &str) -> bool {
+    url.contains("thunderstore.io/package/download/")
+  }
 }
 
 impl TryFrom<String> for ValheimMod {
@@ -195,7 +337,8 @@ impl TryFrom<String> for ValheimMod {
       Ok(ValheimMod::new(&url))
     } else if let Some((author, mod_name, version)) = parse_mod_string(&url) {
       let constructed_url = format!(
-        "https://gcdn.thunderstore.io/live/repository/packages/{author}-{mod_name}-{version}.zip"
+        "https://thunderstore.io/package/download/{}/{}/{}/",
+        author, mod_name, version
       );
       Ok(ValheimMod::new(&constructed_url))
     } else {
@@ -239,5 +382,35 @@ mod install_test {
     let result = mod_inst.install();
     assert!(result.is_ok(), "{:?}", result.err());
     assert!(mod_inst.installed);
+  }
+}
+
+#[cfg(test)]
+mod thunderstore_tests {
+  use super::*;
+
+  #[test]
+  fn transforms_mod_string_to_thunderstore_download_url() {
+    let input = "ValheimModding-Jotunn-2.26.0".to_string();
+    let vm = ValheimMod::try_from(input).expect("Should construct from mod string");
+    assert_eq!(
+      vm.url,
+      "https://thunderstore.io/package/download/ValheimModding/Jotunn/2.26.0/"
+    );
+  }
+
+  #[test]
+  fn normal_url_is_preserved_in_try_from() {
+    let input = "https://example.com/mod.zip".to_string();
+    let vm = ValheimMod::try_from(input.clone()).expect("Should construct from URL");
+    assert_eq!(vm.url, input);
+  }
+
+  #[test]
+  fn detects_thunderstore_download_url() {
+    let turl = "https://thunderstore.io/package/download/Author/Mod/1.2.3/";
+    assert!(ValheimMod::is_thunderstore_download_url(turl));
+    let normal = "https://example.com/path/file.zip";
+    assert!(!ValheimMod::is_thunderstore_download_url(normal));
   }
 }
