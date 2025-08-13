@@ -3,10 +3,9 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Logging function to prepend timestamps to log messages
-log() {
-  echo "$(date) - $*"
-}
+# Logging via odin
+log() { odin log --message "$*"; }
+log_debug() { odin log --level debug --message "$*"; }
 
 # Function to display a deprecation notice
 deprecation_notice() {
@@ -106,11 +105,11 @@ export SteamAppId=${APPID:-896660}
 
 # Setting up server
 log "Running Install..."
-log -l "DEBUG" "Current Directory: $(pwd)"
-log -l "DEBUG" "Current User: $(whoami)"
-log -l "DEBUG" "Current UID: ${UID}"
-log -l "DEBUG" "Current GID: ${PGID}"
-log -l "DEBUG" "Home Directory: ${HOME}"
+log_debug "Current Directory: $(pwd)"
+log_debug "Current User: $(whoami)"
+log_debug "Current UID: ${UID}"
+log_debug "Current GID: ${PGID}"
+log_debug "Home Directory: ${HOME}"
 
 # Install or update the server if necessary
 if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then

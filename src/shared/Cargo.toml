@@ -1,0 +1,14 @@
+[package]
+name = "shared"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "shared"
+path = "src/lib.rs"
+
+[dependencies]
+log = "0.4.27"
+tracing = "0.1.41" 
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
+tracing-log = "0.2.0"

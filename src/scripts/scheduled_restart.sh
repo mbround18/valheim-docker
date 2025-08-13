@@ -7,10 +7,7 @@ if [ "$(whoami)" != "steam" ]; then
   exit 1
 fi
 
-log() {
-  PREFIX="[Valheim][steam]"
-  printf "%-16s: %s\n" "${PREFIX}" "$1"
-}
+log() { odin log --message "$*"; }
 line() {
   log "###########################################################################"
 }

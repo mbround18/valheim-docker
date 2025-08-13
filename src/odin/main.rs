@@ -1,13 +1,12 @@
 use clap::Parser;
 use dotenv::dotenv;
-use log::debug;
+use log::{debug, error, info, trace, warn};
 
-use crate::cli::{Cli, Commands};
+use crate::cli::{Cli, Commands, LevelArg};
 use commands::configure::Configuration;
 
 use crate::commands::configure::Modifiers;
 use crate::executable::handle_exit_status;
-use crate::logger::debug_mode;
 use crate::messages::about;
 
 mod cli;
@@ -17,7 +16,6 @@ mod errors;
 mod executable;
 mod files;
 pub mod log_filters;
-mod logger;
 mod messages;
 mod mods;
 mod notifications;
@@ -26,15 +24,15 @@ mod steamcmd;
 pub mod traits;
 pub mod utils;
 
+use shared::init_logging_and_tracing;
+
 #[tokio::main]
 async fn main() {
   dotenv().ok();
   let cli = initialize_cli();
-  initialize_logger(&cli);
+  // initialize_logger(&cli);
 
-  if cli.debug {
-    debug!("Debug mode enabled!");
-  }
+  init_logging_and_tracing().expect("Failed to initialize logging and tracing");
 
   handle_commands(cli).await;
 }
@@ -43,12 +41,15 @@ fn initialize_cli() -> Cli {
   Cli::parse()
 }
 
-fn initialize_logger(cli: &Cli) {
-  logger::initialize_logger(cli.debug || debug_mode()).unwrap();
-}
-
 async fn handle_commands(cli: Cli) {
   match cli.commands {
+    Commands::Log { message, level } => match level {
+      LevelArg::Error => error!("{}", message),
+      LevelArg::Warn => warn!("{}", message),
+      LevelArg::Info => info!("{}", message),
+      LevelArg::Debug => debug!("{}", message),
+      LevelArg::Trace => trace!("{}", message),
+    },
     Commands::Configure {
       name,
       public,

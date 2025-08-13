@@ -1,7 +1,8 @@
 mod routes;
 
 use log::info;
-use odin::{logger::initialize_logger, server::ServerInfo, utils::environment::fetch_var};
+use odin::{server::ServerInfo, utils::environment::fetch_var};
+use shared::init_logging_and_tracing;
 use std::net::SocketAddrV4;
 use std::str::FromStr;
 use warp::Filter;
@@ -15,8 +16,7 @@ fn fetch_info() -> ServerInfo {
 #[tokio::main]
 async fn main() {
   // Logger
-  let debug_mode = fetch_var("DEBUG_MODE", "0").eq("1");
-  initialize_logger(debug_mode).unwrap();
+  init_logging_and_tracing().expect("Failed to initialize logging and tracing");
 
   // Routes
   let root = warp::path::end().map(routes::invoke);

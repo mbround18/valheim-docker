@@ -3,7 +3,6 @@ pub mod constants;
 pub mod errors;
 pub mod executable;
 pub mod files;
-pub mod logger;
 pub mod messages;
 pub mod mods;
 pub mod notifications;

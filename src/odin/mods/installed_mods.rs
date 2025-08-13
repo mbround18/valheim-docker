@@ -2,12 +2,15 @@ use crate::constants::MODS_LOCATION;
 use crate::mods::manifest::Manifest;
 use glob::glob;
 use log::{debug, error};
-use serde_json::from_reader;
 use std::env;
-use std::fs::File;
-use std::io::BufReader;
+use std::path::PathBuf;
 
-pub fn installed_mods() -> Vec<Manifest> {
+pub struct InstalledMod {
+  pub manifest: Manifest,
+  pub path: String,
+}
+
+pub fn installed_mods_with_paths() -> Vec<InstalledMod> {
   // Retrieve the MODS_LOCATION environment variable
   let mods_location = match env::var(MODS_LOCATION) {
     Ok(path) => path,
@@ -29,26 +32,22 @@ pub fn installed_mods() -> Vec<Manifest> {
     }
   };
 
-  // Iterate over the found paths and attempt to deserialize them into Manifest structs
-  let mut manifests = Vec::new();
+  let mut results = Vec::new();
   for entry in paths {
     match entry {
       Ok(path) => {
         debug!("Found manifest file: {}", path.display());
-        match File::open(&path) {
-          Ok(file) => {
-            let reader = BufReader::new(file);
-            match from_reader(reader) {
-              Ok(manifest) => manifests.push(manifest),
-              Err(e) => error!("Failed to deserialize JSON from {}: {}", path.display(), e),
-            }
-          }
-          Err(e) => error!("Failed to open file {}: {}", path.display(), e),
+        match Manifest::try_from(PathBuf::from(&path)) {
+          Ok(manifest) => results.push(InstalledMod {
+            manifest,
+            path: path.to_string_lossy().into(),
+          }),
+          Err(e) => error!("Failed to deserialize JSON from {}: {}", path.display(), e),
         }
       }
       Err(e) => error!("Error reading path: {}", e),
     }
   }
 
-  manifests
+  results
 }

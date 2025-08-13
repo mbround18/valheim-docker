@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 
 use crate::utils::parse_truthy::parse_truthy;
 
@@ -25,6 +25,18 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
+  /// Internal logging helper for scripts (hidden)
+  #[command(name = "log", hide = true)]
+  Log {
+    /// Message to log (required)
+    #[arg(long, required = true)]
+    message: String,
+
+    /// Log level to use (error|warn|info|debug|trace)
+    #[arg(long, value_enum, default_value_t = LevelArg::Info)]
+    level: LevelArg,
+  },
+
   /// Initializes Odin with its configuration variables.
   Configure {
     /// Sets the name of the server, (Can be set with ENV variable NAME)
@@ -159,4 +171,14 @@ pub enum Commands {
     #[arg(long, short = 'l', conflicts_with = "watch")]
     lines: Option<u16>,
   },
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, ValueEnum)]
+#[value(rename_all = "lower")]
+pub enum LevelArg {
+  Error,
+  Warn,
+  Info,
+  Debug,
+  Trace,
 }

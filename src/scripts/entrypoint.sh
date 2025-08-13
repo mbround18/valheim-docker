@@ -11,9 +11,9 @@ export BACKUP_LOCATION=${BACKUP_LOCATION:-"${GAME_LOCATION}/backups"}
 export CRON_LOCATION="${HOME}/cron.d"
 export LOG_LOCATION="${GAME_LOCATION}/logs"
 
-# Logging function to prepend timestamps to log messages
+ # Logging via odin
 log() {
-  echo "$(date) - $*"
+  odin log --message "$*"
 }
 
 # Function to check and log the current user and steam user's ID and group ID
@@ -128,7 +128,7 @@ setup_cron() {
   local script=$2
   local schedule=$3
 
-  echo "Setting up cron job: $name"
+  log "Setting up cron job: $name"
 
   local cron_folder="$CRON_LOCATION"
   local log_folder="$LOG_LOCATION"
@@ -178,7 +178,7 @@ check_memory() {
   local total_memory
   total_memory=$(free -h | awk '/^Mem:/ {print $2}' | tr -d 'G')
   if (($(echo "$total_memory < 2" | bc -l))); then
-    log "Your system has less than 2GB of RAM! Valheim might not run on your system."
+  log "Your system has less than 2GB of RAM! Valheim might not run on your system."
   else
     log "Total memory: ${total_memory} GB"
   fi
@@ -221,7 +221,7 @@ if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1
     sudo cron -f &
     export CRON_PID=$!
   else
-    log "Error: Cron directory or files are missing."
+  log "Error: Cron directory or files are missing."
     exit 1
   fi
 fi
