@@ -82,7 +82,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          file: ./Dockerfile.${{ matrix.image }}
+          file: ./Dockerfile
+          target: ${{ matrix.image }}
           push: ${{ matrix.push }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

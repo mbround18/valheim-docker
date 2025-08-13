@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # ------------------------------------ #
 # Odin (Rust) build and runtime stages #
 # ------------------------------------ #
@@ -36,7 +34,7 @@ COPY --from=odin-cacher /data/odin/target target
 COPY --from=odin-cacher /usr/local/cargo/registry /usr/local/cargo/
 RUN make release PROFILE=production
 
-FROM debian:${DEBIAN_VERSION}-slim AS odin-runtime
+FROM debian:${DEBIAN_VERSION}-slim AS odin
 WORKDIR /apps
 COPY --from=odin-builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
 ENTRYPOINT ["/apps/odin"]
@@ -68,7 +66,7 @@ ARG GITHUB_REF="not-set"
 ARG GITHUB_REPOSITORY="not-set"
 
 # Pull Odin binaries from odin-runtime stage
-COPY --from=odin-runtime --chmod=755 /apps/odin /apps/huginn /usr/local/bin/
+COPY --from=odin --chmod=755 /apps/odin /apps/huginn /usr/local/bin/
 
 # Set version information and configure sudoers
 RUN printf "${GITHUB_SHA}\n${GITHUB_REF}\n${GITHUB_REPOSITORY}\n" >/home/steam/.version && \
