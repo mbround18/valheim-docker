@@ -1,17 +1,24 @@
 [workspace]
 members = [
   "src/odin",
-  "src/huginn"
+  "src/huginn",
+ "src/shared",
 ]
 resolver = "2"
 
 [workspace.dependencies]
 odin = { path = "src/odin" }
-huginn = { path = "src/huginn" }
+shared = { path = "src/shared" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
 
 [profile.dev]
 opt-level = 0
 
 [profile.release]
 opt-level = 3
+lto = "thin"
+codegen-units = 1
 

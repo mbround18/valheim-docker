@@ -89,7 +89,7 @@ pub fn load_config() -> ValheimArguments {
 /// Creates a new config file
 pub fn config_file() -> ManagedFile {
   let name = fetch_var(ODIN_CONFIG_FILE_VAR, "config.json");
-  debug!("Config file set to: {}", name);
+  debug!("Config file set to: {name}");
   ManagedFile { name }
 }
 

@@ -39,13 +39,10 @@ fn fetch_webhook_url() -> String {
 fn is_webhook_enabled() -> bool {
   let url = fetch_webhook_url();
   if !url.is_empty() {
-    debug!("Webhook Url found!: {}", url);
+    debug!("Webhook Url found!: {url}");
     let is_valid = Url::parse(url.as_str()).is_ok();
     if !is_valid {
-      warn!(
-        "Webhook provided but does not look valid!! Is this right? {}",
-        url
-      )
+      warn!("Webhook provided but does not look valid!! Is this right? {url}")
     }
     return is_valid;
   }
@@ -91,8 +88,8 @@ impl NotificationEvent {
       let response_status = parsed_response.status();
       let response_message = parsed_response.text().unwrap();
       match response_status.as_u16() {
-        204 | 201 => info!("[{}]: Webhook message sent successfully!", self),
-        _ => error!("Request failed! {}, {}", response_status, response_message),
+        204 | 201 => info!("[{self}]: Webhook message sent successfully!"),
+        _ => error!("Request failed! {response_status}, {response_message}"),
       }
     } else {
       error!(
@@ -109,11 +106,11 @@ impl NotificationEvent {
   }
   fn build_request(&self, webhook_url: &str) -> RequestBuilder {
     let client = reqwest::blocking::Client::new();
-    debug!("Webhook URL: {}", webhook_url);
+    debug!("Webhook URL: {webhook_url}");
     client.post(webhook_url)
   }
   pub fn send_custom_notification(&self, webhook_url: &str, notification: &NotificationMessage) {
-    debug!("Webhook enabled, sending notification {}", self);
+    debug!("Webhook enabled, sending notification {self}");
     debug!(
       "Event Received: {}",
       serde_json::to_string_pretty(&notification).unwrap()
@@ -146,7 +143,7 @@ impl NotificationEvent {
       if fetch_var(&enabled_var, "0").eq("1") {
         self.send_custom_notification(&fetch_webhook_url(), &event);
       } else {
-        debug!("Skipping notification, {} is set to 0", enabled_var);
+        debug!("Skipping notification, {enabled_var} is set to 0");
       }
     } else {
       debug!("Skipping notification, no webhook supplied!");
@@ -164,7 +161,7 @@ impl NotificationEvent {
 
 impl fmt::Display for NotificationEvent {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let debug = format!("{:?}", self);
+    let debug = format!("{self:?}");
     let formatted = debug.replace('(', " ").replace(')', "");
     f.write_str(&formatted)
   }

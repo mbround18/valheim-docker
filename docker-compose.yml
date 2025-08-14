@@ -3,7 +3,8 @@ services:
     image: mbround18/odin:latest
     build:
       context: .
-      dockerfile: ./Dockerfile.odin
+      dockerfile: ./Dockerfile
+      target: odin
     volumes:
       - odin-output:/data/odin/target/release
   valheim:
@@ -21,7 +22,8 @@ services:
       TYPE: Vanilla
     build:
       context: .
-      dockerfile: ./Dockerfile.valheim
+      dockerfile: ./Dockerfile
+      target: valheim
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"

@@ -15,7 +15,7 @@ pub fn create_file(path: &str) -> File {
   match File::create(output_path) {
     Ok(file) => file,
     Err(_) => {
-      error!("Failed to create {}", path);
+      error!("Failed to create {path}");
       exit(1)
     }
   }

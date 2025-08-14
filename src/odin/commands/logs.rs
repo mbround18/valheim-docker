@@ -29,8 +29,8 @@ impl FileTracker {
   }
 }
 
-/// Processes a line of text from the log and generates appropriate log messages and notifications.
-fn handle_line(path: &PathBuf, line: &str) {
+/// Core formatter: processes a single logical line of text from the log and generates appropriate log messages and notifications.
+fn handle_line_core(path: &PathBuf, line: &str) {
   if line.trim().is_empty() {
     return;
   }
@@ -46,7 +46,7 @@ fn handle_line(path: &PathBuf, line: &str) {
   let file_name = match path.file_name().and_then(|name| name.to_str()) {
     Some(name) => name,
     None => {
-      error!("Failed to extract file name from path: {:?}", path);
+      error!("Failed to extract file name from path: {path:?}");
       return;
     }
   };
@@ -57,17 +57,68 @@ fn handle_line(path: &PathBuf, line: &str) {
     return;
   }
 
+  // If the message already contains an odin-tagged level (e.g., "INFO odin", "DEBUG odin"),
+  // print it verbatim to avoid double-tagging through our logger formatting.
+  let lower = outline.to_ascii_lowercase();
+  // Normalize whitespace to handle variants like "INFO  odin" with double spaces, etc.
+  let lower_ws = lower.split_whitespace().collect::<Vec<_>>().join(" ");
+  const ODIN_LEVEL_MARKERS: [&str; 6] = [
+    "info odin",
+    "debug odin",
+    "warn odin",
+    "warning odin",
+    "error odin",
+    "trace odin",
+  ];
+  // In addition to explicit "<level> odin" markers, also detect already-formatted
+  // Rust log lines that include a module path (e.g., "odin::commands::...").
+  // This avoids wrapping those lines again with our own logger metadata.
+  if ODIN_LEVEL_MARKERS.iter().any(|m| lower_ws.contains(m))
+    || lower_ws.contains(" odin::")
+    || lower_ws.contains(" huginn::")
+    || lower_ws.contains(" shared::")
+    // Also catch plain target style like "info odin:" without module path
+    || [
+      "info odin:",
+      "debug odin:",
+      "warn odin:",
+      "warning odin:",
+      "error odin:",
+      "trace odin:",
+    ]
+    .iter()
+    .any(|m| lower_ws.contains(m))
+  {
+    println!("{}", outline);
+    handle_launch_probes(outline);
+    return;
+  }
+
   if line.contains("WARNING") {
-    warn!("[{}]: {}", file_name, outline);
+    warn!("[{file_name}]: {outline}");
   } else if line.contains("ERROR") {
-    error!("[{}]: {}", file_name, outline);
+    error!("[{file_name}]: {outline}");
   } else if line.contains("Fallback handler could not load library") {
-    debug!("[{}]: {}", file_name, outline);
+    debug!("[{file_name}]: {outline}");
   } else {
-    info!("[{}]: {}", file_name, outline);
+    info!("[{file_name}]: {outline}");
   }
 
   handle_launch_probes(outline);
+}
+
+/// Processes raw input that may contain carriage returns ("\r") used for in-place updates.
+/// We split on "\r" and process each segment so progress-style logs are not squashed.
+fn handle_line(path: &PathBuf, raw: &str) {
+  if raw.contains('\r') {
+    for segment in raw.split('\r') {
+      if !segment.is_empty() {
+        handle_line_core(path, segment);
+      }
+    }
+  } else {
+    handle_line_core(path, raw);
+  }
 }
 
 /// Tails the given log file asynchronously, processing new lines as they are written.
@@ -164,7 +215,7 @@ pub async fn invoke(lines: Option<u16>, watch: bool) {
   let log_dir = PathBuf::from(&log_path);
 
   if !log_dir.exists() || !log_dir.is_dir() {
-    error!("Log directory does not exist: {:?}", log_path);
+    error!("Log directory does not exist: {log_path:?}");
     return;
   }
 

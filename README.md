@@ -18,7 +18,9 @@
 </a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-17-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -282,7 +284,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 - `/status` provides a more traditional status page.
 
 > Note on `ADDRESS`: This can be set to `127.0.0.1:<your query port>` or `<your public IP>:<your query port>` but does not have to be set. If it is set, it will prevent Odin from reaching out to AWS IP service to ask for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your Valheim server.
-
+>
 > Another note: Your server MUST be public (e.g., `PUBLIC=1`) for Odin+Huginn to collect and report statistics.
 
 ## Feature Information
@@ -343,8 +345,6 @@ If you would like to have release notifications tied into your Discord server, c
 [Odin]: src/odin/README.md
 [Huginn]: src/huginn/README.md
 [Valheim]: https://www.valheimgame.com/
-[Getting started with mods]: ./docs/tutorials/getting_started_with_mods.md
-[If you need help figuring out a cron schedule click here]: https://crontab.guru/#0_1**\_**
 
 ## Sponsors
 

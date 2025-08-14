@@ -1,7 +1,8 @@
 mod routes;
 
 use log::info;
-use odin::{logger::initialize_logger, server::ServerInfo, utils::environment::fetch_var};
+use odin::{server::ServerInfo, utils::environment::fetch_var};
+use shared::init_logging_and_tracing;
 use std::net::SocketAddrV4;
 use std::str::FromStr;
 use warp::Filter;
@@ -15,23 +16,29 @@ fn fetch_info() -> ServerInfo {
 #[tokio::main]
 async fn main() {
   // Logger
-  let debug_mode = fetch_var("DEBUG_MODE", "0").eq("1");
-  initialize_logger(debug_mode).unwrap();
+  init_logging_and_tracing().expect("Failed to initialize logging and tracing");
 
   // Routes
   let root = warp::path::end().map(routes::invoke);
   let status = warp::path!("status").map(routes::status::invoke);
   let metrics = warp::path!("metrics").map(routes::metrics::invoke);
-  let routes = warp::any().and(root.or(status).or(metrics));
+  let health = warp::path!("health").map(routes::health::invoke);
+  let players = warp::path!("players").map(routes::players::invoke);
+  let openapi = warp::path!("openapi.json").map(routes::openapi::invoke);
+  let routes = warp::any().and(
+    root
+      .or(status)
+      .or(metrics)
+      .or(health)
+      .or(players)
+      .or(openapi),
+  );
 
   // HTTP Server
   let http_port: u16 = fetch_var("HTTP_PORT", "3000").parse().unwrap();
 
   // Start server
   info!("Starting web server....");
-  info!(
-    "Navigate to http://127.0.0.1:{}/status to view the server status.",
-    http_port
-  );
+  info!("Navigate to http://127.0.0.1:{http_port}/status to view the server status.");
   warp::serve(routes).run(([0, 0, 0, 0], http_port)).await;
 }
