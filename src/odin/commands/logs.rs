@@ -106,7 +106,6 @@ fn handle_line_core(path: &PathBuf, line: &str) {
 
   log::log!(level, "[{file_name}]: {outline}");
   handle_launch_probes(outline);
-  return;
 }
 
 /// Processes raw input that may contain carriage returns ("\r") used for in-place updates.
