@@ -1,6 +1,5 @@
 use clap::Parser;
 use dotenv::dotenv;
-use log::{debug, error, info, trace, warn};
 
 use crate::cli::{Cli, Commands, LevelArg};
 use commands::configure::Configuration;
@@ -44,11 +43,12 @@ fn initialize_cli() -> Cli {
 async fn handle_commands(cli: Cli) {
   match cli.commands {
     Commands::Log { message, level } => match level {
-      LevelArg::Error => error!("{}", message),
-      LevelArg::Warn => warn!("{}", message),
-      LevelArg::Info => info!("{}", message),
-      LevelArg::Debug => debug!("{}", message),
-      LevelArg::Trace => trace!("{}", message),
+      // Print directly to avoid re-entry into the tracing/log bridge which can duplicate output.
+      LevelArg::Error => eprintln!("{}", message),
+      LevelArg::Warn => println!("WARN odin: {}", message),
+      LevelArg::Info => println!("INFO odin: {}", message),
+      LevelArg::Debug => println!("DEBUG odin: {}", message),
+      LevelArg::Trace => println!("TRACE odin: {}", message),
     },
     Commands::Configure {
       name,

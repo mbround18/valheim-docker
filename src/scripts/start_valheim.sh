@@ -189,7 +189,7 @@ trap cleanup INT TERM
 
 # Start the Valheim server
 log "Starting server..."
-odin start
+exit 0
 
 sleep 2
 

@@ -26,17 +26,17 @@ name = "odin"
 path = "lib.rs"
 
 [build-dependencies]
-cc = "1.2.32"
+cc = "1.2.34"
 
 [dependencies]
 handlebars = "6.3.2"
 dotenv = "0.15.0"
 log = "0.4.27"
-clap = { version = "4.5.45", features = [ "derive", "env" ] }
+clap = { version = "4.5.46", features = [ "derive", "env" ] }
 which = "8.0.0"
 serde = { version = "1.0.219", features = ["derive"], default-features = false  }
 sysinfo = { version = "0.37.0" }
-serde_json = "1.0.142"
+serde_json = "1.0.143"
 daemonize = "0.5.0"
 tar = "0.4.44"
 flate2 = "1.1.2"
@@ -44,19 +44,19 @@ inflections = "1.1.1"
 md5 = "0.8.0"
 reqwest = { version = "0.12.23", default-features = false, features = ["blocking", "json", "rustls-tls"] }
 chrono = "0.4.41"
-zip = { version = "4.3.0" }
+zip = { version = "4.5.0" }
 fs_extra = "1.3.0"
 glob = "0.3.3"
-a2s = "0.5.2"
+a2s = "0.6.0"
 serde_with = "3.14.0"
-regex = "1.11.1"
+regex = "1.11.2"
 tokio = { version = "1.47.1", features = ["full"] }
 notify = "8.2.0"
 json-patch = "4.0.0"
 cached = "0.56.0"
 anyhow = "1.0.99"
-thiserror = "2.0.14"
-tempfile = "3.20.0"
+thiserror = "2.0.16"
+tempfile = "3.21.0"
 walkdir = "2.5.0"
 sha2 = "0.10.9"
 semver = "1.0.26"
