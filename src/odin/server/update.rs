@@ -1,7 +1,7 @@
 use log::{debug, error, info};
 
 use regex::Regex;
-use std::{fs, io::ErrorKind, path::Path, process::exit};
+use std::{env, fs, io::ErrorKind, path::Path, process::exit};
 
 use crate::{
   constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
@@ -62,10 +62,52 @@ pub fn update_server() {
     server::blocking_shutdown();
   }
 
+  // Detect current build (if available) and whether beta branch will be used
+  let prev_build = crate::server::try_get_current_build_id();
+  if let Some(build) = &prev_build {
+    info!("Current build: {build}");
+  } else {
+    info!("Current build: unknown (manifest not found)");
+  }
+
+  let beta_branch = env::var("BETA_BRANCH").unwrap_or_else(|_| "public-test".to_string());
+  let use_public_beta = crate::utils::environment::fetch_var("USE_PUBLIC_BETA", "0").eq("1");
+  let is_backwards_compatible_branch =
+    ["default_preal", "default_old", "default_preml"].contains(&beta_branch.as_str());
+  let beta_in_effect = is_backwards_compatible_branch || use_public_beta;
+  if beta_in_effect {
+    info!("Updating using beta branch: {beta_branch}");
+  } else {
+    info!("Updating using default/stable branch");
+  }
+
   // Update the installation
   if let Err(e) = server::install(constants::GAME_ID) {
     error!("Failed to install server: {e}");
     exit(1);
+  }
+
+  // Read the build after update
+  let post_build = crate::server::try_get_current_build_id();
+  match (prev_build.as_deref(), post_build.as_deref()) {
+    (Some(prev), Some(post)) if prev == post => {
+      info!("No change in build version: {post}");
+    }
+    (Some(prev), Some(post)) => {
+      if beta_in_effect {
+        info!("Updated from build {prev} -> {post} (beta: {beta_branch})");
+      } else {
+        info!("Updated from build {prev} -> {post} (stable)");
+      }
+    }
+    (_, Some(post)) => {
+      if beta_in_effect {
+        info!("Updated to build {post} (beta: {beta_branch})");
+      } else {
+        info!("Updated to build {post} (stable)");
+      }
+    }
+    _ => info!("Update complete; build id not found."),
   }
 
   // Bring the server up if it was running before
@@ -130,7 +172,7 @@ fn get_latest_build_id() -> String {
   extract_build_id_from_app_info(&stdout).to_string()
 }
 
-fn extract_build_id_from_manifest(manifest: &str) -> &str {
+pub(crate) fn extract_build_id_from_manifest(manifest: &str) -> &str {
   let re = Regex::new(r"(buildid)\W+(\d+)\W").unwrap();
   // return group 2
   if let Some(captures) = re.captures(manifest) {
@@ -140,7 +182,7 @@ fn extract_build_id_from_manifest(manifest: &str) -> &str {
   }
 }
 
-fn extract_build_id_from_app_info(app_info: &str) -> &str {
+pub(crate) fn extract_build_id_from_app_info(app_info: &str) -> &str {
   let re = Regex::new(r"depots.\n[\W\S]+public.\n\W+(buildid)\W+(\d+)\W").unwrap();
   // return group 2
   re.captures(app_info)

@@ -1,6 +1,6 @@
-use log::{error, info};
+use log::{debug, error, info};
 use std::path::Path;
-use std::process::{exit, Command, ExitStatus};
+use std::process::{exit, Child, Command, ExitStatus};
 
 pub fn find_command(executable: &str) -> Option<Command> {
   let script_file = Path::new(executable);
@@ -28,12 +28,73 @@ pub fn create_execution(executable: &str) -> Command {
   }
 }
 
-pub fn execute_mut(command: &mut Command) -> std::io::Result<ExitStatus> {
-  match command.spawn() {
+/// Parses a command line argument string according to shell-like rules
+///
+/// Returns a vector of individual argument strings after parsing according to these rules:
+/// - Arguments without spaces are kept as-is
+/// - Unquoted arguments with spaces are split into multiple arguments
+/// - Quoted arguments (double or single quotes) are preserved as a single argument with quotes removed
+/// - CLI style arguments like `--flag "value"` are parsed as separate arguments
+pub fn parse_command_args(args: Vec<String>) -> Vec<String> {
+  let mut parsed_args = Vec::new();
+
+  for arg_str in args {
+    let is_quoted = (arg_str.starts_with('"') && arg_str.ends_with('"'))
+      || (arg_str.starts_with('\'') && arg_str.ends_with('\''));
+
+    if arg_str.contains(' ') && !is_quoted {
+      if let Some(pos) = arg_str.find(" \"") {
+        let (flag, quoted_part) = arg_str.split_at(pos);
+        parsed_args.push(flag.trim().to_string());
+        parsed_args.push(
+          quoted_part
+            .trim()
+            .trim_matches('"')
+            .trim_matches('\'')
+            .to_string(),
+        );
+      } else if let Some(pos) = arg_str.find(" '") {
+        let (flag, quoted_part) = arg_str.split_at(pos);
+        parsed_args.push(flag.trim().to_string());
+        parsed_args.push(
+          quoted_part
+            .trim()
+            .trim_matches('"')
+            .trim_matches('\'')
+            .to_string(),
+        );
+      } else {
+        for part in arg_str.split_whitespace() {
+          parsed_args.push(part.to_string());
+        }
+      }
+    } else if is_quoted {
+      parsed_args.push(arg_str.trim_matches('"').trim_matches('\'').to_string());
+    } else {
+      parsed_args.push(arg_str);
+    }
+  }
+
+  parsed_args
+}
+
+pub fn execute_mut(command: &mut Command) -> std::io::Result<Child> {
+  debug!("Running command: {:?}", command);
+
+  command.spawn()
+}
+
+/// Executes a command with special handling for command line arguments
+///
+/// Processes command arguments to handle spaces and quotes appropriately, similar to
+/// how a shell would interpret them. This ensures arguments are correctly passed to
+/// the subprocess, even when they contain spaces or quotes.
+pub fn execute_mut_wait(command: &mut Command) -> std::io::Result<ExitStatus> {
+  match execute_mut(command) {
     Ok(mut subprocess) => subprocess.wait(),
-    _ => {
-      error!("Failed to run process!");
-      exit(1)
+    Err(e) => {
+      error!("Failed to run process: {}", e);
+      exit(1);
     }
   }
 }
@@ -57,5 +118,114 @@ pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: 
       error!("An error has occurred and the command returned no exit code!");
       exit(1)
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::process::Command;
+
+  #[cfg(test)]
+  fn get_processed_args(initial_args: &[&str]) -> Vec<String> {
+    let mut cmd = Command::new("echo");
+
+    for arg in initial_args {
+      cmd.arg(arg);
+    }
+
+    let args: Vec<_> = cmd
+      .get_args()
+      .map(|arg| arg.to_string_lossy().into_owned())
+      .collect();
+
+    let parsed_args = parse_command_args(args);
+
+    let mut processed_cmd = Command::new("echo");
+    for arg in parsed_args {
+      processed_cmd.arg(arg);
+    }
+
+    processed_cmd
+      .get_args()
+      .map(|arg| arg.to_string_lossy().into_owned())
+      .collect()
+  }
+
+  #[test]
+  fn test_simple_args() {
+    let args = ["arg1", "arg2", "arg3"];
+    let processed = get_processed_args(&args);
+    assert_eq!(processed, vec!["arg1", "arg2", "arg3"]);
+  }
+
+  #[test]
+  fn test_args_with_spaces() {
+    let args = ["arg1 arg2", "arg3"];
+    let processed = get_processed_args(&args);
+    assert_eq!(processed, vec!["arg1", "arg2", "arg3"]);
+  }
+
+  #[test]
+  fn test_quoted_args() {
+    let args = ["\"arg1 arg2\"", "arg3"];
+    let processed = get_processed_args(&args);
+    // The quoted string should be preserved as one argument with quotes removed
+    assert_eq!(processed, vec!["arg1 arg2", "arg3"]);
+  }
+
+  #[test]
+  fn test_single_quoted_args() {
+    let args = ["'arg1 arg2'", "arg3"];
+    let processed = get_processed_args(&args);
+    // The single-quoted string should be preserved as one argument with quotes removed
+    assert_eq!(processed, vec!["arg1 arg2", "arg3"]);
+  }
+
+  #[test]
+  fn test_mixed_args() {
+    let args = ["simple", "with space", "\"quoted arg\"", "'single quoted'"];
+    let processed = get_processed_args(&args);
+    assert_eq!(
+      processed,
+      vec!["simple", "with", "space", "quoted arg", "single quoted"]
+    );
+  }
+
+  #[test]
+  fn test_cli_style_double_quoted_args() {
+    let args = ["--flag \"value with spaces\""];
+    let processed = get_processed_args(&args);
+    assert_eq!(processed, vec!["--flag", "value with spaces"]);
+  }
+
+  #[test]
+  fn test_cli_style_single_quoted_args() {
+    let args = ["--flag 'value with spaces'"];
+    let processed = get_processed_args(&args);
+    assert_eq!(processed, vec!["--flag", "value with spaces"]);
+  }
+
+  #[test]
+  fn test_multiple_cli_style_args() {
+    let args = ["--flag1 \"value1\"", "--flag2 'value2'", "--flag3 value3"];
+    let processed = get_processed_args(&args);
+    assert_eq!(
+      processed,
+      vec!["--flag1", "value1", "--flag2", "value2", "--flag3", "value3"]
+    );
+  }
+
+  #[test]
+  fn test_find_command_exists() {
+    // Test for a command that should definitely exist on Linux
+    let cmd = find_command("ls");
+    assert!(cmd.is_some());
+  }
+
+  #[test]
+  fn test_find_command_not_exists() {
+    let cmd = find_command("definitely_not_a_real_command_12345");
+    assert!(cmd.is_none());
   }
 }

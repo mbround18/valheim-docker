@@ -1,18 +1,17 @@
 use std::fs::File;
-use std::process::{exit, Command};
 use std::{io, process::Child};
 
 use daemonize::{Daemonize, Error};
 use log::{debug, error, info};
 
+use crate::executable::parse_command_args;
 use crate::mods::bepinex::BepInExEnvironment;
 use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::notification_event::NotificationEvent;
-use crate::utils::common_paths::{game_directory, saves_directory};
-use crate::utils::environment::fetch_var;
+use crate::utils::common_paths::game_directory;
 use crate::{
   constants,
-  executable::create_execution,
+  executable::{create_execution, execute_mut},
   files::{config::ValheimArguments, create_file},
   messages,
   utils::environment,
@@ -51,98 +50,6 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
     .start()
 }
 
-fn configure_server_options(command: &mut Command, config: &ValheimArguments) {
-  debug!("Setting up base command");
-  // Sets the name of the server, (Can be set with ENV variable NAME)
-  let name = fetch_var("NAME", &config.name);
-  debug!("Setting name to: {}", &name);
-  command.arg("-name");
-  command.arg(&name);
-
-  // Sets the port of the server, (Can be set with ENV variable PORT)
-  let port = fetch_var("PORT", &config.port);
-  debug!("Setting port to: {}", &port);
-  command.args(["-port", &port]);
-
-  // Sets the world of the server, (Can be set with ENV variable WORLD)
-  let world = fetch_var("WORLD", &config.world);
-  debug!("Setting world to: {}", &fetch_var("WORLD", &world));
-  command.arg("-world");
-  command.arg(&world);
-
-  // Determines if the server is public or not
-  let public = fetch_var("PUBLIC", config.public.as_str());
-  debug!("Setting public to: {}", &public);
-  command.args(["-public", &public]);
-
-  // Sets the save interval in seconds
-  if let Some(save_interval) = &config.save_interval {
-    let interval = save_interval.to_string();
-    debug!("Setting save interval to: {}", &interval);
-    command.args(["-saveinterval", &interval]);
-  };
-
-  // Add set_key to the command
-  if let Some(set_key) = &config.set_key {
-    debug!("Setting set_key to: {}", &set_key);
-    command.args(["-setkey", set_key]);
-  };
-
-  // Add preset to the command
-  if let Some(preset) = &config.preset {
-    debug!("Setting preset to: {}", &preset);
-    command.args(["-preset", preset]);
-  };
-
-  // Add modifiers to the command
-  if let Some(modifiers) = &config.modifiers {
-    modifiers.iter().for_each(|modifier| {
-      debug!(
-        "Setting modifier to: {} {}",
-        &modifier.name, &modifier.value
-      );
-      command.args(["-modifier", &modifier.name, &modifier.value]);
-    });
-  };
-
-  // Extra args for the server
-  command.args({
-    format!(
-      "-nographics -batchmode {}",
-      fetch_var("SERVER_EXTRA_LAUNCH_ARGS", "")
-    )
-    .trim()
-    .split(' ')
-    .collect::<Vec<&str>>()
-  });
-
-  let is_public = config.public.eq("1");
-  let is_vanilla = fetch_var("TYPE", "vanilla").eq_ignore_ascii_case("vanilla");
-  let no_password = config.password.is_empty();
-
-  // If no password env variable
-  if !is_public && !is_vanilla && no_password {
-    info!("No password found, skipping password flag.")
-  } else if no_password && (is_public || is_vanilla) {
-    error!("Cannot run you server with no password! PUBLIC must be 0 and cannot be a Vanilla type server.");
-    exit(1)
-  } else {
-    info!("Password found, adding password flag.");
-    command.arg("-password");
-    command.arg(&config.password);
-  }
-
-  if fetch_var("ENABLE_CROSSPLAY", "0").eq("1") {
-    info!("Launching with Crossplay! <3");
-    command.arg("-crossplay");
-  } else {
-    info!("No Crossplay Enabled!")
-  }
-
-  // Tack on save dir at the end.
-  command.args(["-savedir", &saves_directory()]);
-}
-
 pub fn start(config: ValheimArguments) -> CommandResult {
   let mut command = create_execution(&config.command);
   debug!("--------------------------------------------------------------------------------------------------------------");
@@ -160,7 +67,27 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   base_command.stdout(stdout);
   base_command.stderr(stderr);
   debug!("Base Command: {base_command:#?}");
-  configure_server_options(base_command, &config);
+
+  // i want to error! on error and panic
+  let mut args: Vec<String> = match config.clone().try_into() {
+    Ok(a) => a,
+    Err(e) => {
+      error!("Error parsing configuration into command line arguments: {e}");
+      Vec::new()
+    }
+  };
+
+  if args.is_empty() {
+    error!("No arguments were parsed! This is likely a configuration error!");
+    error!("Please check your configuration with `odin configure --check`");
+    error!("Exiting...");
+    std::process::exit(1);
+  }
+
+  args = parse_command_args(args);
+
+  base_command.args(&args as &[String]);
+
   debug!("Executable: {}", &config.command);
   info!("Launching Command...");
   let ld_library_path_value = environment::fetch_multiple_var(
@@ -175,8 +102,9 @@ pub fn start(config: ValheimArguments) -> CommandResult {
     bepinex_env.launch(command)
   } else {
     info!("Everything looks good! Running normally!");
-    command
-      .env(constants::LD_LIBRARY_PATH_VAR, ld_library_path_value)
-      .spawn()
+
+    command.env(constants::LD_LIBRARY_PATH_VAR, ld_library_path_value);
+
+    execute_mut(&mut command)
   }
 }

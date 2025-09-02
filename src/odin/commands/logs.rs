@@ -2,7 +2,8 @@ use crate::log_filters::{handle_launch_probes, handle_player_events};
 use crate::utils::common_paths::log_directory;
 use crate::utils::environment::is_env_var_truthy;
 use anyhow::{Context, Result};
-use log::{debug, error, info, warn};
+use log::error;
+use log::Level;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
@@ -27,6 +28,37 @@ impl FileTracker {
       last_position: 0,
     }
   }
+}
+
+/// Returns true if the line appears to already be formatted by our Rust logger.
+///
+/// Detection rules:
+/// - Known targets: `odin`, `huginn`, `shared`.
+/// - Known levels: `info`, `debug`, `warn`, `warning`, `error`, `trace`.
+/// - Matches module path style (e.g., `odin::module`), level+target with `:` or `::`
+///   (e.g., `INFO odin: ...`, `INFO odin:: ...`), and loose `"<level> <target> ..."`.
+pub(crate) fn is_already_formatted(line: &str) -> bool {
+  let lower = line.to_ascii_lowercase();
+  let lower_ws = lower.split_whitespace().collect::<Vec<_>>().join(" ");
+  let levels = ["info", "debug", "warn", "warning", "error", "trace"];
+  let targets = ["odin", "huginn", "shared"];
+  if targets
+    .iter()
+    .any(|t| lower_ws.contains(&format!(" {t}::")))
+  {
+    return true;
+  }
+  for lvl in &levels {
+    for tgt in &targets {
+      let a = format!("{lvl} {tgt}:");
+      let b = format!("{lvl} {tgt}::");
+      let c = format!("{lvl} {tgt} ");
+      if lower_ws.contains(&a) || lower_ws.contains(&b) || lower_ws.contains(&c) {
+        return true;
+      }
+    }
+  }
+  false
 }
 
 /// Core formatter: processes a single logical line of text from the log and generates appropriate log messages and notifications.
@@ -57,53 +89,26 @@ fn handle_line_core(path: &PathBuf, line: &str) {
     return;
   }
 
-  // If the message already contains an odin-tagged level (e.g., "INFO odin", "DEBUG odin"),
-  // print it verbatim to avoid double-tagging through our logger formatting.
-  let lower = outline.to_ascii_lowercase();
-  // Normalize whitespace to handle variants like "INFO  odin" with double spaces, etc.
-  let lower_ws = lower.split_whitespace().collect::<Vec<_>>().join(" ");
-  const ODIN_LEVEL_MARKERS: [&str; 6] = [
-    "info odin",
-    "debug odin",
-    "warn odin",
-    "warning odin",
-    "error odin",
-    "trace odin",
-  ];
-  // In addition to explicit "<level> odin" markers, also detect already-formatted
-  // Rust log lines that include a module path (e.g., "odin::commands::...").
-  // This avoids wrapping those lines again with our own logger metadata.
-  if ODIN_LEVEL_MARKERS.iter().any(|m| lower_ws.contains(m))
-    || lower_ws.contains(" odin::")
-    || lower_ws.contains(" huginn::")
-    || lower_ws.contains(" shared::")
-    // Also catch plain target style like "info odin:" without module path
-    || [
-      "info odin:",
-      "debug odin:",
-      "warn odin:",
-      "warning odin:",
-      "error odin:",
-      "trace odin:",
-    ]
-    .iter()
-    .any(|m| lower_ws.contains(m))
-  {
-    println!("{}", outline);
+  if !is_env_var_truthy("SHOW_SHADER_WARNINGS") && line.contains("WARNING: Shader") {
+    return;
+  }
+
+  if is_already_formatted(outline) {
     handle_launch_probes(outline);
     return;
   }
 
-  if line.contains("WARNING") {
-    warn!("[{file_name}]: {outline}");
+  let level = if line.contains("WARNING") {
+    Level::Warn
   } else if line.contains("ERROR") {
-    error!("[{file_name}]: {outline}");
+    Level::Error
   } else if line.contains("Fallback handler could not load library") {
-    debug!("[{file_name}]: {outline}");
+    Level::Debug
   } else {
-    info!("[{file_name}]: {outline}");
-  }
+    Level::Info
+  };
 
+  log::log!(level, "[{file_name}]: {outline}");
   handle_launch_probes(outline);
 }
 
@@ -133,14 +138,12 @@ async fn tail_file(mut file_tracker: FileTracker) -> Result<()> {
     let mut new_lines = Vec::new();
     loop {
       let mut buf = Vec::new();
-      // Read until newline. This returns raw bytes even if they are not valid UTF-8.
       let bytes_read = reader
         .read_until(b'\n', &mut buf)
         .context("Failed to read from log file")?;
       if bytes_read == 0 {
         break;
       }
-      // Convert bytes to string lossily so any invalid UTF-8 is replaced.
       let line = String::from_utf8_lossy(&buf).to_string();
       new_lines.push(line);
     }
@@ -185,6 +188,10 @@ pub async fn watch_logs(log_path: String) {
   }
 }
 
+/// Prints the latest lines from `*.log` files in the provided directory.
+///
+/// - Reads files as raw bytes, converts to UTF-8 lossily.
+/// - Defaults to last 10 lines per file if `lines` is `None`.
 pub fn print_logs(log_path: String, lines: Option<u16>) {
   let paths = fs::read_dir(log_path)
     .expect("Could not read log directory")
@@ -194,9 +201,7 @@ pub fn print_logs(log_path: String, lines: Option<u16>) {
 
   for path in paths {
     if path.is_file() && path.extension().and_then(OsStr::to_str) == Some("log") {
-      // Read file as raw bytes
       let bytes = fs::read(&path).expect("Could not read file");
-      // Convert bytes to string using lossy conversion
       let content = String::from_utf8_lossy(&bytes);
       let lines_to_print = content
         .lines()
@@ -210,6 +215,9 @@ pub fn print_logs(log_path: String, lines: Option<u16>) {
   }
 }
 
+/// Entrypoint used by the CLI: tails logs (`watch=true`) or prints recent lines.
+///
+/// Validates the log directory exists before proceeding.
 pub async fn invoke(lines: Option<u16>, watch: bool) {
   let log_path = log_directory();
   let log_dir = PathBuf::from(&log_path);
@@ -223,5 +231,32 @@ pub async fn invoke(lines: Option<u16>, watch: bool) {
     watch_logs(log_path).await;
   } else {
     print_logs(log_path, lines);
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::is_already_formatted;
+
+  #[test]
+  fn detects_module_target_lines() {
+    assert!(is_already_formatted(
+      "2025-08-29T17:56:23.613579Z  INFO odin::files: Successfully written /home/steam/valheim/config.json"
+    ));
+    assert!(is_already_formatted(
+      "2025-08-29T17:56:23.647870Z  INFO huginn: Starting web server...."
+    ));
+  }
+
+  #[test]
+  fn detects_plain_level_prefix_variants() {
+    assert!(is_already_formatted("INFO  odin: something happened"));
+    assert!(is_already_formatted("warning odin resource low"));
+  }
+
+  #[test]
+  fn non_formatted_lines_are_false() {
+    assert!(!is_already_formatted("[Valheim] Server started"));
+    assert!(!is_already_formatted("Some random game output..."));
   }
 }

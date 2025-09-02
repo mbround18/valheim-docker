@@ -5,6 +5,7 @@ use log::debug;
 use serde::{Deserialize, Serialize};
 
 use crate::constants;
+use crate::executable::execute_mut;
 use crate::mods::installed_mods::installed_mods_with_paths;
 use crate::mods::manifest::Manifest;
 use crate::utils::common_paths::{bepinex_directory, bepinex_plugin_directory, game_directory};
@@ -319,7 +320,7 @@ impl BepInExEnvironment {
           &self.doorstop_corlib_override_path,
         )
     };
-    command.spawn()
+    execute_mut(&mut command)
   }
 }
 

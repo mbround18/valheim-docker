@@ -73,6 +73,124 @@ impl From<Configuration> for ValheimArguments {
   }
 }
 
+impl TryInto<Vec<String>> for ValheimArguments {
+  type Error = String;
+
+  /// Converts the ValheimArguments into a vector of strings
+  fn try_into(self) -> Result<Vec<String>, Self::Error> {
+    let mut args = Vec::new();
+    // Sets the port of the server, (Can be set with ENV variable PORT)
+    let port = fetch_var("PORT", &self.port);
+    debug!("Setting port to: {}", &port);
+    args.push(String::from("-port"));
+    args.push(port);
+
+    // Sets the name of the server, (Can be set with ENV variable NAME)
+    let name = fetch_var("NAME", &self.name);
+    debug!("Setting name to: {}", &name);
+    args.push(String::from("-name"));
+    // Arg processor needs the quotes around the name if it has spaces
+    args.push(format!("'{}'", name));
+
+    // Sets the world of the server, (Can be set with ENV variable WORLD)
+    let world = fetch_var("WORLD", &self.world);
+    debug!("Setting world to: {}", &world);
+    args.push(String::from("-world"));
+    args.push(world);
+
+    // Determines if the server is public or not
+    let public = fetch_var("PUBLIC", &self.public);
+    debug!("Setting public to: {}", &public);
+    args.push(String::from("-public"));
+    args.push(public.clone());
+
+    // Sets the save interval in seconds
+    if let Some(save_interval) = &self.save_interval {
+      let interval = save_interval.to_string();
+      debug!("Setting save interval to: {}", &interval);
+      args.push(String::from("-saveinterval"));
+      args.push(interval);
+    };
+
+    // Add set_key to the command
+    if let Some(set_key) = &self.set_key {
+      debug!("Setting set_key to: {}", &set_key);
+      args.push(String::from("-setkey"));
+      args.push(set_key.to_string());
+    };
+
+    // Add preset to the command
+    if let Some(preset) = &self.preset {
+      debug!("Setting preset to: {}", &preset);
+      args.push(String::from("-preset"));
+      args.push(preset.to_string());
+    };
+
+    // Add modifiers to the command
+    if let Some(modifiers) = &self.modifiers {
+      modifiers.iter().for_each(|modifier| {
+        debug!(
+          "Setting modifier to: {} {}",
+          &modifier.name, &modifier.value
+        );
+        args.push(String::from("-modifier"));
+        args.push(modifier.name.to_string());
+        args.push(modifier.value.to_string());
+      });
+    };
+
+    // Handle password logic similar to configure_server_options
+    let is_public = self.public.eq("1");
+    let is_vanilla = fetch_var("TYPE", "vanilla").eq_ignore_ascii_case("vanilla");
+    let no_password = self.password.is_empty();
+
+    if !is_public && !is_vanilla && no_password {
+      debug!("No password found, skipping password flag.");
+    } else if no_password && (is_public || is_vanilla) {
+      return Err(String::from("Cannot run your server with no password! PUBLIC must be 0 and cannot be a Vanilla type server."));
+    } else {
+      debug!("Password found, adding password flag.");
+      args.push(String::from("-password"));
+      // Arg processor needs the quotes around the password if it has spaces
+      args.push(format!("'{}'", self.password));
+    }
+
+    // Enable crossplay if the environment variable is set to 1
+    if fetch_var("ENABLE_CROSSPLAY", "0").eq("1") {
+      args.push(String::from("-crossplay"));
+      debug!("Crossplay enabled");
+    }
+
+    // Add base Unity arguments
+    args.push(String::from("-nographics"));
+    args.push(String::from("-batchmode"));
+
+    // Add extra arguments from SERVER_EXTRA_LAUNCH_ARGS
+    let extra_launch_args = fetch_var("SERVER_EXTRA_LAUNCH_ARGS", "");
+    if !extra_launch_args.is_empty() {
+      for arg in extra_launch_args.split(' ') {
+        if !arg.is_empty() {
+          args.push(String::from(arg));
+        }
+      }
+    }
+
+    // Add extra arguments from the environment variable ADDITIONAL_SERVER_ARGS
+    if let Ok(extra_args) = std::env::var("ADDITIONAL_SERVER_ARGS") {
+      let additional_args = String::from(extra_args.trim_start_matches('"').trim_end_matches('"'));
+      debug!("Adding additional arguments! {additional_args}");
+      args.push(additional_args);
+    }
+
+    // Tack on save dir at the end
+    use crate::utils::common_paths::saves_directory;
+    args.push(String::from("-savedir"));
+    args.push(saves_directory());
+
+    Ok(args)
+  }
+}
+
 /// Loads the configuration from the config file
 pub fn load_config() -> ValheimArguments {
   let file = config_file();
