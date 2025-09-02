@@ -6,9 +6,10 @@ use std::{
   process::{ExitStatus, Stdio},
 };
 
-use crate::utils::environment;
+use crate::{constants, steamcmd::steamcmd_command, utils::get_working_dir};
 use crate::{
-  constants, executable::execute_mut, steamcmd::steamcmd_command, utils::get_working_dir,
+  executable::{execute_mut_wait, parse_command_args},
+  utils::environment,
 };
 
 const BETA_BRANCH: &str = "public-test";
@@ -95,6 +96,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
   // for args if it has a space, reduce and append it so its a seperate arg
   args = flatten_args(args);
+  args = parse_command_args(args);
 
   let install_command = steamcmd
     .args(&args)
@@ -103,7 +105,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
     .stderr(Stdio::inherit());
   debug!("Launching install command: {install_command:#?}");
 
-  let result = execute_mut(install_command);
+  let result = execute_mut_wait(install_command);
 
   // Post-install logging: new build id
   let post_build = crate::server::try_get_current_build_id();

@@ -89,6 +89,10 @@ fn handle_line_core(path: &PathBuf, line: &str) {
     return;
   }
 
+  if !is_env_var_truthy("SHOW_SHADER_WARNINGS") && line.contains("WARNING: Shader") {
+    return;
+  }
+
   if is_already_formatted(outline) {
     handle_launch_probes(outline);
     return;
