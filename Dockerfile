@@ -2,7 +2,7 @@
 # Odin (Rust) build and runtime stages #
 # ------------------------------------ #
 ARG DEBIAN_VERSION=12
-ARG RUST_VERSION=1.89
+ARG RUST_VERSION=1.90
 ARG UBUNTU_VERSION=24
 ARG EXPECTED_OCTAL=775
 
