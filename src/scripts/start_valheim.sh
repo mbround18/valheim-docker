@@ -54,7 +54,7 @@ install_bepinex() {
 #   VALHEIMPLUS=latest | <tag>            # required to enable install
 #   VALHEIMPLUS_DLL_URL=<direct-url>      # optional override (must be .dll)
 #   VALHEIMPLUS_CFG_URL=<direct-url>      # optional override (must be .cfg)
-#   UPDATE_VP_ON_STARTUP=1                   # optional: force re-install each start
+#   VALHEIMPLUS_UPDATE=1                   # optional: force re-install each start
 #
 install_valheimplus_from_github() {
   local tag="${VALHEIMPLUS:-}"
@@ -78,7 +78,7 @@ install_valheimplus_from_github() {
     marker_key="${tag:-latest}"
   fi
   marker="${marker_dir}/${marker_key}"
-  force_update=$([[ "${UPDATE_VP_ON_STARTUP:-0}" -eq 1 ]] && echo 1 || echo 0)
+  force_update=$([[ "${VALHEIMPLUS_UPDATE:-0}" -eq 1 ]] && echo 1 || echo 0)
 
   if [[ -f "$marker" && "$force_update" -eq 0 ]]; then
     echo "[ValheimPlus] Already installed (${marker_key}); skipping."
@@ -225,7 +225,7 @@ log "Auto Backup Pause With Players: ${AUTO_BACKUP_PAUSE_WITH_PLAYERS}"
 log "Auto Backup Remove Old: ${AUTO_BACKUP_REMOVE_OLD}"
 log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
 log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"
-log "Update On Startup: ${UPDATE_VP_ON_STARTUP}"
+log "Update On Startup: ${VALHEIMPLUS_UPDATE}"
 log "Mods: ${MODS}"
 log "-------------------------------------------------------------"
 
@@ -243,7 +243,7 @@ log_debug "Home Directory: ${HOME}"
 # Install or update the server if necessary
 if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
   odin install || exit 1
-elif [ "${UPDATE_VP_ON_STARTUP:-1}" -eq 1 ]; then
+elif [ "${VALHEIMPLUS_UPDATE:-1}" -eq 1 ]; then
   log "Attempting to update before launching the server!"
   [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ] && /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
   log "Installing Updates..."
@@ -275,7 +275,7 @@ case "${TYPE}" in
   fi
   ;;
 "bepinex")
-  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_VP_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${VALHEIMPLUS_UPDATE:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
     install_bepinex
   fi
   
@@ -286,7 +286,7 @@ case "${TYPE}" in
     vplus_cfg_b="${GAME_LOCATION}/BepInEx/config/valheim_plus.cfg"
 
     need_install=0
-    if [ "${UPDATE_VP_ON_STARTUP:-0}" -eq 1 ]; then
+    if [ "${VALHEIMPLUS_UPDATE:-0}" -eq 1 ]; then
       need_install=1
     else
       if [ ! -f "$vplus_dll" ] || { [ ! -f "$vplus_cfg_a" ] && [ ! -f "$vplus_cfg_b" ]; }; then
