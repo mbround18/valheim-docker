@@ -48,110 +48,128 @@ install_bepinex() {
 }
 
 # ------------------------------------------------------------
-# ValheimPlus (Grantapher) installer (optional)
+# ValheimPlus (Grantapher) installer (DLL + CFG assets only)
 # ------------------------------------------------------------
-# Usage:
-#   export VALHEIMPLUS=0.9.16.2        # or 0.9.17.0-alpha02, or "latest"
-# - Requires BepInEx to be present; we call ensure_bepinex if TYPE=BepInEx.
+# Env:
+#   VALHEIMPLUS=latest | <tag>            # required to enable install
+#   VALHEIMPLUS_DLL_URL=<direct-url>      # optional override (must be .dll)
+#   VALHEIMPLUS_CFG_URL=<direct-url>      # optional override (must be .cfg)
+#   UPDATE_VP_ON_STARTUP=1                   # optional: force re-install each start
+#
 install_valheimplus_from_github() {
   local tag="${VALHEIMPLUS:-}"
-  local override_url="${VALHEIMPLUS_URL:-}"
+  local dll_override="${VALHEIMPLUS_DLL_URL:-}"
+  local cfg_override="${VALHEIMPLUS_CFG_URL:-}"
   local vhome="${VH_HOME:-/home/steam/valheim}"
   local plugins_dir="${vhome}/BepInEx/plugins"
   local config_dir="${vhome}/BepInEx/config"
   local marker_dir="${vhome}/.vplus-installed"
-  local api url tmp zipfile dll_found cfg_found
+  local api dll_url cfg_url marker_key marker force_update tmp dll_path cfg_path
 
-  # Nothing to do if not requested
-  [[ -z "$tag" && -z "$override_url" ]] && return 0
+  # Only run if user requested V+
+  [[ -z "$tag" && -z "$dll_override" && -z "$cfg_override" ]] && return 0
 
-  # Ensure BepInEx structure exists
   mkdir -p "$plugins_dir" "$config_dir" "$marker_dir"
 
-  # If we’ve installed this exact tag/url, skip
-  local marker_key
-  if [[ -n "$override_url" ]]; then
-    marker_key="$(printf '%s' "$override_url" | sha1sum | awk '{print $1}')"
+  # Marker / idempotency
+  if [[ -n "$dll_override" || -n "$cfg_override" ]]; then
+    marker_key="$(printf '%s|%s' "${dll_override:-none}" "${cfg_override:-none}" | sha1sum | awk '{print $1}')"
   else
-    marker_key="$tag"
+    marker_key="${tag:-latest}"
   fi
-  local marker="${marker_dir}/${marker_key}"
-  if [[ -f "$marker" ]]; then
+  marker="${marker_dir}/${marker_key}"
+  force_update=$([[ "${UPDATE_VP_ON_STARTUP:-0}" -eq 1 ]] && echo 1 || echo 0)
+
+  if [[ -f "$marker" && "$force_update" -eq 0 ]]; then
     echo "[ValheimPlus] Already installed (${marker_key}); skipping."
     return 0
   fi
 
-  # Determine download URL
-  if [[ -n "$override_url" ]]; then
-    url="$override_url"
-  else
-    # Build GitHub API endpoint for the tag or latest
-    if [[ "${tag,,}" == "latest" ]]; then
+  # Determine URLs for DLL + CFG
+  if [[ -n "$dll_override" ]]; then
+    dll_url="$dll_override"
+  fi
+  if [[ -n "$cfg_override" ]]; then
+    cfg_url="$cfg_override"
+  fi
+
+  if [[ -z "$dll_url" || -z "$cfg_url" ]]; then
+    # Resolve via GitHub API
+    if [[ -z "$tag" || "${tag,,}" == "latest" ]]; then
       api="https://api.github.com/repos/Grantapher/ValheimPlus/releases/latest"
     else
       api="https://api.github.com/repos/Grantapher/ValheimPlus/releases/tags/${tag}"
     fi
-
-    echo "[ValheimPlus] Resolving asset URL via GitHub API (${api})"
-    # Extract browser_download_url for the Unix/Linux server asset
-    # (No jq dependency; simple awk/grep pipeline)
-    url="$(
+    echo "[ValheimPlus] Resolving asset URLs via GitHub API (${api})"
+    # Pull assets block once
+    assets_json="$(
       curl -fsSL -H "Accept: application/vnd.github+json" "$api" \
       | tr -d '\r' \
-      | awk '/"assets": \[/,/\]/{print}' \
-      | awk -v IGNORECASE=1 '
-          /"name":/ {
-            name=$0
-            if (name ~ /(Unix|Linux)Server.*\.zip"/) match_ok=1; else match_ok=0
-          }
-          /"browser_download_url":/ && match_ok {
-            gsub(/.*"browser_download_url": *"/,""); gsub(/".*/,"");
-            print; exit
-          }'
-    )"
-    if [[ -z "$url" ]]; then
-      echo "[ValheimPlus] ERROR: Could not find UnixServer.zip for tag '${tag}'."
+      | awk '/"assets": \[/,/\]/{print}'
+    )" || {
+      echo "[ValheimPlus] ERROR: failed to fetch release metadata."
       return 1
+    }
+
+    # Extract DLL URL
+    if [[ -z "$dll_url" ]]; then
+      dll_url="$(printf '%s' "$assets_json" | awk -v IGNORECASE=1 '
+        /"name":/ {
+          name=$0
+          gsub(/.*"name": *"/,"",name); gsub(/".*/,"",name)
+        }
+        /"browser_download_url":/ {
+          url=$0
+          gsub(/.*"browser_download_url": *"/,"",url); gsub(/".*/,"",url)
+          if (name ~ /ValheimPlus.*\.dll$/) { print url; exit }
+        }'
+      )"
+    fi
+
+    # Extract CFG URL (accept common names)
+    if [[ -z "$cfg_url" ]]; then
+      cfg_url="$(printf '%s' "$assets_json" | awk -v IGNORECASE=1 '
+        /"name":/ {
+          name=$0
+          gsub(/.*"name": *"/,"",name); gsub(/".*/,"",name)
+        }
+        /"browser_download_url":/ {
+          url=$0
+          gsub(/.*"browser_download_url": *"/,"",url); gsub(/".*/,"",url)
+          if (name ~ /(ValheimPlus\.cfg|valheim_plus\.cfg)$/) { print url; exit }
+        }'
+      )"
     fi
   fi
 
-  echo "[ValheimPlus] Downloading: $url"
+  if [[ -z "$dll_url" ]]; then
+    echo "[ValheimPlus] ERROR: Could not find ValheimPlus.dll asset URL."
+    return 1
+  fi
+  if [[ -z "$cfg_url" ]]; then
+    echo "[ValheimPlus] NOTE: CFG asset not found; server will generate defaults on first run."
+  fi
+
+  echo "[ValheimPlus] Downloading DLL: $dll_url"
   tmp="$(mktemp -d)"
-  zipfile="${tmp}/valheimplus.zip"
-  if ! curl -fL --retry 3 --retry-delay 2 -o "$zipfile" "$url"; then
-    echo "[ValheimPlus] ERROR: Download failed."
+  dll_path="${tmp}/ValheimPlus.dll"
+  if ! curl -fL --retry 3 --retry-delay 2 -o "$dll_path" "$dll_url"; then
+    echo "[ValheimPlus] ERROR: Failed to download DLL."
     rm -rf "$tmp"
     return 1
   fi
+  install -m 0644 "$dll_path" "${plugins_dir}/ValheimPlus.dll"
 
-  echo "[ValheimPlus] Extracting…"
-  unzip -q "$zipfile" -d "$tmp/unzipped"
-
-  # Copy the DLL (ValheimPlus.dll) to plugins
-  dll_found=0
-  while IFS= read -r -d '' f; do
-    dll_found=1
-    echo "[ValheimPlus] -> ${plugins_dir}/$(basename "$f")"
-    cp -f "$f" "$plugins_dir/"
-  done < <(find "$tmp/unzipped" -type f -name "ValheimPlus.dll" -print0)
-
-  if [[ "$dll_found" -eq 0 ]]; then
-    echo "[ValheimPlus] WARNING: ValheimPlus.dll not found in archive."
+  if [[ -n "$cfg_url" ]]; then
+    echo "[ValheimPlus] Downloading CFG: $cfg_url"
+    cfg_path="${tmp}/valheim_plus.cfg"
+    if curl -fL --retry 3 --retry-delay 2 -o "$cfg_path" "$cfg_url"; then
+      install -m 0644 "$cfg_path" "${config_dir}/valheim_plus.cfg"
+    else
+      echo "[ValheimPlus] WARNING: Failed to download CFG; continuing."
+    fi
   fi
 
-  # Copy any V+ config (*.cfg) to config
-  cfg_found=0
-  while IFS= read -r -d '' f; do
-    cfg_found=1
-    echo "[ValheimPlus] -> ${config_dir}/$(basename "$f")"
-    cp -f "$f" "$config_dir/"
-  done < <(find "$tmp/unzipped" -type f -iname "*.cfg" -print0)
-
-  if [[ "$cfg_found" -eq 0 ]]; then
-    echo "[ValheimPlus] (Note) No *.cfg found; default config may be generated on first run."
-  fi
-
-  # Mark success for idempotency
   touch "$marker"
   rm -rf "$tmp"
   echo "[ValheimPlus] Installed (${marker_key})."
@@ -207,7 +225,7 @@ log "Auto Backup Pause With Players: ${AUTO_BACKUP_PAUSE_WITH_PLAYERS}"
 log "Auto Backup Remove Old: ${AUTO_BACKUP_REMOVE_OLD}"
 log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
 log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"
-log "Update On Startup: ${UPDATE_ON_STARTUP}"
+log "Update On Startup: ${UPDATE_VP_ON_STARTUP}"
 log "Mods: ${MODS}"
 log "-------------------------------------------------------------"
 
@@ -225,7 +243,7 @@ log_debug "Home Directory: ${HOME}"
 # Install or update the server if necessary
 if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
   odin install || exit 1
-elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
+elif [ "${UPDATE_VP_ON_STARTUP:-1}" -eq 1 ]; then
   log "Attempting to update before launching the server!"
   [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ] && /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
   log "Installing Updates..."
@@ -257,20 +275,30 @@ case "${TYPE}" in
   fi
   ;;
 "bepinex")
-  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_VP_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
     install_bepinex
   fi
   
   # --- ValheimPlus hook ---
-  if [ -n "${VALHEIMPLUS:-}" ] || [ -n "${VALHEIMPLUS_URL:-}" ]; then
-    VPLUS_DLL="${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll"
-    VPLUS_CFG="${GAME_LOCATION}/BepInEx/config/ValheimPlus.cfg"
+  if [ -n "${VALHEIMPLUS:-}" ] || [ -n "${VALHEIMPLUS_DLL_URL:-}" ] || [ -n "${VALHEIMPLUS_CFG_URL:-}" ]; then
+    vplus_dll="${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll"
+    vplus_cfg_a="${GAME_LOCATION}/BepInEx/config/ValheimPlus.cfg"
+    vplus_cfg_b="${GAME_LOCATION}/BepInEx/config/valheim_plus.cfg"
 
-    if [ ! -f "$VPLUS_DLL" ] || [ ! -f "$VPLUS_CFG" ]; then
-      echo "[ValheimPlus] Missing mod files, running installer…"
+    need_install=0
+    if [ "${UPDATE_VP_ON_STARTUP:-0}" -eq 1 ]; then
+      need_install=1
+    else
+      if [ ! -f "$vplus_dll" ] || { [ ! -f "$vplus_cfg_a" ] && [ ! -f "$vplus_cfg_b" ]; }; then
+        need_install=1
+      fi
+    fi
+
+    if [ "$need_install" -eq 1 ]; then
+      echo "[ValheimPlus] Installing (DLL+CFG assets)…"
       install_valheimplus_from_github
     else
-      echo "[ValheimPlus] DLL and config present, skipping install."
+      echo "[ValheimPlus] DLL and cfg present; skipping install."
     fi
   fi
   ;;
