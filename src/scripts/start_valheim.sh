@@ -281,20 +281,20 @@ case "${TYPE}" in
   
   # --- ValheimPlus hook ---
   if [ -n "${VALHEIMPLUS:-}" ] || [ -n "${VALHEIMPLUS_DLL_URL:-}" ] || [ -n "${VALHEIMPLUS_CFG_URL:-}" ]; then
-    vplus_dll="${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll"
-    vplus_cfg_a="${GAME_LOCATION}/BepInEx/config/ValheimPlus.cfg"
-    vplus_cfg_b="${GAME_LOCATION}/BepInEx/config/valheim_plus.cfg"
+    VPLUS_DLL="${GAME_LOCATION}/BepInEx/plugins/ValheimPlus.dll"
+    VPLUS_CFG_A="${GAME_LOCATION}/BepInEx/config/ValheimPlus.cfg"
+    VPLUS_CFG_B="${GAME_LOCATION}/BepInEx/config/valheim_plus.cfg"
 
-    need_install=0
+    NEED_INSTALL=0
     if [ "${VALHEIMPLUS_UPDATE:-0}" -eq 1 ]; then
-      need_install=1
+      NEED_INSTALL=1
     else
-      if [ ! -f "$vplus_dll" ] || { [ ! -f "$vplus_cfg_a" ] && [ ! -f "$vplus_cfg_b" ]; }; then
-        need_install=1
+      if [ ! -f "$VPLUS_DLL" ] || { [ ! -f "$VPLUS_CFG_A" ] && [ ! -f "$VPLUS_CFG_B" ]; }; then
+        NEED_INSTALL=1
       fi
     fi
 
-    if [ "$need_install" -eq 1 ]; then
+    if [ "$NEED_INSTALL" -eq 1 ]; then
       echo "[ValheimPlus] Installing (DLL+CFG assets)…"
       install_valheimplus_from_github
     else
