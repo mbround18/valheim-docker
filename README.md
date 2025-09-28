@@ -262,7 +262,7 @@ services:
       AUTO_BACKUP_ON_SHUTDOWN: 1
       WEBHOOK_URL: "https://discord.com/api/webhooks/IM_A_SNOWFLAKE/AND_I_AM_A_SECRET"
       WEBHOOK_INCLUDE_PUBLIC_IP: 1
-      UPDATE_ON_STARTUP: 0
+      VALPLUS_UPDATE_ON_STARTUP: 0
     volumes:
       - ./valheim/saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./valheim/server:/home/steam/valheim
