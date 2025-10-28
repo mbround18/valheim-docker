@@ -5,6 +5,8 @@ members = [
  "src/shared",
 ]
 resolver = "2"
+package.edition = "2024"
+package.repository = "https://github.com/mbround18/valheim-docker"
 
 [workspace.dependencies]
 odin = { path = "src/odin" }

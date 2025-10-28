@@ -29,6 +29,13 @@ pub fn is_env_var_truthy(name: &'static str) -> bool {
   parse_truthy(&fetch_var(name, "0")).unwrap_or(false)
 }
 
+/// Variant of is_env_var_truthy that allows a boolean default when the env var is unset/empty.
+/// This keeps a consistent 0/1 parsing convention while letting callers specify default.
+pub fn is_env_var_truthy_with_default(name: &'static str, default: bool) -> bool {
+  let def = if default { "1" } else { "0" };
+  parse_truthy(&fetch_var(name, def)).unwrap_or(default)
+}
+
 #[cfg(test)]
 mod fetch_env_tests {
   use crate::utils::environment::{fetch_multiple_var, fetch_var};
