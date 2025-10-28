@@ -27,4 +27,5 @@ world backup support, and a user-friendly cli interface.
 ## Tutorials
 
 - [Getting Started With Mods](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/getting_started_with_mods.md)
+  - Includes quick-start and wildcard version patterns
 - [How to transfer files](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-transfer-files.md)

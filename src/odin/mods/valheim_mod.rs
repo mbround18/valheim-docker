@@ -20,6 +20,220 @@ use tempfile::tempdir;
 use walkdir::WalkDir;
 use zip::ZipArchive;
 
+#[derive(Debug, Clone)]
+struct ThunderstoreVersionEntry {
+  version_number: String,
+}
+
+fn thunderstore_list_versions(
+  namespace: &str,
+  name: &str,
+) -> Result<Vec<ThunderstoreVersionEntry>, ValheimModError> {
+  use std::time::Duration;
+
+  fn extract_versions(v: &serde_json::Value) -> Option<Vec<ThunderstoreVersionEntry>> {
+    // Common shapes:
+    // - top-level { versions: [{ version_number: "x.y.z" }] }
+    // - nested { package: { versions: [...] } }
+    // - direct array [ { version_number: ... } ]
+    let parse_arr = |arr: &Vec<serde_json::Value>| -> Vec<ThunderstoreVersionEntry> {
+      arr
+        .iter()
+        .filter_map(|item| item.get("version_number").and_then(|s| s.as_str()))
+        .map(|s| ThunderstoreVersionEntry {
+          version_number: s.to_string(),
+        })
+        .collect()
+    };
+
+    if let Some(arr) = v.get("versions").and_then(|vv| vv.as_array()) {
+      let out = parse_arr(arr);
+      if !out.is_empty() {
+        return Some(out);
+      }
+    }
+    if let Some(arr) = v
+      .get("package")
+      .and_then(|p| p.get("versions"))
+      .and_then(|vv| vv.as_array())
+    {
+      let out = parse_arr(arr);
+      if !out.is_empty() {
+        return Some(out);
+      }
+    }
+    if let Some(arr) = v.as_array() {
+      let out = parse_arr(arr);
+      if !out.is_empty() {
+        return Some(out);
+      }
+    }
+    None
+  }
+
+  let client = reqwest::blocking::Client::builder()
+    .timeout(Duration::from_secs(10))
+    .user_agent("odin-valheim-docker/1.0 (+https://github.com/mbround18/valheim-docker)")
+    .build()
+    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+
+  let endpoints = vec![
+    // Experimental package endpoint (no community in path)
+    format!(
+      "https://thunderstore.io/api/experimental/package/{}/{}/",
+      namespace, name
+    ),
+    // Community-scoped experimental endpoint (if available)
+    format!(
+      "https://thunderstore.io/api/experimental/community/valheim/package/{}/{}/",
+      namespace, name
+    ),
+    // Frontend JSON used by website (shape may change but often includes versions)
+    format!(
+      "https://thunderstore.io/api/experimental/frontend/c/valheim/p/{}/{}/",
+      namespace, name
+    ),
+  ];
+
+  let mut last_err: Option<String> = None;
+  for url in endpoints {
+    for attempt in 1..=2 {
+      log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
+      match client.get(&url).send() {
+        Ok(resp) => {
+          if !resp.status().is_success() {
+            last_err = Some(format!("status {} for {}", resp.status(), url));
+            continue;
+          }
+          match resp.json::<serde_json::Value>() {
+            Ok(v) => {
+              if let Some(out) = extract_versions(&v) {
+                if !out.is_empty() {
+                  return Ok(out);
+                }
+                last_err = Some(format!("no versions found in response shape for {}", url));
+              } else {
+                last_err = Some(format!("unable to parse versions from {}", url));
+              }
+            }
+            Err(e) => {
+              last_err = Some(format!("json error for {}: {}", url, e));
+            }
+          }
+        }
+        Err(e) => {
+          last_err = Some(format!("request error for {}: {}", url, e));
+        }
+      }
+      // brief backoff before next attempt
+      std::thread::sleep(Duration::from_millis(500));
+    }
+  }
+
+  // HTML fallback: scrape latest download link from the package page as a last resort
+  let page_url = format!(
+    "https://thunderstore.io/c/valheim/p/{}/{}/",
+    namespace, name
+  );
+  match client.get(&page_url).send() {
+    Ok(resp) if resp.status().is_success() => match resp.text() {
+      Ok(html) => {
+        let needle = format!("/package/download/{}/{}/", namespace, name);
+        if let Some(pos) = html.find(&needle) {
+          // capture characters after needle until next '/'
+          let tail = &html[pos + needle.len()..];
+          if let Some(end) = tail.find('/') {
+            let ver = &tail[..end];
+            if !ver.is_empty() {
+              return Ok(vec![ThunderstoreVersionEntry {
+                version_number: ver.to_string(),
+              }]);
+            }
+          }
+        }
+        Err(ValheimModError::DownloadError(last_err.unwrap_or_else(
+          || "HTML fallback: could not find version".to_string(),
+        )))
+      }
+      Err(e) => Err(ValheimModError::DownloadError(format!(
+        "HTML fallback text error: {}",
+        e
+      ))),
+    },
+    Ok(resp) => Err(ValheimModError::DownloadError(format!(
+      "HTML fallback status {} for {}",
+      resp.status(),
+      page_url
+    ))),
+    Err(e) => Err(ValheimModError::DownloadError(format!(
+      "HTML fallback request error for {}: {}",
+      page_url, e
+    ))),
+  }
+}
+
+fn is_wildcard_version(v: &str) -> bool {
+  let lv = v.to_ascii_lowercase();
+  lv.contains('*') || lv.contains('x')
+}
+
+fn select_version_from_list(
+  requested: &str,
+  versions: &[ThunderstoreVersionEntry],
+) -> Option<String> {
+  // Normalize versions list to semver-like where possible; Thunderstore versions may be dot-separated numeric strings.
+  // We implement simple matching:
+  // - "*" or "x": pick the highest version lexicographically using semver if parseable, else string sort.
+  // - "MAJOR.*" or "MAJOR.x": highest version with same major
+  // - "MAJOR.MINOR.*" or "MAJOR.MINOR.x": highest with same major/minor
+  use semver::Version;
+
+  let req = requested.to_ascii_lowercase();
+  let parts: Vec<&str> = req.split('.').collect();
+
+  // Prepare parsed versions with fallback
+  let mut parsed: Vec<(Option<Version>, String)> = versions
+    .iter()
+    .map(|e| {
+      let s = e.version_number.clone();
+      (Version::parse(&s).ok(), s)
+    })
+    .collect();
+
+  // Sort descending by semver if available, else by string
+  parsed.sort_by(|a, b| match (&a.0, &b.0) {
+    (Some(va), Some(vb)) => vb.cmp(va),
+    (Some(_), None) => std::cmp::Ordering::Less,
+    (None, Some(_)) => std::cmp::Ordering::Greater,
+    (None, None) => b.1.cmp(&a.1),
+  });
+
+  if req == "*" || req == "x" {
+    return parsed.first().map(|(_, s)| s.clone());
+  }
+
+  // Helper to check prefix match with wildcards
+  let matches_req = |ver_str: &str| {
+    let vparts: Vec<&str> = ver_str.split('.').collect();
+    if parts.len() == 2 && (parts[1] == "*" || parts[1] == "x") {
+      // MAJOR.*
+      return vparts.first() == parts.first();
+    }
+    if parts.len() == 3 && (parts[2] == "*" || parts[2] == "x") {
+      // MAJOR.MINOR.*
+      return vparts.first() == parts.first() && vparts.get(1) == parts.get(1);
+    }
+    false
+  };
+
+  for (_, s) in &parsed {
+    if matches_req(s) {
+      return Some(s.clone());
+    }
+  }
+  None
+}
+
 pub struct ValheimMod {
   pub(crate) url: String,
   pub(crate) file_type: String,
@@ -336,11 +550,28 @@ impl TryFrom<String> for ValheimMod {
     if is_valid_url(&url) {
       Ok(ValheimMod::new(&url))
     } else if let Some((author, mod_name, version)) = parse_mod_string(&url) {
-      let constructed_url = format!(
-        "https://thunderstore.io/package/download/{}/{}/{}/",
-        author, mod_name, version
-      );
-      Ok(ValheimMod::new(&constructed_url))
+      // Resolve wildcards for Thunderstore packages if present
+      let v_req = version.to_ascii_lowercase();
+      if is_wildcard_version(&v_req) {
+        let versions = thunderstore_list_versions(author, mod_name)?;
+        if let Some(sel) = select_version_from_list(&v_req, &versions) {
+          let constructed_url = format!(
+            "https://thunderstore.io/package/download/{}/{}/{}/",
+            author, mod_name, sel
+          );
+          Ok(ValheimMod::new(&constructed_url))
+        } else {
+          Err(ValheimModError::DownloadError(
+            "No matching version found for wildcard".to_string(),
+          ))
+        }
+      } else {
+        let constructed_url = format!(
+          "https://thunderstore.io/package/download/{}/{}/{}/",
+          author, mod_name, version
+        );
+        Ok(ValheimMod::new(&constructed_url))
+      }
     } else {
       Err(ValheimModError::InvalidUrl)
     }
@@ -388,6 +619,7 @@ mod install_test {
 #[cfg(test)]
 mod thunderstore_tests {
   use super::*;
+  use std::env;
 
   #[test]
   fn transforms_mod_string_to_thunderstore_download_url() {
@@ -412,5 +644,79 @@ mod thunderstore_tests {
     assert!(ValheimMod::is_thunderstore_download_url(turl));
     let normal = "https://example.com/path/file.zip";
     assert!(!ValheimMod::is_thunderstore_download_url(normal));
+  }
+
+  #[test]
+  fn select_version_latest_for_full_wildcard() {
+    let list = vec![
+      ThunderstoreVersionEntry {
+        version_number: "1.2.3".into(),
+      },
+      ThunderstoreVersionEntry {
+        version_number: "2.0.0".into(),
+      },
+      ThunderstoreVersionEntry {
+        version_number: "1.9.9".into(),
+      },
+    ];
+    let sel = select_version_from_list("*", &list).unwrap();
+    assert_eq!(sel, "2.0.0");
+  }
+
+  #[test]
+  fn select_version_latest_minor_for_major_wildcard() {
+    let list = vec![
+      ThunderstoreVersionEntry {
+        version_number: "1.2.3".into(),
+      },
+      ThunderstoreVersionEntry {
+        version_number: "1.3.0".into(),
+      },
+      ThunderstoreVersionEntry {
+        version_number: "2.0.0".into(),
+      },
+    ];
+    let sel = select_version_from_list("1.*", &list).unwrap();
+    assert_eq!(sel, "1.3.0");
+  }
+
+  #[test]
+  fn select_version_latest_patch_for_major_minor_wildcard() {
+    let list = vec![
+      ThunderstoreVersionEntry {
+        version_number: "1.2.3".into(),
+      },
+      ThunderstoreVersionEntry {
+        version_number: "1.2.9".into(),
+      },
+      ThunderstoreVersionEntry {
+        version_number: "1.3.0".into(),
+      },
+    ];
+    let sel = select_version_from_list("1.2.*", &list).unwrap();
+    assert_eq!(sel, "1.2.9");
+  }
+
+  // Optional live test against Thunderstore; requires network and sets an env flag.
+  // Enable with: THUNDERSTORE_LIVE_TEST=1 cargo test --package odin thunderstore_live_resolve -- --ignored
+  #[test]
+  #[ignore]
+  fn thunderstore_live_resolve() {
+    if env::var("THUNDERSTORE_LIVE_TEST").unwrap_or_default() != "1" {
+      eprintln!("skipping live Thunderstore test; set THUNDERSTORE_LIVE_TEST=1 to enable");
+      return;
+    }
+
+    // Resolve a real wildcard for Jotunn
+    let input = "ValheimModding-Jotunn-*".to_string();
+    let vm = ValheimMod::try_from(input).expect("Should construct from mod string");
+    assert!(
+      vm.url
+        .starts_with("https://thunderstore.io/package/download/ValheimModding/Jotunn/"),
+      "unexpected resolved URL prefix: {}",
+      vm.url
+    );
+    // basic sanity: URL ends with /
+    assert!(vm.url.ends_with('/'));
   }
 }

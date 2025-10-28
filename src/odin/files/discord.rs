@@ -11,16 +11,6 @@ use std::collections::HashMap;
 const ODIN_DISCORD_FILE_VAR: &str = "ODIN_DISCORD_FILE";
 
 #[derive(Deserialize, Serialize)]
-pub struct DiscordConfigEvents {
-  broadcast: DiscordWebHookBody,
-  start: DiscordWebHookBody,
-  stop: DiscordWebHookBody,
-  update: DiscordWebHookBody,
-  player_join: DiscordWebHookBody,
-  player_leave: DiscordWebHookBody,
-}
-
-#[derive(Deserialize, Serialize)]
 pub struct DiscordConfig {
   pub(crate) events: HashMap<String, DiscordWebHookBody>,
 }

@@ -10,7 +10,16 @@ use regex::Regex;
 ///
 /// An `Option` containing a tuple with the author, mod name, and version if parsing is successful; `None` otherwise.
 pub fn parse_mod_string(mod_string: &str) -> Option<(&str, &str, &str)> {
-  let re = Regex::new(r"^([^-\s]+)-([^-]+)-([\d\.]+)$").unwrap();
+  // Support versions with digits and dots, and wildcard placeholders '*' or 'x'
+  // Examples:
+  //  - denikson-BepInExPack_Valheim-5.4.2202
+  //  - Author-Mod-*
+  //  - Author-Mod-1.*
+  //  - Author-Mod-1.2.*
+  //  - Author-Mod-x
+  //  - Author-Mod-1.x
+  //  - Author-Mod-1.2.x
+  let re = Regex::new(r"^([^-\s]+)-([^-]+)-([0-9xX\.*]+)$").unwrap();
   re.captures(mod_string).and_then(|caps| {
     if caps.len() == 4 {
       Some((
@@ -35,6 +44,13 @@ mod tests {
       "RandyKnapp-EpicLoot-0.10.3",
       "ValheimModding-Jotunn-2.23.2",
       "Advize-PlantEverything-1.18.2",
+      // Wildcard variants
+      "Author-Mod-*",
+      "Author-Mod-x",
+      "Author-Mod-1.*",
+      "Author-Mod-1.x",
+      "Author-Mod-1.2.*",
+      "Author-Mod-1.2.x",
     ];
 
     for mod_str in &mod_strings {

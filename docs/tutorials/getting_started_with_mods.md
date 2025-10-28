@@ -91,3 +91,28 @@ Mod development can be slow, and having many mods installed may complicate updat
 Some mods may break with new Valheim updates, while others will not. Stay vigilant for mod-related issues when updating your server.
 
 ---
+
+## Wildcard Version Patterns
+
+You can reference mods with wildcards to automatically resolve the latest compatible release when the server starts.
+
+- `Author-Package-*` → latest available version
+- `Author-Package-1.*` → latest patch within major version 1 (e.g., 1.2.3 → 1.x.x)
+- `Author-Package-1.2.*` → latest patch within minor version 1.2 (e.g., 1.2.3 → 1.2.x)
+
+Example:
+
+```yaml
+services:
+  valheim:
+    environment:
+      - TYPE=BepInEx
+      - |
+        MODS=ValheimModding-Jotunn-*
+        OdinPlus-OdinHorse-1.4.12
+```
+
+Recommendations:
+
+- Use exact versions in production for reproducibility and easier rollbacks
+- If you rely on wildcards, consider disabling automatic updates to avoid breaking changes until you’ve validated your mod set

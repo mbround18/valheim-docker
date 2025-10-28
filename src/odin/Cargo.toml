@@ -26,40 +26,40 @@ name = "odin"
 path = "lib.rs"
 
 [build-dependencies]
-cc = "1.2.35"
+cc = "1.2.43"
 
 [dependencies]
 handlebars = "6.3.2"
 dotenv = "0.15.0"
-log = "0.4.27"
-clap = { version = "4.5.46", features = [ "derive", "env" ] }
+log = "0.4.28"
+clap = { version = "4.5.50", features = [ "derive", "env" ] }
 which = "8.0.0"
-serde = { version = "1.0.219", features = ["derive"], default-features = false  }
-sysinfo = { version = "0.37.0" }
-serde_json = "1.0.143"
+serde = { version = "1.0.228", features = ["derive"], default-features = false  }
+sysinfo = { version = "0.37.2" }
+serde_json = "1.0.145"
 daemonize = "0.5.0"
 tar = "0.4.44"
-flate2 = "1.1.2"
+flate2 = "1.1.5"
 inflections = "1.1.1"
 md5 = "0.8.0"
-reqwest = { version = "0.12.23", default-features = false, features = ["blocking", "json", "rustls-tls"] }
-chrono = "0.4.41"
+reqwest = { version = "0.12.24", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+chrono = "0.4.42"
 zip = { version = "6.0.0" }
 fs_extra = "1.3.0"
 glob = "0.3.3"
 a2s = "0.6.1"
-serde_with = "3.14.0"
-regex = "1.11.2"
-tokio = { version = "1.47.1", features = ["full"] }
+serde_with = "3.15.1"
+regex = "1.12.2"
+tokio = { version = "1.48.0", features = ["full"] }
 notify = "8.2.0"
-json-patch = "4.0.0"
+json-patch = "4.1.0"
 cached = "0.56.0"
-anyhow = "1.0.99"
-thiserror = "2.0.16"
-tempfile = "3.21.0"
+anyhow = "1.0.100"
+thiserror = "2.0.17"
+tempfile = "3.23.0"
 walkdir = "2.5.0"
 sha2 = "0.10.9"
-semver = "1.0.26"
+semver = "1.0.27"
 
 [dependencies.shared]
 workspace = true

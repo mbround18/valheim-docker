@@ -18,7 +18,9 @@
 </a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+
 [![All Contributors](https://img.shields.io/badge/all_contributors-18-orange.svg?style=flat-square)](#contributors-)
+
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 ## Table of Contents
@@ -81,6 +83,38 @@ If you purely want to run this on a Linux-based system, without Docker, take a l
 > If you want a managed, easy one-two punch to manage your server, then look at the Docker section.
 
 ## Running with Docker
+
+### Mods Quick Start
+
+Want to run Valheim with mods? Here's the shortest path:
+
+- Set `TYPE=BepInEx` (installs the BepInEx framework automatically)
+- Provide mods via `MODS` as a newline-separated list of dependency strings or direct URLs
+
+Example (compose):
+
+```yaml
+services:
+  valheim:
+    image: mbround18/valheim:latest
+    environment:
+      - TYPE=BepInEx
+      - |
+        MODS=ValheimModding-Jotunn-*
+        OdinPlus-OdinHorse-1.4.12
+        https://cdn.thunderstore.io/live/repository/packages/abearcodes-SimpleRecycling-0.0.10.zip
+```
+
+Notes:
+
+- Wildcards are supported and resolve to the latest version at startup:
+  - `Author-Package-*` (latest)
+  - `Author-Package-1.*` (latest matching major)
+  - `Author-Package-1.2.*` (latest matching major/minor)
+- Prefer pinning exact versions for stability in production
+- With many mods, consider disabling automatic updates to avoid mismatch issues
+
+See the full guide: docs/tutorials/getting_started_with_mods.md
 
 > This image uses version 3+ for all of its compose examples.
 > Please use Docker engine >=20 or make adjustments accordingly.

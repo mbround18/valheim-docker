@@ -98,7 +98,7 @@ AppID : 896660, change number : 10865381/10865381, last change : Wed Mar  3 00:4
 			"maxsize"		"59862244"
 			"depotfromapp"		"1007"
 		}
-		"896661"
+		"896660"
 		{
 			"name"		"Valheim dedicated server Linux"
 			"config"

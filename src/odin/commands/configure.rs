@@ -1,4 +1,4 @@
-use log::{debug, info};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
@@ -6,6 +6,7 @@ use std::{fs, io};
 
 use crate::files::config::{config_file, write_config};
 use crate::files::discord::{discord_file, write_discord};
+use crate::utils::common_paths::log_directory;
 
 /// See: https://user-images.githubusercontent.com/34519392/273088066-b9c94664-9eef-419d-999a-8b8798462dee.PNG
 /// for a list of modifiers
@@ -134,6 +135,46 @@ impl Configuration {
       if let Err(e) = self.check_permissions(path) {
         return Err(Box::new(e));
       }
+    }
+
+    // Ensure log directory exists and is writable
+    let logs_dir_str = log_directory();
+    let logs_dir = Path::new(&logs_dir_str);
+    if !logs_dir.exists() {
+      info!("Creating logs directory: {logs_dir:?}");
+      if let Err(e) = fs::create_dir_all(logs_dir) {
+        return Err(Box::new(io::Error::new(
+          io::ErrorKind::PermissionDenied,
+          format!("Failed to create logs directory {logs_dir:?}: {e}"),
+        )));
+      }
+    }
+    // On some installs, logs dir may be created with restrictive perms; verify writability via probe file
+    let probe_path = logs_dir.join(".write_test");
+    match fs::OpenOptions::new()
+      .create(true)
+      .write(true)
+      .truncate(true)
+      .open(&probe_path)
+    {
+      Ok(mut f) => {
+        use std::io::Write;
+        if let Err(e) = f.write_all(b"ok") {
+          return Err(Box::new(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            format!("Cannot write to logs directory {logs_dir:?}: {e}"),
+          )));
+        }
+      }
+      Err(e) => {
+        return Err(Box::new(io::Error::new(
+          io::ErrorKind::PermissionDenied,
+          format!("Cannot create file in logs directory {logs_dir:?}: {e}"),
+        )));
+      }
+    }
+    if let Err(e) = fs::remove_file(&probe_path) {
+      warn!("Failed to cleanup logs probe file {:?}: {}", probe_path, e);
     }
 
     Ok(())
