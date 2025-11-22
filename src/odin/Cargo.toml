@@ -71,7 +71,7 @@ serial_test = "3.2.0"
 mockito = "1.7.0"
 lazy_static = "1.5.0"
 test-case = "3.3.1"
-mockall = "0.13.1"
+mockall = "0.14.0"
 
 
 
