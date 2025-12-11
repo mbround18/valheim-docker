@@ -29,7 +29,7 @@ jobs:
           components: clippy rustfmt
 
       # Cache Cargo build files to speed up builds
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         name: Cache Cargo Files
         with:
           path: |
