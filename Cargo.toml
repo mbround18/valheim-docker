@@ -1,9 +1,5 @@
 [workspace]
-members = [
-  "src/odin",
-  "src/huginn",
- "src/shared",
-]
+members = ["src/odin", "src/huginn", "src/shared"]
 resolver = "2"
 package.edition = "2024"
 package.repository = "https://github.com/mbround18/valheim-docker"
@@ -23,4 +19,3 @@ opt-level = 0
 opt-level = 3
 lto = "thin"
 codegen-units = 1
-
