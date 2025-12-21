@@ -1,8 +1,14 @@
 {
   "plugins": [
     "git-tag",
-    "all-contributors",
-    ["upload-assets", { "assets": ["./tmp/bundle.zip"] }]
+    [
+      "upload-assets",
+      {
+        "assets": [
+          "./tmp/bundle.zip"
+        ]
+      }
+    ]
   ],
   "owner": "mbround18",
   "repo": "valheim-docker",
