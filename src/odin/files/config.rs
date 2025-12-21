@@ -112,11 +112,17 @@ impl TryInto<Vec<String>> for ValheimArguments {
       args.push(interval);
     };
 
-    // Add set_key to the command
+    // Add set_key to the command - supports multiple keys separated by commas
     if let Some(set_key) = &self.set_key {
-      debug!("Setting set_key to: {}", &set_key);
-      args.push(String::from("-setkey"));
-      args.push(set_key.to_string());
+      set_key
+        .split(',')
+        .map(|key| key.trim())
+        .filter(|key| !key.is_empty())
+        .for_each(|key| {
+          debug!("Setting set_key to: {}", &key);
+          args.push(String::from("-setkey"));
+          args.push(key.to_string());
+        });
     };
 
     // Add preset to the command
@@ -257,5 +263,150 @@ mod tests {
       ),
     );
     read_config(config_file());
+  }
+
+  #[test]
+  fn test_single_set_key() {
+    let args = ValheimArguments {
+      port: "2456".to_string(),
+      name: "Test".to_string(),
+      world: "TestWorld".to_string(),
+      public: "0".to_string(),
+      password: "testpass".to_string(),
+      command: "/bin/echo".to_string(),
+      preset: None,
+      modifiers: None,
+      set_key: Some("SingleKey".to_string()),
+      save_interval: None,
+    };
+
+    let result: Result<Vec<String>, String> = args.try_into();
+    assert!(result.is_ok());
+    let args_vec = result.unwrap();
+    
+    // Find the -setkey argument
+    let setkey_pos = args_vec.iter().position(|x| x == "-setkey");
+    assert!(setkey_pos.is_some(), "Expected -setkey argument to be present");
+    
+    let setkey_idx = setkey_pos.unwrap();
+    assert_eq!(args_vec[setkey_idx + 1], "SingleKey", "Expected set_key value to be 'SingleKey'");
+  }
+
+  #[test]
+  fn test_multiple_set_keys() {
+    let args = ValheimArguments {
+      port: "2456".to_string(),
+      name: "Test".to_string(),
+      world: "TestWorld".to_string(),
+      public: "0".to_string(),
+      password: "testpass".to_string(),
+      command: "/bin/echo".to_string(),
+      preset: None,
+      modifiers: None,
+      set_key: Some("Key1,Key2,Key3".to_string()),
+      save_interval: None,
+    };
+
+    let result: Result<Vec<String>, String> = args.try_into();
+    assert!(result.is_ok());
+    let args_vec = result.unwrap();
+    
+    // Count occurrences of -setkey
+    let setkey_count = args_vec.iter().filter(|x| *x == "-setkey").count();
+    assert_eq!(setkey_count, 3, "Expected three -setkey arguments");
+    
+    // Find all positions of -setkey
+    let mut found_keys = Vec::new();
+    for (i, arg) in args_vec.iter().enumerate() {
+      if arg == "-setkey" && i + 1 < args_vec.len() {
+        found_keys.push(args_vec[i + 1].clone());
+      }
+    }
+    
+    assert_eq!(found_keys, vec!["Key1", "Key2", "Key3"], "Expected keys to be Key1, Key2, Key3");
+  }
+
+  #[test]
+  fn test_multiple_set_keys_with_whitespace() {
+    let args = ValheimArguments {
+      port: "2456".to_string(),
+      name: "Test".to_string(),
+      world: "TestWorld".to_string(),
+      public: "0".to_string(),
+      password: "testpass".to_string(),
+      command: "/bin/echo".to_string(),
+      preset: None,
+      modifiers: None,
+      set_key: Some(" Key1 , Key2 ,  Key3  ".to_string()),
+      save_interval: None,
+    };
+
+    let result: Result<Vec<String>, String> = args.try_into();
+    assert!(result.is_ok());
+    let args_vec = result.unwrap();
+    
+    // Find all keys
+    let mut found_keys = Vec::new();
+    for (i, arg) in args_vec.iter().enumerate() {
+      if arg == "-setkey" && i + 1 < args_vec.len() {
+        found_keys.push(args_vec[i + 1].clone());
+      }
+    }
+    
+    assert_eq!(found_keys, vec!["Key1", "Key2", "Key3"], "Expected whitespace to be trimmed");
+  }
+
+  #[test]
+  fn test_set_keys_with_empty_values() {
+    let args = ValheimArguments {
+      port: "2456".to_string(),
+      name: "Test".to_string(),
+      world: "TestWorld".to_string(),
+      public: "0".to_string(),
+      password: "testpass".to_string(),
+      command: "/bin/echo".to_string(),
+      preset: None,
+      modifiers: None,
+      set_key: Some("Key1,,Key2,  ,Key3".to_string()),
+      save_interval: None,
+    };
+
+    let result: Result<Vec<String>, String> = args.try_into();
+    assert!(result.is_ok());
+    let args_vec = result.unwrap();
+    
+    // Find all keys
+    let mut found_keys = Vec::new();
+    for (i, arg) in args_vec.iter().enumerate() {
+      if arg == "-setkey" && i + 1 < args_vec.len() {
+        found_keys.push(args_vec[i + 1].clone());
+      }
+    }
+    
+    assert_eq!(found_keys, vec!["Key1", "Key2", "Key3"], "Expected empty values to be filtered out");
+  }
+
+  #[test]
+  fn test_no_set_key() {
+    let args = ValheimArguments {
+      port: "2456".to_string(),
+      name: "Test".to_string(),
+      world: "TestWorld".to_string(),
+      public: "0".to_string(),
+      password: "testpass".to_string(),
+      command: "/bin/echo".to_string(),
+      preset: None,
+      modifiers: None,
+      set_key: None,
+      save_interval: None,
+    };
+
+    let result: Result<Vec<String>, String> = args.try_into();
+    assert!(result.is_ok());
+    let args_vec = result.unwrap();
+    
+    // Verify no -setkey argument exists
+    let has_setkey = args_vec.iter().any(|x| x == "-setkey");
+    assert!(!has_setkey, "Expected no -setkey argument when set_key is None");
   }
 }
