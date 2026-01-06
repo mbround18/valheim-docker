@@ -96,7 +96,7 @@ async fn handle_commands(cli: Cli) {
       message,
       webhook_url,
     } => commands::notify::invoke(title, message, webhook_url),
-    Commands::ModInstall { url } => commands::install_mod::invoke(url),
+    Commands::ModInstall { from_var, url } => commands::install_mod::invoke(url, from_var).await,
     Commands::Status {
       json,
       local,

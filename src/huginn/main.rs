@@ -23,6 +23,7 @@ async fn main() {
   let status = warp::path!("status").map(routes::status::invoke);
   let metrics = warp::path!("metrics").map(routes::metrics::invoke);
   let health = warp::path!("health").map(routes::health::invoke);
+  let mods = warp::path!("mods").map(routes::mods::invoke);
   let players = warp::path!("players").map(routes::players::invoke);
   let openapi = warp::path!("openapi.json").map(routes::openapi::invoke);
   let routes = warp::any().and(
@@ -30,6 +31,7 @@ async fn main() {
       .or(status)
       .or(metrics)
       .or(health)
+      .or(mods)
       .or(players)
       .or(openapi),
   );

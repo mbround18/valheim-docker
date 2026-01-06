@@ -2,6 +2,7 @@ use crate::fetch_info;
 
 pub(crate) mod health;
 pub(crate) mod metrics;
+pub(crate) mod mods;
 pub(crate) mod openapi;
 pub(crate) mod players;
 pub(crate) mod status;
