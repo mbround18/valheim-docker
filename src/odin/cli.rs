@@ -140,8 +140,13 @@ pub enum Commands {
   /// Supported platforms are Nexus (with premium account and API key), GitHub, and any other direct download source.
   #[command(name = "mod:install")]
   ModInstall {
+    /// Install mods from the `MODS` environment variable (comma/newline/whitespace separated)
+    #[arg(long, default_value_t = false)]
+    from_var: bool,
+
     /// Which url you wish to pull from
-    url: String,
+    #[arg(required_unless_present = "from_var")]
+    url: Option<String>,
   },
 
   /// Prints out the status of your server with information about current players, mod support, and a few other details.

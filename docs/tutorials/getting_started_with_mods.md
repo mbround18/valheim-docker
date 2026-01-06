@@ -116,3 +116,15 @@ Recommendations:
 
 - Use exact versions in production for reproducibility and easier rollbacks
 - If you rely on wildcards, consider disabling automatic updates to avoid breaking changes until you’ve validated your mod set
+
+## Special Note: Installing ValheimPlus
+
+ValheimPlus is installed differently from other mods because it's distributed as a DLL file rather than through Thunderstore. For a complete guide on installing and configuring ValheimPlus, see [ValheimPlus Installation](./valheimplus-installation.md).
+
+Quick example:
+
+```yaml
+environment:
+  - TYPE=BepInEx
+  - MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/ValheimPlus.dll
+```

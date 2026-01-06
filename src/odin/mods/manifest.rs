@@ -41,10 +41,10 @@ impl TryFrom<PathBuf> for Manifest {
       content = content.trim_start_matches('\u{FEFF}').to_string();
     }
 
-    debug!("Manifest content: {content}");
+    debug!("Manifest content: {}", content);
 
     let manifest: Manifest = serde_json::from_str(&content)
-      .map_err(|e| ManifestDeserializeError(format!("Failed to deserialize manifest: {e}")))?;
+      .map_err(|e| ManifestDeserializeError(format!("Failed to deserialize manifest: {}", e)))?;
 
     Ok(manifest)
   }

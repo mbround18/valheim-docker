@@ -9,7 +9,7 @@ use crate::{
 use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info, warn};
-use reqwest::blocking::Client;
+use reqwest::Client;
 use reqwest::Url;
 use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
@@ -25,7 +25,7 @@ struct ThunderstoreVersionEntry {
   version_number: String,
 }
 
-fn thunderstore_list_versions(
+async fn thunderstore_list_versions(
   namespace: &str,
   name: &str,
 ) -> Result<Vec<ThunderstoreVersionEntry>, ValheimModError> {
@@ -71,7 +71,7 @@ fn thunderstore_list_versions(
     None
   }
 
-  let client = reqwest::blocking::Client::builder()
+  let client = reqwest::Client::builder()
     .timeout(Duration::from_secs(10))
     .user_agent("odin-valheim-docker/1.0 (+https://github.com/mbround18/valheim-docker)")
     .build()
@@ -99,13 +99,13 @@ fn thunderstore_list_versions(
   for url in endpoints {
     for attempt in 1..=2 {
       log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
-      match client.get(&url).send() {
+      match client.get(&url).send().await {
         Ok(resp) => {
           if !resp.status().is_success() {
             last_err = Some(format!("status {} for {}", resp.status(), url));
             continue;
           }
-          match resp.json::<serde_json::Value>() {
+          match resp.json::<serde_json::Value>().await {
             Ok(v) => {
               if let Some(out) = extract_versions(&v) {
                 if !out.is_empty() {
@@ -135,8 +135,8 @@ fn thunderstore_list_versions(
     "https://thunderstore.io/c/valheim/p/{}/{}/",
     namespace, name
   );
-  match client.get(&page_url).send() {
-    Ok(resp) if resp.status().is_success() => match resp.text() {
+  match client.get(&page_url).send().await {
+    Ok(resp) if resp.status().is_success() => match resp.text().await {
       Ok(html) => {
         let needle = format!("/package/download/{}/{}/", namespace, name);
         if let Some(pos) = html.find(&needle) {
@@ -333,12 +333,12 @@ impl ValheimMod {
   }
 
   /// Download: Downloads the mod ZIP from the URL into the staging location.
-  pub fn download(&mut self) -> Result<(), ValheimModError> {
+  pub async fn download(&mut self) -> Result<(), ValheimModError> {
     debug!("Initializing mod download...");
     // For Thunderstore download URLs, validate upfront that the URL isn't 404 to give fast feedback.
     if Self::is_thunderstore_download_url(&self.url) {
       let client = Client::new();
-      match client.head(&self.url).send() {
+      match client.head(&self.url).send().await {
         Ok(resp) => {
           let status = resp.status();
           if status.is_client_error() {
@@ -370,24 +370,38 @@ impl ValheimMod {
     );
     let orig_cache_path = staging_dir.join(&orig_file_name);
 
-    // Cache hit: URL unchanged and file is a valid ZIP, reuse it.
-    if orig_cache_path.exists() && Self::is_valid_zip(&orig_cache_path) {
-      debug!("Cache hit for URL; reusing {:?}", orig_cache_path);
-      self.staging_location = orig_cache_path;
-      self.file_type = orig_file_type;
-      self.downloaded = true;
-      return Ok(());
-    } else if orig_cache_path.exists() {
-      warn!(
-        "Cached file exists but is not a valid ZIP, removing: {:?}",
-        orig_cache_path
-      );
-      let _ = std::fs::remove_file(&orig_cache_path);
+    // Cache hit: URL unchanged. For ZIPs require valid ZIP; for non-zip types (dll, cfg) accept cached file.
+    if orig_cache_path.exists() {
+      if orig_file_type == "zip" {
+        if Self::is_valid_zip(&orig_cache_path) {
+          debug!("Cache hit for URL; reusing {:?}", orig_cache_path);
+          self.staging_location = orig_cache_path;
+          self.file_type = orig_file_type;
+          self.downloaded = true;
+          return Ok(());
+        } else {
+          warn!(
+            "Cached file exists but is not a valid ZIP, removing: {:?}",
+            orig_cache_path
+          );
+          let _ = std::fs::remove_file(&orig_cache_path);
+        }
+      } else {
+        debug!("Cache hit for URL (non-zip); reusing {:?}", orig_cache_path);
+        self.staging_location = orig_cache_path;
+        self.file_type = orig_file_type;
+        self.downloaded = true;
+        return Ok(());
+      }
     }
 
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
-    let mut response = reqwest::blocking::get(parsed_url)
+    let client = Client::new();
+    let response = client
+      .get(parsed_url)
+      .send()
+      .await
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
 
     if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
@@ -407,31 +421,51 @@ impl ValheimMod {
     let final_path = staging_dir.join(file_name);
     debug!("Downloading to: {:?}", final_path);
 
-    // If the final computed path already exists and is valid, reuse and skip write.
-    if final_path.exists() && Self::is_valid_zip(&final_path) {
-      debug!("Cache hit after redirect; reusing {:?}", final_path);
-      self.staging_location = final_path;
-      self.downloaded = true;
-      return Ok(());
-    } else if final_path.exists() {
-      warn!(
-        "Existing file at destination is not a valid ZIP, overwriting: {:?}",
-        final_path
-      );
+    // If the final computed path already exists, reuse it for non-zip types or validate ZIPs.
+    if final_path.exists() {
+      if self.file_type == "zip" {
+        if Self::is_valid_zip(&final_path) {
+          debug!("Cache hit after redirect; reusing {:?}", final_path);
+          self.staging_location = final_path;
+          self.downloaded = true;
+          return Ok(());
+        } else {
+          warn!(
+            "Existing file at destination is not a valid ZIP, overwriting: {:?}",
+            final_path
+          );
+        }
+      } else {
+        debug!(
+          "Cache hit after redirect for non-zip; reusing {:?}",
+          final_path
+        );
+        self.staging_location = final_path;
+        self.downloaded = true;
+        return Ok(());
+      }
     }
 
-    let mut file =
-      File::create(&final_path).map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
-    response
-      .copy_to(&mut file)
+    let bytes = response
+      .bytes()
+      .await
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    std::fs::write(&final_path, &bytes)
+      .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
 
-    // Validate it's a ZIP and compute SHA-256 sidecar.
-    if !Self::is_valid_zip(&final_path) {
-      error!("Downloaded file is not a valid ZIP: {:?}", final_path);
-      return Err(ValheimModError::ZipArchiveError(
-        "Invalid ZIP file after download".to_string(),
-      ));
+    // Validate based on file type. ZIP must be valid; non-zip types (dll, cfg) are accepted.
+    if self.file_type == "zip" {
+      if !Self::is_valid_zip(&final_path) {
+        error!("Downloaded file is not a valid ZIP: {:?}", final_path);
+        return Err(ValheimModError::ZipArchiveError(
+          "Invalid ZIP file after download".to_string(),
+        ));
+      }
+    } else {
+      debug!(
+        "Downloaded non-zip file ({}), skipping ZIP validation: {:?}",
+        self.file_type, final_path
+      );
     }
 
     match Self::sha256_hex(&final_path) {
@@ -452,13 +486,39 @@ impl ValheimMod {
   /// Install: Creates a temporary directory, extracts the ZIP there, validates the mod,
   /// moves extracted files to their final destination, and cleans up the temp directory.
   pub fn install(&mut self) -> Result<(), ValheimModError> {
-    // Ensure that the staging location is a file (the downloaded ZIP).
+    self.install_with_report().map(|_| ())
+  }
+
+  /// Like `install()`, but returns the destination paths that were installed.
+  ///
+  /// This is primarily used by `odin mod:install --from-var` so it can persist
+  /// cleanup metadata (installed paths + staged artifact) across restarts.
+  pub fn install_with_report(&mut self) -> Result<Vec<PathBuf>, ValheimModError> {
+    // Ensure that the staging location is a file (the downloaded ZIP or single-file mod).
     if self.staging_location.is_dir() {
       error!(
         "Failed to install mod! Staging location is a directory: {:?}",
         self.staging_location
       );
       return Err(ValheimModError::InvalidStagingLocation);
+    }
+
+    // Special-case: if this is a single-file DLL plugin, copy it directly into the plugins directory.
+    if self.file_type.eq_ignore_ascii_case("dll") {
+      info!("Installing DLL plugin directly into plugins directory...");
+      let plugin_dir = PathBuf::from(&common_paths::bepinex_plugin_directory());
+      create_dir_all(&plugin_dir)
+        .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+      let file_name = self
+        .staging_location
+        .file_name()
+        .and_then(|s| s.to_str())
+        .ok_or(ValheimModError::InvalidStagingLocation)?;
+      let dest = plugin_dir.join(file_name);
+      std::fs::copy(&self.staging_location, &dest)
+        .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
+      self.installed = true;
+      return Ok(vec![dest]);
     }
 
     // Create a temporary directory for extraction.
@@ -504,6 +564,9 @@ impl ValheimMod {
       let final_dir = PathBuf::from(&common_paths::game_directory());
       dir::move_dir(temp_dir.path().join(&manifest.name), &final_dir, &options)
         .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
+      let installed_root = final_dir.join(&manifest.name);
+      self.installed = true;
+      Ok(vec![installed_root])
     } else {
       info!("Installing Mod...");
       let final_dir = PathBuf::from(&common_paths::bepinex_plugin_directory()).join(&manifest.name);
@@ -531,29 +594,25 @@ impl ValheimMod {
       }
       dir::move_dir(temp_dir, &final_dir, &options)
         .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
-    }
 
-    // The temporary directory is automatically removed here.
-    self.installed = true;
-    Ok(())
+      self.installed = true;
+      Ok(vec![final_dir])
+    }
   }
 
   fn is_thunderstore_download_url(url: &str) -> bool {
     url.contains("thunderstore.io/package/download/")
   }
-}
 
-impl TryFrom<String> for ValheimMod {
-  type Error = ValheimModError;
-
-  fn try_from(url: String) -> Result<Self, Self::Error> {
-    if is_valid_url(&url) {
-      Ok(ValheimMod::new(&url))
-    } else if let Some((author, mod_name, version)) = parse_mod_string(&url) {
+  /// Async constructor that resolves Thunderstore wildcards.
+  pub async fn async_from_url(url: &str) -> Result<Self, ValheimModError> {
+    if is_valid_url(url) {
+      Ok(ValheimMod::new(url))
+    } else if let Some((author, mod_name, version)) = parse_mod_string(url) {
       // Resolve wildcards for Thunderstore packages if present
       let v_req = version.to_ascii_lowercase();
       if is_wildcard_version(&v_req) {
-        let versions = thunderstore_list_versions(author, mod_name)?;
+        let versions = thunderstore_list_versions(author, mod_name).await?;
         if let Some(sel) = select_version_from_list(&v_req, &versions) {
           let constructed_url = format!(
             "https://thunderstore.io/package/download/{}/{}/{}/",
@@ -578,9 +637,37 @@ impl TryFrom<String> for ValheimMod {
   }
 }
 
+impl TryFrom<String> for ValheimMod {
+  type Error = ValheimModError;
+
+  fn try_from(url: String) -> Result<Self, Self::Error> {
+    if is_valid_url(&url) {
+      Ok(ValheimMod::new(&url))
+    } else if let Some((author, mod_name, version)) = parse_mod_string(&url) {
+      // For TryFrom (synchronous), only support exact versions.
+      // Wildcards must use async_from_url instead.
+      let v_req = version.to_ascii_lowercase();
+      if is_wildcard_version(&v_req) {
+        return Err(ValheimModError::DownloadError(
+          "Wildcard versions require async resolution. Use ValheimMod::async_from_url()."
+            .to_string(),
+        ));
+      }
+      let constructed_url = format!(
+        "https://thunderstore.io/package/download/{}/{}/{}/",
+        author, mod_name, version
+      );
+      Ok(ValheimMod::new(&constructed_url))
+    } else {
+      Err(ValheimModError::InvalidUrl)
+    }
+  }
+}
+
 #[cfg(test)]
 mod install_test {
   use super::*;
+  use serial_test::serial;
 
   // Helper to create a ValheimMod instance with a given staging location.
   fn valheim_mod_with_staging(url: String, staging: PathBuf) -> ValheimMod {
@@ -593,36 +680,95 @@ mod install_test {
     }
   }
 
-  #[test]
-  fn test_install_framework() {
+  #[tokio::test]
+  #[serial]
+  async fn test_install_framework() {
     // Use a test resource ZIP that represents a framework mod.
-    let staging = PathBuf::from("tests/resources/manifest.framework.zip");
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    let game_dir_str = game_dir.to_string_lossy().to_string();
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir_str);
+
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let staging = PathBuf::from(format!(
+      "{}/tests/resources/manifest.framework.zip",
+      manifest_dir
+    ));
     let mut mod_inst =
       valheim_mod_with_staging("https://example.com/test.zip".to_string(), staging);
     let result = mod_inst.install();
     assert!(result.is_ok(), "{:?}", result.err());
     assert!(mod_inst.installed);
+
+    drop(tmp);
   }
 
-  #[test]
-  fn test_install_mod() {
+  #[tokio::test]
+  #[serial]
+  async fn test_install_mod() {
     // Use a test resource ZIP that represents a regular mod.
-    let staging = PathBuf::from("tests/resources/manifest.mod.zip");
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    let game_dir_str = game_dir.to_string_lossy().to_string();
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir_str);
+
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let staging = PathBuf::from(format!("{}/tests/resources/manifest.mod.zip", manifest_dir));
     let mut mod_inst =
       valheim_mod_with_staging("https://example.com/test.zip".to_string(), staging);
     let result = mod_inst.install();
     assert!(result.is_ok(), "{:?}", result.err());
     assert!(mod_inst.installed);
+
+    drop(tmp);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn test_install_dll() {
+    // Create a temporary game directory and staging DLL
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+
+    let game_dir_str = game_dir.to_string_lossy().to_string();
+    // Point GAME_LOCATION to our temp game dir
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir_str);
+
+    let staging = tmp.path().join("dummy.dll");
+    std::fs::write(&staging, b"dummy dll content").unwrap();
+
+    let mut mod_inst =
+      valheim_mod_with_staging("https://example.com/dummy.dll".to_string(), staging);
+    mod_inst.file_type = "dll".to_string();
+
+    let result = mod_inst.install();
+    assert!(result.is_ok(), "{:?}", result.err());
+    assert!(mod_inst.installed);
+
+    let dest = PathBuf::from(common_paths::bepinex_plugin_directory()).join("dummy.dll");
+    assert!(dest.exists(), "DLL should exist at {:?}", dest);
+
+    // Verify the copy actually happened
+    let content = std::fs::read(&dest).expect("should read dll");
+    assert_eq!(content, b"dummy dll content", "DLL content should match");
+
+    // Don't drop tmp until after assertions
+    drop(tmp);
   }
 }
 
 #[cfg(test)]
 mod thunderstore_tests {
   use super::*;
+  use mockito::Server;
+  use serial_test::serial;
   use std::env;
 
-  #[test]
-  fn transforms_mod_string_to_thunderstore_download_url() {
+  #[tokio::test]
+  async fn transforms_mod_string_to_thunderstore_download_url() {
     let input = "ValheimModding-Jotunn-2.26.0".to_string();
     let vm = ValheimMod::try_from(input).expect("Should construct from mod string");
     assert_eq!(
@@ -631,23 +777,23 @@ mod thunderstore_tests {
     );
   }
 
-  #[test]
-  fn normal_url_is_preserved_in_try_from() {
+  #[tokio::test]
+  async fn normal_url_is_preserved_in_try_from() {
     let input = "https://example.com/mod.zip".to_string();
     let vm = ValheimMod::try_from(input.clone()).expect("Should construct from URL");
     assert_eq!(vm.url, input);
   }
 
-  #[test]
-  fn detects_thunderstore_download_url() {
+  #[tokio::test]
+  async fn detects_thunderstore_download_url() {
     let turl = "https://thunderstore.io/package/download/Author/Mod/1.2.3/";
     assert!(ValheimMod::is_thunderstore_download_url(turl));
     let normal = "https://example.com/path/file.zip";
     assert!(!ValheimMod::is_thunderstore_download_url(normal));
   }
 
-  #[test]
-  fn select_version_latest_for_full_wildcard() {
+  #[tokio::test]
+  async fn select_version_latest_for_full_wildcard() {
     let list = vec![
       ThunderstoreVersionEntry {
         version_number: "1.2.3".into(),
@@ -663,8 +809,8 @@ mod thunderstore_tests {
     assert_eq!(sel, "2.0.0");
   }
 
-  #[test]
-  fn select_version_latest_minor_for_major_wildcard() {
+  #[tokio::test]
+  async fn select_version_latest_minor_for_major_wildcard() {
     let list = vec![
       ThunderstoreVersionEntry {
         version_number: "1.2.3".into(),
@@ -680,8 +826,8 @@ mod thunderstore_tests {
     assert_eq!(sel, "1.3.0");
   }
 
-  #[test]
-  fn select_version_latest_patch_for_major_minor_wildcard() {
+  #[tokio::test]
+  async fn select_version_latest_patch_for_major_minor_wildcard() {
     let list = vec![
       ThunderstoreVersionEntry {
         version_number: "1.2.3".into(),
@@ -699,9 +845,9 @@ mod thunderstore_tests {
 
   // Optional live test against Thunderstore; requires network and sets an env flag.
   // Enable with: THUNDERSTORE_LIVE_TEST=1 cargo test --package odin thunderstore_live_resolve -- --ignored
-  #[test]
+  #[tokio::test]
   #[ignore]
-  fn thunderstore_live_resolve() {
+  async fn thunderstore_live_resolve() {
     if env::var("THUNDERSTORE_LIVE_TEST").unwrap_or_default() != "1" {
       eprintln!("skipping live Thunderstore test; set THUNDERSTORE_LIVE_TEST=1 to enable");
       return;
@@ -718,5 +864,140 @@ mod thunderstore_tests {
     );
     // basic sanity: URL ends with /
     assert!(vm.url.ends_with('/'));
+  }
+
+  // Optional live test to download a real DLL from GitHub releases; requires network and sets an env flag.
+  // Enable with: VALHEIMPLUS_LIVE_TEST=1 cargo test -p odin download_dll_live -- --ignored
+  #[tokio::test]
+  #[ignore]
+  async fn download_dll_live() {
+    if env::var("VALHEIMPLUS_LIVE_TEST").unwrap_or_default() != "1" {
+      eprintln!("skipping live DLL download test; set VALHEIMPLUS_LIVE_TEST=1 to enable");
+      return;
+    }
+
+    // Use a temporary game directory for isolated staging
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+
+    let url =
+      "https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/ValheimPlus.dll"
+        .to_string();
+    let mut vm = ValheimMod::new(&url);
+
+    // First download should fetch the file
+    let r = vm.download().await;
+    assert!(r.is_ok(), "{:?}", r.err());
+    assert!(vm.downloaded);
+    assert_eq!(vm.file_type, "dll");
+    assert!(vm.staging_location.exists());
+
+    // Verify the file looks like a DLL by extension and non-zero size
+    assert_eq!(
+      vm.staging_location
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or(""),
+      "dll"
+    );
+    let md = std::fs::metadata(&vm.staging_location).expect("metadata");
+    assert!(md.len() > 0, "downloaded file should not be empty");
+
+    // Second download should hit the cache and reuse the same staging file
+    let mut vm2 = ValheimMod::new(&url);
+    let r2 = vm2.download().await;
+    assert!(r2.is_ok(), "{:?}", r2.err());
+    assert!(vm2.downloaded);
+    assert_eq!(vm2.staging_location, vm.staging_location);
+  }
+
+  // Synthetic tests (run in CI) using mockito to provide deterministic download endpoints
+  #[tokio::test]
+  #[serial]
+  async fn synthetic_download_dll_and_install() {
+    let mut server = Server::new_async().await;
+    let _m = server
+      .mock("GET", "/ValheimPlus.dll")
+      .with_status(200)
+      .with_header("content-type", "application/octet-stream")
+      .with_body("DUMMYDLL")
+      .create();
+
+    let url = format!("{}/ValheimPlus.dll", server.url());
+
+    // Isolate game location
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+
+    let mut vm = ValheimMod::new(&url);
+    let r = vm.download().await;
+    assert!(r.is_ok(), "{:?}", r.err());
+    assert!(vm.downloaded);
+    assert_eq!(vm.file_type, "dll");
+    assert!(vm.staging_location.exists());
+
+    // Install should copy DLL into plugins
+    let r2 = vm.install();
+    assert!(r2.is_ok(), "{:?}", r2.err());
+    let dest_plugin = PathBuf::from(common_paths::bepinex_plugin_directory()).join(
+      vm.staging_location
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap(),
+    );
+    assert!(dest_plugin.exists());
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn synthetic_download_zip_and_install() {
+    use std::io::Cursor;
+    use std::io::Write;
+
+    let mut buf: Vec<u8> = Vec::new();
+    {
+      let cursor = Cursor::new(&mut buf);
+      let mut zipw = zip::ZipWriter::new(cursor);
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      zipw.start_file("manifest.json", options).unwrap();
+      zipw.write_all(b"{\"name\":\"testmod\"}").unwrap();
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      zipw.start_file("plugins/myplugin.dll", options).unwrap();
+      zipw.write_all(b"plugindata").unwrap();
+      zipw.finish().unwrap();
+    }
+
+    let mut server = Server::new_async().await;
+    let _m = server
+      .mock("GET", "/testmod.zip")
+      .with_status(200)
+      .with_header("content-type", "application/zip")
+      .with_body(buf)
+      .create();
+
+    let url = format!("{}/testmod.zip", server.url());
+    let mut vm = ValheimMod::new(&url);
+    let r = vm.download().await;
+    assert!(r.is_ok(), "{:?}", r.err());
+    assert!(vm.downloaded);
+    assert_eq!(vm.file_type, "zip");
+    assert!(vm.staging_location.exists());
+
+    // Install to isolated game dir
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+
+    let r2 = vm.install();
+    assert!(r2.is_ok(), "{:?}", r2.err());
+    let dest = PathBuf::from(common_paths::bepinex_plugin_directory())
+      .join("testmod")
+      .join("myplugin.dll");
+    assert!(dest.exists());
   }
 }
