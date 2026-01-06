@@ -1,3 +1,30 @@
+# v3.5.0 (Tue Jan 06 2026)
+
+#### 🚀 Enhancement
+
+- Add mod checks and valheim plus specifics [#1336](https://github.com/mbround18/valheim-docker/pull/1336) ([@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update Rust crate tokio to v1.49.0 [#1333](https://github.com/mbround18/valheim-docker/pull/1333) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate clap to v4.5.54 [#1332](https://github.com/mbround18/valheim-docker/pull/1332) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate handlebars to v6.4.0 [#1331](https://github.com/mbround18/valheim-docker/pull/1331) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate cc to v1.2.51 [#1328](https://github.com/mbround18/valheim-docker/pull/1328) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate serde_json to v1.0.148 [#1329](https://github.com/mbround18/valheim-docker/pull/1329) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serde_json to v1.0.147 [#1325](https://github.com/mbround18/valheim-docker/pull/1325) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate tempfile to v3.24.0 [#1326](https://github.com/mbround18/valheim-docker/pull/1326) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate reqwest to v0.12.28 [#1324](https://github.com/mbround18/valheim-docker/pull/1324) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate reqwest to v0.12.27 [#1323](https://github.com/mbround18/valheim-docker/pull/1323) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serde_json to v1.0.146 [#1322](https://github.com/mbround18/valheim-docker/pull/1322) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.4.1 (Sun Dec 21 2025)
 
 #### 🐛 Bug Fix
