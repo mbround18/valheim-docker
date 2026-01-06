@@ -158,17 +158,10 @@ esac
 
 # Install additional mods if not running vanilla
 if [ "${TYPE}" != "vanilla" ]; then
-  # Replace commas and newlines with spaces
-  MODS=$(echo "${MODS}" | tr ',\n' ' ')
-
-  # Convert the MODS string into an array
-  # shellcheck disable=SC2206
-  MODS=(${MODS})
-
-  for mod in "${MODS[@]}"; do
-    log "Installing Mod ${mod}"
-    odin mod:install "${mod}"
-  done
+  if [ -n "${MODS:=""}" ]; then
+    log "Installing mods from MODS env via Odin"
+    odin mod:install --from-var
+  fi
 fi
 
 
