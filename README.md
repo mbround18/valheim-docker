@@ -7,11 +7,6 @@
   <img src="https://img.shields.io/docker/pulls/mbround18/valheim?style=for-the-badge" alt="Docker Pulls">
 </a>
 
-<!-- Rust Workflow -->
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/rust.yml">
-  <img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/rust.yml?branch=main&label=Rust&style=for-the-badge" alt="Rust Workflow">
-</a>
-
 <!-- Docker Release Workflow -->
 <a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-release.yml">
   <img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/docker-release.yml?label=Docker&style=for-the-badge" alt="Docker Release Workflow">
