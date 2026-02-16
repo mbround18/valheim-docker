@@ -2,13 +2,13 @@
 
 ## Environment Variables
 
-| Variable                  | Default             | Required | Description                                                                                                                                                                                                                                   |
-| ------------------------- | ------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WEBHOOK_URL               | `<nothing>`         | FALSE    | Set this to send status notifications to your webhook or Discord endpoint. [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                           |
-| TITLE                     | `Broadcast`         | FALSE    | Default title used by `odin notify` when no `--title` argument is provided.                                                                                                                                                                   |
-| MESSAGE                   | `Test Notification` | FALSE    | Default message used by `odin notify` when no `--message` argument is provided.                                                                                                                                                               |
-| WEBHOOK_INCLUDE_PUBLIC_IP | `0`                 | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address.                                                                                                                                |
-| PLAYER_EVENT_NOTIFICATIONS | `0`                | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                                                               |
+| Variable                   | Default             | Required | Description                                                                                                                                                                                     |
+| -------------------------- | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WEBHOOK_URL                | `<nothing>`         | FALSE    | Set this to send status notifications to your webhook or Discord endpoint. [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| TITLE                      | `Broadcast`         | FALSE    | Default title used by `odin notify` when no `--title` argument is provided.                                                                                                                     |
+| MESSAGE                    | `Test Notification` | FALSE    | Default message used by `odin notify` when no `--message` argument is provided.                                                                                                                 |
+| WEBHOOK_INCLUDE_PUBLIC_IP  | `0`                 | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address.                                                                                   |
+| PLAYER_EVENT_NOTIFICATIONS | `0`                 | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                 |
 
 ## POST Body Example
 
