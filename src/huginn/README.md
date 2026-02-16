@@ -25,7 +25,7 @@ Huginn is a status server used to check the status of your Valheim server.
 | CONNECT_REMOTE_HOST        | `<unset>`            | FALSE    | Optional host/IP override for `/connect/remote`. If unset, Huginn falls back to `PUBLIC_ADDRESS`, then `ADDRESS`, then Odin public IP resolution.                                  |
 | CONNECT_STEAM_APP_ID       | `892970`             | FALSE    | Steam app id used for connect deeplink generation (`steam://run/<APP_ID>//+connect%20HOST:PORT`).                                                                                  |
 
-NOTE: your server MUST be public (eg. `PUBLIC=1`) in order for Odin+Huginn to collect and report statistics.
+Note: Your server must be public (e.g., `PUBLIC=1`) for Odin+Huginn to collect and report statistics.
 
 ### Manually Launching
 
@@ -84,7 +84,7 @@ huginn &
 
 | Endpoint          | Description                                                                                                                                                                             |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/metrics`        | Provides a Prometheus compatible output of the server status. [Click here to see a guide on how to get a dashboard setup.](https://github.com/mbround18/valheim-docker/discussions/330) |
+| `/metrics`        | Provides Prometheus-compatible server status output. [Guide to setting up a dashboard](https://github.com/mbround18/valheim-docker/discussions/330).                                      |
 | `/status`         | Provides a more traditional JSON output of the server status.                                                                                                                           |
 | `/connect/local`  | Redirect to `steam://run/892970//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                           |
 | `/connect/remote` | Redirect to `steam://run/892970//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                       |

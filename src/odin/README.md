@@ -1,13 +1,13 @@
 # Odin
 
-Odin is a CLI tool utilized for installing, starting, and stopping [Valheim] servers
+Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 
-> [Who is odin?](https://en.wikipedia.org/wiki/Odin)
+> [Who is Odin?](https://en.wikipedia.org/wiki/Odin)
 
 ## Odin Specific Environment Variables
 
-> These are set automatically by Odin;
-> you DO NOT need to set these and only mess with them if you Know what you are doing.
+> These are set automatically by Odin.
+> You usually do not need to set them unless you are intentionally overriding advanced behavior.
 
 | Variable                        | Default                                 | Required | Description                                                                                                                |
 | ------------------------------- | --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |

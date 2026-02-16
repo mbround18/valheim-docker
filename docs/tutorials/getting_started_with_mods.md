@@ -71,7 +71,7 @@ services:
 Once your configuration is set up, start your server by running:
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 > **Note:** Odin automatically detects if you are running with BepInEx and adjusts the environment variables accordingly.

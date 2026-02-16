@@ -76,11 +76,13 @@ setup_environment() {
   export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
   export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
 
-  # Set timezone
-  run_privileged_or_warn ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
-  if ! printf "%s\n" "$TZ" >/etc/timezone 2>/dev/null; then
-    run_privileged_or_warn sh -c "printf '%s\n' '$TZ' > /etc/timezone"
+  # Set timezone (best effort). In rootless mode, /etc may be read-only.
+  if [ -f "/usr/share/zoneinfo/$TZ" ]; then
+    run_privileged_or_warn ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  else
+    log "Timezone '$TZ' not found under /usr/share/zoneinfo; skipping /etc/localtime update"
   fi
+  run_privileged_or_warn sh -c 'printf "%s\n" "$1" > /etc/timezone' sh "$TZ"
 }
 
 # Function to safely shut down the server

@@ -120,7 +120,7 @@ See the full guide: docs/tutorials/getting_started_with_mods.md
 >
 > [Guide to get started](https://github.com/mbround18/valheim-docker/discussions/28)
 >
-> Mod Support! It is supported to launch the server with BepInEx, but as a disclaimer, you take responsibility for debugging why your server won't start. Modding is not supported by the Valheim developers officially yet, which means you WILL run into errors.
+> Mod support is available through BepInEx. You are responsible for debugging mod-related startup issues. Modding is not officially supported by the Valheim developers, so incompatibilities can happen.
 > See [Getting started with mods](./docs/tutorials/getting_started_with_mods.md)
 
 ### Download Locations
@@ -161,10 +161,10 @@ See the full guide: docs/tutorials/getting_started_with_mods.md
 | MODIFIERS                      | ``                                     | FALSE    | Comma-separated array of modifiers. EX: `combat=easy,raids=muchmore`                                                                                                                                                                                                                                                              |
 | SET_KEY                        | ``                                     | FALSE    | Can be any of the following: nobuildcost, playerevents, passivemobs, nomap                                                                                                                                                                                                                                                        |
 | MODS                           | `<nothing>`                            | FALSE    | This is an array of mods separated by comma and a new line. [Examples](./docs/tutorials/getting_started_with_mods.md). Supported files are `zip`, `dll`, and `cfg`.                                                                                                                                                               |
-| WEBHOOK_URL                    | `<nothing>`                            | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                                                                                          |
+| WEBHOOK_URL                    | `<nothing>`                            | FALSE    | Set this to send status notifications to your webhook or Discord endpoint. [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url)                                                                                                                        |
 | WEBHOOK_INCLUDE_PUBLIC_IP      | `0`                                    | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address. NOTE: If your server is behind a NAT using PAT with more than one external IP address (very unlikely on a home network), this could be inaccurate if your NAT doesn't maintain your server to a single external IP. |
 | PLAYER_EVENT_NOTIFICATIONS     | `0`                                    | FALSE    | Optional, if you have a webhook url supplied and turn this to one. It will post when a player joins/leaves the server.                                                                                                                                                                                                            |
-| UPDATE_ON_STARTUP              | `1`                                    | FALSE    | Tries to update the server the container is started.                                                                                                                                                                                                                                                                              |
+| UPDATE_ON_STARTUP              | `1`                                    | FALSE    | Tries to update the server when the container starts.                                                                                                                                                                                                                                                                              |
 | ADDITIONAL_STEAMCMD_ARGS       | ``                                     | FALSE    | Sets optional arguments for install                                                                                                                                                                                                                                                                                               |
 | STEAMCMD_RETRY_ATTEMPTS        | `3`                                    | FALSE    | Number of retry attempts for SteamCMD commands (install/app_info).                                                                                                                                                                                                                                                                |
 | STEAMCMD_RETRY_BASE_DELAY_SECS | `5`                                    | FALSE    | Base delay in seconds for exponential backoff between SteamCMD retries.                                                                                                                                                                                                                                                           |
@@ -183,14 +183,14 @@ See the full guide: docs/tutorials/getting_started_with_mods.md
 
 | Variable | Default               | Required | Description                                                                                                                                                                                                |
 | -------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TZ       | `America/Los_Angeles` | FALSE    | Sets what timezone your container is running on. This is used for timestamps and scheduled jobs. [Click Here for which timezones are valid.](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) |
+| TZ       | `America/Los_Angeles` | FALSE    | Sets the timezone your container uses for timestamps and scheduled jobs. [Valid timezone list](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). |
 
 #### Auto Update
 
 | Variable                       | Default     | Required | Description                                                                                                                                                                                                                                                                     |
 | ------------------------------ | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AUTO_UPDATE                    | `0`         | FALSE    | Set to `1` if you want your container to auto update! This means at the times indicated by `AUTO_UPDATE_SCHEDULE` it will check for server updates. If there is an update then the server will be shut down, updated, and brought back online if the server was running before. |
-| AUTO_UPDATE_SCHEDULE           | `0 1 * * *` | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule to which it will run an auto update via Odin's built-in scheduler. [If you need help figuring out a cron expression click here](https://crontab.guru/#0_1____)                                               |
+| AUTO_UPDATE_SCHEDULE           | `0 1 * * *` | FALSE    | This works in conjunction with `AUTO_UPDATE` and sets the schedule for Odin's built-in auto-update job. [Cron expression helper](https://crontab.guru/#0_1____)                                                                                    |
 | AUTO_UPDATE_PAUSE_WITH_PLAYERS | `0`         | FALSE    | Does not process an update for the server if there are players online.                                                                                                                                                                                                          |
 
 #### Auto Backup
@@ -198,10 +198,10 @@ See the full guide: docs/tutorials/getting_started_with_mods.md
 | Variable                          | Default        | Required | Description                                                                                                                                                                                  |
 | --------------------------------- | -------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | AUTO_BACKUP                       | `0`            | FALSE    | Set to `1` to enable auto backups. Backups are stored under `/home/steam/backups` which means you will have to add a volume mount for this directory.                                        |
-| AUTO_BACKUP_SCHEDULE              | `*/15 * * * *` | FALSE    | Change to set how frequently you would like the server to backup via Odin's built-in scheduler. [If you need help figuring out a cron expression click here](https://crontab.guru/#0_1____). |
+| AUTO_BACKUP_SCHEDULE              | `*/15 * * * *` | FALSE    | Sets how frequently backups run via Odin's built-in scheduler. [Cron expression helper](https://crontab.guru/#0_1____).                                                                        |
 | AUTO_BACKUP_NICE_LEVEL            | `NOT SET`      | FALSE    | [Do NOT set this variable unless you are following this guide here](https://github.com/mbround18/valheim-docker/discussions/532)                                                             |
 | AUTO_BACKUP_REMOVE_OLD            | `1`            | FALSE    | Set to `0` to keep all backups or manually manage them.                                                                                                                                      |
-| AUTO_BACKUP_DAYS_TO_LIVE          | `3`            | FALSE    | This is the number of days you would like to keep backups for. While backups are compressed and generally small it is best to change this nu                                                 |
+| AUTO_BACKUP_DAYS_TO_LIVE          | `3`            | FALSE    | Number of days to keep backups. Backups are compressed and generally small, but adjust this value to fit your storage limits.                                                                  |
 | AUTO_BACKUP_ON_UPDATE             | `0`            | FALSE    | Create a backup on right before updating and starting your server.                                                                                                                           |
 | AUTO_BACKUP_ON_SHUTDOWN           | `0`            | FALSE    | Create a backup on shutdown.                                                                                                                                                                 |
 | AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS | `0`            | FALSE    | Will skip creating a backup if there are no players. `PUBLIC` must be set to `1` for this to work!                                                                                           |
@@ -316,9 +316,9 @@ services:
 
 ### [Odin]
 
-This repo has a CLI tool called [Odin] in it! It is used for managing the server inside the container. If you are looking for instructions for it, click here: [Odin]
+This repo includes a CLI tool called [Odin] for managing the server inside the container.
 
-[Click here to see advanced environment variables for Odin](src/odin/README.md)
+[View advanced Odin environment variables](src/odin/README.md)
 
 ### [Huginn] HTTP Server
 
@@ -345,7 +345,7 @@ This repo has a CLI tool called [Odin] in it! It is used for managing the server
 
 > Note on `ADDRESS`: This can be set to `127.0.0.1:<your query port>` or `<your public IP>:<your query port>` but does not have to be set. If it is set, it will prevent Odin from reaching out to AWS IP service to ask for your public IP address. Keep in mind, your query port is +1 of what you set in the `PORT` env variable for your Valheim server.
 >
-> Another note: Your server MUST be public (e.g., `PUBLIC=1`) for Odin+Huginn to collect and report statistics.
+> Another note: Your server must be public (e.g., `PUBLIC=1`) for Odin+Huginn to collect and report statistics.
 
 ## Feature Information
 
@@ -358,7 +358,7 @@ As of [March 2021](./docs/bepinex.md), the TYPE variable can be used to automati
 This repo can automatically send notifications to Discord via the WEBHOOK_URL variable.
 Only use the documentation link below if you want advanced settings!
 
-[Click Here to view documentation on Webhook Support](./docs/webhooks.md)
+[View webhook support documentation](./docs/webhooks.md)
 
 ## Guides
 
@@ -366,13 +366,13 @@ Only use the documentation link below if you want advanced settings!
 
 This guide covers the rootless model, host permission expectations, and migration steps from older setups.
 
-[Click here to view the rootless design guide.](./docs/tutorials/rootless_design.md)
+[View the rootless design guide](./docs/tutorials/rootless_design.md)
 
 ### [How to Transfer Files](./docs/tutorials/how_to_transfer_files.md)
 
-This is a tutorial of a recommended path to transferring files. This can be done to transfer world files between hosts, transfer BepInEx configs, or even to transfer backups.
+This guide covers a recommended path for transferring files between hosts, including world data, BepInEx configs, and backups.
 
-[Click Here to view the tutorial of how to transfer files.](./docs/tutorials/how_to_transfer_files.md)
+[View the file transfer tutorial](./docs/tutorials/how_to_transfer_files.md)
 
 ### How to Access Your Container in Docker
 
@@ -380,21 +380,21 @@ This is a tutorial of a recommended path to transferring files. This can be done
 docker exec -it $CONTAINER_NAME gosu steam bash
 ```
 
-### How to Restore a backup
+### How to Restore a Backup
 
-[Click this link to see the guide for restoring a backup](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how_to_transfer_files.md)
+[See the guide for restoring a backup](./docs/tutorials/how_to_restore.md)
 
 ## Additional Information
 
 ### Discord Release Notifications
 
-If you would like to have release notifications tied into your Discord server, click here:
+If you want release notifications in your Discord server:
 
 <a href="https://discord.gg/3kTNUZz276">
   <img src="https://img.shields.io/badge/Discord-Release%20Notifications-blue?label=Docker&style=for-the-badge" alt="Discord Banner">
 </a>
 
-**Note**: The Discord is PURELY for release notifications and any + all permissions involving sending chat messages have been disabled.
+**Note**: This Discord is only for release notifications; chat permissions are disabled.
 [Any support for this repository must take place on the Discussions.](https://github.com/mbround18/valheim-docker/discussions)
 
 ### Versions

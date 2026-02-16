@@ -91,7 +91,7 @@ services:
       TYPE: Vanilla
     build:
       context: .
-      dockerfile: ./Dockerfile.valheim
+      dockerfile: ./Dockerfile
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"

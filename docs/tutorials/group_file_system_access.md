@@ -70,8 +70,8 @@ Replace `1000:1000` with the output from `id -u` and `id -g` on your host if you
 7. **Restart your Docker Compose services to apply the changes:**
 
 ```bash
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 ```
 
 This will recreate the container with the new rootless user settings.
