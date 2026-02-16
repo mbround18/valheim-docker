@@ -86,8 +86,8 @@ huginn &
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/metrics`        | Provides a Prometheus compatible output of the server status. [Click here to see a guide on how to get a dashboard setup.](https://github.com/mbround18/valheim-docker/discussions/330) |
 | `/status`         | Provides a more traditional JSON output of the server status.                                                                                                                           |
-| `/connect/local`  | Redirect to `steam://run/892970//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                        |
-| `/connect/remote` | Redirect to `steam://run/892970//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                   |
+| `/connect/local`  | Redirect to `steam://run/892970//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                           |
+| `/connect/remote` | Redirect to `steam://run/892970//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                       |
 | `/health`         | Returns `200` when the server is online, `503` when offline.                                                                                                                            |
 | `/readiness`      | Kubernetes readiness probe; `200` only if the server is online.                                                                                                                         |
 | `/liveness`       | Kubernetes liveness probe; returns `200` when Huginn is alive.                                                                                                                          |
