@@ -11,6 +11,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       - TYPE=BepInEx
       - MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/ValheimPlus.dll

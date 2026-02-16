@@ -31,6 +31,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       # The TYPE variable sets the server type.
       - TYPE=BepInEx
@@ -53,6 +54,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       # The TYPE variable sets the server type.
       - TYPE=BepInEx
@@ -105,6 +107,7 @@ Example:
 ```yaml
 services:
   valheim:
+    user: "1000:1000"
     environment:
       - TYPE=BepInEx
       - |

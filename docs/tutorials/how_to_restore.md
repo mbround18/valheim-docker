@@ -79,6 +79,7 @@ Here's the `docker-compose.yml` file for reference:
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       PORT: 2456
       NAME: "Created With Valheim Docker"

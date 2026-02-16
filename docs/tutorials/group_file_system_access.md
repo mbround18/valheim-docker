@@ -31,7 +31,21 @@ sudo chown -R :valheim ./saves ./server ./backups
 sudo chmod -R 775 ./saves ./server ./backups
 ```
 
-6. **Update your `docker-compose.yml` file to set the PGID:**
+### 🛡️ Security: Migration to Rootless Design
+
+To follow security best practices, this image has been moved to a **rootless design**. This means the container no longer runs as root by default. While this is a big win for security, it might require a quick tweak to your configuration to handle volume permissions correctly.
+
+For the most reliable experience, we recommend explicitly setting the **user directive** to match your host user (usually `1000:1000`). Here is how to implement that across different platforms:
+
+| Platform           | Implementation                                     |
+| :----------------- | :------------------------------------------------- |
+| **Docker Compose** | Add `user: "1000:1000"` to your service            |
+| **Docker Run**     | Use the `--user 1000:1000` flag                    |
+| **Kubernetes**     | Define `runAsUser: 1000` in your `securityContext` |
+
+> **Quick Tip:** If you aren't sure what your IDs are, run `id -u` and `id -g` on your host machine to find the correct numbers to use!
+
+6. **Update your `docker-compose.yml` file to set the `user` directive:**
 
 Open your `docker-compose.yml` file in a text editor and modify it as follows:
 
@@ -41,7 +55,7 @@ services:
   valheim:
     image: mbround18/valheim:3
     container_name: valheim
-    user: "111:1001" # Replace with the actual GID from step 4
+    user: "1000:1000" # Replace with your host user/group IDs
     volumes:
       - ./saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./server:/home/steam/valheim
@@ -51,7 +65,7 @@ services:
     restart: unless-stopped
 ```
 
-Replace `1001` with the actual GID you found in step 4. You can also dynamically set the PUID using the `id -u` command to get your current user ID.
+Replace `1000:1000` with the output from `id -u` and `id -g` on your host if your IDs are different.
 
 7. **Restart your Docker Compose services to apply the changes:**
 
@@ -60,4 +74,4 @@ docker-compose down
 docker-compose up -d
 ```
 
-This will recreate the container with the new PGID settings.
+This will recreate the container with the new rootless user settings.

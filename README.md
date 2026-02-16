@@ -33,6 +33,7 @@
       - [Auto Update](#auto-update)
       - [Auto Backup](#auto-backup)
       - [Scheduled Restarts](#scheduled-restarts)
+    - [Security: Migration to Rootless Design](#security-migration-to-rootless-design)
   - [Docker Compose](#docker-compose)
     - [Simple](#simple)
     - [Everything but the Kitchen Sink](#everything-but-the-kitchen-sink)
@@ -43,6 +44,7 @@
     - [BepInEx Support](#bepinex-support)
     - [Webhook Support](#webhook-support)
   - [Guides](#guides)
+    - [Rootless Design Guide](#rootless-design-guide)
     - [How to Transfer Files](#how-to-transfer-files)
   - [Additional Information](#additional-information)
     - [Discord Release Notifications](#discord-release-notifications)
@@ -92,6 +94,7 @@ Example (compose):
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       - TYPE=BepInEx
       - |
@@ -222,30 +225,23 @@ This state is included in `odin status --json` and Huginn `/status` as `schedule
 System cron is no longer used inside the container.
 If you previously relied on container cron files, keep using the same `AUTO_*_SCHEDULE` and `SCHEDULED_RESTART_SCHEDULE` variables; they now run through Odin's built-in scheduler.
 
-### Notes on Rootless Design
+<a id="security-migration-to-rootless-design"></a>
 
-This Docker image is designed to run as a rootless container by default, using the user `111:1000`. If you need to run the container as a specific user, you can set the `--user` flag in the Docker CLI or configure the `user` field in your Docker Compose file.
+### 🛡️ Security: Migration to Rootless Design
 
-#### Example Docker CLI Usage
+To follow security best practices, this image has been moved to a **rootless design**. This means the container no longer runs as root by default. While this is a big win for security, it might require a quick tweak to your configuration to handle volume permissions correctly.
 
-```bash
-docker run --user 1001:1001 mbround18/valheim:3
-```
+For the most reliable experience, we recommend explicitly setting the **user directive** to match your host user (usually `1000:1000`). Here is how to implement that across different platforms:
 
-#### Example Docker Compose Configuration
+| Platform           | Implementation                                     |
+| :----------------- | :------------------------------------------------- |
+| **Docker Compose** | Add `user: "1000:1000"` to your service            |
+| **Docker Run**     | Use the `--user 1000:1000` flag                    |
+| **Kubernetes**     | Define `runAsUser: 1000` in your `securityContext` |
 
-```yaml
-version: "3"
-services:
-  valheim:
-    image: mbround18/valheim:3
-    user: "1001:1001"
-    ...
-```
+> **Quick Tip:** If you aren't sure what your IDs are, run `id -u` and `id -g` on your host machine to find the correct numbers to use!
 
-### Removed PUID and GUID
-
-References to `PUID` and `GUID` have been removed. Use the `--user` flag or `user` field as shown above to specify a user. If you, are migrating on the host you will have to stop the container when upgrading and check the folder permissions. Changing them to 1000:1000 before relaunching.
+For a complete walkthrough, see [Rootless Design Guide](./docs/tutorials/rootless_design.md).
 
 ## Docker Compose
 
@@ -261,6 +257,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     stop_signal: SIGINT
     ports:
       - "2456:2456/udp"
@@ -285,6 +282,7 @@ version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
+    user: "1000:1000"
     stop_signal: SIGINT
     ports:
       - "2456:2456/udp"
@@ -363,6 +361,12 @@ Only use the documentation link below if you want advanced settings!
 [Click Here to view documentation on Webhook Support](./docs/webhooks.md)
 
 ## Guides
+
+### [Rootless Design Guide](./docs/tutorials/rootless_design.md)
+
+This guide covers the rootless model, host permission expectations, and migration steps from older setups.
+
+[Click here to view the rootless design guide.](./docs/tutorials/rootless_design.md)
 
 ### [How to Transfer Files](./docs/tutorials/how_to_transfer_files.md)
 

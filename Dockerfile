@@ -107,7 +107,6 @@ ENV PORT="2456" \
     ENABLE_CROSSPLAY="0" \
     PRESET="" \
     MODIFIERS="" \
-    SET_KEY="" \
     MODS="" \
     UPDATE_ON_STARTUP="1" \
     AUTO_UPDATE="0" \
