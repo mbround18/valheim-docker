@@ -10,16 +10,55 @@ export MODS_LOCATION=${MODS_LOCATION:-"${GAME_LOCATION}/BepInEx/plugins"}
 export BACKUP_LOCATION=${BACKUP_LOCATION:-"${GAME_LOCATION}/backups"}
 export LOG_LOCATION="${GAME_LOCATION}/logs"
 
- # Logging via odin
+# Logging via odin
 log() {
   odin log --message "$*"
 }
 
+# Return a best-effort runtime user label, even for numeric-only UIDs.
+runtime_user_label() {
+  if id -un >/dev/null 2>&1; then
+    id -un
+  else
+    printf "uid:%s" "$(id -u)"
+  fi
+}
+
+# Run a command with elevated privileges when possible.
+# If elevation is not available (common in explicit rootless user mode),
+# return non-zero and let the caller decide whether to skip.
+run_privileged() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+    return $?
+  fi
+
+  if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+    sudo "$@"
+    return $?
+  fi
+
+  return 1
+}
+
+# Best-effort wrapper for privileged commands.
+run_privileged_or_warn() {
+  if ! run_privileged "$@"; then
+    log "Skipping privileged command (no sudo/root): $*"
+  fi
+}
+
 # Function to check and log the current user and steam user's ID and group ID
 check_user_and_group() {
-  whoami
-  id -u steam
-  id -g steam
+  log "Runtime user: $(runtime_user_label)"
+  log "Runtime uid: $(id -u)"
+  log "Runtime gid: $(id -g)"
+  if id -u steam >/dev/null 2>&1; then
+    log "Steam uid: $(id -u steam)"
+    log "Steam gid: $(id -g steam)"
+  else
+    log "Steam user entry not found in /etc/passwd"
+  fi
 }
 
 # Function to set up the environment, including sourcing utility scripts and setting environment variables
@@ -38,8 +77,10 @@ setup_environment() {
   export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
 
   # Set timezone
-  sudo ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
-  echo "$TZ" | sudo tee -a /etc/timezone
+  run_privileged_or_warn ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  if ! printf "%s\n" "$TZ" >/etc/timezone 2>/dev/null; then
+    run_privileged_or_warn sh -c "printf '%s\n' '$TZ' > /etc/timezone"
+  fi
 }
 
 # Function to safely shut down the server
@@ -57,29 +98,41 @@ create_dir_with_ownership() {
   local dir=$3
 
   mkdir -p "${dir}"
-  sudo chown -R "${user}:${group}" "${dir}"
-  sudo chmod -R ug+rw "${dir}"
+  run_privileged_or_warn chown -R "${user}:${group}" "${dir}"
+  run_privileged_or_warn chmod -R ug+rw "${dir}"
 }
 
 # Function to set up the filesystem, ensuring correct ownership and permissions
 setup_filesystem() {
   log "Setting up file systems"
 
-  sudo chown -R "$PUID:$PGID" "$HOME" /home/steam/.*
-  sudo chmod -R ug+rwx "$HOME"
+  run_privileged_or_warn chown -R "$PUID:$PGID" "$HOME"
+  run_privileged_or_warn chmod -R ug+rwx "$HOME"
   # Ensure /tmp remains writable for steamcmd/work files even when host-mounted.
-  sudo mkdir -p /tmp
-  sudo chown root:root /tmp
-  sudo chmod 1777 /tmp
+  run_privileged_or_warn mkdir -p /tmp
+  run_privileged_or_warn chown root:root /tmp
+  run_privileged_or_warn chmod 1777 /tmp
 
   create_dir_with_ownership "$PUID" "$PGID" "$SAVE_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$MODS_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$BACKUP_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION/logs"
-  mkdir -p /home/steam/scripts
+  mkdir -p /home/steam/scripts || log "Could not create /home/steam/scripts without elevated permissions"
 
-  sudo usermod -d /home/steam steam
+  run_privileged_or_warn usermod -d /home/steam steam
+}
+
+# Validate that key runtime paths are writable for the current user.
+validate_runtime_paths() {
+  local path
+  for path in "$HOME" "$GAME_LOCATION" "$SAVE_LOCATION" "$MODS_LOCATION" "$BACKUP_LOCATION" /tmp; do
+    mkdir -p "$path" 2>/dev/null || true
+    if [ ! -w "$path" ]; then
+      log "Path is not writable by runtime user: $path"
+      log "If you run with a custom user, ensure mounted volumes and /home/steam are writable by uid:gid $(id -u):$(id -g)"
+    fi
+  done
 }
 
 # Function to check if the system has sufficient memory
@@ -100,6 +153,10 @@ log "Initializing your container..."
 # Check current user and steam user details
 check_user_and_group
 
+# Default ownership targets to current runtime UID/GID when not explicitly set.
+export PUID="${PUID:-$(id -u)}"
+export PGID="${PGID:-$(id -g)}"
+
 # Set up environment
 setup_environment
 
@@ -108,6 +165,9 @@ check_memory
 
 # Set up the filesystem
 setup_filesystem
+
+# Validate runtime write access in rootless mode
+validate_runtime_paths
 
 # Navigate to the Valheim game directory
 log "Navigating to steam home..."

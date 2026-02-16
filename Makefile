@@ -1,6 +1,6 @@
 # Makefile
 
-.PHONY: help build setup .member_format .member_clippy docker-build docker-up docker-down docker-push start start-dev build-dev access access-admin release-odin release-http-server release test docker-dev
+.PHONY: help build setup .member_format .member_clippy docker-build docker-up docker-down docker-push start start-dev build-dev access access-admin release-odin release-http-server release test docker-dev smoke-rootless
 
 
 help: ## Show this help and available make targets
@@ -42,6 +42,9 @@ docker-push: setup ## Push docker images using docker-compose.dev.yml
 
 docker-dev: setup ## Build and start docker services (dev)
 	docker compose -f ./docker-compose.dev.yml up --build
+
+smoke-rootless: setup ## Smoke test container startup as default user and explicit 1000:1000
+	@bash ./.github/scripts/smoke-rootless-users.sh
 
 test: ## Run Rust tests (cargo test)
 	cargo test

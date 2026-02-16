@@ -7,6 +7,15 @@ set -e
 log() { odin log --message "$*"; }
 log_debug() { odin log --level debug --message "$*"; }
 
+# Return a best-effort runtime user label, even for numeric-only UIDs.
+runtime_user_label() {
+  if id -un >/dev/null 2>&1; then
+    id -un
+  else
+    printf "uid:%s" "$(id -u)"
+  fi
+}
+
 # Function to display a deprecation notice
 deprecation_notice() {
   log "-------------------------------------------------------------------------"
@@ -52,9 +61,11 @@ install_bepinex() {
 # Navigate to the Valheim directory or exit if it fails
 cd /home/steam/valheim
 
-# Set default values for Steam user and group IDs if not provided
-STEAM_UID=${PUID:=1000}
-STEAM_GID=${PGID:=1000}
+# Default to runtime UID/GID when env vars are not explicitly set
+export PUID="${PUID:-$(id -u)}"
+export PGID="${PGID:-$(id -g)}"
+STEAM_UID="${PUID}"
+STEAM_GID="${PGID}"
 
 # Source utility scripts if they exist
 [ -f "/home/steam/scripts/utils.sh" ] && source "/home/steam/scripts/utils.sh"
@@ -108,9 +119,9 @@ export SteamAppId=${APPID:-896660}
 # Setting up server
 log "Running Install..."
 log_debug "Current Directory: $(pwd)"
-log_debug "Current User: $(whoami)"
+log_debug "Current User: $(runtime_user_label)"
 log_debug "Current UID: ${UID}"
-log_debug "Current GID: ${PGID}"
+log_debug "Current GID: $(id -g)"
 log_debug "Home Directory: ${HOME}"
 
 # Install or update the server if necessary
