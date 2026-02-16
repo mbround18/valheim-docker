@@ -3,6 +3,7 @@ pub mod environment;
 pub mod fetch_public_ip_address;
 pub mod fs;
 pub mod parse_truthy;
+pub mod scheduler_state;
 pub mod steamcmd_args;
 
 pub use fetch_public_ip_address::fetch_public_address;

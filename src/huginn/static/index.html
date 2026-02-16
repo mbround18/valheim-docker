@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Valheim Server Dashboard</title>
+
+  <!-- 1. Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- 2. Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Lato:wght@400;700&display=swap"
+    rel="stylesheet">
+
+  <!-- 3. React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- 4. Babel (to compile JSX in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      background-color: #111214;
+      color: #e0e0e0;
+      font-family: 'Lato', sans-serif;
+    }
+
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+
+    .font-mono {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #1b1e23;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 3px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #dca259;
+    }
+
+    /* Animation for loading */
+    @keyframes pulse-gold {
+
+      0%,
+      100% {
+        opacity: 1;
+        text-shadow: 0 0 10px #dca259;
+      }
+
+      50% {
+        opacity: .5;
+        text-shadow: none;
+      }
+    }
+
+    .animate-pulse-gold {
+      animation: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* --- ODIN FOOTER STYLES --- */
+    .odin-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #0b0c0e;
+      border-top: 2px solid #dca259;
+      padding: 15px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 50;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (min-width: 768px) {
+      .odin-footer {
+        flex-direction: row;
+        gap: 30px;
+        padding: 10px 0;
+      }
+    }
+
+    .odin-btn {
+      display: inline-block;
+      font-family: 'Cinzel', serif;
+      color: #dca259;
+      font-size: 16px;
+      text-decoration: none;
+      border: 2px solid #dca259;
+      padding: 8px 25px;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: rgba(0, 0, 0, 0.3);
+      font-weight: 700;
+    }
+
+    .odin-btn:hover {
+      background-color: #dca259;
+      color: #111214;
+      box-shadow: 0 0 20px rgba(220, 162, 89, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .odin-text {
+      color: #8a8f96;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .odin-text strong {
+      color: #e0e0e0;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="root"></div>
+
+  <!-- 5. Application Code -->
+  <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Inline SVG components to avoid bundler dependency) ---
+        const IconBase = ({ d, className = "w-6 h-6" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {d}
+            </svg>
+        );
+
+        const Icons = {
+            Users: (props) => <IconBase {...props} d={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>} />,
+            Server: (props) => <IconBase {...props} d={<><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></>} />,
+            Activity: (props) => <IconBase {...props} d={<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>} />,
+            Terminal: (props) => <IconBase {...props} d={<><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></>} />,
+            MapIcon: (props) => <IconBase {...props} d={<><polygon points="3 6 9 3 15 6 21 3 21 21 15 18 9 21 3 18 3 6"/><line x1="9" x2="9" y1="3" y2="21"/><line x1="15" x2="15" y1="6" y2="21"/></>} />,
+            HardDrive: (props) => <IconBase {...props} d={<><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></>} />,
+            Clock: (props) => <IconBase {...props} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />,
+            ShieldCheck: (props) => <IconBase {...props} d={<><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></>} />,
+            Cpu: (props) => <IconBase {...props} d={<><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></>} />,
+            RefreshCw: (props) => <IconBase {...props} d={<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></>} />,
+            ExternalLink: (props) => <IconBase {...props} d={<><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></>} />,
+            Wifi: (props) => <IconBase {...props} d={<><path d="M12 20h.01"/><path d="M2 8.82a15 15 0 0 1 20 0"/><path d="M5 12.859a10 10 0 0 1 14 0"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/></>} />,
+            WifiOff: (props) => <IconBase {...props} d={<><line x1="2" x2="22" y1="2" y2="22"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.175-2.658"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="M12 20h.01"/></>} />,
+        };
+
+        // --- MOCK DATA ---
+        const generateMockData = () => ({
+            status: {
+                name: "Valhalla Rising [10x Loot]",
+                version: "0.217.22",
+                map: "Dedicated",
+                online: true,
+                players: 4,
+                max_players: 10,
+                bepinex: {
+                    enabled: true,
+                    mods: [
+                        { name: "ValheimPlus", version: "9.9.11" },
+                        { name: "EpicLoot", version: "0.9.15" }
+                    ]
+                },
+                jobs: [
+                    { name: "auto-backup", schedule: "0 */6 * * *", enabled: true },
+                    { name: "auto-update", schedule: "0 4 * * *", enabled: true }
+                ],
+                scheduler_state: {
+                    updated_at: new Date().toISOString(),
+                    jobs: [
+                        { 
+                            name: "auto-backup", 
+                            last_started_at: "2023-10-27T10:00:00Z", 
+                            last_finished_at: "2023-10-27T10:00:45Z", 
+                            last_status: "success", 
+                            last_message: "Backup created: world_20231027.db",
+                            run_count: 142,
+                            success_count: 140,
+                            failure_count: 2
+                        },
+                        { 
+                            name: "auto-update", 
+                            last_started_at: "2023-10-27T04:00:00Z", 
+                            last_finished_at: "2023-10-27T04:02:10Z", 
+                            last_status: "success", 
+                            last_message: "No updates found",
+                            run_count: 24,
+                            success_count: 24,
+                            failure_count: 0
+                        }
+                    ]
+                }
+            },
+            players: {
+                online: true,
+                players: 4,
+                max_players: 10,
+                names: ["Ragnar", "Lagertha", "Bjorn", "Floki"]
+            },
+            mods: {
+                count: 15,
+                installed_mods: [
+                    { name: "ValheimPlus", version: "9.9.11" },
+                    { name: "EpicLoot", version: "0.9.15" },
+                    { name: "CreatureLevelAndLootControl", version: "4.5.2" },
+                    { name: "BetterUI", version: "2.4.0" },
+                    { name: "EquipmentAndQuickSlots", version: "2.1.0" },
+                    { name: "PlantEverything", version: "1.13.0" },
+                    { name: "FarmGrid", version: "0.2.0" },
+                    { name: "HookGenPatcher", version: "0.0.3" },
+                    { name: "Jotunn", version: "2.12.0" }
+                ]
+            },
+            metadata: {
+                service: {
+                    name: "huginn",
+                    version: "1.0.0"
+                },
+                odin: {
+                    jobs: {
+                        auto_update_enabled: true,
+                        auto_update_schedule: "*/15 * * * *",
+                        auto_backup_enabled: true,
+                        auto_backup_schedule: "*/15 * * * *",
+                        scheduled_restart_enabled: true,
+                        scheduled_restart_schedule: "*/15 * * * *"
+                    }
+                }
+            }
+        });
+
+        // --- COMPONENTS ---
+
+        const Card = ({ children, title, icon: Icon, className = "" }) => (
+            <div className={`bg-[#1b1e23] border border-[#333] rounded-lg shadow-xl overflow-hidden flex flex-col ${className}`}>
+                {(title || Icon) && (
+                <div className="bg-[#15171a] border-b border-[#333] p-4 flex items-center gap-2">
+                    {Icon && <Icon className="w-5 h-5 text-[#dca259]" />}
+                    {title && <h3 className="font-cinzel font-bold text-[#dca259] text-lg tracking-wide">{title}</h3>}
+                </div>
+                )}
+                <div className="p-4 flex-1">
+                {children}
+                </div>
+            </div>
+        );
+
+        const StatPill = ({ label, value, icon: Icon, color = "text-gray-300" }) => (
+            <div className="flex flex-col">
+                <span className="text-[#8a8f96] text-xs uppercase tracking-widest mb-1 font-bold">{label}</span>
+                <div className="flex items-center gap-2">
+                {Icon && <Icon className={`w-4 h-4 ${color}`} />}
+                <span className={`text-xl font-bold font-mono ${color}`}>{value}</span>
+                </div>
+            </div>
+        );
+
+        const JobRow = ({ job }) => {
+            const status = (job.last_status || 'unknown').toLowerCase();
+            const isSuccess = status === 'success';
+            const isFailure = status === 'failure';
+            const statusColor = isSuccess
+                ? 'text-[#3a5f41]'
+                : isFailure
+                    ? 'text-[#8b0000]'
+                    : 'text-[#8a8f96]';
+            const statusLabel = status.toUpperCase();
+
+            return (
+                <div className="border-b border-[#333] last:border-0 py-3 flex items-start justify-between">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-[#dca259]">{job.name}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded bg-black/30 border border-white/10 ${statusColor}`}>
+                        {statusLabel}
+                    </span>
+                    </div>
+                    <div className="text-xs text-[#8a8f96] font-mono">
+                    Last Run: {job.last_finished_at ? new Date(job.last_finished_at).toLocaleString() : 'Never'}
+                    </div>
+                    {job.last_message && (
+                    <div className="text-xs text-[#666] mt-1 italic truncate max-w-[200px] sm:max-w-xs">
+                        "{job.last_message}"
+                    </div>
+                    )}
+                </div>
+                <div className="text-right hidden sm:block">
+                    <div className="text-xs text-[#8a8f96]">Runs</div>
+                    <div className="font-mono text-white">
+                    <span className="text-[#3a5f41]">{job.success_count}</span> / <span className="text-[#8b0000]">{job.failure_count}</span>
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const getNextScheduledTime = (cronExpression) => {
+            try {
+                const parts = cronExpression.trim().split(/\s+/);
+                if (parts.length !== 5) {
+                    return 'Invalid schedule';
+                }
+
+                const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+                const now = new Date();
+                let next = new Date(now);
+                next.setSeconds(0);
+                next.setMilliseconds(0);
+                next.setMinutes(next.getMinutes() + 1);
+
+                // Simple cron parser for common patterns
+                const parseField = (field, min, max) => {
+                    if (field === '*') {
+                        return Array.from({length: max - min + 1}, (_, i) => i + min);
+                    }
+                    if (field.startsWith('*/')) {
+                        const step = parseInt(field.substring(2));
+                        const vals = [];
+                        for (let i = min; i <= max; i += step) {
+                            vals.push(i);
+                        }
+                        return vals;
+                    }
+                    if (field.includes(',')) {
+                        return field.split(',').map(f => parseInt(f.trim())).filter(n => !isNaN(n));
+                    }
+                    if (field.includes('-')) {
+                        const [start, end] = field.split('-').map(s => parseInt(s.trim()));
+                        return Array.from({length: end - start + 1}, (_, i) => i + start);
+                    }
+                    return [parseInt(field)];
+                };
+
+                const minuteVals = parseField(minute, 0, 59);
+                const hourVals = parseField(hour, 0, 23);
+                const dayVals = parseField(dayOfMonth, 1, 31);
+
+                // Find next occurrence
+                for (let i = 0; i < 365 * 24 * 60; i++) {
+                    const m = next.getMinutes();
+                    const h = next.getHours();
+                    const d = next.getDate();
+
+                    if (minuteVals.includes(m) && hourVals.includes(h) && dayVals.includes(d)) {
+                        return next.toLocaleString();
+                    }
+                    next.setMinutes(next.getMinutes() + 1);
+                }
+                return 'Schedule unavailable';
+            } catch (error) {
+                return 'Invalid schedule';
+            }
+        };
+
+        const ConfigJobRow = ({ name, enabled, schedule }) => {
+            const nextRun = enabled ? getNextScheduledTime(schedule) : 'Disabled';
+            
+            return (
+            <div className="border-b border-[#333] last:border-0 py-3 flex items-center justify-between">
+            <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                <span className="font-bold text-[#dca259] capitalize">{name.replace(/_/g, ' ')}</span>
+                <span className={`text-xs px-2 py-0.5 rounded font-bold ${enabled ? 'bg-[#3a5f41] text-[#7ec47f]' : 'bg-[#333] text-[#666]'}`}>
+                    {enabled ? 'ENABLED' : 'DISABLED'}
+                </span>
+                </div>
+                <div className="text-xs text-[#8a8f96] font-mono mb-1">{schedule}</div>
+                <div className="text-xs text-[#dca259]">Next: {nextRun}</div>
+            </div>
+            </div>
+            );
+        };
+
+        // --- MAIN APP COMPONENT ---
+
+        function App() {
+            const [data, setData] = useState(null);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [isMockMode, setIsMockMode] = useState(false);
+
+            const fetchData = async () => {
+                setLoading(true);
+                try {
+                // DYNAMIC CHECK: Try to resolve openapi.json
+                let isLive = false;
+                try {
+                    const probe = await fetch('/openapi.json');
+                    isLive = probe.ok;
+                } catch (e) {
+                    console.log("API not reachable, switching to mock mode.");
+                    isLive = false;
+                }
+
+                if (!isLive) {
+                    setIsMockMode(true);
+                    // Simulate network delay for realism
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    setData(generateMockData());
+                } else {
+                    setIsMockMode(false);
+                    // Fetch from real endpoints defined in OpenAPI
+                    const [statusRes, playersRes, modsRes, metadataRes] = await Promise.all([
+                    fetch('/status'),
+                    fetch('/players'),
+                    fetch('/mods'),
+                    fetch('/metadata')
+                    ]);
+
+                    if (!statusRes.ok || !playersRes.ok || !modsRes.ok || !metadataRes.ok) {
+                    throw new Error("Failed to fetch specific endpoints"); 
+                    }
+
+                    const status = await statusRes.json();
+                    const players = await playersRes.json();
+                    const mods = await modsRes.json();
+                    const metadata = await metadataRes.json();
+
+                    setData({ status, players, mods, metadata });
+                }
+                setError(null);
+                } catch (err) {
+                console.error(err);
+                if (!data) {
+                    setIsMockMode(true);
+                    setData(generateMockData());
+                }
+                } finally {
+                setLoading(false);
+                }
+            };
+
+            useEffect(() => {
+                fetchData();
+                const interval = setInterval(fetchData, 30000); // Poll every 30s
+                return () => clearInterval(interval);
+            }, []);
+
+            if (loading && !data) {
+                return (
+                <div className="min-h-screen bg-[#111214] flex items-center justify-center text-[#dca259] font-cinzel text-2xl animate-pulse-gold">
+                    Summoning Server Data...
+                </div>
+                );
+            }
+
+            const status = data?.status || {};
+            const players = data?.players || {};
+            const mods = data?.mods || {};
+            const metadata = data?.metadata || {};
+            const runtimeJobs = status.scheduler_state?.jobs || [];
+            const schedulerJobs = runtimeJobs.length > 0
+                ? runtimeJobs
+                : (status.jobs || []).map((job) => ({
+                    name: job.name,
+                    last_status: job.enabled ? 'configured' : 'disabled',
+                    last_finished_at: null,
+                    last_message: `Schedule: ${job.schedule || 'n/a'}`,
+                    success_count: 0,
+                    failure_count: 0
+                }));
+
+            return (
+                // Added extra bottom padding (pb-48) so the fixed footer doesn't cover content
+                <div className="min-h-screen bg-[#111214] text-[#e0e0e0] pb-48">
+                    
+                    {/* HEADER */}
+                    <div className="bg-[#0b0c0e] border-b-2 border-[#a67c45] shadow-2xl">
+                        <div className="max-w-7xl mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full shadow-[0_0_10px_currentColor] ${status.online ? 'text-[#3a5f41] bg-[#3a5f41]' : 'text-[#8b0000] bg-[#8b0000]'}`} />
+                            <h1 className="text-2xl md:text-3xl font-cinzel text-[#dca259] tracking-widest">
+                            VALHEIM <span className="text-[#8a8f96]">DASHBOARD</span>
+                            </h1>
+                        </div>
+                        
+                        <div className="flex items-center gap-6">
+                            {/* Live/Mock Indicator */}
+                            <div className={`flex items-center gap-2 px-3 py-1 rounded border ${isMockMode ? 'border-yellow-600 bg-yellow-900/20 text-yellow-500' : 'border-green-600 bg-green-900/20 text-green-500'}`}>
+                            {isMockMode ? <Icons.WifiOff className="w-4 h-4" /> : <Icons.Wifi className="w-4 h-4" />}
+                            <span className="text-xs font-bold tracking-wider">{isMockMode ? 'MOCK DATA' : 'LIVE DATA'}</span>
+                            </div>
+
+                            <div className="flex items-center gap-4 text-sm text-[#8a8f96] font-mono">
+                            <span className="hidden sm:inline">UPDATED: {new Date().toLocaleTimeString()}</span>
+                            <button onClick={fetchData} className="p-2 hover:text-[#dca259] transition-colors" title="Refresh">
+                                <Icons.RefreshCw className="w-5 h-5" />
+                            </button>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                        {/* HERO STATUS CARD */}
+                        <div className="lg:col-span-8">
+                        <Card className="h-full bg-gradient-to-br from-[#1b1e23] to-[#111214] border-[#dca259]">
+                            <div className="flex flex-col h-full justify-between p-2">
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                <h2 className="text-3xl font-cinzel text-white mb-2">{status.name || "Unknown Server"}</h2>
+                                <div className="flex items-center gap-2 text-[#dca259]">
+                                    <Icons.Server className="w-4 h-4" />
+                                    <span className="font-mono text-sm">v{status.version || "?.?.?"}</span>
+                                </div>
+                                </div>
+                                {status.online && !isMockMode && (
+                                <a 
+                                    href="/connect/local" 
+                                    className="group flex items-center gap-2 px-6 py-3 bg-[#a67c45]/20 border border-[#dca259] hover:bg-[#dca259] hover:text-black transition-all duration-300 rounded-sm font-cinzel font-bold"
+                                >
+                                    <span>JOIN</span>
+                                    <Icons.ExternalLink className="w-4 h-4" />
+                                </a>
+                                )}
+                                {isMockMode && (
+                                <button 
+                                    disabled
+                                    className="group flex items-center gap-2 px-6 py-3 bg-gray-800 border border-gray-600 text-gray-400 cursor-not-allowed rounded-sm font-cinzel font-bold"
+                                >
+                                    <span>OFFLINE</span>
+                                </button>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-auto">
+                                <StatPill label="Map" value={status.map || "Unknown"} icon={Icons.MapIcon} />
+                                <StatPill label="Players" value={`${players.players || 0}/${players.max_players || 0}`} icon={Icons.Users} />
+                                <StatPill label="Uptime" value={status.online ? "Active" : "Down"} icon={Icons.Clock} color={status.online ? "text-[#3a5f41]" : "text-[#8b0000]"} />
+                                <StatPill label="Mods" value={mods.count || 0} icon={Icons.Cpu} />
+                            </div>
+                            </div>
+                        </Card>
+                        </div>
+
+                        {/* PLAYER ROSTER */}
+                        <div className="lg:col-span-4">
+                        <Card title="Vikings Online" icon={Icons.Users} className="h-full min-h-[300px]">
+                            {players.names && players.names.length > 0 ? (
+                            <ul className="space-y-2">
+                                {players.names.map((name, i) => (
+                                <li key={i} className="flex items-center gap-3 p-2 rounded hover:bg-white/5 transition-colors">
+                                    <div className="w-8 h-8 rounded bg-[#dca259] flex items-center justify-center text-black font-bold font-cinzel">
+                                    {name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="font-medium tracking-wide">{name}</span>
+                                </li>
+                                ))}
+                            </ul>
+                            ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-[#8a8f96] py-8">
+                                <Icons.Users className="w-12 h-12 mb-2 opacity-20" />
+                                <p>The Halls are Empty</p>
+                            </div>
+                            )}
+                        </Card>
+                        </div>
+
+                        {/* JOB SCHEDULER */}
+                        <div className="lg:col-span-6">
+                        <Card title="Job Scheduler" icon={Icons.Terminal}>
+                            {schedulerJobs.length > 0 ? (
+                            <div className="flex flex-col">
+                                {schedulerJobs.map((job, i) => (
+                                <JobRow key={i} job={job} />
+                                ))}
+                            </div>
+                            ) : (
+                            <div className="text-[#8a8f96] text-center py-8">No jobs scheduled</div>
+                            )}
+                        </Card>
+                        </div>
+
+                        {/* SCHEDULED JOBS CONFIGURATION */}
+                        <div className="lg:col-span-6">
+                        <Card title="Scheduled Jobs" icon={Icons.Clock}>
+                            {metadata.odin && metadata.odin.jobs ? (
+                            <div className="flex flex-col">
+                                <ConfigJobRow 
+                                name="auto_update" 
+                                enabled={metadata.odin.jobs.auto_update_enabled} 
+                                schedule={metadata.odin.jobs.auto_update_schedule}
+                                />
+                                <ConfigJobRow 
+                                name="auto_backup" 
+                                enabled={metadata.odin.jobs.auto_backup_enabled} 
+                                schedule={metadata.odin.jobs.auto_backup_schedule}
+                                />
+                                <ConfigJobRow 
+                                name="scheduled_restart" 
+                                enabled={metadata.odin.jobs.scheduled_restart_enabled} 
+                                schedule={metadata.odin.jobs.scheduled_restart_schedule}
+                                />
+                            </div>
+                            ) : (
+                            <div className="text-[#8a8f96] text-center py-8">Job configuration unavailable</div>
+                            )}
+                        </Card>
+                        </div>
+
+                        {/* MOD LOCKER */}
+                        <div className="lg:col-span-6">
+                        <Card title="Mod Locker" icon={Icons.HardDrive}>
+                            {mods.installed_mods && mods.installed_mods.length > 0 ? (
+                            <div className="max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                                <table className="w-full text-left border-collapse">
+                                <thead className="text-xs text-[#8a8f96] uppercase border-b border-[#333]">
+                                    <tr>
+                                    <th className="py-2">Name</th>
+                                    <th className="py-2 text-right">Version</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="font-mono text-sm">
+                                    {mods.installed_mods.map((mod, i) => (
+                                    <tr key={i} className="border-b border-[#333] last:border-0 hover:bg-white/5">
+                                        <td className="py-2 text-[#e0e0e0]">{mod.name}</td>
+                                        <td className="py-2 text-right text-[#dca259]">{mod.version}</td>
+                                    </tr>
+                                    ))}
+                                </tbody>
+                                </table>
+                            </div>
+                            ) : (
+                            <div className="text-[#8a8f96] text-center py-8">No mods detected</div>
+                            )}
+                        </Card>
+                        </div>
+
+                    </div>
+
+                    {/* --- POWERED BY ODIN FOOTER --- */}
+                    <div className="odin-footer">
+                        <div className="odin-text">
+                            Maintained by <strong>mbround18</strong>/<strong>valheim-docker</strong>
+                        </div>
+                        <a
+                            href="https://github.com/mbround18/valheim-docker/discussions"
+                            target="_blank"
+                            className="odin-btn"
+                        >
+                            Powered by Odin
+                        </a>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+  </script>
+</body>
+
+</html>

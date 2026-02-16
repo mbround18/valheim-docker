@@ -1,6 +1,4 @@
-use odin::utils::environment::fetch_var;
-use std::net::SocketAddrV4;
-use std::str::FromStr;
+use crate::{fetch_info, query_socket_addr};
 use warp::reply::json;
 use warp::reply::Json;
 
@@ -13,16 +11,20 @@ pub struct PlayersResponse {
 }
 
 pub fn invoke() -> Json {
-  let port: u16 = fetch_var("PORT", "2457").parse().unwrap_or(2457);
-  let address = fetch_var("ADDRESS", format!("127.0.0.1:{}", port + 1).as_str());
-  let socket = SocketAddrV4::from_str(&address).unwrap();
-
-  // Current/max from status query (reuse odin's ServerInfo conversion path)
-  let info = odin::server::ServerInfo::from(socket);
+  // Reuse cached status information from huginn's fetch path.
+  let info = fetch_info();
 
   // Attempt to query player names directly via A2S; degrade gracefully on error.
   let mut names: Vec<String> = Vec::new();
   if info.online {
+    let Some(socket) = query_socket_addr() else {
+      return json(&PlayersResponse {
+        online: info.online,
+        players: info.players,
+        max_players: info.max_players,
+        names,
+      });
+    };
     if let Ok(client) = a2s::A2SClient::new() {
       match client.players(socket) {
         Ok(players) => {

@@ -18,7 +18,7 @@ docker-compose exec valheim bash
 1. Run `curl https://getcroc.schollz.com | bash` inside the `mbround18/valheim` container.
 2. Run `curl https://getcroc.schollz.com | bash` inside the destination machine. (If the destination machine is not a linux|unix based system with access to bash, please look at [schollz/croc] repo for installation instructions.)
 
-![Install Croc Success](../assets/transfer-file-demo/install-croc.png)
+![Install Croc Success](../assets/transfer_file_demo/install_croc.png)
 
 ## Instructions
 
@@ -39,11 +39,11 @@ docker-compose exec valheim bash
 3. Cd into your saves dir with `cd /home/steam/.config/unity3d/IronGate/Valheim` on both container A and container B.
 4. With croc already installed, run `croc send ./*` on container A.
 
-   ![croc send command](../assets/transfer-file-demo/send-croc.png)
+   ![croc send command](../assets/transfer_file_demo/send_croc.png)
 
 5. Once it spits out the transfer key, copy the transfer key to container B and hit the enter key.
 
-   ![croc send command success](../assets/transfer-file-demo/send-croc-success.png)
+   ![croc send command success](../assets/transfer_file_demo/send_croc_success.png)
 
 6. You can now safely shutdown container A and restart container B.
 

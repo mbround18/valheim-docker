@@ -39,7 +39,7 @@ Open your `docker-compose.yml` file in a text editor and modify it as follows:
 version: "3"
 services:
   valheim:
-    image: mbround18/valheim:latest
+    image: mbround18/valheim:3
     container_name: valheim
     user: "111:1001" # Replace with the actual GID from step 4
     volumes:

@@ -2,7 +2,7 @@ use crate::utils::environment::fetch_var;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct JobInfo {
   pub name: String,
   pub enabled: bool,

@@ -498,7 +498,7 @@
 #### ⚠️ Pushed to `main`
 
 - Update README.md ([@mbround18](https://github.com/mbround18))
-- Create how-to-restore.md ([@mbround18](https://github.com/mbround18))
+- Create how_to_restore.md ([@mbround18](https://github.com/mbround18))
 
 #### Authors: 1
 

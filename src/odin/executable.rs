@@ -84,21 +84,6 @@ pub fn execute_mut(command: &mut Command) -> std::io::Result<Child> {
   command.spawn()
 }
 
-/// Executes a command with special handling for command line arguments
-///
-/// Processes command arguments to handle spaces and quotes appropriately, similar to
-/// how a shell would interpret them. This ensures arguments are correctly passed to
-/// the subprocess, even when they contain spaces or quotes.
-pub fn execute_mut_wait(command: &mut Command) -> std::io::Result<ExitStatus> {
-  match execute_mut(command) {
-    Ok(mut subprocess) => subprocess.wait(),
-    Err(e) => {
-      error!("Failed to run process: {}", e);
-      exit(1);
-    }
-  }
-}
-
 pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: String) {
   match result {
     Ok(exit_status) => {
@@ -107,7 +92,7 @@ pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: 
       } else {
         match exit_status.code() {
           Some(code) => {
-            error!("Exited with http code: {code}");
+            error!("Exited with exit code: {code}");
             exit(code)
           }
           None => info!("Process terminated by signal"),

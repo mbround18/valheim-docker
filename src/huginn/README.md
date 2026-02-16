@@ -17,10 +17,13 @@ Huginn is a status server used to check the status of your Valheim server.
 
 ### Environment Variables
 
-| Variable  | Default               | Required | Description                                                                                                                  |
-| --------- | --------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| ADDRESS   | `Your Public IP`      | FALSE    | This setting is used in conjunction with `odin status` and setting this will stop `odin` from trying to fetch your public IP |
-| HTTP_PORT | `anything above 1024` | FALSE    | Setting this will spin up a little http server that provides two endpoints for you to call.                                  |
+| Variable                   | Default              | Required | Description                                                                                                                                                                        |
+| -------------------------- | -------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADDRESS                    | `127.0.0.1:(PORT+1)` | FALSE    | Query address Huginn uses for server info. If unset, it defaults to loopback query port (`PORT+1`, usually `2457`). Set this if Huginn should query a different interface or host. |
+| HTTP_PORT                  | `3000`               | FALSE    | HTTP port Huginn listens on. Huginn binds to `0.0.0.0` and logs `127.0.0.1` links for local convenience.                                                                           |
+| HUGINN_INFO_CACHE_TTL_SECS | `2`                  | FALSE    | Status cache TTL in seconds for A2S-backed responses (`/status`, `/health`, `/readiness`, `/players`). Lower values increase freshness but also query load.                        |
+| CONNECT_REMOTE_HOST        | `<unset>`            | FALSE    | Optional host/IP override for `/connect/remote`. If unset, Huginn falls back to `PUBLIC_ADDRESS`, then `ADDRESS`, then Odin public IP resolution.                                  |
+| CONNECT_STEAM_APP_ID       | `892970`             | FALSE    | Steam app id used for connect deeplink generation (`steam://run/<APP_ID>//+connect%20HOST:PORT`).                                                                                  |
 
 NOTE: your server MUST be public (eg. `PUBLIC=1`) in order for Odin+Huginn to collect and report statistics.
 
@@ -79,7 +82,17 @@ huginn &
 
 ## Endpoints
 
-| Endpoint   | Description                                                                                                                                                                             |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/metrics` | Provides a Prometheus compatible output of the server status. [Click here to see a guide on how to get a dashboard setup.](https://github.com/mbround18/valheim-docker/discussions/330) |
-| `/status`  | Provides a more traditional JSON output of the server status.                                                                                                                           |
+| Endpoint          | Description                                                                                                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/metrics`        | Provides a Prometheus compatible output of the server status. [Click here to see a guide on how to get a dashboard setup.](https://github.com/mbround18/valheim-docker/discussions/330) |
+| `/status`         | Provides a more traditional JSON output of the server status.                                                                                                                           |
+| `/connect/local`  | Redirect to `steam://run/892970//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                        |
+| `/connect/remote` | Redirect to `steam://run/892970//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                   |
+| `/health`         | Returns `200` when the server is online, `503` when offline.                                                                                                                            |
+| `/readiness`      | Kubernetes readiness probe; `200` only if the server is online.                                                                                                                         |
+| `/liveness`       | Kubernetes liveness probe; returns `200` when Huginn is alive.                                                                                                                          |
+| `/mods`           | Returns installed mod metadata.                                                                                                                                                         |
+| `/players`        | Returns player counts and player names when available.                                                                                                                                  |
+| `/metadata`       | Returns safe Odin/Huginn runtime metadata (ports, build id, beta mode, scheduler toggles/schedules, cache/runtime info).                                                                |
+| `/openapi.json`   | OpenAPI specification for the HTTP API.                                                                                                                                                 |
+| `/docs`           | Swagger UI for interactive API documentation.                                                                                                                                           |

@@ -29,8 +29,10 @@ cleanup() {
   odin stop
   if [ "${AUTO_BACKUP_ON_SHUTDOWN:=0}" -eq 1 ]; then
     log "Backup on shutdown triggered! Running backup tool..."
-    /bin/bash /home/steam/scripts/auto_backup.sh "shutdown"
+    backup_file="/home/steam/backups/$(date +"%Y%m%d-%H%M%S")-shutdown.tar.gz"
+    odin backup /home/steam/.config/unity3d/IronGate/Valheim "$backup_file"
   fi
+  [[ -n $ODIN_SCHEDULER_PID ]] && kill "$ODIN_SCHEDULER_PID"
   [[ -n $TAIL_PID ]] && kill "$TAIL_PID"
   [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID"
 }
@@ -116,7 +118,10 @@ if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
   odin install || exit 1
 elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
   log "Attempting to update before launching the server!"
-  [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ] && /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
+  if [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ]; then
+    backup_file="/home/steam/backups/$(date +"%Y%m%d-%H%M%S")-pre-update-backup.tar.gz"
+    odin backup /home/steam/.config/unity3d/IronGate/Valheim "$backup_file"
+  fi
   log "Installing Updates..."
   odin install || exit 1
 else
@@ -169,6 +174,13 @@ fi
 if [ -d "/valheim-post-install.d/" ]; then
   log "Executing post-install scripts"
   find /valheim-post-install.d/ -type f -executable -exec {} \;
+fi
+
+# Start built-in scheduler if any job is enabled
+if [ "${AUTO_UPDATE:=0}" -eq 1 ] || [ "${AUTO_BACKUP:=0}" -eq 1 ] || [ "${SCHEDULED_RESTART:=0}" -eq 1 ]; then
+  log "Starting Odin built-in scheduler..."
+  odin jobs &
+  export ODIN_SCHEDULER_PID=$!
 fi
 
 # Start HTTP server if HTTP_PORT is specified

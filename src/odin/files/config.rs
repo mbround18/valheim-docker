@@ -243,7 +243,7 @@ mod tests {
   use std::env;
   use std::env::current_dir;
 
-  use rand::Rng;
+  use rand::RngExt;
 
   use super::*;
 

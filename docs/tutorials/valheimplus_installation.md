@@ -10,7 +10,7 @@ To install ValheimPlus, set your Docker environment variables like this:
 version: "3"
 services:
   valheim:
-    image: mbround18/valheim:latest
+    image: mbround18/valheim:3
     environment:
       - TYPE=BepInEx
       - MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/ValheimPlus.dll
