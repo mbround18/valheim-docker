@@ -1,7 +1,9 @@
 use log::{debug, error, info, warn};
 
 use std::{
-  env, fs, io,
+  env,
+  ffi::OsString,
+  fs, io,
   path::{Path, PathBuf},
   process::ExitStatus,
   time::{SystemTime, UNIX_EPOCH},
@@ -265,7 +267,7 @@ fn promote_staged_install(staged_dir: &Path, live_dir: &Path, app_id: i64) -> Re
     )
   })?;
 
-  let rollback_root = rollback_root_dir();
+  let rollback_root = rollback_root_dir(live_dir);
   fs::create_dir_all(&rollback_root).map_err(|e| {
     format!(
       "failed to create rollback dir {}: {}",
@@ -346,6 +348,62 @@ fn promote_staged_install(staged_dir: &Path, live_dir: &Path, app_id: i64) -> Re
     })?;
   }
 
+  prune_live_entries_missing_from_staged(staged_dir, live_dir)?;
+
+  Ok(())
+}
+
+fn prune_live_entries_missing_from_staged(
+  staged_dir: &Path,
+  live_dir: &Path,
+) -> Result<(), String> {
+  let mut staged_entries: std::collections::HashSet<PathBuf> = std::collections::HashSet::new();
+  let mut staged_roots: std::collections::HashSet<OsString> = std::collections::HashSet::new();
+
+  for entry in WalkDir::new(staged_dir).into_iter().filter_map(Result::ok) {
+    let rel = entry
+      .path()
+      .strip_prefix(staged_dir)
+      .map_err(|e| format!("failed to compute staged relative path: {}", e))?;
+    if rel.as_os_str().is_empty() {
+      continue;
+    }
+    staged_entries.insert(rel.to_path_buf());
+    if let Some(first) = rel.components().next() {
+      staged_roots.insert(first.as_os_str().to_os_string());
+    }
+  }
+
+  for entry in WalkDir::new(live_dir)
+    .contents_first(true)
+    .into_iter()
+    .filter_map(Result::ok)
+  {
+    let rel = entry
+      .path()
+      .strip_prefix(live_dir)
+      .map_err(|e| format!("failed to compute live relative path: {}", e))?;
+    if rel.as_os_str().is_empty() {
+      continue;
+    }
+    let Some(first) = rel.components().next() else {
+      continue;
+    };
+    if !staged_roots.contains(first.as_os_str()) {
+      continue;
+    }
+    if staged_entries.contains(rel) {
+      continue;
+    }
+    remove_path_cautious(entry.path()).map_err(|e| {
+      format!(
+        "failed to remove stale live path {}: {}",
+        entry.path().display(),
+        e
+      )
+    })?;
+  }
+
   Ok(())
 }
 
@@ -362,14 +420,12 @@ fn rollback_promotion(created_paths: &[PathBuf], backed_up_paths: &[(PathBuf, Pa
   }
 }
 
-fn rollback_root_dir() -> PathBuf {
+fn rollback_root_dir(live_dir: &Path) -> PathBuf {
   let ts = SystemTime::now()
     .duration_since(UNIX_EPOCH)
     .map(|d| d.as_secs())
     .unwrap_or(0);
-  PathBuf::from("/home/steam/.staging")
-    .join("rollback")
-    .join(ts.to_string())
+  live_dir.join(".odin").join("rollback").join(ts.to_string())
 }
 
 fn stash_bepinex_before_clean() -> Option<(std::path::PathBuf, std::path::PathBuf)> {
@@ -767,6 +823,8 @@ fn log_space_overview() {
 mod tests {
   use super::*;
   use std::env;
+  use std::fs;
+  use tempfile::tempdir;
   use test_case::test_case;
 
   #[test_case(
@@ -857,5 +915,87 @@ mod tests {
     let cfg = BetaConfig::from_parts(false, "ignored".to_string(), "".to_string());
     let s = compose_app_update_arg(896660, &cfg, false);
     assert_eq!(s, "+app_update 896660");
+  }
+
+  #[test]
+  fn test_promote_staged_install_overwrites_existing_files() {
+    let staged_root = tempdir().unwrap();
+    let live_root = tempdir().unwrap();
+    let app_id = 896660_i64;
+
+    let staged_dir = staged_root.path();
+    let live_dir = live_root.path();
+
+    fs::create_dir_all(staged_dir.join("steamapps")).unwrap();
+    fs::write(staged_dir.join("valheim_server.x86_64"), "new-bin").unwrap();
+    fs::write(
+      staged_dir.join(format!("steamapps/appmanifest_{}.acf", app_id)),
+      "manifest",
+    )
+    .unwrap();
+    fs::create_dir_all(staged_dir.join("sub")).unwrap();
+    fs::write(staged_dir.join("sub/file.txt"), "new-value").unwrap();
+
+    fs::create_dir_all(live_dir.join("sub")).unwrap();
+    fs::write(live_dir.join("sub/file.txt"), "old-value").unwrap();
+
+    promote_staged_install(staged_dir, live_dir, app_id).unwrap();
+    assert_eq!(
+      fs::read_to_string(live_dir.join("sub/file.txt")).unwrap(),
+      "new-value"
+    );
+  }
+
+  #[test]
+  fn test_promote_staged_install_prunes_stale_files_in_managed_roots() {
+    let staged_root = tempdir().unwrap();
+    let live_root = tempdir().unwrap();
+    let app_id = 896660_i64;
+
+    let staged_dir = staged_root.path();
+    let live_dir = live_root.path();
+
+    fs::create_dir_all(staged_dir.join("steamapps")).unwrap();
+    fs::write(staged_dir.join("valheim_server.x86_64"), "new-bin").unwrap();
+    fs::write(
+      staged_dir.join(format!("steamapps/appmanifest_{}.acf", app_id)),
+      "manifest",
+    )
+    .unwrap();
+    fs::create_dir_all(staged_dir.join("valheim_data")).unwrap();
+    fs::write(staged_dir.join("valheim_data/present.txt"), "present").unwrap();
+
+    fs::create_dir_all(live_dir.join("valheim_data")).unwrap();
+    fs::write(live_dir.join("valheim_data/stale.txt"), "stale").unwrap();
+    fs::create_dir_all(live_dir.join("BepInEx/plugins")).unwrap();
+    fs::write(live_dir.join("BepInEx/plugins/custom.dll"), "mod").unwrap();
+
+    promote_staged_install(staged_dir, live_dir, app_id).unwrap();
+
+    assert!(!live_dir.join("valheim_data/stale.txt").exists());
+    assert!(live_dir.join("valheim_data/present.txt").exists());
+    assert!(live_dir.join("BepInEx/plugins/custom.dll").exists());
+  }
+
+  #[test]
+  fn test_rollback_promotion_restores_backups_and_removes_created_paths() {
+    let root = tempdir().unwrap();
+    let root_path = root.path();
+
+    let created_file = root_path.join("created.txt");
+    fs::write(&created_file, "created").unwrap();
+
+    let dst_file = root_path.join("dst.txt");
+    let backup_file = root_path.join("backup.txt");
+    fs::write(&dst_file, "new").unwrap();
+    fs::write(&backup_file, "old").unwrap();
+
+    rollback_promotion(
+      &[created_file.clone()],
+      &[(dst_file.clone(), backup_file.clone())],
+    );
+
+    assert!(!created_file.exists());
+    assert_eq!(fs::read_to_string(dst_file).unwrap(), "old");
   }
 }

@@ -284,7 +284,7 @@ pub fn invoke() -> Json {
       "/connect/local": {
         "get": {
           "summary": "Steam local connect redirect",
-          "description": "Redirects to steam://run/892970//+connect%20127.0.0.1:<PORT>. Browser CORS fetch clients receive JSON payload instead.",
+          "description": "Redirects to steam://run/<CONNECT_STEAM_APP_ID>//+connect%20127.0.0.1:<PORT>. Browser CORS fetch clients receive JSON payload instead.",
           "responses": {
             "200": {
               "description": "Connect URL payload for browser CORS clients",
@@ -303,7 +303,7 @@ pub fn invoke() -> Json {
       "/connect/remote": {
         "get": {
           "summary": "Steam remote connect redirect",
-          "description": "Redirects to steam://run/892970//+connect%20<PUBLIC_HOST>:<PORT>. Browser CORS fetch clients receive JSON payload instead.",
+          "description": "Redirects to steam://run/<CONNECT_STEAM_APP_ID>//+connect%20<PUBLIC_HOST>:<PORT>. Browser CORS fetch clients receive JSON payload instead.",
           "responses": {
             "200": {
               "description": "Connect URL payload for browser CORS clients",

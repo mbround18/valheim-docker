@@ -100,7 +100,8 @@ fn steam_redirect(url: String) -> impl Reply {
 }
 
 fn steam_url(host: &str, port: u16) -> String {
-  format!("steam://connect/{host}:{port}")
+  let app_id = fetch_var("CONNECT_STEAM_APP_ID", "892970");
+  format!("steam://run/{app_id}//+connect%20{host}:{port}")
 }
 
 fn should_return_json(sec_fetch_mode: Option<&str>) -> bool {
@@ -155,9 +156,9 @@ mod tests {
   }
 
   #[test]
-  fn steam_url_uses_connect_style() {
+  fn steam_url_uses_run_connect_style() {
     let url = steam_url("127.0.0.1", 2456);
-    assert!(url.starts_with("steam://connect/"));
+    assert!(url.starts_with("steam://run/892970//+connect%20"));
     assert!(url.contains("127.0.0.1:2456"));
   }
 }

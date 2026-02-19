@@ -473,7 +473,7 @@ fn update_state_for_job(
   let duration_ms = chrono::DateTime::parse_from_rfc3339(&finished_at)
     .ok()
     .zip(chrono::DateTime::parse_from_rfc3339(&started_at).ok())
-    .map(|(end, start)| (end - start).num_milliseconds().max(0) as u128);
+    .map(|(end, start)| (end - start).num_milliseconds().max(0) as u64);
 
   let idx = state.jobs.iter().position(|j| j.name == job_name);
   let job = if let Some(i) = idx {

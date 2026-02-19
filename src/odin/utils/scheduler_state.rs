@@ -12,7 +12,7 @@ pub struct JobRuntimeInfo {
   pub last_status: Option<String>,
   pub last_message: Option<String>,
   pub last_exit_code: Option<i32>,
-  pub last_duration_ms: Option<u128>,
+  pub last_duration_ms: Option<u64>,
   pub run_count: u64,
   pub success_count: u64,
   pub failure_count: u64,

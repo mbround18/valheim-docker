@@ -41,9 +41,9 @@ cleanup() {
     backup_file="/home/steam/backups/$(date +"%Y%m%d-%H%M%S")-shutdown.tar.gz"
     odin backup /home/steam/.config/unity3d/IronGate/Valheim "$backup_file"
   fi
-  [[ -n $ODIN_SCHEDULER_PID ]] && kill "$ODIN_SCHEDULER_PID"
-  [[ -n $TAIL_PID ]] && kill "$TAIL_PID"
-  [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID"
+  [[ -n $ODIN_SCHEDULER_PID ]] && kill "$ODIN_SCHEDULER_PID" 2>/dev/null || true
+  [[ -n $TAIL_PID ]] && kill "$TAIL_PID" 2>/dev/null || true
+  [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID" 2>/dev/null || true
 }
 
 # Function to handle BepInEx installation
@@ -105,7 +105,6 @@ log "Auto Backup: ${AUTO_BACKUP}"
 log "Auto Backup On Update: ${AUTO_BACKUP_ON_UPDATE}"
 log "Auto Backup On Shutdown: ${AUTO_BACKUP_ON_SHUTDOWN}"
 log "Auto Backup Pause With No Players: ${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}"
-log "Auto Backup Pause With Players: ${AUTO_BACKUP_PAUSE_WITH_PLAYERS}"
 log "Auto Backup Remove Old: ${AUTO_BACKUP_REMOVE_OLD}"
 log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
 log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"

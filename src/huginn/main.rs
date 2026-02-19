@@ -214,11 +214,11 @@ pub(crate) fn fetch_metadata() -> MetadataResponse {
       },
       jobs: JobsMetadata {
         auto_update_enabled: parse_bool_env("AUTO_UPDATE", false),
-        auto_update_schedule: fetch_var("AUTO_UPDATE_SCHEDULE", "0 * * * *"),
+        auto_update_schedule: fetch_var("AUTO_UPDATE_SCHEDULE", "0 1 * * *"),
         auto_backup_enabled: parse_bool_env("AUTO_BACKUP", false),
-        auto_backup_schedule: fetch_var("AUTO_BACKUP_SCHEDULE", "0 */6 * * *"),
+        auto_backup_schedule: fetch_var("AUTO_BACKUP_SCHEDULE", "*/15 * * * *"),
         scheduled_restart_enabled: parse_bool_env("SCHEDULED_RESTART", false),
-        scheduled_restart_schedule: fetch_var("SCHEDULED_RESTART_SCHEDULE", "0 5 * * *"),
+        scheduled_restart_schedule: fetch_var("SCHEDULED_RESTART_SCHEDULE", "0 2 * * *"),
       },
     },
   }

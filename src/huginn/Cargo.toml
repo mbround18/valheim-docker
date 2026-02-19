@@ -41,3 +41,6 @@ features = [
   "run-cargo-test",
   "run-cargo-clippy",
 ]
+
+[dev-dependencies]
+regex = "1.12.2"
