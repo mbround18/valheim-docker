@@ -1,17 +1,17 @@
 # BepInEx Support
 
-> [As of March 2021, this repo now has an env flag to run with BepInEx, Click Here to find out more](tutorials/getting_started_with_mods.md)
+> [As of March 2021, this repo has an environment flag to run with BepInEx. Learn more](tutorials/getting_started_with_mods.md)
 
 ## Installing BepInEx
 
 > Due to the fact that there are so many variants of installing and running BepInEx; we will be covering only the basics.
-> If you have additional questions please visit their discord. [BepInEx Discord](https://discord.gg/aZszQ9YB)
+> If you have additional questions, please visit their Discord. [BepInEx Discord](https://discord.gg/aZszQ9YB)
 > If you have issues with setting up a specific plugin, please contact the mod developer!
 
 1. Access the container as the steam user.
 
    ```sh
-   docker-compose exec --user steam valheim bash
+   docker compose exec --user steam valheim bash
    ```
 
 2. Create a new folder
@@ -40,7 +40,7 @@
 
 6. Restart your server.
 
-> You should see a huge disclaimer in your console about running with bepinex.
+> You should see a disclaimer in your console about running with BepInEx.
 
 ## BepInEx/Modded Variables
 

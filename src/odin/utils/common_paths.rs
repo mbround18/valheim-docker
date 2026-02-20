@@ -30,10 +30,6 @@ pub fn mods_staging_directory() -> String {
   format!("{}/.staging/mods", game_directory())
 }
 
-// pub fn backup_directory() -> String {
-//   env::var(BACKUP_LOCATION).unwrap_or_else(|_| format!("{}/backups", get_working_dir()))
-// }
-
 pub fn saves_directory() -> String {
   env::var(SAVE_LOCATION).unwrap_or_else(|_| match env::var("HOME") {
     Ok(dir) => format!("{dir}/.config/unity3d/IronGate/Valheim"),

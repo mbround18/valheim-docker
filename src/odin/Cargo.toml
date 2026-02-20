@@ -22,41 +22,41 @@ name = "odin"
 path = "lib.rs"
 
 [build-dependencies]
-cc = "1.2.51"
+cc = "1.2.56"
 
 [dependencies]
 handlebars = "6.4.0"
 dotenv = "0.15.0"
 log = "0.4.29"
-clap = { version = "4.5.54", features = ["derive", "env"] }
+clap = { version = "4.5.58", features = ["derive", "env"] }
 which = "8.0.0"
 serde = { version = "1.0.228", features = ["derive"], default-features = false }
-sysinfo = { version = "0.38.0" }
-serde_json = "1.0.148"
+sysinfo = { version = "0.38.2" }
+serde_json = "1.0.149"
 daemonize = "0.5.0"
 tar = "0.4.44"
-flate2 = "1.1.5"
+flate2 = "1.1.9"
 inflections = "1.1.1"
 md5 = "0.8.0"
-reqwest = { version = "0.13.1", default-features = false, features = [
+reqwest = { version = "0.13.2", default-features = false, features = [
   "blocking",
   "json",
   "native-tls",
 ] }
-chrono = "0.4.42"
+chrono = "0.4.43"
 zip = { version = "8.0.0" }
 fs_extra = "1.3.0"
 glob = "0.3.3"
 a2s = "0.6.1"
 serde_with = "3.16.1"
-regex = "1.12.2"
+regex = "1.12.3"
 tokio = { version = "1.49.0", features = ["full"] }
 notify = "8.2.0"
 json-patch = "4.1.0"
 cached = "0.56.0"
-anyhow = "1.0.100"
-thiserror = "2.0.17"
-tempfile = "3.24.0"
+anyhow = "1.0.101"
+thiserror = "2.0.18"
+tempfile = "3.25.0"
 walkdir = "2.5.0"
 sha2 = "0.10.9"
 semver = "1.0.27"
@@ -68,7 +68,7 @@ workspace = true
 once_cell = "1.21.3"
 rand = "0.10.0"
 serial_test = "3.3.1"
-mockito = "1.7.1"
+mockito = "1.7.2"
 lazy_static = "1.5.0"
 test-case = "3.3.1"
 mockall = "0.14.0"

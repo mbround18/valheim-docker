@@ -40,6 +40,41 @@ fn initialize_cli() -> Cli {
   Cli::parse()
 }
 
+fn normalize_optional_arg(value: Option<String>) -> Option<String> {
+  value.and_then(|v| {
+    let trimmed = v.trim();
+    if trimmed.is_empty() {
+      None
+    } else {
+      Some(trimmed.to_string())
+    }
+  })
+}
+
+fn parse_modifiers(value: Option<String>) -> Option<Vec<Modifiers>> {
+  let mut parsed = Vec::new();
+
+  if let Some(raw) = value {
+    for modifier in raw.split(',').map(str::trim).filter(|m| !m.is_empty()) {
+      match modifier.split_once('=') {
+        Some((name, val)) if !name.trim().is_empty() && !val.trim().is_empty() => {
+          parsed.push(Modifiers::from(format!("{}={}", name.trim(), val.trim())));
+        }
+        _ => log::warn!(
+          "Ignoring invalid modifier entry '{}'; expected non-empty key=value",
+          modifier
+        ),
+      }
+    }
+  }
+
+  if parsed.is_empty() {
+    None
+  } else {
+    Some(parsed)
+  }
+}
+
 async fn handle_commands(cli: Cli) {
   match cli.commands {
     Commands::Log { message, level } => match level {
@@ -68,13 +103,9 @@ async fn handle_commands(cli: Cli) {
       world,
       password,
       public.eq("1"),
-      preset,
-      modifiers.map(|m| {
-        m.split(',')
-          .map(|modifier| Modifiers::from(modifier.to_string()))
-          .collect()
-      }),
-      set_key,
+      normalize_optional_arg(preset),
+      parse_modifiers(modifiers),
+      normalize_optional_arg(set_key),
       save_interval,
     )
     .invoke()
@@ -91,6 +122,7 @@ async fn handle_commands(cli: Cli) {
       output_file,
     } => commands::backup::invoke(input_directory, output_file),
     Commands::Update { check, force } => commands::update::invoke(cli.dry_run, check, force),
+    Commands::Jobs { once } => commands::jobs::invoke(once),
     Commands::Notify {
       title,
       message,

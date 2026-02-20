@@ -119,6 +119,13 @@ pub enum Commands {
     force: bool,
   },
 
+  /// Runs the built-in scheduler for auto update/backup/restart jobs.
+  Jobs {
+    /// Run one scheduler tick and exit (for testing/debugging).
+    #[arg(long, default_value_t = false)]
+    once: bool,
+  },
+
   /// Sends a notification to the provided webhook.
   Notify {
     /// Title of the message block (required by discord & generic webhook, automatically supplied, default: "Broadcast")

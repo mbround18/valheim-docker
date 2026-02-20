@@ -10,7 +10,7 @@ apt-get update
 apt-get upgrade -y
 apt-get install -y -qq --no-install-recommends \
   build-essential procps htop net-tools nano gcc g++ gdb \
-  netcat-traditional curl wget zip unzip cron sudo gosu dos2unix \
+  netcat-traditional curl wget zip unzip sudo gosu dos2unix \
   libsdl2-2.0-0 jq libc6 libc6-dev libpulse-dev libatomic1 \
   tzdata bc ca-certificates
 rm -rf /var/lib/apt/lists/*

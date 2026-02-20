@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Valheim API Documentation</title>
+
+    <!-- Fonts: Cinzel for that Viking feel, Lato for readability -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Lato:wght@400;700&display=swap"
+      rel="stylesheet"
+      referrerpolicy="no-referrer"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css"
+      integrity="sha384-wxLW6kwyHktdDGr6Pv1zgm/VGJh99lfUbzSn6HNHBENZlCN7W602k9VkGdxuFvPn"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+
+    <style>
+      :root {
+        --valheim-bg: #111214;
+        /* Deep dark slate */
+        --valheim-panel: #1b1e23;
+        /* Lighter slate for panels */
+        --valheim-gold: #dca259;
+        /* The iconic Valheim orange/gold */
+        --valheim-gold-dim: #a67c45;
+        --valheim-text: #e0e0e0;
+        --valheim-text-muted: #8a8f96;
+        --valheim-red: #8b0000;
+        --valheim-green: #3a5f41;
+        --font-header: "Cinzel", serif;
+        --font-body: "Lato", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--valheim-bg);
+        background-image: radial-gradient(
+          circle at 50% 0%,
+          #2a2f35 0%,
+          var(--valheim-bg) 60%
+        );
+        color: var(--valheim-text);
+        font-family: var(--font-body);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* --- SWAGGER UI OVERRIDES --- */
+
+      /* Main container fix */
+      .swagger-ui {
+        font-family: var(--font-body);
+        color: var(--valheim-text);
+        flex: 1;
+        /* Pushes footer down */
+      }
+
+      /* Top Bar (Header) */
+      .swagger-ui .topbar {
+        background-color: #0b0c0e;
+        border-bottom: 2px solid var(--valheim-gold-dim);
+        padding: 20px 0;
+      }
+
+      .swagger-ui .topbar a {
+        max-width: fit-content;
+      }
+
+      .swagger-ui .topbar .link {
+        font-family: var(--font-header);
+        font-size: 24px;
+        color: var(--valheim-gold);
+      }
+
+      /* Info Section */
+      .swagger-ui .info .title {
+        font-family: var(--font-header);
+        color: var(--valheim-gold);
+        text-shadow: 0 0 10px rgba(220, 162, 89, 0.3);
+        font-size: 36px;
+      }
+
+      .swagger-ui .info p,
+      .swagger-ui .info li,
+      .swagger-ui .info .table-container {
+        color: var(--valheim-text);
+      }
+
+      .swagger-ui .info a {
+        color: var(--valheim-gold);
+        text-decoration: none;
+        transition: color 0.3s;
+      }
+
+      .swagger-ui .info a:hover {
+        color: #fff;
+      }
+
+      /* Schemes (Servers) Container */
+      .swagger-ui .scheme-container {
+        background-color: var(--valheim-panel);
+        box-shadow: none;
+        border-top: 1px solid #333;
+        border-bottom: 1px solid #333;
+      }
+
+      /* Operations (Endpoints) Styles */
+      .swagger-ui .opblock {
+        background-color: rgba(27, 30, 35, 0.8);
+        border: 1px solid #333;
+        border-radius: 4px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+
+      .swagger-ui .opblock .opblock-summary {
+        border-bottom: 1px solid transparent;
+      }
+
+      .swagger-ui .opblock .opblock-summary-method {
+        font-family: var(--font-header);
+        font-weight: 700;
+        border-radius: 2px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      }
+
+      .swagger-ui .opblock .opblock-summary-path {
+        color: var(--valheim-text);
+        font-family: "Consolas", "Monaco", monospace;
+      }
+
+      .swagger-ui .opblock .opblock-summary-description {
+        color: var(--valheim-text-muted);
+      }
+
+      /* Method Specific Colors (Muted/Earthy) */
+      .swagger-ui .opblock.opblock-get {
+        border-color: #3e6b89;
+        background: rgba(62, 107, 137, 0.1);
+      }
+
+      .swagger-ui .opblock.opblock-get .opblock-summary-method {
+        background: #3e6b89;
+      }
+
+      .swagger-ui .opblock.opblock-post {
+        border-color: var(--valheim-green);
+        background: rgba(58, 95, 65, 0.1);
+      }
+
+      .swagger-ui .opblock.opblock-post .opblock-summary-method {
+        background: var(--valheim-green);
+      }
+
+      .swagger-ui .opblock.opblock-put {
+        border-color: var(--valheim-gold-dim);
+        background: rgba(166, 124, 69, 0.1);
+      }
+
+      .swagger-ui .opblock.opblock-put .opblock-summary-method {
+        background: var(--valheim-gold-dim);
+      }
+
+      .swagger-ui .opblock.opblock-delete {
+        border-color: var(--valheim-red);
+        background: rgba(139, 0, 0, 0.1);
+      }
+
+      .swagger-ui .opblock.opblock-delete .opblock-summary-method {
+        background: var(--valheim-red);
+      }
+
+      /* Expanded Section Styles */
+      .swagger-ui .opblock-body {
+        background-color: #15171a;
+        border-top: 1px solid #333;
+      }
+
+      .swagger-ui .opblock-section-header {
+        background-color: var(--valheim-panel);
+        box-shadow: none;
+        border-bottom: 1px solid #333;
+      }
+
+      .swagger-ui .opblock-section-header h4 {
+        color: var(--valheim-gold);
+        font-family: var(--font-header);
+      }
+
+      /* Tables & Models */
+      .swagger-ui table thead tr th {
+        color: var(--valheim-gold);
+        font-family: var(--font-header);
+        border-bottom: 1px solid var(--valheim-gold-dim);
+      }
+
+      .swagger-ui table tbody tr td {
+        color: var(--valheim-text);
+      }
+
+      .swagger-ui .model-box {
+        background-color: rgba(0, 0, 0, 0.2);
+      }
+
+      .swagger-ui section.models {
+        border: 1px solid var(--valheim-gold-dim);
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+      }
+
+      .swagger-ui section.models h4 {
+        color: var(--valheim-gold);
+        font-family: var(--font-header);
+        border-bottom: 1px solid var(--valheim-gold-dim);
+      }
+
+      .swagger-ui .model {
+        color: var(--valheim-text);
+      }
+
+      .swagger-ui .model-title {
+        color: var(--valheim-text-muted);
+      }
+
+      /* Inputs & Buttons */
+      .swagger-ui input[type="text"],
+      .swagger-ui input[type="email"],
+      .swagger-ui input[type="password"],
+      .swagger-ui select {
+        background-color: #0b0c0e;
+        border: 1px solid var(--valheim-gold-dim);
+        color: var(--valheim-gold);
+        font-family: "Consolas", monospace;
+      }
+
+      .swagger-ui .btn {
+        background-color: transparent;
+        border: 1px solid var(--valheim-gold);
+        color: var(--valheim-gold);
+        font-family: var(--font-header);
+        font-weight: bold;
+        box-shadow: none;
+        border-radius: 2px;
+        transition: all 0.2s;
+      }
+
+      .swagger-ui .btn.execute {
+        background-color: var(--valheim-gold-dim);
+        color: #fff;
+        border-color: var(--valheim-gold);
+        width: 100%;
+      }
+
+      .swagger-ui .btn.authorize {
+        color: var(--valheim-green);
+        border-color: var(--valheim-green);
+      }
+
+      .swagger-ui .btn.authorize svg {
+        fill: var(--valheim-green);
+      }
+
+      /* Code blocks */
+      .swagger-ui .microlight {
+        background-color: #000 !important;
+        border: 1px solid #333;
+        border-radius: 4px;
+      }
+
+      /* Dialogs */
+      .swagger-ui .dialog-ux .modal-ux {
+        background-color: var(--valheim-panel);
+        border: 2px solid var(--valheim-gold);
+        color: var(--valheim-text);
+      }
+
+      .swagger-ui .dialog-ux .modal-ux-header h3 {
+        color: var(--valheim-gold);
+        font-family: var(--font-header);
+      }
+
+      /* Custom Logo Replacement text */
+      .swagger-ui .topbar-wrapper img {
+        display: none;
+      }
+
+      .swagger-ui .topbar-wrapper::before {
+        content: "VALHEIM API";
+        font-family: var(--font-header);
+        font-size: 28px;
+        color: var(--valheim-text);
+        letter-spacing: 2px;
+        border: 2px solid var(--valheim-gold);
+        padding: 5px 15px;
+        border-radius: 2px;
+      }
+
+      /* --- FOOTER BRANDING --- */
+      .odin-footer {
+        background-color: #0b0c0e;
+        border-top: 2px solid var(--valheim-gold-dim);
+        padding: 40px 0;
+        text-align: center;
+        margin-top: auto;
+        /* Push to bottom */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .odin-btn {
+        display: inline-block;
+        font-family: var(--font-header);
+        color: var(--valheim-gold);
+        font-size: 20px;
+        text-decoration: none;
+        border: 2px solid var(--valheim-gold);
+        padding: 12px 35px;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        background: rgba(0, 0, 0, 0.3);
+        position: relative;
+      }
+
+      .odin-btn:hover {
+        background-color: var(--valheim-gold);
+        color: #111214;
+        box-shadow: 0 0 20px rgba(220, 162, 89, 0.4);
+        transform: translateY(-2px);
+      }
+
+      .odin-text {
+        font-family: var(--font-body);
+        color: var(--valheim-text-muted);
+        font-size: 14px;
+        letter-spacing: 1px;
+      }
+
+      .odin-text strong {
+        color: var(--valheim-text);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="swagger-ui"></div>
+
+    <!-- Custom Footer Branding -->
+    <div class="odin-footer">
+      <div class="odin-text">
+        Maintained by <strong>mbround18</strong>/<strong>valheim-docker</strong>
+      </div>
+      <a
+        href="https://github.com/mbround18/valheim-docker/discussions"
+        target="_blank"
+        class="odin-btn"
+      >
+        Powered by Odin
+      </a>
+    </div>
+
+    <script
+      src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"
+      integrity="sha384-wmyclcVGX/WhUkdkATwhaK1X1JtiNrr2EoYJ+diV3vj4v6OC5yCeSu+yW13SYJep"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script
+      src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js"
+      integrity="sha384-2YH8WDRaj7V2OqU/trsmzSagmk/E2SutiCsGkdgoQwC9pNUJV1u/141DHB6jgs8t"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script>
+      window.onload = function () {
+        window.ui = SwaggerUIBundle({
+          // --- CONFIGURATION ---
+          url: "/openapi.json",
+          dom_id: "#swagger-ui",
+          deepLinking: true,
+          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+          plugins: [
+            // Disabled plugins
+          ],
+          layout: "StandaloneLayout",
+          validatorUrl: null,
+        });
+      };
+    </script>
+  </body>
+</html>
