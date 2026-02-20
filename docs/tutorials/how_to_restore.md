@@ -78,19 +78,20 @@ Here's the `docker-compose.yml` file for reference:
 ```yaml
 services:
   valheim:
-    image: mbround18/valheim:latest
+    image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       PORT: 2456
       NAME: "Created With Valheim Docker"
       PASSWORD: "Change Me! Please."
       TZ: "America/Los_Angeles"
       AUTO_UPDATE: 1
-      UPDATE_ON_START: 0
+      UPDATE_ON_STARTUP: 0
       AUTO_UPDATE_SCHEDULE: "0 1 * * *"
       TYPE: Vanilla
     build:
       context: .
-      dockerfile: ./Dockerfile.valheim
+      dockerfile: ./Dockerfile
     ports:
       - "2456:2456/udp"
       - "2457:2457/udp"

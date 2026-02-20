@@ -7,6 +7,15 @@ set -e
 log() { odin log --message "$*"; }
 log_debug() { odin log --level debug --message "$*"; }
 
+# Return a best-effort runtime user label, even for numeric-only UIDs.
+runtime_user_label() {
+  if id -un >/dev/null 2>&1; then
+    id -un
+  else
+    printf "uid:%s" "$(id -u)"
+  fi
+}
+
 # Function to display a deprecation notice
 deprecation_notice() {
   log "-------------------------------------------------------------------------"
@@ -29,10 +38,12 @@ cleanup() {
   odin stop
   if [ "${AUTO_BACKUP_ON_SHUTDOWN:=0}" -eq 1 ]; then
     log "Backup on shutdown triggered! Running backup tool..."
-    /bin/bash /home/steam/scripts/auto_backup.sh "shutdown"
+    backup_file="/home/steam/backups/$(date +"%Y%m%d-%H%M%S")-shutdown.tar.gz"
+    odin backup /home/steam/.config/unity3d/IronGate/Valheim "$backup_file"
   fi
-  [[ -n $TAIL_PID ]] && kill "$TAIL_PID"
-  [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID"
+  [[ -n $ODIN_SCHEDULER_PID ]] && kill "$ODIN_SCHEDULER_PID" 2>/dev/null || true
+  [[ -n $TAIL_PID ]] && kill "$TAIL_PID" 2>/dev/null || true
+  [[ -n $ODIN_HTTP_SERVER_PID ]] && kill "$ODIN_HTTP_SERVER_PID" 2>/dev/null || true
 }
 
 # Function to handle BepInEx installation
@@ -50,9 +61,11 @@ install_bepinex() {
 # Navigate to the Valheim directory or exit if it fails
 cd /home/steam/valheim
 
-# Set default values for Steam user and group IDs if not provided
-STEAM_UID=${PUID:=1000}
-STEAM_GID=${PGID:=1000}
+# Default to runtime UID/GID when env vars are not explicitly set
+export PUID="${PUID:-$(id -u)}"
+export PGID="${PGID:-$(id -g)}"
+STEAM_UID="${PUID}"
+STEAM_GID="${PGID}"
 
 # Source utility scripts if they exist
 [ -f "/home/steam/scripts/utils.sh" ] && source "/home/steam/scripts/utils.sh"
@@ -92,7 +105,6 @@ log "Auto Backup: ${AUTO_BACKUP}"
 log "Auto Backup On Update: ${AUTO_BACKUP_ON_UPDATE}"
 log "Auto Backup On Shutdown: ${AUTO_BACKUP_ON_SHUTDOWN}"
 log "Auto Backup Pause With No Players: ${AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS}"
-log "Auto Backup Pause With Players: ${AUTO_BACKUP_PAUSE_WITH_PLAYERS}"
 log "Auto Backup Remove Old: ${AUTO_BACKUP_REMOVE_OLD}"
 log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
 log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"
@@ -106,9 +118,9 @@ export SteamAppId=${APPID:-896660}
 # Setting up server
 log "Running Install..."
 log_debug "Current Directory: $(pwd)"
-log_debug "Current User: $(whoami)"
+log_debug "Current User: $(runtime_user_label)"
 log_debug "Current UID: ${UID}"
-log_debug "Current GID: ${PGID}"
+log_debug "Current GID: $(id -g)"
 log_debug "Home Directory: ${HOME}"
 
 # Install or update the server if necessary
@@ -116,7 +128,10 @@ if [ ! -f "./valheim_server.x86_64" ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
   odin install || exit 1
 elif [ "${UPDATE_ON_STARTUP:-1}" -eq 1 ]; then
   log "Attempting to update before launching the server!"
-  [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ] && /bin/bash /home/steam/scripts/auto_backup.sh "pre-update-backup"
+  if [ "${AUTO_BACKUP_ON_UPDATE:=0}" -eq 1 ]; then
+    backup_file="/home/steam/backups/$(date +"%Y%m%d-%H%M%S")-pre-update-backup.tar.gz"
+    odin backup /home/steam/.config/unity3d/IronGate/Valheim "$backup_file"
+  fi
   log "Installing Updates..."
   odin install || exit 1
 else
@@ -169,6 +184,13 @@ fi
 if [ -d "/valheim-post-install.d/" ]; then
   log "Executing post-install scripts"
   find /valheim-post-install.d/ -type f -executable -exec {} \;
+fi
+
+# Start built-in scheduler if any job is enabled
+if [ "${AUTO_UPDATE:=0}" -eq 1 ] || [ "${AUTO_BACKUP:=0}" -eq 1 ] || [ "${SCHEDULED_RESTART:=0}" -eq 1 ]; then
+  log "Starting Odin built-in scheduler..."
+  odin jobs &
+  export ODIN_SCHEDULER_PID=$!
 fi
 
 # Start HTTP server if HTTP_PORT is specified

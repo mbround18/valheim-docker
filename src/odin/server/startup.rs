@@ -25,6 +25,7 @@ fn create_log_files() -> Result<(File, File), Error> {
   let stderr = create_file(format!("{game_dir}/logs/valheim_server.err").as_str());
   Ok((stdout, stderr))
 }
+
 pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error> {
   debug!("Starting server daemonized...");
   let (stdout, stderr) = create_log_files().unwrap();

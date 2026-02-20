@@ -4,13 +4,13 @@
 
 Welcome! Valheim Docker powered by Odin.
 The Valheim dedicated game server manager which is designed with resiliency in mind by providing automatic updates,
-world backup support, and a user-friendly cli interface.
+world backup support, and a user-friendly CLI interface.
 
 ## Links
 
 - [Getting Started](https://github.com/mbround18/valheim-docker/blob/main/README.md)
 
-  The repositories Readme contains all relevant information for running with Docker
+  The repository's README contains all relevant information for running with Docker.
 
 - [Discussion for Help and Info](https://github.com/mbround18/valheim-docker/discussions)
 
@@ -18,7 +18,7 @@ world backup support, and a user-friendly cli interface.
 
 - [Getting Started With & Using Odin](https://github.com/mbround18/valheim-docker/blob/main/src/odin/README.md)
 
-  You can run your Valheim server without docker! Take a look at Odin's docs.
+  You can run your Valheim server without Docker. Take a look at Odin's docs.
 
 - [Getting Started With & Using Huginn](https://github.com/mbround18/valheim-docker/blob/main/src/huginn/README.md)
 
@@ -26,6 +26,7 @@ world backup support, and a user-friendly cli interface.
 
 ## Tutorials
 
+- [Rootless Design Guide](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/rootless_design.md)
 - [Getting Started With Mods](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/getting_started_with_mods.md)
   - Includes quick-start and wildcard version patterns
-- [How to transfer files](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how-to-transfer-files.md)
+- [How to Transfer Files](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how_to_transfer_files.md)

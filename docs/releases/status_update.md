@@ -43,8 +43,17 @@ With `--json`
       "name": "AUTO_BACKUP",
       "enabled": true,
       "schedule": "*/5 * * * *"
+    },
+    {
+      "name": "SCHEDULED_RESTART",
+      "enabled": false,
+      "schedule": "0 2 * * *"
     }
-  ]
+  ],
+  "scheduler_state": {
+    "updated_at": "2026-02-16T05:00:00-08:00",
+    "jobs": []
+  }
 }
 ```
 
@@ -84,8 +93,17 @@ You are responsible for putting your status endpoint behind SSL or authenticatio
       "name": "AUTO_BACKUP",
       "enabled": true,
       "schedule": "*/5 * * * *"
+    },
+    {
+      "name": "SCHEDULED_RESTART",
+      "enabled": false,
+      "schedule": "0 2 * * *"
     }
-  ]
+  ],
+  "scheduler_state": {
+    "updated_at": "2026-02-16T05:00:00-08:00",
+    "jobs": []
+  }
 }
 ```
 
@@ -107,6 +125,10 @@ You are responsible for putting your status endpoint behind SSL or authenticatio
     "enabled": false,
     "mods": []
   },
-  "jobs": []
+  "jobs": [],
+  "scheduler_state": {
+    "updated_at": null,
+    "jobs": []
+  }
 }
 ```

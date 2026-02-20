@@ -1003,6 +1003,7 @@ dependencies = [
  "cc",
  "log",
  "odin",
+ "regex",
  "serde",
  "serde_json",
  "shared",

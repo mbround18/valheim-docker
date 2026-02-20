@@ -1,8 +1,9 @@
 mod bepinex_info;
 mod jobs_info;
 
-use crate::constants::{AUTO_BACKUP_JOB, AUTO_UPDATE_JOB};
+use crate::constants::{AUTO_BACKUP_JOB, AUTO_UPDATE_JOB, SCHEDULED_RESTART_JOB};
 use crate::utils::environment::fetch_var;
+use crate::utils::scheduler_state::{load_scheduler_state, JobRuntimeInfo, SchedulerState};
 use a2s::info::Info;
 use a2s::A2SClient;
 use bepinex_info::BepInExInfo;
@@ -13,7 +14,7 @@ use std::fmt::{Display, Formatter};
 use std::net::SocketAddrV4;
 use std::str::FromStr;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ServerInfo {
   pub name: String,
   pub version: String,
@@ -23,21 +24,54 @@ pub struct ServerInfo {
   pub online: bool,
   pub bepinex: BepInExInfo,
   pub jobs: Vec<JobInfo>,
+  pub scheduler_state: SchedulerState,
 }
 
 impl ServerInfo {
+  fn scheduler_state_with_configured_jobs(jobs: &[JobInfo]) -> SchedulerState {
+    let mut scheduler_state = load_scheduler_state();
+    for job in jobs {
+      if scheduler_state
+        .jobs
+        .iter()
+        .any(|existing| existing.name == job.name)
+      {
+        continue;
+      }
+      scheduler_state.jobs.push(JobRuntimeInfo {
+        name: job.name.clone(),
+        ..JobRuntimeInfo::default()
+      });
+    }
+    scheduler_state
+  }
+
   pub fn new(address: SocketAddrV4) -> ServerInfo {
-    let query_client = A2SClient::new().unwrap();
+    let query_client = match A2SClient::new() {
+      Ok(c) => c,
+      Err(e) => {
+        error!("Failed to initialize A2S client: {}", e);
+        return ServerInfo::offline();
+      }
+    };
     match query_client.info(address) {
       Ok(a2s_info) => ServerInfo::from(a2s_info),
-      Err(_err) => {
-        error!("Failed to request server information!");
+      Err(err) => {
+        error!(
+          "Failed to request server information from {}: {}",
+          address, err
+        );
         ServerInfo::offline()
       }
     }
   }
   pub fn offline() -> ServerInfo {
     let unknown = String::from("Unknown");
+    let jobs = vec![
+      JobInfo::from_str(AUTO_UPDATE_JOB).unwrap(),
+      JobInfo::from_str(AUTO_BACKUP_JOB).unwrap(),
+      JobInfo::from_str(SCHEDULED_RESTART_JOB).unwrap(),
+    ];
     ServerInfo {
       name: fetch_var("NAME", &unknown),
       version: unknown.clone(),
@@ -46,7 +80,8 @@ impl ServerInfo {
       map: fetch_var("NAME", &unknown),
       online: false,
       bepinex: BepInExInfo::disabled(),
-      jobs: vec![],
+      scheduler_state: Self::scheduler_state_with_configured_jobs(&jobs),
+      jobs,
     }
   }
 }
@@ -60,6 +95,11 @@ impl From<SocketAddrV4> for ServerInfo {
 impl From<Info> for ServerInfo {
   fn from(info: Info) -> ServerInfo {
     let version = String::from(&info.clone().extended_server_info.keywords.unwrap());
+    let jobs = vec![
+      JobInfo::from_str(AUTO_UPDATE_JOB).unwrap(),
+      JobInfo::from_str(AUTO_BACKUP_JOB).unwrap(),
+      JobInfo::from_str(SCHEDULED_RESTART_JOB).unwrap(),
+    ];
     ServerInfo {
       name: info.name,
       version,
@@ -68,10 +108,8 @@ impl From<Info> for ServerInfo {
       map: info.map,
       online: true,
       bepinex: BepInExInfo::new(),
-      jobs: vec![
-        JobInfo::from_str(AUTO_UPDATE_JOB).unwrap(),
-        JobInfo::from_str(AUTO_BACKUP_JOB).unwrap(),
-      ],
+      scheduler_state: Self::scheduler_state_with_configured_jobs(&jobs),
+      jobs,
     }
   }
 }

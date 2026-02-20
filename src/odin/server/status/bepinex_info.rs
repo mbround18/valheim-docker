@@ -1,7 +1,7 @@
 use crate::mods::bepinex::{BepInExEnvironment, ModInfo};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct BepInExInfo {
   pub enabled: bool,
   pub(crate) mods: Vec<ModInfo>,

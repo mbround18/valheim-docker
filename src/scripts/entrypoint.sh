@@ -8,19 +8,57 @@ export GAME_LOCATION=${GAME_LOCATION:-"${HOME}/valheim"}
 export SAVE_LOCATION=${SAVE_LOCATION:-"${GAME_LOCATION}/saves"}
 export MODS_LOCATION=${MODS_LOCATION:-"${GAME_LOCATION}/BepInEx/plugins"}
 export BACKUP_LOCATION=${BACKUP_LOCATION:-"${GAME_LOCATION}/backups"}
-export CRON_LOCATION="${HOME}/cron.d"
 export LOG_LOCATION="${GAME_LOCATION}/logs"
 
- # Logging via odin
+# Logging via odin
 log() {
   odin log --message "$*"
 }
 
+# Return a best-effort runtime user label, even for numeric-only UIDs.
+runtime_user_label() {
+  if id -un >/dev/null 2>&1; then
+    id -un
+  else
+    printf "uid:%s" "$(id -u)"
+  fi
+}
+
+# Run a command with elevated privileges when possible.
+# If elevation is not available (common in explicit rootless user mode),
+# return non-zero and let the caller decide whether to skip.
+run_privileged() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+    return $?
+  fi
+
+  if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+    sudo "$@"
+    return $?
+  fi
+
+  return 1
+}
+
+# Best-effort wrapper for privileged commands.
+run_privileged_or_warn() {
+  if ! run_privileged "$@"; then
+    log "Skipping privileged command (no sudo/root): $*"
+  fi
+}
+
 # Function to check and log the current user and steam user's ID and group ID
 check_user_and_group() {
-  whoami
-  id -u steam
-  id -g steam
+  log "Runtime user: $(runtime_user_label)"
+  log "Runtime uid: $(id -u)"
+  log "Runtime gid: $(id -g)"
+  if id -u steam >/dev/null 2>&1; then
+    log "Steam uid: $(id -u steam)"
+    log "Steam gid: $(id -g steam)"
+  else
+    log "Steam user entry not found in /etc/passwd"
+  fi
 }
 
 # Function to set up the environment, including sourcing utility scripts and setting environment variables
@@ -38,111 +76,22 @@ setup_environment() {
   export ODIN_CONFIG_FILE="${ODIN_CONFIG_FILE:-"${GAME_LOCATION}/config.json"}"
   export ODIN_DISCORD_FILE="${ODIN_DISCORD_FILE:-"${GAME_LOCATION}/discord.json"}"
 
-  # Set timezone
-  sudo ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
-  echo "$TZ" | sudo tee -a /etc/timezone
+  # Set timezone (best effort). In rootless mode, /etc may be read-only.
+  if [ -f "/usr/share/zoneinfo/$TZ" ]; then
+    run_privileged_or_warn ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  else
+    log "Timezone '$TZ' not found under /usr/share/zoneinfo; skipping /etc/localtime update"
+  fi
+  run_privileged_or_warn sh -c 'printf "%s\n" "$1" > /etc/timezone' sh "$TZ"
 }
 
-# Function to safely shut down the server and terminate cron jobs
+# Function to safely shut down the server
 clean_up() {
   log "Safely shutting down..."
-  if [[ -n $CRON_PID ]]; then
-    kill "$CRON_PID"
-  fi
 }
 
 # Trap signals for safe shutdown
 trap clean_up INT TERM
-
-# Function to set up environment variables for cron jobs
-setup_cron_env() {
-  log "Configuring Preset Env"
-  # shellcheck disable=SC2054
-  env_vars=(
-    "DEBUG_MODE"
-    "ODIN_CONFIG_FILE"
-    "ODIN_DISCORD_FILE"
-    "ODIN_WORKING_DIR"
-    "SAVE_LOCATION"
-    "MODS_LOCATION"
-    "GAME_LOCATION"
-    "BACKUP_LOCATION"
-    "NAME"
-    "ADDRESS"
-    "PORT"
-    "PUBLIC"
-    "ENABLE_CROSSPLAY"
-    "UPDATE_ON_STARTUP"
-    "SERVER_EXTRA_LAUNCH_ARGS"
-    "PRESET"
-    "MODIFIERS"
-    "SET_KEY"
-    "WEBHOOK_URL"
-    "WEBHOOK_STATUS_SUCCESSFUL"
-    "WEBHOOK_STATUS_FAILED"
-    "WEBHOOK_STATUS_RUNNING"
-    "WEBHOOK_INCLUDE_PUBLIC_IP"
-    "AUTO_UPDATE"
-    "AUTO_UPDATE_PAUSE_WITH_PLAYERS"
-    "AUTO_BACKUP"
-    "AUTO_BACKUP_NICE_LEVEL"
-    "AUTO_BACKUP_REMOVE_OLD"
-    "AUTO_BACKUP_DAYS_TO_LIVE"
-    "AUTO_BACKUP_ON_UPDATE"
-    "AUTO_BACKUP_ON_SHUTDOWN"
-    "AUTO_BACKUP_PAUSE_WITH_NO_PLAYERS"
-    "AUTO_BACKUP_SCHEDULE"
-    "VALHEIM_PLUS_RELEASES_URL"
-    "VALHEIM_PLUS_DOWNLOAD_URL"
-    "BEPINEX_RELEASES_URL"
-    "BEPINEX_DOWNLOAD_URL"
-    "BEPINEX_FULL_RELEASES_URL"
-    "PLAYER_EVENT_NOTIFICATIONS"
-    "WEBHOOK_STATUS_JOINED"
-    "WEBHOOK_STATUS_LEFT"
-    "BETA_BRANCH"
-    "BETA_BRANCH_PASSWORD"
-    "HTTP_PORT"
-    "SCHEDULED_RESTART_SCHEDULE"
-    "WORLD"
-    "PASSWORD"
-    "TYPE"
-    "MODS"
-    "ADDITIONAL_STEAMCMD_ARGS"
-    "TZ"
-    "PUID"
-    "PGID"
-  )
-
-  for var in "${env_vars[@]}"; do
-    value="${!var//\"/}"
-    [[ -n "$value" ]] && echo "export ${var}=\"$value\"" | sudo tee -a /env.sh
-  done
-
-  log "Preset Env Configured"
-}
-
-# Function to set up cron jobs
-setup_cron() {
-  local name=$1
-  local script=$2
-  local schedule=$3
-
-  log "Setting up cron job: $name"
-
-  local cron_folder="$CRON_LOCATION"
-  local log_folder="$LOG_LOCATION"
-  local log_location="$log_folder/$name.out"
-
-  # Create necessary directories
-  mkdir -p "$log_folder" "$cron_folder"
-  rm -f "$log_location"
-
-  # Create the cron job
-  # shellcheck disable=SC2086
-  echo "${schedule//\"/} BASH_ENV=/env.sh /bin/bash $HOME/scripts/$script >> $log_location 2>&1" | tee "$cron_folder/$name"
-  chmod 0644 "$cron_folder/$name"
-}
 
 # Function to create directories with specified ownership and permissions
 create_dir_with_ownership() {
@@ -151,26 +100,41 @@ create_dir_with_ownership() {
   local dir=$3
 
   mkdir -p "${dir}"
-  sudo chown -R "${user}:${group}" "${dir}"
-  sudo chmod -R ug+rw "${dir}"
+  run_privileged_or_warn chown -R "${user}:${group}" "${dir}"
+  run_privileged_or_warn chmod -R ug+rw "${dir}"
 }
 
 # Function to set up the filesystem, ensuring correct ownership and permissions
 setup_filesystem() {
   log "Setting up file systems"
 
-  sudo chown -R "$PUID:$PGID" "$HOME" /home/steam/.*
-  sudo chmod -R ug+rwx "$HOME"
+  run_privileged_or_warn chown -R "$PUID:$PGID" "$HOME"
+  run_privileged_or_warn chmod -R ug+rwx "$HOME"
+  # Ensure /tmp remains writable for steamcmd/work files even when host-mounted.
+  run_privileged_or_warn mkdir -p /tmp
+  run_privileged_or_warn chown root:root /tmp
+  run_privileged_or_warn chmod 1777 /tmp
 
   create_dir_with_ownership "$PUID" "$PGID" "$SAVE_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$MODS_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$BACKUP_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION"
   create_dir_with_ownership "$PUID" "$PGID" "$GAME_LOCATION/logs"
-  create_dir_with_ownership "$PUID" "$PGID" "$HOME/cron.d"
-  mkdir -p /home/steam/scripts
+  mkdir -p /home/steam/scripts || log "Could not create /home/steam/scripts without elevated permissions"
 
-  sudo usermod -d /home/steam steam
+  run_privileged_or_warn usermod -d /home/steam steam
+}
+
+# Validate that key runtime paths are writable for the current user.
+validate_runtime_paths() {
+  local path
+  for path in "$HOME" "$GAME_LOCATION" "$SAVE_LOCATION" "$MODS_LOCATION" "$BACKUP_LOCATION" /tmp; do
+    mkdir -p "$path" 2>/dev/null || true
+    if [ ! -w "$path" ]; then
+      log "Path is not writable by runtime user: $path"
+      log "If you run with a custom user, ensure mounted volumes and /home/steam are writable by uid:gid $(id -u):$(id -g)"
+    fi
+  done
 }
 
 # Function to check if the system has sufficient memory
@@ -191,6 +155,10 @@ log "Initializing your container..."
 # Check current user and steam user details
 check_user_and_group
 
+# Default ownership targets to current runtime UID/GID when not explicitly set.
+export PUID="${PUID:-$(id -u)}"
+export PGID="${PGID:-$(id -g)}"
+
 # Set up environment
 setup_environment
 
@@ -200,31 +168,8 @@ check_memory
 # Set up the filesystem
 setup_filesystem
 
-# Configure environment variables for cron jobs
-setup_cron_env
-
-# Set up cron jobs if enabled
-[[ "$AUTO_UPDATE" -eq 1 ]] && setup_cron "auto-update" "auto_update.sh" "$AUTO_UPDATE_SCHEDULE"
-[[ "$AUTO_BACKUP" -eq 1 ]] && setup_cron "auto-backup" "auto_backup.sh" "$AUTO_BACKUP_SCHEDULE"
-[[ "$SCHEDULED_RESTART" -eq 1 ]] && setup_cron "scheduled-restart" "scheduled_restart.sh" "$SCHEDULED_RESTART_SCHEDULE"
-
-# Verify the cron directory and its contents
-if [[ "$AUTO_BACKUP" -eq 1 || "$AUTO_UPDATE" -eq 1 || "$SCHEDULED_RESTART" -eq 1 ]]; then
-  log "Checking if cron directory and files exist..."
-  if [[ -d "$CRON_LOCATION" && $(ls -A "$CRON_LOCATION") ]]; then
-    touch /tmp/master-cron
-    for file in "$CRON_LOCATION"/*; do
-      cat "$file" >>/tmp/master-cron
-    done
-    crontab /tmp/master-cron
-    rm -f /tmp/master-cron
-    sudo cron -f &
-    export CRON_PID=$!
-  else
-  log "Error: Cron directory or files are missing."
-    exit 1
-  fi
-fi
+# Validate runtime write access in rootless mode
+validate_runtime_paths
 
 # Navigate to the Valheim game directory
 log "Navigating to steam home..."

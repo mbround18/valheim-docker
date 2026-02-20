@@ -3,6 +3,7 @@ use crate::mods::manifest::Manifest;
 use crate::utils::common_paths::bepinex_plugin_directory;
 use glob::glob;
 use log::{debug, error};
+use std::collections::HashMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -34,15 +35,20 @@ pub fn installed_mods_with_paths() -> Vec<InstalledMod> {
   };
 
   let mut results = Vec::new();
+  let mut found_mods = HashMap::new();
+
   for entry in paths {
     match entry {
       Ok(path) => {
         debug!("Found manifest file: {}", path.display());
         match Manifest::try_from(PathBuf::from(&path)) {
-          Ok(manifest) => results.push(InstalledMod {
-            manifest,
-            path: path.to_string_lossy().into(),
-          }),
+          Ok(manifest) => {
+            found_mods.insert(manifest.name.clone(), true);
+            results.push(InstalledMod {
+              manifest,
+              path: path.to_string_lossy().into(),
+            });
+          }
           Err(e) => error!("Failed to deserialize JSON from {}: {}", path.display(), e),
         }
       }
@@ -50,7 +56,13 @@ pub fn installed_mods_with_paths() -> Vec<InstalledMod> {
     }
   }
 
-  results.extend(discover_plugin_dlls());
+  // Only add DLL-discovered mods if we haven't already found them
+  for dll_mod in discover_plugin_dlls() {
+    if !found_mods.contains_key(&dll_mod.manifest.name) {
+      found_mods.insert(dll_mod.manifest.name.clone(), true);
+      results.push(dll_mod);
+    }
+  }
 
   results
 }

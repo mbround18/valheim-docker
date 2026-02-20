@@ -22,7 +22,7 @@ If you do not wish to install additional mods, you can skip this step. Otherwise
 3. Click **Show Dependency Strings**.
 4. Copy everything except the BepInEx dependency (this will be installed via `TYPE`).
 
-![](../assets/installing-mods/r2modman-dep-strings.gif)
+![](../assets/installing_mods/r2modman_dep_strings.gif)
 
 Example configuration:
 
@@ -30,7 +30,8 @@ Example configuration:
 version: "3"
 services:
   valheim:
-    image: mbround18/valheim:latest
+    image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       # The TYPE variable sets the server type.
       - TYPE=BepInEx
@@ -52,7 +53,8 @@ Example configuration:
 version: "3"
 services:
   valheim:
-    image: mbround18/valheim:latest
+    image: mbround18/valheim:3
+    user: "1000:1000"
     environment:
       # The TYPE variable sets the server type.
       - TYPE=BepInEx
@@ -69,7 +71,7 @@ services:
 Once your configuration is set up, start your server by running:
 
 ```bash
-docker-compose up
+docker compose up
 ```
 
 > **Note:** Odin automatically detects if you are running with BepInEx and adjusts the environment variables accordingly.
@@ -105,6 +107,7 @@ Example:
 ```yaml
 services:
   valheim:
+    user: "1000:1000"
     environment:
       - TYPE=BepInEx
       - |
@@ -119,7 +122,7 @@ Recommendations:
 
 ## Special Note: Installing ValheimPlus
 
-ValheimPlus is installed differently from other mods because it's distributed as a DLL file rather than through Thunderstore. For a complete guide on installing and configuring ValheimPlus, see [ValheimPlus Installation](./valheimplus-installation.md).
+ValheimPlus is installed differently from other mods because it's distributed as a DLL file rather than through Thunderstore. For a complete guide on installing and configuring ValheimPlus, see [ValheimPlus Installation](./valheimplus_installation.md).
 
 Quick example:
 

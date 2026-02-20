@@ -1,14 +1,21 @@
 use crate::fetch_info;
 use shared::system::collect_system_metrics;
 
+fn escape_prom_label_value(value: &str) -> String {
+  value
+    .replace('\\', "\\\\")
+    .replace('"', "\\\"")
+    .replace('\n', "\\n")
+}
+
 pub fn invoke() -> String {
   let info = fetch_info();
   let sys = collect_system_metrics();
   let labels = format!(
     "{{name=\"{name}\", version=\"{version}\", map=\"{map}\"}}",
-    name = &info.name,
-    version = &info.version,
-    map = &info.map
+    name = escape_prom_label_value(&info.name),
+    version = escape_prom_label_value(&info.version),
+    map = escape_prom_label_value(&info.map)
   );
   let content = [
     format!(

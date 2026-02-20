@@ -2,18 +2,17 @@
 
 ## Environment Variables
 
-| Variable                  | Default     | Required | Description                                                                                                                                                                                                                                   |
-| ------------------------- | ----------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WEBHOOK_URL               | `<nothing>` | FALSE    | Supply this to get information regarding your server's status in a webhook or Discord notification! [Click here to learn how to get a webhook url for Discord](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
-| WEBHOOK_BROADCAST_MESSAGE | CHANGE_ME   | TRUE     | You set this. See `odin notify --help`                                                                                                                                                                                                        |
-| WEBHOOK_STATUS_RUNNING    | "0"         | FALSE    | Posts a running status to discord when a command is initialized.                                                                                                                                                                              |
-| WEBHOOK_STATUS_FAILED     | "1"         | FALSE    | Posts a failed status to discord in the event of a failure.                                                                                                                                                                                   |
-| WEBHOOK_STATUS_SUCCESSFUL | "1"         | FALSE    | Posts a running status to discord when the command succeeds.                                                                                                                                                                                  |
-| WEBHOOK_INCLUDE_PUBLIC_IP | `0`         | FALSE    | Optionally include your server's public IP in webhook notications, useful if not using a static IP address.                                                                                                                                   |
+| Variable                   | Default             | Required | Description                                                                                                                                                                                     |
+| -------------------------- | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WEBHOOK_URL                | `<nothing>`         | FALSE    | Set this to send status notifications to your webhook or Discord endpoint. [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| TITLE                      | `Broadcast`         | FALSE    | Default title used by `odin notify` when no `--title` argument is provided.                                                                                                                     |
+| MESSAGE                    | `Test Notification` | FALSE    | Default message used by `odin notify` when no `--message` argument is provided.                                                                                                                 |
+| WEBHOOK_INCLUDE_PUBLIC_IP  | `0`                 | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address.                                                                                   |
+| PLAYER_EVENT_NOTIFICATIONS | `0`                 | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                 |
 
 ## POST Body Example
 
-```Json
+```json
 {
   "event_type": {
     "name": "Broadcast",
@@ -33,8 +32,8 @@
 
 ## Considerations
 
-- The expected HTTP codes returned from the webhook should be either 204 or 201 to be considered successful.
-  - 204 is the default return http code for a webhook as it signifies the request has been processed.
+- The expected HTTP status codes returned from the webhook should be either 204 or 201 to be considered successful.
+  - 204 is the default return HTTP code for a webhook, meaning the request has been processed.
   - 201 was included in case you want to stream into an endpoint for creating a resource.
     - Example 1, logging actions on the server.
     - Example 2, using json-server to debug webhooks.
@@ -42,8 +41,8 @@
 ## Discord Configs
 
 Generates a file in the server directory called `discord.json`. There are a series of variables provided that you can use
-from the templating engine. See below, note if you use `{{some_var}}` and its not provided by the table below it will show as a blank.
-If any of the values turn out blank, discord might reject the post.
+from the templating engine. If you use a variable like `{{some_var}}` that is not provided, it renders as blank.
+If values are blank, Discord may reject the payload.
 
      title: String::from(&notification.event_type.name),
       description: String::from(&notification.event_message),
@@ -56,7 +55,7 @@ If any of the values turn out blank, discord might reject the post.
 | `{{title}}`       | Event title                    | `Start`                               |
 | `{{description}}` | Event Message                  | `Server Status: Start Successful`     |
 | `{{status}}`      | Event Status                   | `Successful`                          |
-| `{{timestamp}}`   | tiemstamp of event             | `2021-05-30T08:16:39.294366700-07:00` |
+| `{{timestamp}}`   | Timestamp of event             | `2021-05-30T08:16:39.294366700-07:00` |
 | `{{server_name}}` | Name pulled from env or config | `Created with Valheim Docker`         |
 
 ## Developing/Debugging Webhooks
@@ -70,5 +69,5 @@ If any of the values turn out blank, discord might reject the post.
 2. Run notify against the webhook
 
    ```shell
-   cargo run -- notify "Derp Testing another notification" --webhook "http://127.0.0.1:3000/posts"
+   cargo run -- notify "Testing webhook notification" --webhook "http://127.0.0.1:3000/posts"
    ```

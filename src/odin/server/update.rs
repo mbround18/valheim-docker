@@ -4,7 +4,8 @@ use regex::Regex;
 use std::{env, fs, io::ErrorKind, path::Path, process::exit};
 
 use crate::{
-  constants, files::config::load_config, server, steamcmd::steamcmd_command, utils::get_working_dir,
+  constants, files::config::load_config, server, steamcmd::output_with_retries,
+  utils::get_working_dir,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -155,17 +156,14 @@ fn get_latest_build_id() -> String {
   });
 
   // Now pull the latest app info
-  let args = &[
+  let args = [
     "+@ShutdownOnFailedCommand 1",
     "+login anonymous",
     &format!("+app_info_print {}", constants::GAME_ID),
     "+quit",
   ];
-  let mut steamcmd = steamcmd_command();
-  let app_info_output = steamcmd
-    .args(args)
-    .output()
-    .expect("Failed to run steamcmd");
+  let arg_list = args.iter().map(|v| v.to_string()).collect::<Vec<_>>();
+  let app_info_output = output_with_retries(&arg_list).expect("Failed to run steamcmd");
   assert!(app_info_output.status.success());
 
   let stdout = String::from_utf8(app_info_output.stdout).expect("steamcmd returned invalid UTF-8");
