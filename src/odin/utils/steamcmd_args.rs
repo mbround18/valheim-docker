@@ -1,4 +1,3 @@
-use log::debug;
 use std::env;
 
 use crate::utils::environment;
@@ -43,7 +42,7 @@ impl BetaConfig {
   }
 }
 
-/// Build the +app_update ... segment including any beta flags and validate toggle.
+/// Build the +app_update ... segment including any beta flags and optional validate toggle.
 pub fn compose_app_update_arg(app_id: i64, beta: &BetaConfig, do_validate: bool) -> String {
   let mut app_update = format!("+app_update {app_id}");
   if beta.beta_in_effect() {
@@ -54,8 +53,6 @@ pub fn compose_app_update_arg(app_id: i64, beta: &BetaConfig, do_validate: bool)
   }
   if do_validate {
     app_update.push_str(" validate");
-  } else {
-    debug!("Skipping SteamCMD validate: VALIDATE_ON_INSTALL=0");
   }
   app_update
 }

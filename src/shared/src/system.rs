@@ -1,10 +1,11 @@
 use nix::sys::statvfs::statvfs;
 use nix::unistd::{Gid, Uid, getgroups};
+use serde::Serialize;
 use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 use sysinfo::{Disks, System};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SystemMetrics {
   pub total_memory_bytes: u64,
   pub used_memory_bytes: u64,
@@ -53,7 +54,7 @@ pub fn collect_system_metrics() -> SystemMetrics {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct FsUsage {
   pub path: String,
   pub total_bytes: u64,
@@ -100,7 +101,7 @@ pub fn fs_usage_for<P: AsRef<Path>>(path: P) -> Option<FsUsage> {
   })
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PermSummary {
   pub path: String,
   pub owner_uid: u32,
