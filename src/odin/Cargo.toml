@@ -53,7 +53,7 @@ regex = "1.12.3"
 tokio = { version = "1.49.0", features = ["full"] }
 notify = "8.2.0"
 json-patch = "4.1.0"
-cached = "0.57.0"
+cached = "0.58.0"
 anyhow = "1.0.101"
 thiserror = "2.0.18"
 tempfile = "3.25.0"
