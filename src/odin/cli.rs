@@ -171,6 +171,17 @@ pub enum Commands {
     #[arg(long)]
     address: Option<String>,
   },
+
+  /// Prints system/runtime metadata (memory, disk, inode, and permission summaries for key paths).
+  System {
+    /// Print output as JSON
+    #[arg(long)]
+    json: bool,
+
+    /// Run startup checks (memory + writable runtime paths) and exit non-zero on failure
+    #[arg(long)]
+    check: bool,
+  },
   /// Prints out information about Odin
   About,
 
