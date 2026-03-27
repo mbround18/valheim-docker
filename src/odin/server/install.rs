@@ -56,6 +56,79 @@ fn add_additional_args(args: &mut Vec<String>) {
   }
 }
 
+fn build_steamcmd_install_args(
+  app_id: i64,
+  install_dir: &str,
+  beta_cfg: &BetaConfig,
+  include_validate: bool,
+) -> Vec<String> {
+  let login = "+login anonymous".to_string();
+  let force_install_dir = format!("+force_install_dir {}", install_dir);
+
+  // Build SteamCMD args with order:
+  // 1) +@ control vars  2) +force_install_dir  3) +login  4) optional verbose  5) +app_update {id} [beta flags] [validate]
+  let mut args = vec![
+    String::from("+@NoPromptForPassword"),
+    String::from("1"),
+    String::from("+@ShutdownOnFailedCommand"),
+    String::from("1"),
+    String::from("+@sSteamCmdForcePlatformType"),
+    String::from("linux"),
+    String::from("+@sSteamCmdForcePlatformBitness"),
+    String::from("64"),
+    force_install_dir,
+    login,
+  ];
+
+  if environment::is_env_var_truthy_with_default("DEBUG_MODE", false) {
+    args.push(String::from("verbose"));
+  }
+
+  args.push(compose_app_update_arg(app_id, beta_cfg, include_validate));
+
+  add_additional_args(&mut args);
+
+  // remove the call to steamcmd from args to avoid duplication
+  args.retain(|arg| arg != "/usr/bin/steamcmd");
+
+  let args = flatten_args(args);
+  parse_command_args(args)
+}
+
+fn auto_repair_steamapps_on_update_exit8_enabled() -> bool {
+  environment::is_env_var_truthy_with_default("AUTO_REPAIR_STEAMAPPS_ON_UPDATE_EXIT8", true)
+}
+
+fn should_attempt_steamapps_repair_after_update(result: &io::Result<ExitStatus>) -> bool {
+  if !auto_repair_steamapps_on_update_exit8_enabled() {
+    return false;
+  }
+  matches!(result, Ok(status) if !status.success() && status.code() == Some(8))
+}
+
+fn reset_install_steamapps_dir(install_dir: &str) -> Result<(), String> {
+  let steamapps_dir = Path::new(install_dir).join("steamapps");
+  if !steamapps_dir.exists() {
+    info!(
+      "SteamCMD recovery: steamapps dir not present, nothing to delete: {}",
+      steamapps_dir.display()
+    );
+    return Ok(());
+  }
+
+  info!(
+    "SteamCMD recovery: deleting steamapps dir before retry: {}",
+    steamapps_dir.display()
+  );
+  remove_path_cautious(&steamapps_dir).map_err(|e| {
+    format!(
+      "failed to delete steamapps dir {}: {}",
+      steamapps_dir.display(),
+      e
+    )
+  })
+}
+
 pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   let staged_install = staged_updates_enabled();
   let live_install_dir = get_working_dir();
@@ -112,51 +185,41 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   } else {
     info!("Installing using default/stable branch");
   }
+  let validate_on_install =
+    environment::is_env_var_truthy_with_default("VALIDATE_ON_INSTALL", true);
 
   info!("Installing {} to {}", app_id, install_dir);
-  let login = "+login anonymous".to_string();
-  let force_install_dir = format!("+force_install_dir {}", install_dir);
-  // Build SteamCMD args with order:
-  // 1) +@ control vars  2) +force_install_dir  3) +login  4) optional verbose  5) +app_update {id} [beta flags] [validate]
-  let mut args = vec![
-    // +@ controls first
-    String::from("+@NoPromptForPassword"),
-    String::from("1"),
-    String::from("+@ShutdownOnFailedCommand"),
-    String::from("1"),
-    String::from("+@sSteamCmdForcePlatformType"),
-    String::from("linux"),
-    String::from("+@sSteamCmdForcePlatformBitness"),
-    String::from("64"),
-    // then force install dir and login
-    force_install_dir,
-    login,
-  ];
+  info!("SteamCMD phase: update");
+  let update_args = build_steamcmd_install_args(app_id, &install_dir, &beta_cfg, false);
+  let mut steamcmd_phase = "update";
+  let mut result = run_with_retries(&update_args);
 
-  if environment::is_env_var_truthy_with_default("DEBUG_MODE", false) {
-    args.push(String::from("verbose"));
+  if should_attempt_steamapps_repair_after_update(&result) {
+    warn!(
+      "steamcmd update exited with code 8. This commonly corresponds to app state issues (e.g. state 0x6). \
+Attempting one-time recovery by deleting the install steamapps folder and retrying update."
+    );
+    match reset_install_steamapps_dir(&install_dir) {
+      Ok(()) => {
+        info!("SteamCMD phase: update (recovery retry after steamapps reset)");
+        result = run_with_retries(&update_args);
+      }
+      Err(e) => {
+        error!("SteamCMD recovery failed before retry: {}", e);
+      }
+    }
   }
 
-  // Compose +app_update with beta flags and optional validate as trailing args
-  let app_update = compose_app_update_arg(
-    app_id,
-    &beta_cfg,
-    environment::is_env_var_truthy_with_default("VALIDATE_ON_INSTALL", true),
-  );
-  args.push(app_update);
-
-  // Append any additional raw args, if provided
-  // Append any additional raw args, if provided (handled consistently with helper)
-  add_additional_args(&mut args);
-
-  // remove the call to steamccmd from args to avoid duplication
-  args.retain(|arg| arg != "/usr/bin/steamcmd");
-
-  // for args if it has a space, reduce and append it so its a seperate arg
-  args = flatten_args(args);
-  args = parse_command_args(args);
-
-  let mut result = run_with_retries(&args);
+  if matches!(&result, Ok(status) if status.success()) {
+    if validate_on_install {
+      info!("SteamCMD phase: verify (validate)");
+      steamcmd_phase = "verify";
+      let verify_args = build_steamcmd_install_args(app_id, &install_dir, &beta_cfg, true);
+      result = run_with_retries(&verify_args);
+    } else {
+      debug!("Skipping separate SteamCMD verify step: VALIDATE_ON_INSTALL=0");
+    }
+  }
 
   if staged_install {
     match &result {
@@ -188,10 +251,11 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
   // If the install failed, collect diagnostics to help identify issues (e.g., low disk space)
   if let Err(ref e) = result {
-    error!("steamcmd execution error: {e}");
+    error!("steamcmd {steamcmd_phase} step execution error: {e}");
     collect_install_diagnostics(None);
   } else if let Ok(ref status) = result {
     if !status.success() {
+      error!("steamcmd {steamcmd_phase} step failed");
       collect_install_diagnostics(status.code());
     }
   }

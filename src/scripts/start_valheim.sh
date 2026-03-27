@@ -61,11 +61,9 @@ install_bepinex() {
 # Navigate to the Valheim directory or exit if it fails
 cd /home/steam/valheim
 
-# Default to runtime UID/GID when env vars are not explicitly set
-export PUID="${PUID:-$(id -u)}"
-export PGID="${PGID:-$(id -g)}"
-STEAM_UID="${PUID}"
-STEAM_GID="${PGID}"
+# Rootless runtime identity (used for logging/guardrails)
+STEAM_UID="$(id -u)"
+STEAM_GID="$(id -g)"
 
 # Source utility scripts if they exist
 [ -f "/home/steam/scripts/utils.sh" ] && source "/home/steam/scripts/utils.sh"
@@ -80,7 +78,7 @@ fi
 
 # Warn if .bashrc is missing
 if [ ! -f "/home/steam/.bashrc" ]; then
-  log "WARNING: You should not run the server without a .bashrc! Please use a non-root user!"
+  log "WARNING: /home/steam/.bashrc is missing; shell profile customizations may not load as expected."
 fi
 
 # Check if webhook URL is provided
