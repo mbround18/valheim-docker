@@ -134,6 +134,7 @@ async fn handle_commands(cli: Cli) {
       local,
       address,
     } => commands::status::invoke(json, local, address),
+    Commands::System { json, check } => commands::system::invoke(json, check),
     Commands::About => about(env!("GIT_HASH")),
     Commands::Logs { lines, watch } => commands::logs::invoke(lines, watch).await,
   }
