@@ -253,7 +253,6 @@ For a complete walkthrough, see [Rootless Design Guide](./docs/tutorials/rootles
 > This is a basic example of a Docker Compose file. You can apply any of the variables above to the `environment` section below but be sure to follow each variable's description notes!
 
 ```yaml
-version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
@@ -278,7 +277,6 @@ services:
 ### Everything but the Kitchen Sink
 
 ```yaml
-version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
