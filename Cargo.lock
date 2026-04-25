@@ -2487,6 +2487,7 @@ version = "0.1.0"
 dependencies = [
  "log",
  "nix",
+ "serde",
  "sysinfo",
  "tracing",
  "tracing-log",
