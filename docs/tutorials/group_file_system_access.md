@@ -50,7 +50,6 @@ For the most reliable experience, we recommend explicitly setting the **user dir
 Open your `docker-compose.yml` file in a text editor and modify it as follows:
 
 ```yaml
-version: "3"
 services:
   valheim:
     image: mbround18/valheim:3

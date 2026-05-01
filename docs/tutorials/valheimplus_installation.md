@@ -7,7 +7,6 @@ ValheimPlus is a comprehensive mod that enhances Valheim with numerous quality-o
 To install ValheimPlus, set your Docker environment variables like this:
 
 ```yaml
-version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
