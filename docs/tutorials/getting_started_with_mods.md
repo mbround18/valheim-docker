@@ -27,7 +27,6 @@ If you do not wish to install additional mods, you can skip this step. Otherwise
 Example configuration:
 
 ```yaml
-version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
@@ -50,7 +49,6 @@ Specify mods by providing their URLs. Ensure that each URL is followed by a newl
 Example configuration:
 
 ```yaml
-version: "3"
 services:
   valheim:
     image: mbround18/valheim:3
