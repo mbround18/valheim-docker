@@ -12,7 +12,7 @@ log = "0.4.29"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }
 tracing-log = "0.2.0"
-sysinfo = { version = "0.38.2" }
+sysinfo = { version = "0.39.0" }
 nix = { version = "0.31.1", default-features = false, features = [
     "fs",
     "user",
