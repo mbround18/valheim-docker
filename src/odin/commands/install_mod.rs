@@ -2,6 +2,7 @@ use crate::mods::ValheimMod;
 use crate::mods::{ensure_valheim_plus_config_for_dll_url, is_valheim_plus_dll_url};
 
 use crate::errors::ValheimModError;
+use crate::utils::bytes_to_lower_hex;
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -57,7 +58,7 @@ fn sha256_hex(path: &Path) -> Result<String, ValheimModError> {
     }
     hasher.update(&buf[..n]);
   }
-  Ok(format!("{:x}", hasher.finalize()))
+  Ok(bytes_to_lower_hex(&hasher.finalize()))
 }
 
 fn sha_sidecar_path(staging_path: &Path) -> PathBuf {

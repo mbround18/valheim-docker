@@ -72,6 +72,16 @@ pub fn get_md5_hash(context: &str) -> String {
   format!("{:x}", md5::compute(context.as_bytes()))
 }
 
+pub fn bytes_to_lower_hex(bytes: &[u8]) -> String {
+  const HEX: &[u8; 16] = b"0123456789abcdef";
+  let mut out = String::with_capacity(bytes.len() * 2);
+  for &byte in bytes {
+    out.push(HEX[(byte >> 4) as usize] as char);
+    out.push(HEX[(byte & 0x0f) as usize] as char);
+  }
+  out
+}
+
 pub fn url_parse_file_type(url: &str) -> String {
   url.split('.').next_back().unwrap().to_string()
 }

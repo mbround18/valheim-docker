@@ -4,7 +4,7 @@ use crate::utils::normalize_paths::normalize_paths;
 use crate::utils::{is_valid_url, parse_mod_string};
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
-  utils::{common_paths, get_md5_hash, parse_file_name, url_parse_file_type},
+  utils::{bytes_to_lower_hex, common_paths, get_md5_hash, parse_file_name, url_parse_file_type},
 };
 use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
@@ -293,7 +293,7 @@ impl ValheimMod {
       }
       hasher.update(&buf[..n]);
     }
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(bytes_to_lower_hex(&hasher.finalize()))
   }
 
   /// Try opening as a ZIP to validate integrity.
