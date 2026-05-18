@@ -1,8 +1,5 @@
 # [Valheim]  
 
-<!-- temp change, remove later -->
-
-
 <img src="docs/assets/valheim_docker_logo.png" width="500" height="auto" alt="Valheim Docker Logo">
 <br>
 <!-- Docker Pulls -->
