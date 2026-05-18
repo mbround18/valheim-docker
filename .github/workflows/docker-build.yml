@@ -43,6 +43,8 @@ jobs:
   build_rust:
     name: Build Rust
     uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yaml@main
+    with:
+      name: ci-test-server
     secrets:
       DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
