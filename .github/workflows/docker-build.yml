@@ -42,70 +42,23 @@ jobs:
 
   build_rust:
     name: Build Rust
-    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@2568721113f887ee4b243447c08a8ad8712baef1
+    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yaml@main
+    secrets:
+      DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
 
   build_docker:
     name: "Build Docker"
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
         image: [odin, valheim]
-        include:
-          - image: odin
-            push: true
-          - image: valheim
-            push: ${{ contains(github.event.pull_request.labels.*.name, 'canary') }}
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v4
-        with:
-          username: mbround18
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      - name: Docker meta
-        id: meta
-        uses: crazy-max/ghaction-docker-meta@v6
-        with:
-          images: |
-            mbround18/${{ matrix.image }}
-          tags: |
-            type=sha
-
-      - name: Build ${{ matrix.image }}
-        id: docker_build
-        uses: docker/build-push-action@v7
-        with:
-          file: ./Dockerfile
-          target: ${{ matrix.image }}
-          push: ${{ matrix.push }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=mbround18/${{ matrix.image }}:buildcache
-          cache-to: type=registry,ref=mbround18/${{ matrix.image }}:buildcache,mode=max
-          build-args: |
-            "GITHUB_SHA=${GITHUB_SHA}"
-            "GITHUB_REF=${GITHUB_REF}"
-            "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
-            "ODIN_IMAGE_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
-
-      - name: Publish Image Summary
-        if: matrix.push
-        run: |
-          {
-            echo "\`\`\`";
-            if [ "${{ matrix.image }}" = "odin" ]; then
-              echo "docker run ${{ steps.meta.outputs.tags }}";
-            else
-              echo "docker run --rm -it \\";
-              echo "  -e PASSWORD=\"123abc\" \\";
-              echo "  -e PUBLIC=\"1\" \\";
-              echo "  ${{ steps.meta.outputs.tags }}";
-            fi;
-            echo "\`\`\`";
-          } >> $GITHUB_STEP_SUMMARY
+    uses: mbround18/gh-reusable/.github/workflows/docker-release.yaml@main
+    with:
+      image: mbround18/${{ matrix.image }}
+      target: ${{ matrix.image }}
+      canary_label: canary
+      dockerhub_username: mbround18
+    secrets:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

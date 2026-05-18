@@ -10,70 +10,20 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
         image: [odin, valheim]
 
-    steps:
-      # Check out the repository
-      - uses: actions/checkout@v6
-
-      # Generate Docker metadata
-      - name: Docker meta
-        id: meta
-        uses: crazy-max/ghaction-docker-meta@v6
-        with:
-          images: |
-            mbround18/${{ matrix.image }}
-            ghcr.io/mbround18/${{ matrix.image }}
-          tags: |
-            type=schedule
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
-
-      # Set up Docker Buildx
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      # Log in to DockerHub
-      - name: Login to DockerHub
-        uses: docker/login-action@v4
-        with:
-          username: mbround18
-          password: ${{ secrets.DOCKER_TOKEN }}
-
-      # Log in to GitHub Container Registry
-      - name: Login to GitHub Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GHCR_TOKEN }}
-
-      # Install jq for JSON parsing
-      - name: "JQ: Install"
-        run: sudo apt-get install -y jq
-
-      # Build and push Docker images
-      - name: Build and push
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          target: ${{ matrix.image }}
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=mbround18/${{ matrix.image }}:buildcache
-          cache-to: type=registry,ref=mbround18/${{ matrix.image }}:buildcache,mode=max
-          build-args: |
-            "GITHUB_SHA=${GITHUB_SHA}"
-            "GITHUB_REF=${GITHUB_REF}"
-            "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
+    uses: mbround18/gh-reusable/.github/workflows/docker-release.yaml@main
+    with:
+      image: mbround18/${{ matrix.image }}
+      target: ${{ matrix.image }}
+      ghcr: true
+      ghcr_username: ${{ github.repository_owner }}
+      dockerhub_username: mbround18
+    secrets:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}

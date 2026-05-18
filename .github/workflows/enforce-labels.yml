@@ -10,10 +10,10 @@ concurrency:
 
 jobs:
   enforce-label:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: yogevbd/enforce-label-action@2.2.2
-        with:
-          REQUIRED_LABELS_ANY: "major,minor,patch,internal,performance,question,release,tests,wontfix,documentation,bug,dependencies"
-          REQUIRED_LABELS_ANY_DESCRIPTION: "Select at least one label ['major','minr','patch', 'documentation']"
-          BANNED_LABELS: "banned"
+    uses: mbround18/gh-reusable/.github/workflows/enforce-labels.yaml@main
+    with:
+      required_labels_any: "major,minor,patch,internal,performance,question,release,tests,wontfix,documentation,bug,dependencies"
+      required_labels_any_description: "Select at least one label ['major','minor','patch', 'documentation']"
+      banned_labels: "banned"
+    secrets:
+      DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
