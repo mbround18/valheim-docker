@@ -42,7 +42,7 @@ jobs:
 
   build_rust:
     name: Build Rust
-    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@main
+    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@2568721113f887ee4b243447c08a8ad8712baef1
 
   build_docker:
     name: "Build Docker"
