@@ -1,7 +1,7 @@
 # ------------------------------------ #
 # Odin (Rust) build and runtime stages #
 # ------------------------------------ #
-ARG DEBIAN_VERSION=12
+ARG DEBIAN_VERSION=13
 ARG RUST_VERSION=1.95
 ARG UBUNTU_VERSION=24
 ARG EXPECTED_OCTAL=775
@@ -141,9 +141,9 @@ COPY --chmod=${EXPECTED_OCTAL} --chown=steam:${PGID} ./src/scripts/entrypoint.sh
 COPY --chmod=${EXPECTED_OCTAL} --chown=steam:${PGID} ./src/scripts/env.sh /env.sh
 COPY --chmod=${EXPECTED_OCTAL} --chown=steam:${PGID} ./src/scripts/steam_bashrc.sh /home/steam/.bashrc
 
-# Convert scripts to Unix format
-RUN --mount=type=bind,source=src/scripts/build/valheim-postcopy.sh,target=/tmp/valheim-postcopy.sh \
-    bash /tmp/valheim-postcopy.sh
+# # Convert scripts to Unix format
+# RUN --mount=type=bind,source=src/scripts/build/valheim-postcopy.sh,target=/tmp/valheim-postcopy.sh \
+#     bash /tmp/valheim-postcopy.sh
 
 # Set the working directory to the game directory
 WORKDIR /home/steam/valheim
