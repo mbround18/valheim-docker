@@ -3,8 +3,10 @@ name: Build & Check
 on:
   pull_request:
     types:
+      - opened
       - labeled
       - edited
+      - reopened
       - synchronize
       - unlabeled
     branches:
@@ -42,10 +44,10 @@ jobs:
 
   build_rust:
     name: Build Rust
-    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@main
+    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yaml@main
 
   build_docker:
-    name: "Build Docker"
+    name: Build Docker (${{ matrix.image }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
