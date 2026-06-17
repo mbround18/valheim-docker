@@ -245,6 +245,23 @@ pub struct ValheimMod {
 }
 
 impl ValheimMod {
+  /// Format bytes as human-readable size (KB, MB, GB)
+  fn format_bytes(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+
+    if bytes >= GB {
+      format!("{:.2} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+      format!("{:.2} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+      format!("{:.2} KB", bytes as f64 / KB as f64)
+    } else {
+      format!("{} B", bytes)
+    }
+  }
+
   pub fn new(url: &str) -> Self {
     let file_type = url_parse_file_type(url);
     ValheimMod {
@@ -293,7 +310,13 @@ impl ValheimMod {
       }
       hasher.update(&buf[..n]);
     }
-    Ok(format!("{:x}", hasher.finalize()))
+    let digest = hasher.finalize();
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+      use std::fmt::Write as _;
+      write!(&mut hex, "{byte:02x}").map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    }
+    Ok(hex)
   }
 
   /// Try opening as a ZIP to validate integrity.
@@ -374,7 +397,13 @@ impl ValheimMod {
     if orig_cache_path.exists() {
       if orig_file_type == "zip" {
         if Self::is_valid_zip(&orig_cache_path) {
-          debug!("Cache hit for URL; reusing {:?}", orig_cache_path);
+          if let Ok(metadata) = std::fs::metadata(&orig_cache_path) {
+            let size = Self::format_bytes(metadata.len());
+            info!("⚡ Cache hit: reusing {} from cache", size);
+            debug!("   Path: {:?}", orig_cache_path);
+          } else {
+            info!("⚡ Cache hit: reusing cached file");
+          }
           self.staging_location = orig_cache_path;
           self.file_type = orig_file_type;
           self.downloaded = true;
@@ -387,7 +416,13 @@ impl ValheimMod {
           let _ = std::fs::remove_file(&orig_cache_path);
         }
       } else {
-        debug!("Cache hit for URL (non-zip); reusing {:?}", orig_cache_path);
+        if let Ok(metadata) = std::fs::metadata(&orig_cache_path) {
+          let size = Self::format_bytes(metadata.len());
+          info!("⚡ Cache hit: reusing {} (non-zip)", size);
+          debug!("   Path: {:?}", orig_cache_path);
+        } else {
+          info!("⚡ Cache hit: reusing cached file (non-zip)");
+        }
         self.staging_location = orig_cache_path;
         self.file_type = orig_file_type;
         self.downloaded = true;
@@ -398,6 +433,7 @@ impl ValheimMod {
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     let client = Client::new();
+    debug!("⬇️  Downloading from: {}", &self.url);
     let response = client
       .get(parsed_url)
       .send()
@@ -425,7 +461,13 @@ impl ValheimMod {
     if final_path.exists() {
       if self.file_type == "zip" {
         if Self::is_valid_zip(&final_path) {
-          debug!("Cache hit after redirect; reusing {:?}", final_path);
+          if let Ok(metadata) = std::fs::metadata(&final_path) {
+            let size = Self::format_bytes(metadata.len());
+            info!("⚡ Cache hit (post-redirect): reusing {}", size);
+            debug!("   Path: {:?}", final_path);
+          } else {
+            info!("⚡ Cache hit (post-redirect): reusing cached file");
+          }
           self.staging_location = final_path;
           self.downloaded = true;
           return Ok(());
@@ -436,22 +478,33 @@ impl ValheimMod {
           );
         }
       } else {
-        debug!(
-          "Cache hit after redirect for non-zip; reusing {:?}",
-          final_path
-        );
+        if let Ok(metadata) = std::fs::metadata(&final_path) {
+          let size = Self::format_bytes(metadata.len());
+          info!("⚡ Cache hit (post-redirect): reusing {} (non-zip)", size);
+          debug!("   Path: {:?}", final_path);
+        } else {
+          info!("⚡ Cache hit (post-redirect): reusing cached file (non-zip)");
+        }
         self.staging_location = final_path;
         self.downloaded = true;
         return Ok(());
       }
     }
 
+    let start_time = std::time::Instant::now();
+    info!("📦 Downloading mod...");
     let bytes = response
       .bytes()
       .await
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    let elapsed = start_time.elapsed();
+    let size = Self::format_bytes(bytes.len() as u64);
+    let seconds = elapsed.as_secs_f64();
+
     std::fs::write(&final_path, &bytes)
       .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+
+    info!("✓ Downloaded {} in {:.1}s", size, seconds);
 
     // Validate based on file type. ZIP must be valid; non-zip types (dll, cfg) are accepted.
     if self.file_type == "zip" {

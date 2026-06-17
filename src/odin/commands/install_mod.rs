@@ -6,20 +6,67 @@ use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
+/// Format bytes as human-readable size (KB, MB, GB)
+fn format_size(bytes: u64) -> String {
+  const KB: u64 = 1024;
+  const MB: u64 = KB * 1024;
+  const GB: u64 = MB * 1024;
+
+  if bytes >= GB {
+    format!("{:.2} GB", bytes as f64 / GB as f64)
+  } else if bytes >= MB {
+    format!("{:.2} MB", bytes as f64 / MB as f64)
+  } else if bytes >= KB {
+    format!("{:.2} KB", bytes as f64 / KB as f64)
+  } else {
+    format!("{} B", bytes)
+  }
+}
+
+/// Extract mod name from URL
+fn extract_mod_name(url: &str) -> String {
+  url
+    .split('/')
+    .find_map(|part| {
+      if part.ends_with(".zip") || part.ends_with(".dll") {
+        Some(
+          part
+            .trim_end_matches(".zip")
+            .trim_end_matches(".dll")
+            .to_string(),
+        )
+      } else {
+        None
+      }
+    })
+    .unwrap_or_else(|| "mod".to_string())
+}
+
 async fn process_mod(input: &str) -> Result<(), ValheimModError> {
   let mut valheim_mod = ValheimMod::async_from_url(input).await?;
-  info!("Installing {}", &input);
-  debug!("Mod URL: {}", valheim_mod.url);
+  let mod_name = extract_mod_name(&valheim_mod.url);
+
+  info!("📦 Installing: {}", mod_name);
+  debug!("   URL: {}", valheim_mod.url);
+
   match valheim_mod.download().await {
     Ok(_) => {
+      let staging_path = &valheim_mod.staging_location;
+      if let Ok(metadata) = fs::metadata(staging_path) {
+        let size = format_size(metadata.len());
+        debug!("   Downloaded size: {}", size);
+      }
+
       valheim_mod.install()?;
+      info!("✓ Installed: {}", mod_name);
       Ok(())
     }
     Err(message) => {
-      error!("Download failed: {message}");
+      error!("✗ Download failed: {} ({})", mod_name, message);
       Err(ValheimModError::DownloadFailed)
     }
   }
@@ -57,7 +104,13 @@ fn sha256_hex(path: &Path) -> Result<String, ValheimModError> {
     }
     hasher.update(&buf[..n]);
   }
-  Ok(format!("{:x}", hasher.finalize()))
+  let digest = hasher.finalize();
+  let mut hex = String::with_capacity(digest.len() * 2);
+  for byte in digest {
+    use std::fmt::Write as _;
+    write!(&mut hex, "{byte:02x}").map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+  }
+  Ok(hex)
 }
 
 fn sha_sidecar_path(staging_path: &Path) -> PathBuf {
@@ -156,16 +209,33 @@ fn cleanup_removed_mod(mod_state: &InstalledModState) {
 
 async fn process_mod_collect_state(input: &str) -> Result<InstalledModState, ValheimModError> {
   let mut valheim_mod = ValheimMod::async_from_url(input).await?;
-  info!("Installing {}", &input);
-  debug!("Mod URL: {}", valheim_mod.url);
+  let mod_name = extract_mod_name(&valheim_mod.url);
 
+  info!("📦 Installing: {}", mod_name);
+  debug!("   URL: {}", valheim_mod.url);
+
+  let start = std::time::Instant::now();
   valheim_mod.download().await.map_err(|message| {
-    error!("Download failed: {message}");
+    error!("✗ Download failed for {}: {}", mod_name, message);
     ValheimModError::DownloadFailed
   })?;
+  let elapsed = start.elapsed();
+
+  let staging = valheim_mod.staging_location.clone();
+  let file_size = fs::metadata(&staging)
+    .map(|m| format_size(m.len()))
+    .unwrap_or_else(|_| "unknown".to_string());
+
+  info!("✓ Downloaded {} ({})", mod_name, file_size);
+  debug!("   Download time: {:.2}s", elapsed.as_secs_f64());
 
   let installed_paths = valheim_mod.install_with_report()?;
-  let staging = valheim_mod.staging_location.clone();
+  info!(
+    "✓ Installed: {} to {} location(s)",
+    mod_name,
+    installed_paths.len()
+  );
+
   let sha = sha256_hex(&staging).ok();
 
   Ok(InstalledModState {
