@@ -16,20 +16,20 @@ jobs:
     if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
     steps:
       # Check out the repository
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # df4cb1c (https://github.com/actions/checkout/releases/tag/v6.0.3)
         with:
           fetch-depth: 0
           token: "${{ secrets.GH_TOKEN }}"
 
       # Set up Rust with the stable toolchain
       - name: Setup | Rust | Stable
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # 46268bd (https://github.com/actions-rust-lang/setup-rust-toolchain/releases/tag/v1.16.1)
         with:
           toolchain: stable
           components: clippy rustfmt
 
       # Cache Cargo build files to speed up builds
-      - uses: actions/cache@v5
+      - uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # 27d5ce7 (https://github.com/actions/cache/releases/tag/v5.0.5)
         name: Cache Cargo Files
         with:
           path: |
@@ -42,13 +42,13 @@ jobs:
         run: make release PROFILE=production
 
       # Create a ZIP archive of the release binaries
-      - uses: vimtor/action-zip@v1
+      - uses: vimtor/action-zip@5407800dfb2b1b37d48df912330cb22f4ab6f422 # 5407800 (https://github.com/vimtor/action-zip/releases/tag/v1.3)
         with:
           files: target/release/odin target/release/huginn
           dest: tmp/bundle.zip
 
       # Use the Auto Release Tool by Intuit
       - name: Auto Release Tool by Intuit
-        uses: mbround18/auto@v1.5.0
+        uses: mbround18/auto@52c63af059a94fee4575f83bfc6ea0f35866b3b8 # 52c63af (https://github.com/mbround18/auto/releases/tag/v1.5.0)
         with:
           token: ${{ secrets.GH_TOKEN }}
