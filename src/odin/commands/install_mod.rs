@@ -9,6 +9,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::exit;
+use std::sync::Arc;
 
 /// Format bytes as human-readable size (KB, MB, GB)
 fn format_size(bytes: u64) -> String {
@@ -70,6 +71,35 @@ async fn process_mod(input: &str) -> Result<(), ValheimModError> {
       Err(ValheimModError::DownloadFailed)
     }
   }
+}
+
+/// Downloads a mod and returns the ready-to-install `ValheimMod`.
+/// Used by `process_mods_from_env` to separate the download phase (concurrent)
+/// from the install phase (sequential).
+async fn download_mod_only(input: &str) -> Result<ValheimMod, ValheimModError> {
+  let mut valheim_mod = ValheimMod::async_from_url(input).await?;
+  let mod_name = extract_mod_name(&valheim_mod.url);
+
+  info!("📦 Downloading: {}", mod_name);
+  let start = std::time::Instant::now();
+
+  valheim_mod.download().await.map_err(|e| {
+    error!("✗ Download failed for {}: {}", mod_name, e);
+    ValheimModError::DownloadFailed
+  })?;
+
+  let elapsed = start.elapsed();
+  let file_size = fs::metadata(&valheim_mod.staging_location)
+    .map(|m| format_size(m.len()))
+    .unwrap_or_else(|_| "unknown".to_string());
+  info!(
+    "✓ Downloaded {} ({}) in {:.1}s",
+    mod_name,
+    file_size,
+    elapsed.as_secs_f64()
+  );
+
+  Ok(valheim_mod)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -207,49 +237,6 @@ fn cleanup_removed_mod(mod_state: &InstalledModState) {
   }
 }
 
-async fn process_mod_collect_state(input: &str) -> Result<InstalledModState, ValheimModError> {
-  let mut valheim_mod = ValheimMod::async_from_url(input).await?;
-  let mod_name = extract_mod_name(&valheim_mod.url);
-
-  info!("📦 Installing: {}", mod_name);
-  debug!("   URL: {}", valheim_mod.url);
-
-  let start = std::time::Instant::now();
-  valheim_mod.download().await.map_err(|message| {
-    error!("✗ Download failed for {}: {}", mod_name, message);
-    ValheimModError::DownloadFailed
-  })?;
-  let elapsed = start.elapsed();
-
-  let staging = valheim_mod.staging_location.clone();
-  let file_size = fs::metadata(&staging)
-    .map(|m| format_size(m.len()))
-    .unwrap_or_else(|_| "unknown".to_string());
-
-  info!("✓ Downloaded {} ({})", mod_name, file_size);
-  debug!("   Download time: {:.2}s", elapsed.as_secs_f64());
-
-  let installed_paths = valheim_mod.install_with_report()?;
-  info!(
-    "✓ Installed: {} to {} location(s)",
-    mod_name,
-    installed_paths.len()
-  );
-
-  let sha = sha256_hex(&staging).ok();
-
-  Ok(InstalledModState {
-    url: input.to_string(),
-    file_type: valheim_mod.file_type.clone(),
-    staging_path: staging.to_string_lossy().into(),
-    sha256: sha,
-    installed_paths: installed_paths
-      .into_iter()
-      .map(|p| p.to_string_lossy().into())
-      .collect(),
-  })
-}
-
 pub async fn invoke(url: Option<String>, from_var: bool) {
   // We're already in a tokio runtime (from #[tokio::main]), so just run the async functions directly
   let result = if from_var {
@@ -307,18 +294,81 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
 
   info!("Installing {} mod(s) from MODS env", desired_mods.len());
 
+  // Identify ValheimPlus entries up-front (just string comparison, no I/O).
   let mut valheim_plus_dll_url: Option<String> = None;
-  let mut new_states: Vec<InstalledModState> = Vec::with_capacity(desired_mods.len());
-
-  // Download and install mods (async but sequential to avoid runtime issues with tests)
-  // For true parallelism with 50+ mods, this could use tokio::task::JoinSet
-  // but that requires multi-threaded runtime which complicates testing
   for m in &desired_mods {
     if is_valheim_plus_dll_url(m) {
       valheim_plus_dll_url = Some(m.to_string());
+      break;
     }
-    let state = process_mod_collect_state(m).await?;
-    new_states.push(state);
+  }
+
+  // Phase 1 — Concurrent downloads (bounded to 4 simultaneous connections).
+  // Downloads are pure I/O and safe to run concurrently; installation is
+  // sequential below to preserve deterministic mod ordering.
+  const MAX_CONCURRENT_DOWNLOADS: usize = 4;
+  let semaphore = Arc::new(tokio::sync::Semaphore::new(MAX_CONCURRENT_DOWNLOADS));
+
+  let mut join_set: tokio::task::JoinSet<(usize, Result<ValheimMod, ValheimModError>)> =
+    tokio::task::JoinSet::new();
+
+  for (idx, m) in desired_mods.iter().enumerate() {
+    let m = m.clone();
+    let sem = semaphore.clone();
+    join_set.spawn(async move {
+      let _permit = sem.acquire().await.unwrap();
+      (idx, download_mod_only(&m).await)
+    });
+  }
+
+  // Collect results, preserving original ordering for deterministic installation.
+  let mut downloaded: Vec<Option<ValheimMod>> = (0..desired_mods.len()).map(|_| None).collect();
+  while let Some(task_result) = join_set.join_next().await {
+    match task_result {
+      Ok((idx, Ok(vmod))) => downloaded[idx] = Some(vmod),
+      Ok((_, Err(e))) => {
+        join_set.abort_all();
+        return Err(e);
+      }
+      Err(e) => {
+        join_set.abort_all();
+        return Err(ValheimModError::DownloadError(format!(
+          "download task panicked: {e}"
+        )));
+      }
+    }
+  }
+
+  // Phase 2 — Sequential installation (BepInEx ordering matters).
+  let mut new_states: Vec<InstalledModState> = Vec::with_capacity(desired_mods.len());
+  for (idx, m) in desired_mods.iter().enumerate() {
+    let mut vmod = downloaded[idx]
+      .take()
+      .expect("all mods downloaded in phase 1");
+    let mod_name = extract_mod_name(&vmod.url);
+    let staging = vmod.staging_location.clone();
+
+    let installed_paths = vmod.install_with_report().map_err(|e| {
+      error!("✗ Install failed for {}: {}", mod_name, e);
+      e
+    })?;
+    info!(
+      "✓ Installed: {} to {} location(s)",
+      mod_name,
+      installed_paths.len()
+    );
+
+    let sha = sha256_hex(&staging).ok();
+    new_states.push(InstalledModState {
+      url: m.to_string(),
+      file_type: vmod.file_type.clone(),
+      staging_path: staging.to_string_lossy().into(),
+      sha256: sha,
+      installed_paths: installed_paths
+        .into_iter()
+        .map(|p| p.to_string_lossy().into())
+        .collect(),
+    });
   }
 
   // After all mods are installed, ensure ValheimPlus config exists when ValheimPlus.dll was installed.
