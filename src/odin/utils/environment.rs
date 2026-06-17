@@ -1,5 +1,4 @@
 use crate::utils::parse_truthy::parse_truthy;
-use cached::proc_macro::cached;
 use std::env;
 
 pub fn fetch_var(name: &str, default: &str) -> String {
@@ -24,7 +23,6 @@ pub fn fetch_multiple_var(name: &str, default: &str) -> String {
   }
 }
 
-#[cached]
 pub fn is_env_var_truthy(name: &'static str) -> bool {
   parse_truthy(&fetch_var(name, "0")).unwrap_or(false)
 }
