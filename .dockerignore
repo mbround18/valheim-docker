@@ -11,3 +11,6 @@ yarn.lock
 .yarn
 .env*
 .vscode
+.git
+.vscode
+

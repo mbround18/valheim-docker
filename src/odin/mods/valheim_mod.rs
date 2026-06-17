@@ -16,6 +16,7 @@ use std::convert::TryFrom;
 use std::fs::{create_dir_all, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tempfile::tempdir;
 use walkdir::WalkDir;
 use zip::ZipArchive;
@@ -245,6 +246,23 @@ pub struct ValheimMod {
 }
 
 impl ValheimMod {
+  /// Format bytes as human-readable size (KB, MB, GB)
+  fn format_bytes(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+    const GB: u64 = MB * 1024;
+
+    if bytes >= GB {
+      format!("{:.2} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+      format!("{:.2} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+      format!("{:.2} KB", bytes as f64 / KB as f64)
+    } else {
+      format!("{} B", bytes)
+    }
+  }
+
   pub fn new(url: &str) -> Self {
     let file_type = url_parse_file_type(url);
     ValheimMod {
@@ -293,7 +311,13 @@ impl ValheimMod {
       }
       hasher.update(&buf[..n]);
     }
-    Ok(format!("{:x}", hasher.finalize()))
+    let digest = hasher.finalize();
+    let mut hex = String::with_capacity(digest.len() * 2);
+    for byte in digest {
+      use std::fmt::Write as _;
+      write!(&mut hex, "{byte:02x}").map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    }
+    Ok(hex)
   }
 
   /// Try opening as a ZIP to validate integrity.
@@ -330,6 +354,113 @@ impl ValheimMod {
         warn!("Failed to write sha256 sidecar: {}", e);
       }
     }
+  }
+
+  /// Parallel chunked download for large files.
+  ///
+  /// Issues up to `MAX_WORKERS` concurrent Range requests, writing each chunk
+  /// directly to its correct offset so no sorting/buffering pass is needed.
+  /// Falls back gracefully: callers only invoke this when the server has already
+  /// advertised `Accept-Ranges: bytes` *and* the file exceeds the threshold.
+  #[cfg(unix)]
+  async fn download_chunked(
+    url: &str,
+    path: &Path,
+    total_size: u64,
+  ) -> Result<(), ValheimModError> {
+    use std::os::unix::fs::FileExt;
+
+    const CHUNK_SIZE: u64 = 4 * 1024 * 1024; // 4 MB per chunk
+    const MAX_WORKERS: usize = 4;
+
+    let num_chunks = total_size.div_ceil(CHUNK_SIZE);
+    info!(
+      "🚀 Parallel download: {} in {} chunks ({} concurrent)",
+      Self::format_bytes(total_size),
+      num_chunks,
+      MAX_WORKERS
+    );
+
+    // Pre-allocate the file so workers can write to arbitrary offsets safely.
+    {
+      let file = File::create(path).map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+      file
+        .set_len(total_size)
+        .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+    }
+
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(MAX_WORKERS));
+    let url = Arc::new(url.to_string());
+    let client = Arc::new(Client::new());
+    // Shared writable handle — write_at uses pwrite64 so concurrent non-overlapping
+    // writes are safe without any additional locking.
+    let file = Arc::new(
+      std::fs::OpenOptions::new()
+        .write(true)
+        .open(path)
+        .map_err(|e| ValheimModError::FileOpenError(e.to_string()))?,
+    );
+
+    let mut join_set: tokio::task::JoinSet<Result<(), ValheimModError>> =
+      tokio::task::JoinSet::new();
+
+    for i in 0..num_chunks {
+      let start_byte = i * CHUNK_SIZE;
+      let end_byte = std::cmp::min(start_byte + CHUNK_SIZE - 1, total_size - 1);
+      let url = url.clone();
+      let client = client.clone();
+      let sem = semaphore.clone();
+      let file = file.clone();
+
+      join_set.spawn(async move {
+        let _permit = sem.acquire().await.unwrap();
+        let resp = client
+          .get(url.as_str())
+          .header("Range", format!("bytes={}-{}", start_byte, end_byte))
+          .send()
+          .await
+          .map_err(|e| ValheimModError::DownloadError(format!("chunk {i}: {e}")))?;
+
+        // 206 Partial Content is expected; 200 is tolerated (full body served).
+        if resp.status() != reqwest::StatusCode::PARTIAL_CONTENT && !resp.status().is_success() {
+          return Err(ValheimModError::DownloadError(format!(
+            "chunk {i} status {}",
+            resp.status()
+          )));
+        }
+
+        let data = resp
+          .bytes()
+          .await
+          .map_err(|e| ValheimModError::DownloadError(format!("chunk {i} body: {e}")))?;
+
+        tokio::task::spawn_blocking(move || {
+          file
+            .write_at(&data, start_byte)
+            .map(|_| ())
+            .map_err(|e| ValheimModError::FileCreateError(format!("chunk {i} write: {e}")))
+        })
+        .await
+        .map_err(|e| ValheimModError::DownloadError(format!("chunk {i} task: {e}")))?
+      });
+    }
+
+    while let Some(result) = join_set.join_next().await {
+      match result {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => {
+          join_set.abort_all();
+          return Err(e);
+        }
+        Err(e) => {
+          join_set.abort_all();
+          return Err(ValheimModError::DownloadError(format!("chunk task: {e}")));
+        }
+      }
+    }
+
+    info!("✓ Parallel download complete ({num_chunks} chunks assembled)");
+    Ok(())
   }
 
   /// Download: Downloads the mod ZIP from the URL into the staging location.
@@ -374,7 +505,13 @@ impl ValheimMod {
     if orig_cache_path.exists() {
       if orig_file_type == "zip" {
         if Self::is_valid_zip(&orig_cache_path) {
-          debug!("Cache hit for URL; reusing {:?}", orig_cache_path);
+          if let Ok(metadata) = std::fs::metadata(&orig_cache_path) {
+            let size = Self::format_bytes(metadata.len());
+            info!("⚡ Cache hit: reusing {} from cache", size);
+            debug!("   Path: {:?}", orig_cache_path);
+          } else {
+            info!("⚡ Cache hit: reusing cached file");
+          }
           self.staging_location = orig_cache_path;
           self.file_type = orig_file_type;
           self.downloaded = true;
@@ -387,7 +524,13 @@ impl ValheimMod {
           let _ = std::fs::remove_file(&orig_cache_path);
         }
       } else {
-        debug!("Cache hit for URL (non-zip); reusing {:?}", orig_cache_path);
+        if let Ok(metadata) = std::fs::metadata(&orig_cache_path) {
+          let size = Self::format_bytes(metadata.len());
+          info!("⚡ Cache hit: reusing {} (non-zip)", size);
+          debug!("   Path: {:?}", orig_cache_path);
+        } else {
+          info!("⚡ Cache hit: reusing cached file (non-zip)");
+        }
         self.staging_location = orig_cache_path;
         self.file_type = orig_file_type;
         self.downloaded = true;
@@ -398,6 +541,7 @@ impl ValheimMod {
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     let client = Client::new();
+    debug!("⬇️  Downloading from: {}", &self.url);
     let response = client
       .get(parsed_url)
       .send()
@@ -425,7 +569,13 @@ impl ValheimMod {
     if final_path.exists() {
       if self.file_type == "zip" {
         if Self::is_valid_zip(&final_path) {
-          debug!("Cache hit after redirect; reusing {:?}", final_path);
+          if let Ok(metadata) = std::fs::metadata(&final_path) {
+            let size = Self::format_bytes(metadata.len());
+            info!("⚡ Cache hit (post-redirect): reusing {}", size);
+            debug!("   Path: {:?}", final_path);
+          } else {
+            info!("⚡ Cache hit (post-redirect): reusing cached file");
+          }
           self.staging_location = final_path;
           self.downloaded = true;
           return Ok(());
@@ -436,22 +586,82 @@ impl ValheimMod {
           );
         }
       } else {
-        debug!(
-          "Cache hit after redirect for non-zip; reusing {:?}",
-          final_path
-        );
+        if let Ok(metadata) = std::fs::metadata(&final_path) {
+          let size = Self::format_bytes(metadata.len());
+          info!("⚡ Cache hit (post-redirect): reusing {} (non-zip)", size);
+          debug!("   Path: {:?}", final_path);
+        } else {
+          info!("⚡ Cache hit (post-redirect): reusing cached file (non-zip)");
+        }
         self.staging_location = final_path;
         self.downloaded = true;
         return Ok(());
       }
     }
 
-    let bytes = response
-      .bytes()
-      .await
-      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-    std::fs::write(&final_path, &bytes)
-      .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+    // Check whether the server supports parallel Range downloads.
+    // We inspect headers from the already-established GET response so no extra round-trip is needed.
+    const PARALLEL_THRESHOLD: u64 = 10 * 1024 * 1024; // 10 MB
+    let parallel_size: Option<u64> = {
+      let accepts_ranges = response
+        .headers()
+        .get("accept-ranges")
+        .and_then(|v| v.to_str().ok())
+        .map(|v| v != "none")
+        .unwrap_or(false);
+      let content_length = response
+        .headers()
+        .get("content-length")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<u64>().ok());
+      if accepts_ranges {
+        content_length.filter(|&l| l >= PARALLEL_THRESHOLD)
+      } else {
+        None
+      }
+    };
+
+    let start_time = std::time::Instant::now();
+
+    #[cfg(unix)]
+    if let Some(total_size) = parallel_size {
+      // Drop the initial response — we don't need its body; chunk tasks open their own connections.
+      drop(response);
+      Self::download_chunked(&self.url, &final_path, total_size).await?;
+      let elapsed = start_time.elapsed();
+      let size = Self::format_bytes(
+        std::fs::metadata(&final_path)
+          .map(|m| m.len())
+          .unwrap_or(total_size),
+      );
+      info!("✓ Downloaded {} in {:.1}s", size, elapsed.as_secs_f64());
+    } else {
+      info!("📦 Downloading mod...");
+      let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+      let elapsed = start_time.elapsed();
+      let size = Self::format_bytes(bytes.len() as u64);
+      std::fs::write(&final_path, &bytes)
+        .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+      info!("✓ Downloaded {} in {:.1}s", size, elapsed.as_secs_f64());
+    }
+
+    #[cfg(not(unix))]
+    {
+      let _ = parallel_size; // unused on non-Unix; fall through to standard download
+      info!("📦 Downloading mod...");
+      let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+      let elapsed = start_time.elapsed();
+      let size = Self::format_bytes(bytes.len() as u64);
+      std::fs::write(&final_path, &bytes)
+        .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
+      info!("✓ Downloaded {} in {:.1}s", size, elapsed.as_secs_f64());
+    }
 
     // Validate based on file type. ZIP must be valid; non-zip types (dll, cfg) are accepted.
     if self.file_type == "zip" {

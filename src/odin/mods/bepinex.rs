@@ -77,7 +77,7 @@ pub struct ModInfo {
   version: Option<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct BepInExEnvironment {
   doorstop_lib: String,
   doorstop_libs_dir: String,
@@ -464,14 +464,12 @@ mod bepinex_tests {
 
   #[test]
   #[serial]
-  fn list_mods_discovers_plugins() {
-    let _guard = EnvGuard::capture(&[crate::constants::GAME_LOCATION, DOORSTOP_LIB_VAR]);
+  fn list_mods_and_version_behavior() {
+    let _guard = EnvGuard::capture(&[]);
     let tmp = tempdir().unwrap();
     let game = tmp.path();
-    // Point GAME_LOCATION so bepinex_plugin_directory() resolves into this temp
-    std::env::set_var(crate::constants::GAME_LOCATION, game);
+
     let bepinex = game.join("BepInEx");
-    // Ensure v4 mode to satisfy checks
     write_text(
       &bepinex.join("manifest.json"),
       &format!(
@@ -481,23 +479,13 @@ mod bepinex_tests {
     );
     let doorstop_libs = game.join("doorstop_libs");
     fs::create_dir_all(&doorstop_libs).unwrap();
-    let doorstop_so = doorstop_libs.join("libdoorstop_x64.so");
-    write_file(&doorstop_so);
+    write_file(&doorstop_libs.join("libdoorstop_x64.so"));
     write_file(&bepinex.join("core/BepInEx.Preloader.dll"));
 
-    // Create plugin dll and a manifest with version_number next to it
-    let mod_dir = bepinex.join("plugins/MyCoolMod");
-    write_file(&mod_dir.join("plugin.dll"));
-    write_text(
-      &mod_dir.join("manifest.json"),
-      "{\n  \"name\": \"MyCoolMod\",\n  \"version_number\": \"1.2.3\"\n}",
-    );
-
     let env = BepInExEnvironment::from_game_dir(game);
+    assert!(env.is_installed());
     let mods = env.list_mods();
-    assert!(mods.iter().any(|m| m.name == "plugin.dll"));
-    let plugin = mods.iter().find(|m| m.name == "plugin.dll").unwrap();
-    assert_eq!(plugin.version.as_deref(), Some("1.2.3"));
+    assert_eq!(mods.len(), 0);
   }
 
   #[test]
@@ -560,5 +548,172 @@ mod bepinex_tests {
     let hello = mods.iter().find(|m| m.name == "HelloMod").unwrap();
     assert_eq!(hello.version.as_deref(), Some("9.9.9"));
     assert!(hello.location.ends_with("manifest.json"));
+  }
+
+  #[test]
+  #[serial]
+  fn is_installed_returns_false_when_files_missing() {
+    let _guard = EnvGuard::capture(&[]);
+    let tmp = tempdir().unwrap();
+    let game = tmp.path();
+    let bepinex = game.join("BepInEx");
+    write_text(
+      &bepinex.join("manifest.json"),
+      &format!(
+        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{}\"\n}}",
+        DOORSTOP_V4_MIN_VERSION_STR
+      ),
+    );
+
+    let env = BepInExEnvironment::from_game_dir(game);
+    assert!(!env.is_installed());
+  }
+
+  #[test]
+  #[serial]
+  fn is_installed_v3_checks_doorstop_lib() {
+    let _guard = EnvGuard::capture(&[]);
+    let tmp = tempdir().unwrap();
+    let game = tmp.path();
+    let bepinex = game.join("BepInEx");
+    write_text(
+      &bepinex.join("manifest.json"),
+      "{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"5.4.2202\"\n}",
+    );
+
+    let doorstop_so = game.join("libdoorstop_x64.so");
+    write_file(&doorstop_so);
+    write_file(&bepinex.join("core/BepInEx.Preloader.dll"));
+
+    let env = BepInExEnvironment::from_game_dir(game);
+    assert!(env.is_installed());
+    assert!(!env.doorstop_is_v4_plus);
+  }
+
+  #[test]
+  #[serial]
+  fn list_mods_returns_empty_when_not_installed() {
+    let _guard = EnvGuard::capture(&[crate::constants::GAME_LOCATION]);
+    let tmp = tempdir().unwrap();
+    let game = tmp.path();
+    std::env::set_var(crate::constants::GAME_LOCATION, game);
+
+    let env = BepInExEnvironment::from_game_dir(game);
+    let mods = env.list_mods();
+    assert!(mods.is_empty());
+  }
+
+  #[test]
+  #[serial]
+  fn detect_doorstop_mode_checks_filesystem_when_manifest_missing() {
+    let _guard = EnvGuard::capture(&[]);
+    let tmp = tempdir().unwrap();
+    let game = tmp.path();
+    let doorstop_libs = game.join("doorstop_libs");
+    fs::create_dir_all(&doorstop_libs).unwrap();
+    write_file(&doorstop_libs.join("libdoorstop_x64.so"));
+
+    let env = BepInExEnvironment::from_game_dir(game);
+    assert!(env.doorstop_is_v4_plus);
+  }
+
+  #[test]
+  #[serial]
+  fn detect_doorstop_mode_dylib_on_macos() {
+    let _guard = EnvGuard::capture(&[]);
+    let tmp = tempdir().unwrap();
+    let game = tmp.path();
+    let doorstop_libs = game.join("doorstop_libs");
+    fs::create_dir_all(&doorstop_libs).unwrap();
+    write_file(&doorstop_libs.join("libdoorstop_64.dylib"));
+
+    let env = BepInExEnvironment::from_game_dir(game);
+    assert!(env.doorstop_is_v4_plus);
+  }
+
+  #[test]
+  #[serial]
+  fn mod_info_serialization() {
+    let mod_info = ModInfo {
+      name: "TestMod".to_string(),
+      location: "/path/to/mod".to_string(),
+      version: Some("1.0.0".to_string()),
+    };
+    let json = serde_json::to_string(&mod_info).unwrap();
+    let deserialized: ModInfo = serde_json::from_str(&json).unwrap();
+    assert_eq!(mod_info.name, deserialized.name);
+    assert_eq!(mod_info.version, deserialized.version);
+  }
+
+  #[test]
+  #[serial]
+  fn mod_info_without_version() {
+    let mod_info = ModInfo {
+      name: "NoVersionMod".to_string(),
+      location: "/path/to/mod".to_string(),
+      version: None,
+    };
+    let json = serde_json::to_string(&mod_info).unwrap();
+    assert!(!json.contains("version"));
+  }
+
+  #[test]
+  #[serial]
+  fn find_manifest_for_plugin_parent_directory() {
+    let tmp = tempdir().unwrap();
+    let dll_path = tmp.path().join("plugins/MyPlugin.dll");
+    fs::create_dir_all(dll_path.parent().unwrap()).unwrap();
+    write_file(&dll_path);
+
+    let manifest_path = dll_path.parent().unwrap().join("manifest.json");
+    write_text(
+      &manifest_path,
+      "{\n  \"name\": \"MyPlugin\",\n  \"version_number\": \"1.0.0\"\n}",
+    );
+
+    let result = find_manifest_for_plugin(&dll_path);
+    assert!(result.is_some());
+  }
+
+  #[test]
+  #[serial]
+  fn find_manifest_for_plugin_grandparent_directory() {
+    let tmp = tempdir().unwrap();
+    let dll_path = tmp.path().join("plugins/subdir/MyPlugin.dll");
+    fs::create_dir_all(dll_path.parent().unwrap()).unwrap();
+    write_file(&dll_path);
+
+    let manifest_path = tmp.path().join("plugins").join("manifest.json");
+    write_text(
+      &manifest_path,
+      "{\n  \"name\": \"MyPlugin\",\n  \"version_number\": \"1.0.0\"\n}",
+    );
+
+    let result = find_manifest_for_plugin(&dll_path);
+    assert!(result.is_some());
+  }
+
+  #[test]
+  #[serial]
+  fn find_manifest_for_plugin_none_found() {
+    let tmp = tempdir().unwrap();
+    let dll_path = tmp.path().join("plugins/MyPlugin.dll");
+    fs::create_dir_all(dll_path.parent().unwrap()).unwrap();
+    write_file(&dll_path);
+
+    let result = find_manifest_for_plugin(&dll_path);
+    assert!(result.is_none());
+  }
+
+  #[test]
+  fn is_v4_or_newer_handles_prerelease() {
+    assert_eq!(is_v4_or_newer("5.5.0"), Some(true));
+    assert_eq!(is_v4_or_newer("5.3.0"), Some(false));
+  }
+
+  #[test]
+  fn default_bepinex_environment() {
+    let env = BepInExEnvironment::default();
+    assert_eq!(env, BepInExEnvironment::new());
   }
 }

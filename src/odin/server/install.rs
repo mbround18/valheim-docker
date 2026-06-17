@@ -991,7 +991,7 @@ mod tests {
     fs::write(&backup_file, "old").unwrap();
 
     rollback_promotion(
-      &[created_file.clone()],
+      std::slice::from_ref(&created_file),
       &[(dst_file.clone(), backup_file.clone())],
     );
 
