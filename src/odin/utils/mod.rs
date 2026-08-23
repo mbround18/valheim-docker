@@ -11,9 +11,11 @@ pub use fetch_public_ip_address::fetch_public_address;
 pub mod is_valid_url;
 pub mod normalize_paths;
 pub mod parse_mod_string;
+pub mod thunderstore_auth;
 
 pub use is_valid_url::is_valid_url;
 pub use parse_mod_string::parse_mod_string;
+pub use thunderstore_auth::with_thunderstore_auth;
 
 use log::debug;
 use std::env;
