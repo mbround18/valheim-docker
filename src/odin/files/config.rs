@@ -81,33 +81,33 @@ impl TryInto<Vec<String>> for ValheimArguments {
     let mut args = Vec::new();
     // Sets the port of the server, (Can be set with ENV variable PORT)
     let port = fetch_var("PORT", &self.port);
-    debug!("Setting port to: {}", &port);
+    debug!("Setting port to: {}", port);
     args.push(String::from("-port"));
     args.push(port);
 
     // Sets the name of the server, (Can be set with ENV variable NAME)
     let name = fetch_var("NAME", &self.name);
-    debug!("Setting name to: {}", &name);
+    debug!("Setting name to: {}", name);
     args.push(String::from("-name"));
     // Arg processor needs the quotes around the name if it has spaces
     args.push(format!("'{}'", name));
 
     // Sets the world of the server, (Can be set with ENV variable WORLD)
     let world = fetch_var("WORLD", &self.world);
-    debug!("Setting world to: {}", &world);
+    debug!("Setting world to: {}", world);
     args.push(String::from("-world"));
     args.push(world);
 
     // Determines if the server is public or not
     let public = fetch_var("PUBLIC", &self.public);
-    debug!("Setting public to: {}", &public);
+    debug!("Setting public to: {}", public);
     args.push(String::from("-public"));
     args.push(public.clone());
 
     // Sets the save interval in seconds
     if let Some(save_interval) = &self.save_interval {
       let interval = save_interval.to_string();
-      debug!("Setting save interval to: {}", &interval);
+      debug!("Setting save interval to: {}", interval);
       args.push(String::from("-saveinterval"));
       args.push(interval);
     };
@@ -119,7 +119,7 @@ impl TryInto<Vec<String>> for ValheimArguments {
         .map(|key| key.trim())
         .filter(|key| !key.is_empty())
         .for_each(|key| {
-          debug!("Setting set_key to: {}", &key);
+          debug!("Setting set_key to: {}", key);
           args.push(String::from("-setkey"));
           args.push(key.to_string());
         });
@@ -127,7 +127,7 @@ impl TryInto<Vec<String>> for ValheimArguments {
 
     // Add preset to the command
     if let Some(preset) = &self.preset {
-      debug!("Setting preset to: {}", &preset);
+      debug!("Setting preset to: {}", preset);
       args.push(String::from("-preset"));
       args.push(preset.to_string());
     };
@@ -135,10 +135,7 @@ impl TryInto<Vec<String>> for ValheimArguments {
     // Add modifiers to the command
     if let Some(modifiers) = &self.modifiers {
       modifiers.iter().for_each(|modifier| {
-        debug!(
-          "Setting modifier to: {} {}",
-          &modifier.name, &modifier.value
-        );
+        debug!("Setting modifier to: {} {}", modifier.name, modifier.value);
         args.push(String::from("-modifier"));
         args.push(modifier.name.to_string());
         args.push(modifier.value.to_string());

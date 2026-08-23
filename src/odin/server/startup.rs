@@ -56,7 +56,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   debug!("--------------------------------------------------------------------------------------------------------------");
   let (stdout, stderr) = create_log_files().unwrap();
 
-  debug!("Launching With Args: \n{:#?}", &config);
+  debug!("Launching With Args: \n{:#?}", config);
   let base_command = command
     .env(
       "SteamAppId",
@@ -89,7 +89,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
 
   base_command.args(&args as &[String]);
 
-  debug!("Executable: {}", &config.command);
+  debug!("Executable: {}", config.command);
   info!("Launching Command...");
   let ld_library_path_value = environment::fetch_multiple_var(
     constants::LD_LIBRARY_PATH_VAR,

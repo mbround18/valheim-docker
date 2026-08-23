@@ -26,12 +26,12 @@ pub fn invoke(dry_run: bool) {
     info!(
       target: "commands_start",
       "This command would have launched\n{} -nographics -batchmode -port {} -name {} -world {} -password {} -public {}",
-      &config.command,
-      &config.port,
-      &config.name,
-      &config.world,
-      &config.password,
-      &config.public,
+      config.command,
+      config.port,
+      config.name,
+      config.world,
+      config.password,
+      config.public,
     )
   }
 }

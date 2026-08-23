@@ -132,7 +132,7 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
       .get(&event.event_type.name.as_str().to_lowercase())
       .unwrap_or(&default_event);
     let source = serde_json::to_string(&discord_event).unwrap();
-    debug!("Discord Notification Template: {}", &source);
+    debug!("Discord Notification Template: {}", source);
     handlebars
       .register_template_string("notification", source)
       .unwrap();
@@ -170,6 +170,8 @@ mod tests {
   use crate::notifications::enums::player::PlayerStatus;
   use crate::notifications::NotificationMessage;
   use chrono::Local;
+  use serial_test::serial;
+  use std::env::set_var;
 
   #[test]
   fn test_color_from_event_status() {
@@ -195,7 +197,12 @@ mod tests {
   }
 
   #[test]
+  #[serial]
   fn test_discord_webhook_body_from_notification_message() {
+    set_var(
+      "NAME",
+      "test_discord_webhook_body_from_notification_message",
+    );
     let notification = NotificationMessage {
       author: String::from("Test Author"),
       event_type: NotificationEvent::Player(PlayerStatus::Joined).to_event_type(),
@@ -213,7 +220,9 @@ mod tests {
   }
 
   #[test]
+  #[serial]
   fn test_color_application_for_player_join() {
+    set_var("NAME", "test_color_application_for_player_join");
     let notification = NotificationMessage {
       author: String::from("Test Author"),
       event_type: NotificationEvent::Player(PlayerStatus::Joined).to_event_type(),
@@ -226,7 +235,9 @@ mod tests {
   }
 
   #[test]
+  #[serial]
   fn test_color_application_for_successful_status() {
+    set_var("NAME", "test_color_application_for_successful_status");
     let mut event_type = NotificationEvent::Start(EventStatus::Successful).to_event_type();
     event_type.status = "Successful".to_string();
 

@@ -63,7 +63,7 @@ pub fn parse_file_name(url: &Url, default: &str) -> String {
     url
       .path_segments()
       .and_then(|mut segments| segments.next_back())
-      .and_then(|name| if name.is_empty() { None } else { Some(name) })
+      .filter(|&name| !name.is_empty())
       .unwrap_or(default),
   )
 }
