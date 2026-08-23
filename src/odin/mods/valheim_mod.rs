@@ -1,7 +1,7 @@
 use crate::errors::ValheimModError;
 use crate::mods::manifest::Manifest;
 use crate::utils::normalize_paths::normalize_paths;
-use crate::utils::{is_valid_url, parse_mod_string};
+use crate::utils::{is_valid_url, parse_mod_string, with_thunderstore_auth};
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
   utils::{common_paths, get_md5_hash, parse_file_name, url_parse_file_type},
@@ -100,7 +100,7 @@ async fn thunderstore_list_versions(
   for url in endpoints {
     for attempt in 1..=2 {
       log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
-      match client.get(&url).send().await {
+      match with_thunderstore_auth(client.get(&url), &url).send().await {
         Ok(resp) => {
           if !resp.status().is_success() {
             last_err = Some(format!("status {} for {}", resp.status(), url));
@@ -136,7 +136,10 @@ async fn thunderstore_list_versions(
     "https://thunderstore.io/c/valheim/p/{}/{}/",
     namespace, name
   );
-  match client.get(&page_url).send().await {
+  match with_thunderstore_auth(client.get(&page_url), &page_url)
+    .send()
+    .await
+  {
     Ok(resp) if resp.status().is_success() => match resp.text().await {
       Ok(html) => {
         let needle = format!("/package/download/{}/{}/", namespace, name);
@@ -414,8 +417,7 @@ impl ValheimMod {
 
       join_set.spawn(async move {
         let _permit = sem.acquire().await.unwrap();
-        let resp = client
-          .get(url.as_str())
+        let resp = with_thunderstore_auth(client.get(url.as_str()), &url)
           .header("Range", format!("bytes={}-{}", start_byte, end_byte))
           .send()
           .await
@@ -469,7 +471,10 @@ impl ValheimMod {
     // For Thunderstore download URLs, validate upfront that the URL isn't 404 to give fast feedback.
     if Self::is_thunderstore_download_url(&self.url) {
       let client = Client::new();
-      match client.head(&self.url).send().await {
+      match with_thunderstore_auth(client.head(&self.url), &self.url)
+        .send()
+        .await
+      {
         Ok(resp) => {
           let status = resp.status();
           if status.is_client_error() {
@@ -542,8 +547,7 @@ impl ValheimMod {
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     let client = Client::new();
     debug!("⬇️  Downloading from: {}", self.url);
-    let response = client
-      .get(parsed_url)
+    let response = with_thunderstore_auth(client.get(parsed_url), &self.url)
       .send()
       .await
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
