@@ -15,7 +15,7 @@ impl FromStr for JobInfo {
   fn from_str(job_name: &str) -> Result<JobInfo, std::convert::Infallible> {
     let sanitized_name = job_name.to_uppercase();
     let enabled: bool = fetch_var(&sanitized_name, "0").eq_ignore_ascii_case("1");
-    let schedule = fetch_var(&format!("{}_SCHEDULE", &sanitized_name), "never").replace('"', "");
+    let schedule = fetch_var(&format!("{}_SCHEDULE", sanitized_name), "never").replace('"', "");
     Ok(JobInfo {
       name: job_name.to_string(),
       enabled,

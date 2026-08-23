@@ -11,7 +11,7 @@ pub fn invoke(input: String, output: String) {
   let tar_gz = match File::create(&output) {
     Ok(file) => file,
     Err(_) => {
-      error!("Failed to create backup file at {}", &output);
+      error!("Failed to create backup file at {}", output);
       exit(1)
     }
   };

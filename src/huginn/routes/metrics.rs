@@ -20,22 +20,22 @@ pub fn invoke() -> String {
   let content = [
     format!(
       "valheim_online{labels} {online}",
-      labels = &labels,
+      labels = labels,
       online = info.online as i32
     ),
     format!(
       "valheim_current_player_count{labels} {players}",
-      labels = &labels,
-      players = &info.players
+      labels = labels,
+      players = info.players
     ),
     format!(
       "valheim_max_player_count{labels} {players}",
-      labels = &labels,
-      players = &info.max_players
+      labels = labels,
+      players = info.max_players
     ),
     format!(
       "valheim_bepinex_installed{labels} {bepinex_installed}",
-      labels = &labels,
+      labels = labels,
       bepinex_installed = info.bepinex.enabled as i32
     ),
     // System metrics (no labels beyond server identity)

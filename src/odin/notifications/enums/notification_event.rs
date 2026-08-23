@@ -64,7 +64,7 @@ fn is_webhook_include_public_ip() -> bool {
 pub fn parse_server_name_for_notification() -> String {
   if is_webhook_include_public_ip() {
     let ip = fetch_public_address();
-    format!("{} - {}:{}", get_server_name(), &ip.ip, &ip.port)
+    format!("{} - {}:{}", get_server_name(), ip.ip, ip.port)
   } else {
     get_server_name()
   }
@@ -139,7 +139,7 @@ impl NotificationEvent {
         event.event_message = msg;
       }
 
-      debug!("Checking ENV Var: {}", &enabled_var);
+      debug!("Checking ENV Var: {}", enabled_var);
       if fetch_var(&enabled_var, "0").eq("1") {
         self.send_custom_notification(&fetch_webhook_url(), &event);
       } else {

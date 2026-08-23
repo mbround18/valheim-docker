@@ -162,7 +162,7 @@ impl BepInExEnvironment {
   pub fn new() -> BepInExEnvironment {
     let game_dir = game_directory();
     let bepinex_dir = bepinex_directory();
-    let bepinex_preloader_dll = format!("{}/core/BepInEx.Preloader.dll", &bepinex_dir);
+    let bepinex_preloader_dll = format!("{}/core/BepInEx.Preloader.dll", bepinex_dir);
 
     // Detect BepInExPack_Valheim version from manifest.json if present and cross-check filesystem
     let mut doorstop_is_v4_plus =
@@ -173,15 +173,15 @@ impl BepInExEnvironment {
 
     debug!("Parsing Doorstop locations.");
     let doorstop_lib_default = if doorstop_is_v4_plus {
-      format!("{}/doorstop_libs/libdoorstop_x64.so", &game_dir)
+      format!("{}/doorstop_libs/libdoorstop_x64.so", game_dir)
     } else {
       String::from("libdoorstop_x64.so")
     };
     let doorstop_lib = environment::fetch_var(DOORSTOP_LIB_VAR, &doorstop_lib_default);
     let doorstop_libs = parse_path(
       DOORSTOP_LIBS_VAR,
-      format!("{}/doorstop_libs", &game_dir),
-      format!("{}/doorstop", &bepinex_dir),
+      format!("{}/doorstop_libs", game_dir),
+      format!("{}/doorstop", bepinex_dir),
     );
     let doorstop_target_assembly =
       environment::fetch_var(DOORSTOP_TARGET_ASSEMBLY_VAR, &bepinex_preloader_dll);
@@ -190,15 +190,15 @@ impl BepInExEnvironment {
     // Prefer BepInEx/core_lib, fallback to BepInEx/core; no more game_dir/unstripped_corlib
     let doorstop_corlib_override_path = parse_path(
       DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
-      format!("{}/core_lib", &bepinex_dir),
-      format!("{}/core", &bepinex_dir),
+      format!("{}/core_lib", bepinex_dir),
+      format!("{}/core", bepinex_dir),
     );
 
     debug!("Parsing LD locations.");
     let ld_preload = environment::fetch_var(constants::LD_PRELOAD_VAR, "").add(&doorstop_lib);
     let ld_library_path = environment::fetch_var(
       constants::LD_LIBRARY_PATH_VAR,
-      format!("./linux64:{}", &doorstop_libs).as_str(),
+      format!("./linux64:{}", doorstop_libs).as_str(),
     );
 
     debug!("Returning environment");
@@ -221,8 +221,8 @@ impl BepInExEnvironment {
     debug!("Checking for BepInEx specific files...");
     // Choose checks based on detected mode
     // For Doorstop v4+: verify native lib in doorstop_libs dir (Linux .so or macOS .dylib)
-    let lib_so = format!("{}/libdoorstop_x64.so", &self.doorstop_libs_dir);
-    let lib_dylib = format!("{}/libdoorstop_64.dylib", &self.doorstop_libs_dir);
+    let lib_so = format!("{}/libdoorstop_x64.so", self.doorstop_libs_dir);
+    let lib_dylib = format!("{}/libdoorstop_64.dylib", self.doorstop_libs_dir);
     let checks_v4 = [&self.doorstop_target_assembly];
     let checks_v3 = [&self.doorstop_lib, &self.doorstop_invoke_dll];
     let expected_state = true;
@@ -231,21 +231,21 @@ impl BepInExEnvironment {
       let dylib_exists = path_exists(&lib_dylib);
       let target_exists = path_exists(&self.doorstop_target_assembly);
       debug!("Doorstop v4+ checks:");
-      debug!(" - lib (so): {} => {}", &lib_so, so_exists);
-      debug!(" - lib (dylib): {} => {}", &lib_dylib, dylib_exists);
+      debug!(" - lib (so): {} => {}", lib_so, so_exists);
+      debug!(" - lib (dylib): {} => {}", lib_dylib, dylib_exists);
       debug!(
         " - target assembly: {} => {}",
-        &self.doorstop_target_assembly, target_exists
+        self.doorstop_target_assembly, target_exists
       );
       (so_exists || dylib_exists) && checks_v4.iter().all(|v| path_exists(v) == expected_state)
     } else {
       let lib_exists = path_exists(&self.doorstop_lib);
       let invoke_exists = path_exists(&self.doorstop_invoke_dll);
       debug!("Doorstop v3 checks:");
-      debug!(" - doorstop_lib: {} => {}", &self.doorstop_lib, lib_exists);
+      debug!(" - doorstop_lib: {} => {}", self.doorstop_lib, lib_exists);
       debug!(
         " - invoke dll: {} => {}",
-        &self.doorstop_invoke_dll, invoke_exists
+        self.doorstop_invoke_dll, invoke_exists
       );
       checks_v3.iter().all(|v| path_exists(v) == expected_state)
     };

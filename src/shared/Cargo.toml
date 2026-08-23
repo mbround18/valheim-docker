@@ -8,11 +8,11 @@ name = "shared"
 path = "src/lib.rs"
 
 [dependencies]
-log = "0.4.32"
+log = "0.4.33"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt"] }
 tracing-log = "0.2.0"
-sysinfo = { version = "0.39.3" }
+sysinfo = { version = "0.39.6" }
 nix = { version = "0.31.3", default-features = false, features = [
     "fs",
     "user",

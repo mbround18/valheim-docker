@@ -497,7 +497,7 @@ impl ValheimMod {
     }
     let orig_file_name = parse_file_name(
       &orig_url,
-      &format!("{}.{}", get_md5_hash(&self.url), &orig_file_type),
+      &format!("{}.{}", get_md5_hash(&self.url), orig_file_type),
     );
     let orig_cache_path = staging_dir.join(&orig_file_name);
 
@@ -541,7 +541,7 @@ impl ValheimMod {
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     let client = Client::new();
-    debug!("⬇️  Downloading from: {}", &self.url);
+    debug!("⬇️  Downloading from: {}", self.url);
     let response = client
       .get(parsed_url)
       .send()
@@ -549,7 +549,7 @@ impl ValheimMod {
       .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
 
     if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
-      debug!("Using redirect URL: {}", &self.url);
+      debug!("Using redirect URL: {}", self.url);
       self.url = response.url().to_string();
       self.file_type = url_parse_file_type(response.url().as_ref());
       if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
@@ -560,7 +560,7 @@ impl ValheimMod {
 
     let file_name = parse_file_name(
       &Url::parse(&self.url).unwrap(),
-      &format!("{}.{}", get_md5_hash(&self.url), &self.file_type),
+      &format!("{}.{}", get_md5_hash(&self.url), self.file_type),
     );
     let final_path = staging_dir.join(file_name);
     debug!("Downloading to: {:?}", final_path);
@@ -688,7 +688,7 @@ impl ValheimMod {
 
     self.staging_location = final_path;
     self.downloaded = true;
-    debug!("Download complete: {}", &self.url);
+    debug!("Download complete: {}", self.url);
     debug!("Download output: {:?}", self.staging_location);
     Ok(())
   }
