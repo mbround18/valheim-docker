@@ -1,5 +1,6 @@
 use crate::errors::ValheimModError;
 use crate::utils::common_paths;
+use crate::utils::with_thunderstore_auth;
 use log::{debug, info, warn};
 use reqwest::Client;
 use reqwest::Url;
@@ -53,8 +54,7 @@ pub async fn ensure_valheim_plus_config_for_dll_url(
   info!("Downloading config from: '{}'", cfg_url);
 
   let client = Client::new();
-  let resp = client
-    .get(&cfg_url)
+  let resp = with_thunderstore_auth(client.get(&cfg_url), &cfg_url)
     .send()
     .await
     .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
