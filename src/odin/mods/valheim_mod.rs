@@ -2,8 +2,8 @@ use crate::errors::ValheimModError;
 use crate::mods::manifest::Manifest;
 use crate::utils::normalize_paths::normalize_paths;
 use crate::utils::{
-  concurrent_downloads_enabled, is_valid_url, max_concurrent_downloads, parse_mod_string,
-  send_with_backoff, thunderstore_base_url, with_thunderstore_auth,
+  concurrent_downloads_enabled, is_thunderstore_host, is_valid_url, max_concurrent_downloads,
+  parse_mod_string, send_with_backoff, thunderstore_base_url, with_thunderstore_auth,
 };
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
@@ -12,7 +12,6 @@ use crate::{
 use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info, warn};
-use reqwest::Client;
 use reqwest::Url;
 use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
@@ -75,12 +74,6 @@ async fn thunderstore_list_versions(
     None
   }
 
-  let client = reqwest::Client::builder()
-    .timeout(Duration::from_secs(10))
-    .user_agent("odin-valheim-docker/1.0 (+https://github.com/mbround18/valheim-docker)")
-    .build()
-    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-
   let base = thunderstore_base_url();
   let endpoints = vec![
     // Experimental package endpoint (no community in path)
@@ -101,7 +94,7 @@ async fn thunderstore_list_versions(
   for url in endpoints {
     for attempt in 1..=2 {
       log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
-      match send_with_backoff(&format!("thunderstore {namespace}/{name}"), || {
+      match send_with_backoff(&format!("thunderstore {namespace}/{name}"), |client| {
         with_thunderstore_auth(client.get(&url), &url)
       })
       .await
@@ -138,7 +131,7 @@ async fn thunderstore_list_versions(
 
   // HTML fallback: scrape latest download link from the package page as a last resort
   let page_url = format!("{}/c/valheim/p/{}/{}/", base, namespace, name);
-  match send_with_backoff(&format!("thunderstore page {namespace}/{name}"), || {
+  match send_with_backoff(&format!("thunderstore page {namespace}/{name}"), |client| {
     with_thunderstore_auth(client.get(&page_url), &page_url)
   })
   .await
@@ -397,7 +390,6 @@ impl ValheimMod {
 
     let semaphore = Arc::new(tokio::sync::Semaphore::new(max_workers));
     let url = Arc::new(url.to_string());
-    let client = Arc::new(Client::new());
     // Shared writable handle — write_at uses pwrite64 so concurrent non-overlapping
     // writes are safe without any additional locking.
     let file = Arc::new(
@@ -414,13 +406,12 @@ impl ValheimMod {
       let start_byte = i * CHUNK_SIZE;
       let end_byte = std::cmp::min(start_byte + CHUNK_SIZE - 1, total_size - 1);
       let url = url.clone();
-      let client = client.clone();
       let sem = semaphore.clone();
       let file = file.clone();
 
       join_set.spawn(async move {
         let _permit = sem.acquire().await.unwrap();
-        let resp = send_with_backoff(&format!("chunk {i}"), || {
+        let resp = send_with_backoff(&format!("chunk {i}"), |client| {
           with_thunderstore_auth(client.get(url.as_str()), &url)
             .header("Range", format!("bytes={}-{}", start_byte, end_byte))
         })
@@ -474,10 +465,10 @@ impl ValheimMod {
     debug!("Initializing mod download...");
     // For Thunderstore download URLs, validate upfront that the URL isn't 404 to give fast feedback.
     if Self::is_thunderstore_download_url(&self.url) {
-      let client = Client::new();
-      match with_thunderstore_auth(client.head(&self.url), &self.url)
-        .send()
-        .await
+      match send_with_backoff(&format!("preflight {}", self.url), |client| {
+        with_thunderstore_auth(client.head(&self.url), &self.url)
+      })
+      .await
       {
         Ok(resp) => {
           let status = resp.status();
@@ -488,7 +479,7 @@ impl ValheimMod {
             )));
           }
         }
-        Err(e) => return Err(ValheimModError::DownloadError(e.to_string())),
+        Err(e) => return Err(ValheimModError::DownloadError(e)),
       }
     }
     // Always derive the staging directory from common paths to avoid stale file paths
@@ -549,10 +540,9 @@ impl ValheimMod {
 
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
-    let client = Client::new();
     debug!("⬇️  Downloading from: {}", self.url);
     let url_for_send = self.url.clone();
-    let response = send_with_backoff(&format!("download {}", self.url), || {
+    let response = send_with_backoff(&format!("download {}", self.url), |client| {
       with_thunderstore_auth(client.get(parsed_url.clone()), &url_for_send)
     })
     .await
@@ -828,8 +818,21 @@ impl ValheimMod {
     }
   }
 
+  /// Whether `url` is a Thunderstore package download link, used to decide if a HEAD
+  /// preflight is worth doing. Matches on the parsed host rather than a substring so
+  /// subdomains and a THUNDERSTORE_BASE_URL override are both handled.
   fn is_thunderstore_download_url(url: &str) -> bool {
-    url.contains("thunderstore.io/package/download/")
+    let Ok(parsed) = Url::parse(url) else {
+      return false;
+    };
+    if !parsed.path().contains("/package/download/") {
+      return false;
+    }
+    let is_default_host = parsed.host_str().is_some_and(is_thunderstore_host);
+    let is_configured_base = Url::parse(&thunderstore_base_url())
+      .ok()
+      .is_some_and(|base| base.host_str() == parsed.host_str() && base.port() == parsed.port());
+    is_default_host || is_configured_base
   }
 
   /// Async constructor that resolves Thunderstore wildcards.

@@ -711,7 +711,10 @@ mod bepinex_tests {
     assert_eq!(is_v4_or_newer("5.3.0"), Some(false));
   }
 
+  // Both constructors read GAME_LOCATION, so this has to be serialized against the
+  // tests that point that at a temp dir - otherwise the two reads can straddle a change.
   #[test]
+  #[serial]
   fn default_bepinex_environment() {
     let env = BepInExEnvironment::default();
     assert_eq!(env, BepInExEnvironment::new());

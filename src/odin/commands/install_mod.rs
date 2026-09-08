@@ -3,7 +3,7 @@ use crate::mods::{ensure_valheim_plus_config_for_dll_url, is_valheim_plus_dll_ur
 
 use crate::errors::ValheimModError;
 use crate::utils::environment::is_env_var_truthy_with_default;
-use crate::utils::{download_stagger, max_concurrent_downloads};
+use crate::utils::{download_stagger, max_concurrent_downloads, HttpPool};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -441,6 +441,8 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     mods: new_states,
   };
   save_from_var_state(&state)?;
+
+  HttpPool::global().log_summary();
 
   if !failures.is_empty() {
     warn!(

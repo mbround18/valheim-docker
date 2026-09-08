@@ -38,7 +38,7 @@ fn thunderstore_credentials() -> Option<(String, String)> {
 /// Whether `host` is thunderstore.io or one of its subdomains. Community sites
 /// (`valheim.thunderstore.io`) and the package CDN (`gcdn.thunderstore.io`) are both
 /// Thunderstore-operated, so credentials belong on those too.
-fn is_thunderstore_host(host: &str) -> bool {
+pub fn is_thunderstore_host(host: &str) -> bool {
   host.eq_ignore_ascii_case(THUNDERSTORE_HOST)
     || host
       .len()
