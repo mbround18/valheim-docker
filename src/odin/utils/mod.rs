@@ -1,7 +1,9 @@
 pub mod common_paths;
+pub mod download_config;
 pub mod environment;
 pub mod fetch_public_ip_address;
 pub mod fs;
+pub mod http_pool;
 pub mod parse_truthy;
 pub mod scheduler_state;
 pub mod steamcmd_args;
@@ -12,10 +14,15 @@ pub mod is_valid_url;
 pub mod normalize_paths;
 pub mod parse_mod_string;
 pub mod thunderstore_auth;
+pub(crate) mod thunderstore_http;
 
+pub use download_config::{
+  concurrent_downloads_enabled, download_stagger, max_concurrent_downloads,
+};
+pub use http_pool::{send_with_backoff, HttpPool};
 pub use is_valid_url::is_valid_url;
 pub use parse_mod_string::parse_mod_string;
-pub use thunderstore_auth::with_thunderstore_auth;
+pub use thunderstore_auth::{is_thunderstore_host, thunderstore_base_url, with_thunderstore_auth};
 
 use log::debug;
 use std::env;

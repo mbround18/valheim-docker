@@ -1,6 +1,8 @@
 target/
 tmp/
 *.env*
+# ...but the checked-in template must stay tracked.
+!.env.example
 docker-compose.*.yml
 release
 node_modules/

@@ -33,6 +33,65 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | STAGED_UPDATES                  | `0`                                     | FALSE    | Set to `1` to install into a staging directory first and only promote to live after validation succeeds.                   |
 | STAGED_INSTALL_DIR              | `/home/steam/.staging/valheim-pending`  | FALSE    | Override the staging installation directory when `STAGED_UPDATES=1`.                                                       |
 | ODIN_SCHEDULER_STATE_FILE       | `${GAME_LOCATION}/logs/jobs_state.json` | FALSE    | Override where Odin persists scheduler runtime state.                                                                      |
+| CONCURRENT_DOWNLOADS_ENABLED    | `true`                                  | FALSE    | Set to `false` to download mods one at a time and skip chunked range downloads (avoids Thunderstore 429 rate limiting).     |
+| MAX_CONCURRENT_DOWNLOADS        | `4`                                     | FALSE    | Total requests in flight, shared across mod downloads and the range chunks each splits into.                               |
+| DOWNLOAD_RETRY_ATTEMPTS         | `5`                                     | FALSE    | Attempts per mod request; 429/5xx responses honor `Retry-After` and otherwise back off exponentially (capped at 60s).       |
+| DOWNLOAD_STAGGER_MS             | `250`                                   | FALSE    | Milliseconds between concurrent download starts so requests are spaced out. Set to `0` to disable.                          |
+| DOWNLOAD_POOL_MAX_IDLE_PER_HOST | `8`                                     | FALSE    | Idle keep-alive connections retained per host by the shared HTTP pool.                                                     |
+| DOWNLOAD_POOL_IDLE_TIMEOUT_SECS | `90`                                    | FALSE    | How long an idle pooled connection is kept before being dropped.                                                           |
+| DOWNLOAD_REQUEST_TIMEOUT_SECS   | `300`                                   | FALSE    | Whole-request timeout for mod downloads.                                                                                   |
+| DOWNLOAD_CONNECT_TIMEOUT_SECS   | `15`                                    | FALSE    | TCP/TLS connect timeout.                                                                                                   |
+| MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                  |
+| THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Service account token (`tss_...`), sent as `Authorization: Bearer`. Optional: the endpoints Odin reads are public. |
+| THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                          |
+
+## Mod Download Pool
+
+All Thunderstore traffic - version lookups, the HEAD preflight, mod downloads and range
+chunks - goes through one shared pool (`utils/http_pool.rs`), which owns three things
+that only work as a set:
+
+- **One connection pool**, so repeat requests reuse established TLS connections instead
+  of renegotiating per mod and per chunk.
+- **One concurrency budget** spanning every layer. Bounding mod downloads and range
+  chunks separately is not enough: 4 mods each splitting into 4 chunks is 16 simultaneous
+  requests. `MAX_CONCURRENT_DOWNLOADS` caps the real total however the work nests.
+- **One rate-limit gate**, so a 429 pauses every worker against the host rather than each
+  one rediscovering the limit independently.
+
+Retries honor `Retry-After` verbatim when the server sends it, and otherwise back off
+exponentially with jitter so workers throttled together do not all retry on the same
+instant. After an install the pool logs a summary of requests, retries, rate limits and
+failures.
+
+### Testing
+
+Set `THUNDERSTORE_BASE_URL` to a local mock server to exercise the lookup and download
+paths without touching the network - this is how the wildcard resolution tests run.
+
+Two opt-in live tests hit the real services and are `#[ignore]`d by default:
+
+```sh
+THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_resolve -- --ignored
+THUNDERSTORE_TOKEN=tss_... cargo test -p odin thunderstore_live_auth -- --ignored
+THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_basic_auth_ignored -- --ignored
+VALHEIMPLUS_LIVE_TEST=1 cargo test -p odin download_dll_live -- --ignored
+```
+
+### A note on Thunderstore authentication
+
+See [Getting a Thunderstore API Token](../../docs/tutorials/thunderstore_token.md) for
+how to create one.
+
+Verified against the live API: `Authorization: Bearer <tss_ token>` is honoured - a bad
+token gets a 401 from `/api/experimental/current-user/`, which is what proves the scheme
+is correct. HTTP Basic auth is *ignored* rather than rejected, answering 200 as an
+anonymous user, so `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` never actually
+authenticated anything and are kept only for backwards compatibility.
+
+The endpoints Odin reads - package listing, version resolution and downloads - are public
+and return 200 with no credentials at all, so a token is optional and does not raise any
+rate limit. Use the download pool settings above for throttling, not authentication.
 
 ## Gotchas
 
