@@ -42,7 +42,7 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | DOWNLOAD_REQUEST_TIMEOUT_SECS   | `300`                                   | FALSE    | Whole-request timeout for mod downloads.                                                                                   |
 | DOWNLOAD_CONNECT_TIMEOUT_SECS   | `15`                                    | FALSE    | TCP/TLS connect timeout.                                                                                                   |
 | MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                  |
-| THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Thunderstore service account token (`tss_...`), sent as `Authorization: Bearer` to thunderstore.io and its subdomains.      |
+| THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Service account token (`tss_...`), sent as `Authorization: Bearer`. Optional: the endpoints Odin reads are public. |
 | THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                          |
 
 ## Mod Download Pool
@@ -73,8 +73,22 @@ Two opt-in live tests hit the real services and are `#[ignore]`d by default:
 
 ```sh
 THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_resolve -- --ignored
+THUNDERSTORE_TOKEN=tss_... cargo test -p odin thunderstore_live_auth -- --ignored
+THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_basic_auth_ignored -- --ignored
 VALHEIMPLUS_LIVE_TEST=1 cargo test -p odin download_dll_live -- --ignored
 ```
+
+### A note on Thunderstore authentication
+
+Verified against the live API: `Authorization: Bearer <tss_ token>` is honoured - a bad
+token gets a 401 from `/api/experimental/current-user/`, which is what proves the scheme
+is correct. HTTP Basic auth is *ignored* rather than rejected, answering 200 as an
+anonymous user, so `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` never actually
+authenticated anything and are kept only for backwards compatibility.
+
+The endpoints Odin reads - package listing, version resolution and downloads - are public
+and return 200 with no credentials at all, so a token is optional and does not raise any
+rate limit. Use the download pool settings above for throttling, not authentication.
 
 ## Gotchas
 
