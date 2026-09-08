@@ -8,7 +8,7 @@ This repository includes a `Makefile` to simplify common development tasks. If y
 make help
 ```
 
-That prints all documented targets and short descriptions derived from `##` comments in the [Makefile](Makefile).
+That prints all documented targets and short descriptions derived from `##` comments in the [Makefile](../Makefile).
 
 Below are the most commonly used targets and concise guidance.
 
@@ -55,4 +55,4 @@ make test
 make release PROFILE=production
 ```
 
-If you want to add or update make target documentation, edit the corresponding target in the [Makefile](Makefile) and append a `## short description` to that target line; then run `make help` to see the updated list.
+If you want to add or update make target documentation, edit the corresponding target in the [Makefile](../Makefile) and append a `## short description` to that target line; then run `make help` to see the updated list.

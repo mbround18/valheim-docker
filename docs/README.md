@@ -1,6 +1,6 @@
 # [Valheim]
 
-<img src="docs/assets/valheim_docker_logo.png" width="500" height="auto" alt="Valheim Docker Logo">
+<img src="./assets/valheim_docker_logo.png" width="500" height="auto" alt="Valheim Docker Logo">
 <br>
 <!-- Docker Pulls -->
 <a href="https://hub.docker.com/r/mbround18/valheim">
@@ -73,8 +73,8 @@
 This repo bundles its tools in a way that you can run them without having to install Docker!
 If you purely want to run this on a Linux-based system, without Docker, take a look at the links below:
 
-- [Installing & Using Odin](./src/odin/README.md): Odin runs the show and does almost all the heavy lifting in this repo. It starts, stops, and manages your Valheim server instance.
-- [Installing & Using Huginn](./src/huginn/README.md): Huginn is an HTTP server built on the same source as Odin and uses these capabilities to expose a few HTTP endpoints.
+- [Installing & Using Odin](../src/odin/README.md): Odin runs the show and does almost all the heavy lifting in this repo. It starts, stops, and manages your Valheim server instance.
+- [Installing & Using Huginn](../src/huginn/README.md): Huginn is an HTTP server built on the same source as Odin and uses these capabilities to expose a few HTTP endpoints.
 
 > Using the binaries to run on an Ubuntu Server, you will have to be more involved and configure a few things manually.
 > If you want a managed, easy one-two punch to manage your server, then look at the Docker section.
@@ -121,7 +121,7 @@ See the full guide: docs/tutorials/getting_started_with_mods.md
 > [Guide to get started](https://github.com/mbround18/valheim-docker/discussions/28)
 >
 > Mod support is available through BepInEx. You are responsible for debugging mod-related startup issues. Modding is not officially supported by the Valheim developers, so incompatibilities can happen.
-> See [Getting started with mods](./docs/tutorials/getting_started_with_mods.md)
+> See [Getting started with mods](./tutorials/getting_started_with_mods.md)
 
 ### Download Locations
 
@@ -160,7 +160,7 @@ See the full guide: docs/tutorials/getting_started_with_mods.md
 | PRESET                         | ``                                     | FALSE    | Normal, Casual, Easy, Hard, Hardcore, Immersive, Hammer                                                                                                                                                                                                                                                                           |
 | MODIFIERS                      | ``                                     | FALSE    | Comma-separated array of modifiers. EX: `combat=easy,raids=muchmore`                                                                                                                                                                                                                                                              |
 | SET_KEY                        | ``                                     | FALSE    | Can be any of the following: nobuildcost, playerevents, passivemobs, nomap                                                                                                                                                                                                                                                        |
-| MODS                           | `<nothing>`                            | FALSE    | This is an array of mods separated by comma and a new line. [Examples](./docs/tutorials/getting_started_with_mods.md). Supported files are `zip`, `dll`, and `cfg`.                                                                                                                                                               |
+| MODS                           | `<nothing>`                            | FALSE    | This is an array of mods separated by comma and a new line. [Examples](./tutorials/getting_started_with_mods.md). Supported files are `zip`, `dll`, and `cfg`.                                                                                                                                                               |
 | MODS_CONTINUE_ON_FAILURE       | `false`                                | FALSE    | Set to `true` to install every mod that downloads successfully and only warn about the rest, instead of failing the whole run (and restarting the container) on the first error.                                                                                                                                                  |
 | THUNDERSTORE_TOKEN             | `<nothing>`                            | FALSE    | Thunderstore service account API token (`tss_...`). [How to create one](./tutorials/thunderstore_token.md). Sent as `Authorization: Bearer` to `thunderstore.io` and its subdomains. Note that mod listing, version resolution and downloads are public endpoints, so a token is optional and does **not** exempt you from rate limiting. |
 | THUNDERSTORE_BASE_URL          | `https://thunderstore.io`              | FALSE    | Base URL used for Thunderstore API lookups and download URLs. Override to point at a mirror, or at a local server for testing. Note that credentials are only attached to `thunderstore.io` and its subdomains.                                                                                                                     |
@@ -254,7 +254,7 @@ For the most reliable experience, we recommend explicitly setting the **user dir
 
 > **Quick Tip:** If you aren't sure what your IDs are, run `id -u` and `id -g` on your host machine to find the correct numbers to use!
 
-For a complete walkthrough, see [Rootless Design Guide](./docs/tutorials/rootless_design.md).
+For a complete walkthrough, see [Rootless Design Guide](./tutorials/rootless_design.md).
 
 ## Docker Compose
 
@@ -329,7 +329,7 @@ services:
 
 This repo includes a CLI tool called [Odin] for managing the server inside the container.
 
-[View advanced Odin environment variables](src/odin/README.md)
+[View advanced Odin environment variables](../src/odin/README.md)
 
 ### [Huginn] HTTP Server
 
@@ -360,30 +360,30 @@ This repo includes a CLI tool called [Odin] for managing the server inside the c
 
 ## Feature Information
 
-### [BepInEx Support](./docs/bepinex.md)
+### [BepInEx Support](./bepinex.md)
 
-As of [March 2021](./docs/bepinex.md), the TYPE variable can be used to automatically install BepInEx. For details, see [Getting started with mods](./docs/tutorials/getting_started_with_mods.md).
+As of [March 2021](./bepinex.md), the TYPE variable can be used to automatically install BepInEx. For details, see [Getting started with mods](./tutorials/getting_started_with_mods.md).
 
-### [Webhook Support](./docs/webhooks.md)
+### [Webhook Support](./webhooks.md)
 
 This repo can automatically send notifications to Discord via the WEBHOOK_URL variable.
 Only use the documentation link below if you want advanced settings!
 
-[View webhook support documentation](./docs/webhooks.md)
+[View webhook support documentation](./webhooks.md)
 
 ## Guides
 
-### [Rootless Design Guide](./docs/tutorials/rootless_design.md)
+### [Rootless Design Guide](./tutorials/rootless_design.md)
 
 This guide covers the rootless model, host permission expectations, and migration steps from older setups.
 
-[View the rootless design guide](./docs/tutorials/rootless_design.md)
+[View the rootless design guide](./tutorials/rootless_design.md)
 
-### [How to Transfer Files](./docs/tutorials/how_to_transfer_files.md)
+### [How to Transfer Files](./tutorials/how_to_transfer_files.md)
 
 This guide covers a recommended path for transferring files between hosts, including world data, BepInEx configs, and backups.
 
-[View the file transfer tutorial](./docs/tutorials/how_to_transfer_files.md)
+[View the file transfer tutorial](./tutorials/how_to_transfer_files.md)
 
 ### How to Access Your Container in Docker
 
@@ -393,7 +393,7 @@ docker exec -it $CONTAINER_NAME gosu steam bash
 
 ### How to Restore a Backup
 
-[See the guide for restoring a backup](./docs/tutorials/how_to_restore.md)
+[See the guide for restoring a backup](./tutorials/how_to_restore.md)
 
 ## Additional Information
 
