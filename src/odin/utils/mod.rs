@@ -19,7 +19,7 @@ pub use download_config::{
 };
 pub use is_valid_url::is_valid_url;
 pub use parse_mod_string::parse_mod_string;
-pub use thunderstore_auth::with_thunderstore_auth;
+pub use thunderstore_auth::{thunderstore_base_url, with_thunderstore_auth};
 
 use log::debug;
 use std::env;

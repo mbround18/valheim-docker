@@ -39,6 +39,7 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | DOWNLOAD_STAGGER_MS             | `250`                                   | FALSE    | Milliseconds between concurrent download starts so requests are spaced out. Set to `0` to disable.                          |
 | MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                  |
 | THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Thunderstore service account token (`tss_...`), sent as `Authorization: Bearer` to thunderstore.io and its subdomains.      |
+| THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                          |
 
 ## Gotchas
 

@@ -5,6 +5,16 @@ const THUNDERSTORE_TOKEN_VAR: &str = "THUNDERSTORE_TOKEN";
 const THUNDERSTORE_USERNAME_VAR: &str = "THUNDERSTORE_USERNAME";
 const THUNDERSTORE_PASSWORD_VAR: &str = "THUNDERSTORE_PASSWORD";
 const THUNDERSTORE_HOST: &str = "thunderstore.io";
+const THUNDERSTORE_BASE_URL_VAR: &str = "THUNDERSTORE_BASE_URL";
+const DEFAULT_THUNDERSTORE_BASE_URL: &str = "https://thunderstore.io";
+
+/// Base URL for Thunderstore API and download requests. Overridable via
+/// `THUNDERSTORE_BASE_URL` for mirrors and for tests that point at a local server.
+/// The trailing slash is always trimmed so callers can join paths directly.
+pub fn thunderstore_base_url() -> String {
+  let base = fetch_var(THUNDERSTORE_BASE_URL_VAR, DEFAULT_THUNDERSTORE_BASE_URL);
+  base.trim_end_matches('/').to_string()
+}
 
 /// Returns the `THUNDERSTORE_TOKEN` service account token when set. Thunderstore issues
 /// these from a team's Service Accounts page (they look like `tss_...`) and expects them
@@ -67,6 +77,16 @@ mod tests {
   use super::*;
   use serial_test::serial;
   use std::env::{remove_var, set_var};
+
+  #[test]
+  #[serial]
+  fn base_url_defaults_and_trims() {
+    remove_var(THUNDERSTORE_BASE_URL_VAR);
+    assert_eq!(thunderstore_base_url(), DEFAULT_THUNDERSTORE_BASE_URL);
+    set_var(THUNDERSTORE_BASE_URL_VAR, "http://localhost:1234/");
+    assert_eq!(thunderstore_base_url(), "http://localhost:1234");
+    remove_var(THUNDERSTORE_BASE_URL_VAR);
+  }
 
   fn clear_credentials() {
     remove_var(THUNDERSTORE_TOKEN_VAR);

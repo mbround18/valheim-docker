@@ -3,7 +3,7 @@ use crate::mods::manifest::Manifest;
 use crate::utils::normalize_paths::normalize_paths;
 use crate::utils::{
   concurrent_downloads_enabled, is_valid_url, max_concurrent_downloads, parse_mod_string,
-  send_with_backoff, with_thunderstore_auth,
+  send_with_backoff, thunderstore_base_url, with_thunderstore_auth,
 };
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
@@ -81,21 +81,19 @@ async fn thunderstore_list_versions(
     .build()
     .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
 
+  let base = thunderstore_base_url();
   let endpoints = vec![
     // Experimental package endpoint (no community in path)
-    format!(
-      "https://thunderstore.io/api/experimental/package/{}/{}/",
-      namespace, name
-    ),
+    format!("{}/api/experimental/package/{}/{}/", base, namespace, name),
     // Community-scoped experimental endpoint (if available)
     format!(
-      "https://thunderstore.io/api/experimental/community/valheim/package/{}/{}/",
-      namespace, name
+      "{}/api/experimental/community/valheim/package/{}/{}/",
+      base, namespace, name
     ),
     // Frontend JSON used by website (shape may change but often includes versions)
     format!(
-      "https://thunderstore.io/api/experimental/frontend/c/valheim/p/{}/{}/",
-      namespace, name
+      "{}/api/experimental/frontend/c/valheim/p/{}/{}/",
+      base, namespace, name
     ),
   ];
 
@@ -139,10 +137,7 @@ async fn thunderstore_list_versions(
   }
 
   // HTML fallback: scrape latest download link from the package page as a last resort
-  let page_url = format!(
-    "https://thunderstore.io/c/valheim/p/{}/{}/",
-    namespace, name
-  );
+  let page_url = format!("{}/c/valheim/p/{}/{}/", base, namespace, name);
   match send_with_backoff(&format!("thunderstore page {namespace}/{name}"), || {
     with_thunderstore_auth(client.get(&page_url), &page_url)
   })
@@ -848,8 +843,11 @@ impl ValheimMod {
         let versions = thunderstore_list_versions(author, mod_name).await?;
         if let Some(sel) = select_version_from_list(&v_req, &versions) {
           let constructed_url = format!(
-            "https://thunderstore.io/package/download/{}/{}/{}/",
-            author, mod_name, sel
+            "{}/package/download/{}/{}/{}/",
+            thunderstore_base_url(),
+            author,
+            mod_name,
+            sel
           );
           Ok(ValheimMod::new(&constructed_url))
         } else {
@@ -859,8 +857,11 @@ impl ValheimMod {
         }
       } else {
         let constructed_url = format!(
-          "https://thunderstore.io/package/download/{}/{}/{}/",
-          author, mod_name, version
+          "{}/package/download/{}/{}/{}/",
+          thunderstore_base_url(),
+          author,
+          mod_name,
+          version
         );
         Ok(ValheimMod::new(&constructed_url))
       }
@@ -887,8 +888,11 @@ impl TryFrom<String> for ValheimMod {
         ));
       }
       let constructed_url = format!(
-        "https://thunderstore.io/package/download/{}/{}/{}/",
-        author, mod_name, version
+        "{}/package/download/{}/{}/{}/",
+        thunderstore_base_url(),
+        author,
+        mod_name,
+        version
       );
       Ok(ValheimMod::new(&constructed_url))
     } else {
@@ -1232,5 +1236,226 @@ mod thunderstore_tests {
       .join("testmod")
       .join("myplugin.dll");
     assert!(dest.exists());
+  }
+}
+
+#[cfg(test)]
+mod wildcard_resolution_tests {
+  use super::*;
+  use serial_test::serial;
+  use std::env::{remove_var, set_var};
+
+  const BASE_URL_VAR: &str = "THUNDERSTORE_BASE_URL";
+
+  fn versions_json(versions: &[&str]) -> String {
+    let entries: Vec<String> = versions
+      .iter()
+      .map(|v| format!("{{\"version_number\":\"{v}\"}}"))
+      .collect();
+    format!("{{\"versions\":[{}]}}", entries.join(","))
+  }
+
+  const PKG_PATH: &str = "/api/experimental/package/Author/Mod/";
+
+  #[tokio::test]
+  #[serial]
+  async fn full_wildcard_resolves_to_latest_version() {
+    let mut server = mockito::Server::new_async().await;
+    let _m = server
+      .mock("GET", PKG_PATH)
+      .with_status(200)
+      .with_header("content-type", "application/json")
+      .with_body(versions_json(&["1.2.3", "2.0.1", "1.9.9"]))
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-*").await.unwrap();
+    assert_eq!(
+      vmod.url,
+      format!("{}/package/download/Author/Mod/2.0.1/", server.url())
+    );
+    remove_var(BASE_URL_VAR);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn major_wildcard_stays_within_major() {
+    let mut server = mockito::Server::new_async().await;
+    let _m = server
+      .mock("GET", PKG_PATH)
+      .with_status(200)
+      .with_body(versions_json(&["1.2.3", "2.0.1", "1.9.9"]))
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-1.*").await.unwrap();
+    assert!(
+      vmod.url.ends_with("/Author/Mod/1.9.9/"),
+      "expected 1.9.9, got {}",
+      vmod.url
+    );
+    remove_var(BASE_URL_VAR);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn minor_wildcard_stays_within_minor() {
+    let mut server = mockito::Server::new_async().await;
+    let _m = server
+      .mock("GET", PKG_PATH)
+      .with_status(200)
+      .with_body(versions_json(&["1.2.3", "1.2.10", "1.3.0"]))
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-1.2.*")
+      .await
+      .unwrap();
+    assert!(
+      vmod.url.ends_with("/Author/Mod/1.2.10/"),
+      "expected 1.2.10, got {}",
+      vmod.url
+    );
+    remove_var(BASE_URL_VAR);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn exact_version_makes_no_network_call() {
+    let mut server = mockito::Server::new_async().await;
+    let never = server.mock("GET", PKG_PATH).expect(0).create_async().await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-1.2.3")
+      .await
+      .unwrap();
+    assert!(vmod.url.ends_with("/Author/Mod/1.2.3/"));
+    never.assert_async().await;
+    remove_var(BASE_URL_VAR);
+  }
+
+  /// The rate-limit backoff must not break wildcards: a 429 on the first try should
+  /// be retried, not treated as "package not found".
+  #[tokio::test]
+  #[serial]
+  async fn wildcard_survives_a_rate_limited_first_attempt() {
+    let mut server = mockito::Server::new_async().await;
+    let limited = server
+      .mock("GET", PKG_PATH)
+      .with_status(429)
+      .with_header("retry-after", "0")
+      .expect(1)
+      .create_async()
+      .await;
+    let ok = server
+      .mock("GET", PKG_PATH)
+      .with_status(200)
+      .with_body(versions_json(&["3.1.0", "3.0.0"]))
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-*").await.unwrap();
+    assert!(
+      vmod.url.ends_with("/Author/Mod/3.1.0/"),
+      "expected 3.1.0, got {}",
+      vmod.url
+    );
+    limited.assert_async().await;
+    ok.assert_async().await;
+    remove_var(BASE_URL_VAR);
+  }
+
+  /// A 404 on the primary endpoint is not retryable and must fall through to the
+  /// community-scoped endpoint rather than aborting resolution.
+  #[tokio::test]
+  #[serial]
+  async fn wildcard_falls_through_to_secondary_endpoint() {
+    let mut server = mockito::Server::new_async().await;
+    let _primary = server
+      .mock("GET", PKG_PATH)
+      .with_status(404)
+      .expect_at_least(1)
+      .create_async()
+      .await;
+    let secondary = server
+      .mock(
+        "GET",
+        "/api/experimental/community/valheim/package/Author/Mod/",
+      )
+      .with_status(200)
+      .with_body(versions_json(&["4.2.0"]))
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-*").await.unwrap();
+    assert!(
+      vmod.url.ends_with("/Author/Mod/4.2.0/"),
+      "expected 4.2.0, got {}",
+      vmod.url
+    );
+    secondary.assert_async().await;
+    remove_var(BASE_URL_VAR);
+  }
+
+  /// Last-resort HTML scrape of the package page still works when every API shape fails.
+  #[tokio::test]
+  #[serial]
+  async fn wildcard_falls_back_to_html_scrape() {
+    let mut server = mockito::Server::new_async().await;
+    for path in [
+      PKG_PATH,
+      "/api/experimental/community/valheim/package/Author/Mod/",
+      "/api/experimental/frontend/c/valheim/p/Author/Mod/",
+    ] {
+      server
+        .mock("GET", path)
+        .with_status(404)
+        .expect_at_least(1)
+        .create_async()
+        .await;
+    }
+    let page = server
+      .mock("GET", "/c/valheim/p/Author/Mod/")
+      .with_status(200)
+      .with_body("<html><a href=\"/package/download/Author/Mod/5.5.5/\">Download</a></html>")
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-*").await.unwrap();
+    assert!(
+      vmod.url.ends_with("/Author/Mod/5.5.5/"),
+      "expected 5.5.5, got {}",
+      vmod.url
+    );
+    page.assert_async().await;
+    remove_var(BASE_URL_VAR);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn wildcard_with_no_matching_major_errors() {
+    let mut server = mockito::Server::new_async().await;
+    let _m = server
+      .mock("GET", PKG_PATH)
+      .with_status(200)
+      .with_body(versions_json(&["1.0.0", "2.0.0"]))
+      .create_async()
+      .await;
+    set_var(BASE_URL_VAR, server.url());
+
+    match ValheimMod::async_from_url("Author-Mod-9.*").await {
+      Ok(m) => panic!("expected no match for 9.*, resolved to {}", m.url),
+      Err(e) => assert!(
+        e.to_string().contains("No matching version"),
+        "unexpected error: {e}"
+      ),
+    }
+    remove_var(BASE_URL_VAR);
   }
 }
