@@ -14,6 +14,7 @@ pub mod is_valid_url;
 pub mod normalize_paths;
 pub mod parse_mod_string;
 pub mod thunderstore_auth;
+pub(crate) mod thunderstore_http;
 
 pub use download_config::{
   concurrent_downloads_enabled, download_stagger, max_concurrent_downloads,

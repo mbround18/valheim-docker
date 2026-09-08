@@ -1,6 +1,6 @@
 [package]
 name = "odin"
-version = "2.1.0"
+version = "2.2.0"
 authors = ["mbround18"]
 edition = "2021"
 license = "BSD-3-Clause License"

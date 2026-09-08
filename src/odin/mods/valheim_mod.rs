@@ -1,9 +1,11 @@
 use crate::errors::ValheimModError;
 use crate::mods::manifest::Manifest;
+use crate::utils::http_pool::HttpPool;
 use crate::utils::normalize_paths::normalize_paths;
+use crate::utils::thunderstore_http::send;
 use crate::utils::{
-  concurrent_downloads_enabled, is_thunderstore_host, is_valid_url, max_concurrent_downloads,
-  parse_mod_string, send_with_backoff, thunderstore_base_url, with_thunderstore_auth,
+  concurrent_downloads_enabled, is_valid_url, max_concurrent_downloads, parse_mod_string,
+  thunderstore_base_url,
 };
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
@@ -75,6 +77,7 @@ async fn thunderstore_list_versions(
   }
 
   let base = thunderstore_base_url();
+  let client = HttpPool::global().client();
   let endpoints = vec![
     // Experimental package endpoint (no community in path)
     format!("{}/api/experimental/package/{}/{}/", base, namespace, name),
@@ -94,12 +97,19 @@ async fn thunderstore_list_versions(
   for url in endpoints {
     for attempt in 1..=2 {
       log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
-      match send_with_backoff(&format!("thunderstore {namespace}/{name}"), |client| {
-        with_thunderstore_auth(client.get(&url), &url)
-      })
+      match send(
+        client.get(&url),
+        &url,
+        &format!("thunderstore {namespace}/{name}"),
+      )
       .await
       {
         Ok(resp) => {
+          if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(ValheimModError::DownloadError(
+              "Thunderstore rate limit persisted after retries; try again later".to_string(),
+            ));
+          }
           if !resp.status().is_success() {
             last_err = Some(format!("status {} for {}", resp.status(), url));
             continue;
@@ -131,9 +141,11 @@ async fn thunderstore_list_versions(
 
   // HTML fallback: scrape latest download link from the package page as a last resort
   let page_url = format!("{}/c/valheim/p/{}/{}/", base, namespace, name);
-  match send_with_backoff(&format!("thunderstore page {namespace}/{name}"), |client| {
-    with_thunderstore_auth(client.get(&page_url), &page_url)
-  })
+  match send(
+    client.get(&page_url),
+    &page_url,
+    &format!("thunderstore page {namespace}/{name}"),
+  )
   .await
   {
     Ok(resp) if resp.status().is_success() => match resp.text().await {
@@ -390,6 +402,7 @@ impl ValheimMod {
 
     let semaphore = Arc::new(tokio::sync::Semaphore::new(max_workers));
     let url = Arc::new(url.to_string());
+    let client = HttpPool::global().client();
     // Shared writable handle — write_at uses pwrite64 so concurrent non-overlapping
     // writes are safe without any additional locking.
     let file = Arc::new(
@@ -411,10 +424,13 @@ impl ValheimMod {
 
       join_set.spawn(async move {
         let _permit = sem.acquire().await.unwrap();
-        let resp = send_with_backoff(&format!("chunk {i}"), |client| {
-          with_thunderstore_auth(client.get(url.as_str()), &url)
-            .header("Range", format!("bytes={}-{}", start_byte, end_byte))
-        })
+        let resp = send(
+          client
+            .get(url.as_str())
+            .header("Range", format!("bytes={}-{}", start_byte, end_byte)),
+          &url,
+          &format!("chunk {i}"),
+        )
         .await
         .map_err(|e| ValheimModError::DownloadError(format!("chunk {i}: {e}")))?;
 
@@ -463,25 +479,6 @@ impl ValheimMod {
   /// Download: Downloads the mod ZIP from the URL into the staging location.
   pub async fn download(&mut self) -> Result<(), ValheimModError> {
     debug!("Initializing mod download...");
-    // For Thunderstore download URLs, validate upfront that the URL isn't 404 to give fast feedback.
-    if Self::is_thunderstore_download_url(&self.url) {
-      match send_with_backoff(&format!("preflight {}", self.url), |client| {
-        with_thunderstore_auth(client.head(&self.url), &self.url)
-      })
-      .await
-      {
-        Ok(resp) => {
-          let status = resp.status();
-          if status.is_client_error() {
-            return Err(ValheimModError::DownloadError(format!(
-              "Thunderstore URL not reachable, status: {}",
-              status
-            )));
-          }
-        }
-        Err(e) => return Err(ValheimModError::DownloadError(e)),
-      }
-    }
     // Always derive the staging directory from common paths to avoid stale file paths
     let staging_dir: PathBuf = common_paths::mods_staging_directory().into();
     if !staging_dir.exists() {
@@ -541,12 +538,12 @@ impl ValheimMod {
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     debug!("⬇️  Downloading from: {}", self.url);
-    let url_for_send = self.url.clone();
-    let response = send_with_backoff(&format!("download {}", self.url), |client| {
-      with_thunderstore_auth(client.get(parsed_url.clone()), &url_for_send)
-    })
-    .await
-    .map_err(ValheimModError::DownloadError)?;
+    let response = send(
+      HttpPool::global().client().get(parsed_url),
+      &self.url,
+      &format!("download {}", self.url),
+    )
+    .await?;
 
     if !response.status().is_success() {
       return Err(ValheimModError::DownloadError(format!(
@@ -818,23 +815,6 @@ impl ValheimMod {
     }
   }
 
-  /// Whether `url` is a Thunderstore package download link, used to decide if a HEAD
-  /// preflight is worth doing. Matches on the parsed host rather than a substring so
-  /// subdomains and a THUNDERSTORE_BASE_URL override are both handled.
-  fn is_thunderstore_download_url(url: &str) -> bool {
-    let Ok(parsed) = Url::parse(url) else {
-      return false;
-    };
-    if !parsed.path().contains("/package/download/") {
-      return false;
-    }
-    let is_default_host = parsed.host_str().is_some_and(is_thunderstore_host);
-    let is_configured_base = Url::parse(&thunderstore_base_url())
-      .ok()
-      .is_some_and(|base| base.host_str() == parsed.host_str() && base.port() == parsed.port());
-    is_default_host || is_configured_base
-  }
-
   /// Async constructor that resolves Thunderstore wildcards.
   pub async fn async_from_url(url: &str) -> Result<Self, ValheimModError> {
     if is_valid_url(url) {
@@ -1022,14 +1002,6 @@ mod thunderstore_tests {
     let input = "https://example.com/mod.zip".to_string();
     let vm = ValheimMod::try_from(input.clone()).expect("Should construct from URL");
     assert_eq!(vm.url, input);
-  }
-
-  #[tokio::test]
-  async fn detects_thunderstore_download_url() {
-    let turl = "https://thunderstore.io/package/download/Author/Mod/1.2.3/";
-    assert!(ValheimMod::is_thunderstore_download_url(turl));
-    let normal = "https://example.com/path/file.zip";
-    assert!(!ValheimMod::is_thunderstore_download_url(normal));
   }
 
   #[tokio::test]

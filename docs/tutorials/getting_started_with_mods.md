@@ -162,3 +162,12 @@ environment:
   - TYPE=BepInEx
   - MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/ValheimPlus.dll
 ```
+
+## Thunderstore rate limits
+
+Odin spaces mod requests to `thunderstore.io` and its subdomains at least one second
+apart. If Thunderstore returns `429 Too Many Requests`, new Thunderstore requests
+pause for its `Retry-After` time.
+Without a valid retry time, Odin waits 60, 120, then 240 seconds before retrying.
+After three unsuccessful retries, installation stops with an error. Allow the
+cooldown to finish instead of repeatedly restarting the container.

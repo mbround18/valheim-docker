@@ -92,6 +92,9 @@ impl HttpPool {
       .connect_timeout(config.connect_timeout)
       .pool_max_idle_per_host(config.max_idle_per_host)
       .pool_idle_timeout(config.idle_timeout)
+      // Redirects are followed by utils::thunderstore_http so every hop is paced and
+      // budgeted individually, rather than disappearing inside one send().
+      .redirect(reqwest::redirect::Policy::none())
       .build()
       .unwrap_or_else(|e| {
         warn!("Falling back to a default HTTP client: {e}");
@@ -119,6 +122,12 @@ impl HttpPool {
       );
       HttpPool::with_config(config)
     })
+  }
+
+  /// The pooled client, for callers that need to build a request themselves (the
+  /// redirect walker in `utils::thunderstore_http`).
+  pub fn client(&self) -> &Client {
+    &self.client
   }
 
   pub fn config(&self) -> PoolConfig {
@@ -190,6 +199,27 @@ impl HttpPool {
   where
     F: Fn(&Client) -> RequestBuilder,
   {
+    self
+      .attempt(label, || build(&self.client).build().ok())
+      .await
+  }
+
+  /// Variant for an already-built request, used by the redirect walker in
+  /// `utils::thunderstore_http` which mutates headers as it follows each hop.
+  pub async fn execute_request(
+    &self,
+    label: &str,
+    request: &reqwest::Request,
+  ) -> Result<Response, String> {
+    self.attempt(label, || request.try_clone()).await
+  }
+
+  /// Shared retry loop. `make_request` returns `None` when the request cannot be
+  /// cloned for another attempt (a streaming body), which is treated as fatal.
+  async fn attempt<F>(&self, label: &str, make_request: F) -> Result<Response, String>
+  where
+    F: Fn() -> Option<reqwest::Request>,
+  {
     let attempts = self.config.retry_attempts;
     let mut backoff = Duration::from_secs(1);
     let mut last_err = String::new();
@@ -206,7 +236,10 @@ impl HttpPool {
       self.await_gate().await;
       self.stats.requests.fetch_add(1, Ordering::Relaxed);
 
-      let delay = match build(&self.client).send().await {
+      let request = make_request()
+        .ok_or_else(|| format!("{label}: request cannot be retried (non-clonable body)"))?;
+
+      let delay = match self.client.execute(request).await {
         Ok(response) => {
           if !is_retryable(response.status()) {
             return Ok(response);
