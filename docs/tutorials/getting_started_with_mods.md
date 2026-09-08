@@ -147,9 +147,9 @@ By default one failed mod fails the entire install and the container restarts, w
 turn a temporary rate limit into a restart loop. `MODS_CONTINUE_ON_FAILURE=true` starts
 the server with whatever installed successfully and logs the rest.
 
-If you have a Thunderstore account, you can also set `THUNDERSTORE_TOKEN` to a service
-account API token (created from your team's Service Accounts page). Note that this
-authenticates your requests but does not exempt you from Cloudflare's throttling.
+You can also set `THUNDERSTORE_TOKEN` to a service account API token
+([how to create one](./thunderstore_token.md)), but note that this authenticates your
+requests **without** exempting you from Cloudflare's throttling - it will not fix 429s.
 
 ## Special Note: Installing ValheimPlus
 

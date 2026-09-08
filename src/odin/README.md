@@ -80,6 +80,9 @@ VALHEIMPLUS_LIVE_TEST=1 cargo test -p odin download_dll_live -- --ignored
 
 ### A note on Thunderstore authentication
 
+See [Getting a Thunderstore API Token](../../docs/tutorials/thunderstore_token.md) for
+how to create one.
+
 Verified against the live API: `Authorization: Bearer <tss_ token>` is honoured - a bad
 token gets a 401 from `/api/experimental/current-user/`, which is what proves the scheme
 is correct. HTTP Basic auth is *ignored* rather than rejected, answering 200 as an
