@@ -45,6 +45,37 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Thunderstore service account token (`tss_...`), sent as `Authorization: Bearer` to thunderstore.io and its subdomains.      |
 | THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                          |
 
+## Mod Download Pool
+
+All Thunderstore traffic - version lookups, the HEAD preflight, mod downloads and range
+chunks - goes through one shared pool (`utils/http_pool.rs`), which owns three things
+that only work as a set:
+
+- **One connection pool**, so repeat requests reuse established TLS connections instead
+  of renegotiating per mod and per chunk.
+- **One concurrency budget** spanning every layer. Bounding mod downloads and range
+  chunks separately is not enough: 4 mods each splitting into 4 chunks is 16 simultaneous
+  requests. `MAX_CONCURRENT_DOWNLOADS` caps the real total however the work nests.
+- **One rate-limit gate**, so a 429 pauses every worker against the host rather than each
+  one rediscovering the limit independently.
+
+Retries honor `Retry-After` verbatim when the server sends it, and otherwise back off
+exponentially with jitter so workers throttled together do not all retry on the same
+instant. After an install the pool logs a summary of requests, retries, rate limits and
+failures.
+
+### Testing
+
+Set `THUNDERSTORE_BASE_URL` to a local mock server to exercise the lookup and download
+paths without touching the network - this is how the wildcard resolution tests run.
+
+Two opt-in live tests hit the real services and are `#[ignore]`d by default:
+
+```sh
+THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_resolve -- --ignored
+VALHEIMPLUS_LIVE_TEST=1 cargo test -p odin download_dll_live -- --ignored
+```
+
 ## Gotchas
 
 - Odin relies on Rust. [Please install Rust](https://www.rust-lang.org/tools/install)

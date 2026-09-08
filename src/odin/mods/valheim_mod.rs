@@ -1093,17 +1093,37 @@ mod thunderstore_tests {
       return;
     }
 
-    // Resolve a real wildcard for Jotunn
-    let input = "ValheimModding-Jotunn-*".to_string();
-    let vm = ValheimMod::try_from(input).expect("Should construct from mod string");
-    assert!(
-      vm.url
-        .starts_with("https://thunderstore.io/package/download/ValheimModding/Jotunn/"),
-      "unexpected resolved URL prefix: {}",
-      vm.url
-    );
-    // basic sanity: URL ends with /
-    assert!(vm.url.ends_with('/'));
+    // Resolve a real wildcard for Jotunn. This must go through async_from_url:
+    // TryFrom deliberately rejects wildcards because it cannot await the lookup.
+    for pattern in ["ValheimModding-Jotunn-*", "ValheimModding-Jotunn-2.*"] {
+      let vm = ValheimMod::async_from_url(pattern)
+        .await
+        .unwrap_or_else(|e| panic!("{pattern} should resolve against the live API: {e}"));
+      let prefix = "https://thunderstore.io/package/download/ValheimModding/Jotunn/";
+      assert!(
+        vm.url.starts_with(prefix),
+        "unexpected resolved URL prefix for {pattern}: {}",
+        vm.url
+      );
+      assert!(
+        vm.url.ends_with('/'),
+        "resolved URL should end with a slash"
+      );
+
+      // The wildcard must have been replaced by a concrete version.
+      let version = vm.url[prefix.len()..].trim_end_matches('/');
+      assert!(
+        !version.is_empty() && version.chars().next().is_some_and(|c| c.is_ascii_digit()),
+        "expected a concrete version for {pattern}, got {version:?}"
+      );
+      if pattern.contains("2.") {
+        assert!(
+          version.starts_with("2."),
+          "MAJOR wildcard must stay within its major, got {version}"
+        );
+      }
+      eprintln!("{pattern} -> {version}");
+    }
   }
 
   // Optional live test to download a real DLL from GitHub releases; requires network and sets an env flag.
