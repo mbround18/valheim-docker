@@ -1,3 +1,36 @@
+# v3.7.0 (Tue Sep 08 2026)
+
+#### 🚀 Enhancement
+
+- feat(mods): make Thunderstore downloads rate-limit aware [#1499](https://github.com/mbround18/valheim-docker/pull/1499) ([@skint007](https://github.com/skint007) [@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- Update actions-rust-lang/setup-rust-toolchain action to v2 [#1497](https://github.com/mbround18/valheim-docker/pull/1497) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate serde_with to v3.23.0 [#1496](https://github.com/mbround18/valheim-docker/pull/1496) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate cached to v4 [#1495](https://github.com/mbround18/valheim-docker/pull/1495) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate cc to v1.4.5 [#1494](https://github.com/mbround18/valheim-docker/pull/1494) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate flate2 to v1.1.10 [#1493](https://github.com/mbround18/valheim-docker/pull/1493) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate cached to v3.1.1 [#1492](https://github.com/mbround18/valheim-docker/pull/1492) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate which to v8.0.6 [#1491](https://github.com/mbround18/valheim-docker/pull/1491) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate cached to v3.1.0 [#1490](https://github.com/mbround18/valheim-docker/pull/1490) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update Rust crate serial_test to v4 [#1489](https://github.com/mbround18/valheim-docker/pull/1489) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update Rust crate cached to v3 [#1488](https://github.com/mbround18/valheim-docker/pull/1488) ([@renovate[bot]](https://github.com/renovate[bot]))
+- Update rust Docker tag to v1.98 [#1486](https://github.com/mbround18/valheim-docker/pull/1486) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update actions/setup-node action to v7 [#1487](https://github.com/mbround18/valheim-docker/pull/1487) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Update actions/cache action to v6 [#1474](https://github.com/mbround18/valheim-docker/pull/1474) ([@renovate[bot]](https://github.com/renovate[bot]) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- feat: support Thunderstore Basic Auth for mod downloads [#1484](https://github.com/mbround18/valheim-docker/pull/1484) ([@mbround18](https://github.com/mbround18))
+- chore: bump dependencies, fix flaky tests, clippy/fmt cleanup [#1483](https://github.com/mbround18/valheim-docker/pull/1483) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 4
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- [@renovate[bot]](https://github.com/renovate[bot])
+- [@skint007](https://github.com/skint007)
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.6.1 (Wed Jun 17 2026)
 
 #### 🐛 Bug Fix
