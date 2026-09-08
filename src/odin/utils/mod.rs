@@ -12,6 +12,7 @@ pub mod is_valid_url;
 pub mod normalize_paths;
 pub mod parse_mod_string;
 pub mod thunderstore_auth;
+pub(crate) mod thunderstore_http;
 
 pub use is_valid_url::is_valid_url;
 pub use parse_mod_string::parse_mod_string;
