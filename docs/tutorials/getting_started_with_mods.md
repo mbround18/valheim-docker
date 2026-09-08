@@ -118,6 +118,39 @@ Recommendations:
 - Use exact versions in production for reproducibility and easier rollbacks
 - If you rely on wildcards, consider disabling automatic updates to avoid breaking changes until you’ve validated your mod set
 
+## Troubleshooting: Rate Limited Downloads (HTTP 429)
+
+Thunderstore sits behind Cloudflare, which throttles bursts of requests from a single
+host. By default Odin downloads up to 4 mods at once and splits large files into
+parallel range requests, which some hosts get throttled for — especially with wildcard
+versions, since those add version-resolution requests before the downloads start.
+
+Odin honors the `Retry-After` header and backs off automatically. If you still see 429
+errors, turn concurrency off so mods download one at a time:
+
+```yaml
+environment:
+  - CONCURRENT_DOWNLOADS_ENABLED=false
+```
+
+Related knobs, all optional:
+
+| Variable                       | Default | Description                                                                              |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------- |
+| `CONCURRENT_DOWNLOADS_ENABLED` | `true`  | Set to `false` for one mod at a time and no chunked range downloads.                       |
+| `MAX_CONCURRENT_DOWNLOADS`     | `4`     | Lower this (e.g. `2`) to reduce pressure without going fully serial.                       |
+| `DOWNLOAD_RETRY_ATTEMPTS`      | `5`     | Attempts per request before giving up.                                                     |
+| `DOWNLOAD_STAGGER_MS`          | `250`   | Milliseconds between concurrent download starts.                                           |
+| `MODS_CONTINUE_ON_FAILURE`     | `false` | Set to `true` to install the mods that succeeded instead of failing the whole run.         |
+
+By default one failed mod fails the entire install and the container restarts, which can
+turn a temporary rate limit into a restart loop. `MODS_CONTINUE_ON_FAILURE=true` starts
+the server with whatever installed successfully and logs the rest.
+
+If you have a Thunderstore account, you can also set `THUNDERSTORE_TOKEN` to a service
+account API token (created from your team's Service Accounts page). Note that this
+authenticates your requests but does not exempt you from Cloudflare's throttling.
+
 ## Special Note: Installing ValheimPlus
 
 ValheimPlus is installed differently from other mods because it's distributed as a DLL file rather than through Thunderstore. For a complete guide on installing and configuring ValheimPlus, see [ValheimPlus Installation](./valheimplus_installation.md).
