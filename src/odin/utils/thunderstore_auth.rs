@@ -1,12 +1,21 @@
 use crate::utils::environment::fetch_var;
 use reqwest::RequestBuilder;
 
+const THUNDERSTORE_TOKEN_VAR: &str = "THUNDERSTORE_TOKEN";
 const THUNDERSTORE_USERNAME_VAR: &str = "THUNDERSTORE_USERNAME";
 const THUNDERSTORE_PASSWORD_VAR: &str = "THUNDERSTORE_PASSWORD";
 const THUNDERSTORE_HOST: &str = "thunderstore.io";
 
-/// Returns `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` when both are set, for
-/// authenticating against Thunderstore's API (see https://thunderstore.io/api/docs/).
+/// Returns the `THUNDERSTORE_TOKEN` service account token when set. Thunderstore issues
+/// these from a team's Service Accounts page (they look like `tss_...`) and expects them
+/// as `Authorization: Bearer <token>`. See https://thunderstore.io/api/docs/.
+fn thunderstore_token() -> Option<String> {
+  let token = fetch_var(THUNDERSTORE_TOKEN_VAR, "");
+  (!token.is_empty()).then_some(token)
+}
+
+/// Returns `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` when both are set. Kept for
+/// backwards compatibility with existing deployments; prefer `THUNDERSTORE_TOKEN`.
 fn thunderstore_credentials() -> Option<(String, String)> {
   let username = fetch_var(THUNDERSTORE_USERNAME_VAR, "");
   let password = fetch_var(THUNDERSTORE_PASSWORD_VAR, "");
@@ -16,20 +25,35 @@ fn thunderstore_credentials() -> Option<(String, String)> {
   Some((username, password))
 }
 
-/// Attaches HTTP Basic Auth to `builder` when `url` targets thunderstore.io and
-/// `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` are both configured. Requests to
-/// any other host are returned unmodified.
+/// Whether `host` is thunderstore.io or one of its subdomains. Community sites
+/// (`valheim.thunderstore.io`) and the package CDN (`gcdn.thunderstore.io`) are both
+/// Thunderstore-operated, so credentials belong on those too.
+fn is_thunderstore_host(host: &str) -> bool {
+  host.eq_ignore_ascii_case(THUNDERSTORE_HOST)
+    || host
+      .len()
+      .checked_sub(THUNDERSTORE_HOST.len() + 1)
+      .is_some_and(|split| {
+        host.as_bytes()[split] == b'.' && host[split + 1..].eq_ignore_ascii_case(THUNDERSTORE_HOST)
+      })
+}
+
+/// Attaches Thunderstore credentials to `builder` when `url` targets thunderstore.io or one
+/// of its subdomains. `THUNDERSTORE_TOKEN` is sent as a Bearer token and takes precedence;
+/// `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` fall back to HTTP Basic. Requests to any
+/// other host are returned unmodified.
 pub fn with_thunderstore_auth(builder: RequestBuilder, url: &str) -> RequestBuilder {
   let is_thunderstore = reqwest::Url::parse(url)
     .ok()
-    .and_then(|u| {
-      u.host_str()
-        .map(|h| h.eq_ignore_ascii_case(THUNDERSTORE_HOST))
-    })
+    .and_then(|u| u.host_str().map(is_thunderstore_host))
     .unwrap_or(false);
 
   if !is_thunderstore {
     return builder;
+  }
+
+  if let Some(token) = thunderstore_token() {
+    return builder.bearer_auth(token);
   }
 
   match thunderstore_credentials() {
@@ -44,12 +68,85 @@ mod tests {
   use serial_test::serial;
   use std::env::{remove_var, set_var};
 
+  fn clear_credentials() {
+    remove_var(THUNDERSTORE_TOKEN_VAR);
+    remove_var(THUNDERSTORE_USERNAME_VAR);
+    remove_var(THUNDERSTORE_PASSWORD_VAR);
+  }
+
+  fn auth_header(url: &str) -> Option<String> {
+    let client = reqwest::Client::new();
+    let req = with_thunderstore_auth(client.get(url), url)
+      .build()
+      .unwrap();
+    req
+      .headers()
+      .get("authorization")
+      .map(|v| v.to_str().unwrap().to_string())
+  }
+
   #[test]
   #[serial]
   fn no_auth_when_credentials_missing() {
-    remove_var(THUNDERSTORE_USERNAME_VAR);
-    remove_var(THUNDERSTORE_PASSWORD_VAR);
+    clear_credentials();
     assert!(thunderstore_credentials().is_none());
+    assert!(thunderstore_token().is_none());
+  }
+
+  #[test]
+  #[serial]
+  fn token_is_sent_as_bearer() {
+    clear_credentials();
+    set_var(THUNDERSTORE_TOKEN_VAR, "tss_secret");
+    assert_eq!(
+      auth_header("https://thunderstore.io/api/experimental/package/Author/Mod/"),
+      Some("Bearer tss_secret".to_string())
+    );
+    clear_credentials();
+  }
+
+  #[test]
+  #[serial]
+  fn token_takes_precedence_over_basic() {
+    clear_credentials();
+    set_var(THUNDERSTORE_TOKEN_VAR, "tss_secret");
+    set_var(THUNDERSTORE_USERNAME_VAR, "user");
+    set_var(THUNDERSTORE_PASSWORD_VAR, "pass");
+    assert_eq!(
+      auth_header("https://thunderstore.io/api/experimental/package/Author/Mod/"),
+      Some("Bearer tss_secret".to_string())
+    );
+    clear_credentials();
+  }
+
+  #[test]
+  #[serial]
+  fn subdomains_are_authenticated() {
+    clear_credentials();
+    set_var(THUNDERSTORE_TOKEN_VAR, "tss_secret");
+    for url in [
+      "https://valheim.thunderstore.io/api/v1/package/",
+      "https://gcdn.thunderstore.io/live/repository/packages/Author-Mod-1.0.0.zip",
+      "https://new.thunderstore.io/c/valheim/p/Author/Mod/",
+    ] {
+      assert!(auth_header(url).is_some(), "{url} should be authenticated");
+    }
+    clear_credentials();
+  }
+
+  #[test]
+  #[serial]
+  fn lookalike_hosts_are_not_authenticated() {
+    clear_credentials();
+    set_var(THUNDERSTORE_TOKEN_VAR, "tss_secret");
+    for url in [
+      "https://notthunderstore.io/api/",
+      "https://thunderstore.io.evil.com/api/",
+      "https://evil-thunderstore.io/api/",
+    ] {
+      assert!(auth_header(url).is_none(), "{url} must not receive auth");
+    }
+    clear_credentials();
   }
 
   #[test]

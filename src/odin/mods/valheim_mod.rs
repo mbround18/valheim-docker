@@ -1,7 +1,10 @@
 use crate::errors::ValheimModError;
 use crate::mods::manifest::Manifest;
 use crate::utils::normalize_paths::normalize_paths;
-use crate::utils::{is_valid_url, parse_mod_string, with_thunderstore_auth};
+use crate::utils::{
+  concurrent_downloads_enabled, is_valid_url, max_concurrent_downloads, parse_mod_string,
+  send_with_backoff, with_thunderstore_auth,
+};
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
   utils::{common_paths, get_md5_hash, parse_file_name, url_parse_file_type},
@@ -100,7 +103,11 @@ async fn thunderstore_list_versions(
   for url in endpoints {
     for attempt in 1..=2 {
       log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
-      match with_thunderstore_auth(client.get(&url), &url).send().await {
+      match send_with_backoff(&format!("thunderstore {namespace}/{name}"), || {
+        with_thunderstore_auth(client.get(&url), &url)
+      })
+      .await
+      {
         Ok(resp) => {
           if !resp.status().is_success() {
             last_err = Some(format!("status {} for {}", resp.status(), url));
@@ -127,7 +134,7 @@ async fn thunderstore_list_versions(
         }
       }
       // brief backoff before next attempt
-      std::thread::sleep(Duration::from_millis(500));
+      tokio::time::sleep(Duration::from_millis(500)).await;
     }
   }
 
@@ -136,9 +143,10 @@ async fn thunderstore_list_versions(
     "https://thunderstore.io/c/valheim/p/{}/{}/",
     namespace, name
   );
-  match with_thunderstore_auth(client.get(&page_url), &page_url)
-    .send()
-    .await
+  match send_with_backoff(&format!("thunderstore page {namespace}/{name}"), || {
+    with_thunderstore_auth(client.get(&page_url), &page_url)
+  })
+  .await
   {
     Ok(resp) if resp.status().is_success() => match resp.text().await {
       Ok(html) => {
@@ -361,7 +369,7 @@ impl ValheimMod {
 
   /// Parallel chunked download for large files.
   ///
-  /// Issues up to `MAX_WORKERS` concurrent Range requests, writing each chunk
+  /// Issues up to `MAX_CONCURRENT_DOWNLOADS` concurrent Range requests, writing each chunk
   /// directly to its correct offset so no sorting/buffering pass is needed.
   /// Falls back gracefully: callers only invoke this when the server has already
   /// advertised `Accept-Ranges: bytes` *and* the file exceeds the threshold.
@@ -374,14 +382,14 @@ impl ValheimMod {
     use std::os::unix::fs::FileExt;
 
     const CHUNK_SIZE: u64 = 4 * 1024 * 1024; // 4 MB per chunk
-    const MAX_WORKERS: usize = 4;
+    let max_workers = max_concurrent_downloads();
 
     let num_chunks = total_size.div_ceil(CHUNK_SIZE);
     info!(
       "🚀 Parallel download: {} in {} chunks ({} concurrent)",
       Self::format_bytes(total_size),
       num_chunks,
-      MAX_WORKERS
+      max_workers
     );
 
     // Pre-allocate the file so workers can write to arbitrary offsets safely.
@@ -392,7 +400,7 @@ impl ValheimMod {
         .map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
     }
 
-    let semaphore = Arc::new(tokio::sync::Semaphore::new(MAX_WORKERS));
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(max_workers));
     let url = Arc::new(url.to_string());
     let client = Arc::new(Client::new());
     // Shared writable handle — write_at uses pwrite64 so concurrent non-overlapping
@@ -417,11 +425,12 @@ impl ValheimMod {
 
       join_set.spawn(async move {
         let _permit = sem.acquire().await.unwrap();
-        let resp = with_thunderstore_auth(client.get(url.as_str()), &url)
-          .header("Range", format!("bytes={}-{}", start_byte, end_byte))
-          .send()
-          .await
-          .map_err(|e| ValheimModError::DownloadError(format!("chunk {i}: {e}")))?;
+        let resp = send_with_backoff(&format!("chunk {i}"), || {
+          with_thunderstore_auth(client.get(url.as_str()), &url)
+            .header("Range", format!("bytes={}-{}", start_byte, end_byte))
+        })
+        .await
+        .map_err(|e| ValheimModError::DownloadError(format!("chunk {i}: {e}")))?;
 
         // 206 Partial Content is expected; 200 is tolerated (full body served).
         if resp.status() != reqwest::StatusCode::PARTIAL_CONTENT && !resp.status().is_success() {
@@ -547,10 +556,20 @@ impl ValheimMod {
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
     let client = Client::new();
     debug!("⬇️  Downloading from: {}", self.url);
-    let response = with_thunderstore_auth(client.get(parsed_url), &self.url)
-      .send()
-      .await
-      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    let url_for_send = self.url.clone();
+    let response = send_with_backoff(&format!("download {}", self.url), || {
+      with_thunderstore_auth(client.get(parsed_url.clone()), &url_for_send)
+    })
+    .await
+    .map_err(ValheimModError::DownloadError)?;
+
+    if !response.status().is_success() {
+      return Err(ValheimModError::DownloadError(format!(
+        "status {} for {}",
+        response.status(),
+        self.url
+      )));
+    }
 
     if !SUPPORTED_FILE_TYPES.contains(&self.file_type.as_str()) {
       debug!("Using redirect URL: {}", self.url);
@@ -628,7 +647,7 @@ impl ValheimMod {
     let start_time = std::time::Instant::now();
 
     #[cfg(unix)]
-    if let Some(total_size) = parallel_size {
+    if let Some(total_size) = parallel_size.filter(|_| concurrent_downloads_enabled()) {
       // Drop the initial response — we don't need its body; chunk tasks open their own connections.
       drop(response);
       Self::download_chunked(&self.url, &final_path, total_size).await?;

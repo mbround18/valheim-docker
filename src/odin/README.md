@@ -33,6 +33,12 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | STAGED_UPDATES                  | `0`                                     | FALSE    | Set to `1` to install into a staging directory first and only promote to live after validation succeeds.                   |
 | STAGED_INSTALL_DIR              | `/home/steam/.staging/valheim-pending`  | FALSE    | Override the staging installation directory when `STAGED_UPDATES=1`.                                                       |
 | ODIN_SCHEDULER_STATE_FILE       | `${GAME_LOCATION}/logs/jobs_state.json` | FALSE    | Override where Odin persists scheduler runtime state.                                                                      |
+| CONCURRENT_DOWNLOADS_ENABLED    | `true`                                  | FALSE    | Set to `false` to download mods one at a time and skip chunked range downloads (avoids Thunderstore 429 rate limiting).     |
+| MAX_CONCURRENT_DOWNLOADS        | `4`                                     | FALSE    | Maximum simultaneous mod downloads / range chunks while `CONCURRENT_DOWNLOADS_ENABLED` is true.                             |
+| DOWNLOAD_RETRY_ATTEMPTS         | `5`                                     | FALSE    | Attempts per mod request; 429/5xx responses honor `Retry-After` and otherwise back off exponentially (capped at 60s).       |
+| DOWNLOAD_STAGGER_MS             | `250`                                   | FALSE    | Milliseconds between concurrent download starts so requests are spaced out. Set to `0` to disable.                          |
+| MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                  |
+| THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Thunderstore service account token (`tss_...`), sent as `Authorization: Bearer` to thunderstore.io and its subdomains.      |
 
 ## Gotchas
 

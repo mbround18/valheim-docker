@@ -2,6 +2,8 @@ use crate::mods::ValheimMod;
 use crate::mods::{ensure_valheim_plus_config_for_dll_url, is_valheim_plus_dll_url};
 
 use crate::errors::ValheimModError;
+use crate::utils::environment::is_env_var_truthy_with_default;
+use crate::utils::{download_stagger, max_concurrent_downloads};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -254,6 +256,18 @@ pub async fn invoke(url: Option<String>, from_var: bool) {
   }
 }
 
+/// Set to `true` to install every mod that succeeded and log the rest, instead of
+/// failing the whole run on the first error.
+const MODS_CONTINUE_ON_FAILURE: &str = "MODS_CONTINUE_ON_FAILURE";
+
+fn aggregate_failures(failures: &[String]) -> String {
+  format!(
+    "{} mod(s) failed: {}. Set {MODS_CONTINUE_ON_FAILURE}=true to install the rest anyway.",
+    failures.len(),
+    failures.join("; ")
+  )
+}
+
 async fn process_mods_from_env() -> Result<(), ValheimModError> {
   let mods_raw = env::var("MODS").unwrap_or_default();
 
@@ -294,6 +308,11 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
 
   info!("Installing {} mod(s) from MODS env", desired_mods.len());
 
+  // By default one failed mod fails the whole run (and the container restarts).
+  // MODS_CONTINUE_ON_FAILURE=true installs whatever succeeded and only warns,
+  // which avoids a transient Thunderstore 429 turning into a restart loop.
+  let continue_on_failure = is_env_var_truthy_with_default(MODS_CONTINUE_ON_FAILURE, false);
+
   // Identify ValheimPlus entries up-front (just string comparison, no I/O).
   let mut valheim_plus_dll_url: Option<String> = None;
   for m in &desired_mods {
@@ -303,11 +322,19 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     }
   }
 
-  // Phase 1 — Concurrent downloads (bounded to 4 simultaneous connections).
+  // Phase 1 — Downloads, bounded by CONCURRENT_DOWNLOADS_ENABLED/MAX_CONCURRENT_DOWNLOADS.
   // Downloads are pure I/O and safe to run concurrently; installation is
-  // sequential below to preserve deterministic mod ordering.
-  const MAX_CONCURRENT_DOWNLOADS: usize = 4;
-  let semaphore = Arc::new(tokio::sync::Semaphore::new(MAX_CONCURRENT_DOWNLOADS));
+  // sequential below to preserve deterministic mod ordering. Setting
+  // CONCURRENT_DOWNLOADS_ENABLED=false serializes them, which avoids tripping
+  // Thunderstore's rate limiting on hosts that get throttled aggressively.
+  let max_concurrent = max_concurrent_downloads();
+  let stagger = download_stagger();
+  if max_concurrent > 1 {
+    info!("Downloading up to {max_concurrent} mod(s) concurrently");
+  } else {
+    info!("Concurrent downloads disabled; downloading mods one at a time");
+  }
+  let semaphore = Arc::new(tokio::sync::Semaphore::new(max_concurrent));
 
   let mut join_set: tokio::task::JoinSet<(usize, Result<ValheimMod, ValheimModError>)> =
     tokio::task::JoinSet::new();
@@ -315,43 +342,72 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   for (idx, m) in desired_mods.iter().enumerate() {
     let m = m.clone();
     let sem = semaphore.clone();
+    // Space out request starts so we don't open every connection in the same instant.
+    let delay = stagger * idx.min(max_concurrent) as u32;
     join_set.spawn(async move {
       let _permit = sem.acquire().await.unwrap();
+      if !delay.is_zero() {
+        tokio::time::sleep(delay).await;
+      }
       (idx, download_mod_only(&m).await)
     });
   }
 
   // Collect results, preserving original ordering for deterministic installation.
+  // Every download runs to completion even when one fails, so a single bad mod
+  // reports as itself instead of masking whatever else was also broken.
   let mut downloaded: Vec<Option<ValheimMod>> = (0..desired_mods.len()).map(|_| None).collect();
+  let mut failures: Vec<String> = Vec::new();
   while let Some(task_result) = join_set.join_next().await {
     match task_result {
       Ok((idx, Ok(vmod))) => downloaded[idx] = Some(vmod),
-      Ok((_, Err(e))) => {
-        join_set.abort_all();
-        return Err(e);
+      Ok((idx, Err(e))) => {
+        error!("✗ Download failed for {}: {e}", desired_mods[idx]);
+        failures.push(format!("{}: {e}", desired_mods[idx]));
       }
-      Err(e) => {
-        join_set.abort_all();
-        return Err(ValheimModError::DownloadError(format!(
-          "download task panicked: {e}"
-        )));
-      }
+      Err(e) => failures.push(format!("download task panicked: {e}")),
     }
+  }
+
+  if !failures.is_empty() && !continue_on_failure {
+    return Err(ValheimModError::DownloadError(aggregate_failures(
+      &failures,
+    )));
   }
 
   // Phase 2 — Sequential installation (BepInEx ordering matters).
   let mut new_states: Vec<InstalledModState> = Vec::with_capacity(desired_mods.len());
   for (idx, m) in desired_mods.iter().enumerate() {
-    let mut vmod = downloaded[idx]
-      .take()
-      .expect("all mods downloaded in phase 1");
+    let Some(mut vmod) = downloaded[idx].take() else {
+      // Download failed above; MODS_CONTINUE_ON_FAILURE let us get here. Keep any
+      // previously recorded state for this mod so its installed files stay tracked.
+      if let Some(prev) = previous_state
+        .as_ref()
+        .and_then(|p| p.mods.iter().find(|s| s.url == *m))
+      {
+        new_states.push(prev.clone());
+      }
+      continue;
+    };
     let mod_name = extract_mod_name(&vmod.url);
     let staging = vmod.staging_location.clone();
 
-    let installed_paths = vmod.install_with_report().map_err(|e| {
-      error!("✗ Install failed for {}: {}", mod_name, e);
-      e
-    })?;
+    let installed_paths = match vmod.install_with_report() {
+      Ok(paths) => paths,
+      Err(e) => {
+        error!("✗ Install failed for {}: {}", mod_name, e);
+        failures.push(format!("{m}: {e}"));
+        if !continue_on_failure {
+          // Persist what installed cleanly so a retry doesn't redo the whole set.
+          let _ = save_from_var_state(&FromVarState {
+            schema_version: 1,
+            mods: new_states,
+          });
+          return Err(e);
+        }
+        continue;
+      }
+    };
     info!(
       "✓ Installed: {} to {} location(s)",
       mod_name,
@@ -385,12 +441,22 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     mods: new_states,
   };
   save_from_var_state(&state)?;
+
+  if !failures.is_empty() {
+    warn!(
+      "Continuing despite {} mod failure(s) because {MODS_CONTINUE_ON_FAILURE} is enabled: {}",
+      failures.len(),
+      failures.join("; ")
+    );
+  }
+
   Ok(())
 }
 
 #[cfg(test)]
 mod from_var_state_tests {
   use super::*;
+  use crate::utils::download_config::DOWNLOAD_RETRY_ATTEMPTS_VAR;
   use mockito::Server;
   use serial_test::serial;
   use std::io::{Cursor, Write};
@@ -830,5 +896,175 @@ mod from_var_state_tests {
     assert!(final_state.mods.iter().any(|m| m.url == dll1_url));
     assert!(final_state.mods.iter().any(|m| m.url == dll3_url));
     assert!(!final_state.mods.iter().any(|m| m.url == dll2_url));
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn from_var_fails_whole_run_when_a_mod_fails_by_default() {
+    let mut server = Server::new_async().await;
+    let zip_bytes = make_test_zip();
+
+    let _zip_mock = server
+      .mock("GET", "/testmod.zip")
+      .with_status(200)
+      .with_header("content-type", "application/zip")
+      .with_body(zip_bytes)
+      .create();
+
+    let _missing_mock = server
+      .mock("GET", "/missing.dll")
+      .with_status(404)
+      .expect_at_least(1)
+      .create();
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+    env::remove_var(MODS_CONTINUE_ON_FAILURE);
+
+    let zip_url = format!("{}/testmod.zip", server.url());
+    let missing_url = format!("{}/missing.dll", server.url());
+    env::set_var("MODS", format!("{} {}", zip_url, missing_url));
+
+    let err = process_mods_from_env().await.expect_err("run should fail");
+    let message = err.to_string();
+    assert!(
+      message.contains("missing.dll"),
+      "error should name the failing mod: {message}"
+    );
+    assert!(
+      message.contains(MODS_CONTINUE_ON_FAILURE),
+      "error should point at the opt-out flag: {message}"
+    );
+
+    // Nothing is installed when the run aborts.
+    let testmod_dir =
+      PathBuf::from(crate::utils::common_paths::bepinex_plugin_directory()).join("testmod");
+    assert!(
+      !testmod_dir.exists(),
+      "no mod should install on a failed run"
+    );
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn from_var_continues_past_failures_when_opted_in() {
+    let mut server = Server::new_async().await;
+    let zip_bytes = make_test_zip();
+
+    let _zip_mock = server
+      .mock("GET", "/testmod.zip")
+      .with_status(200)
+      .with_header("content-type", "application/zip")
+      .with_body(zip_bytes)
+      .create();
+
+    let _missing_mock = server
+      .mock("GET", "/missing.dll")
+      .with_status(404)
+      .expect_at_least(1)
+      .create();
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+    env::set_var(MODS_CONTINUE_ON_FAILURE, "true");
+
+    let zip_url = format!("{}/testmod.zip", server.url());
+    let missing_url = format!("{}/missing.dll", server.url());
+    env::set_var("MODS", format!("{} {}", missing_url, zip_url));
+
+    process_mods_from_env()
+      .await
+      .expect("run should succeed despite one failure");
+
+    let testmod_plugin = PathBuf::from(crate::utils::common_paths::bepinex_plugin_directory())
+      .join("testmod")
+      .join("myplugin.dll");
+    assert!(
+      testmod_plugin.exists(),
+      "healthy mod should install even though a sibling failed"
+    );
+
+    let state = load_from_var_state().unwrap().expect("state file");
+    assert_eq!(state.mods.len(), 1, "only the successful mod is recorded");
+    assert_eq!(state.mods[0].url, zip_url);
+
+    env::remove_var(MODS_CONTINUE_ON_FAILURE);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn from_var_keeps_prior_state_for_a_mod_that_fails_later() {
+    let mut server = Server::new_async().await;
+    let zip_bytes = make_test_zip();
+
+    let _zip_mock = server
+      .mock("GET", "/testmod.zip")
+      .with_status(200)
+      .with_header("content-type", "application/zip")
+      .with_body(zip_bytes)
+      .create();
+
+    let flaky_ok = server
+      .mock("GET", "/flaky.dll")
+      .with_status(200)
+      .with_header("content-type", "application/octet-stream")
+      .with_body("FLAKYDLL")
+      .expect(1)
+      .create();
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+    env::set_var(MODS_CONTINUE_ON_FAILURE, "true");
+
+    let zip_url = format!("{}/testmod.zip", server.url());
+    let flaky_url = format!("{}/flaky.dll", server.url());
+    env::set_var("MODS", format!("{} {}", zip_url, flaky_url));
+
+    process_mods_from_env()
+      .await
+      .expect("first run installs both");
+    flaky_ok.assert_async().await;
+
+    let first_state = load_from_var_state().unwrap().expect("state file");
+    let flaky_state = first_state
+      .mods
+      .iter()
+      .find(|m| m.url == flaky_url)
+      .expect("flaky state")
+      .clone();
+
+    // Drop the cached artifact so the second run has to re-download, then rate limit it.
+    let _ = std::fs::remove_file(&flaky_state.staging_path);
+    let _rate_limited = server
+      .mock("GET", "/flaky.dll")
+      .with_status(429)
+      .with_header("retry-after", "0")
+      .expect_at_least(1)
+      .create();
+    env::set_var(DOWNLOAD_RETRY_ATTEMPTS_VAR, "1");
+
+    process_mods_from_env()
+      .await
+      .expect("second run tolerates the 429");
+
+    let second_state = load_from_var_state().unwrap().expect("state file");
+    let carried = second_state
+      .mods
+      .iter()
+      .find(|m| m.url == flaky_url)
+      .expect("failed mod should keep its previous state entry");
+    assert_eq!(
+      carried.installed_paths, flaky_state.installed_paths,
+      "installed paths must stay tracked so cleanup still works later"
+    );
+
+    env::remove_var(DOWNLOAD_RETRY_ATTEMPTS_VAR);
+    env::remove_var(MODS_CONTINUE_ON_FAILURE);
   }
 }
