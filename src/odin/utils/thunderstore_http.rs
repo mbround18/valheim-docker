@@ -97,6 +97,20 @@ fn is_thunderstore(url: &reqwest::Url) -> bool {
     .is_some_and(|host| host == "thunderstore.io" || host.ends_with(".thunderstore.io"))
 }
 
+fn redirect_referer(
+  previous: &reqwest::Url,
+  next: &reqwest::Url,
+) -> Option<reqwest::header::HeaderValue> {
+  if previous.scheme() == "https" && next.scheme() == "http" {
+    return None;
+  }
+  let mut referer = previous.clone();
+  let _ = referer.set_username("");
+  let _ = referer.set_password(None);
+  referer.set_fragment(None);
+  referer.as_str().parse().ok()
+}
+
 /// Send a mod GET request, pacing and retrying each Thunderstore redirect hop.
 /// Callers must build their client with `client_builder`.
 pub(crate) async fn send(request: RequestBuilder, url: &str) -> Result<Response, ValheimModError> {
@@ -152,6 +166,13 @@ pub(crate) async fn send(request: RequestBuilder, url: &str) -> Result<Response,
       ] {
         request.headers_mut().remove(header);
       }
+    }
+    if let Some(referer) = redirect_referer(request.url(), &next) {
+      request
+        .headers_mut()
+        .insert(reqwest::header::REFERER, referer);
+    } else {
+      request.headers_mut().remove(reqwest::header::REFERER);
     }
     *request.url_mut() = next;
   }
@@ -299,6 +320,10 @@ mod tests {
       .with_status(307)
       .match_header("authorization", mockito::Matcher::Missing)
       .match_header("cookie", mockito::Matcher::Missing)
+      .match_header(
+        "referer",
+        format!("http://thunderstore.io:{port}/origin").as_str(),
+      )
       .with_header("Location", "/final")
       .expect(1)
       .create_async()
@@ -363,5 +388,18 @@ mod tests {
       .to_string()
       .contains("Too many mod download redirects"));
     redirect.assert_async().await;
+  }
+
+  #[test]
+  fn sanitizes_referer_and_omits_it_on_https_downgrades() {
+    let previous =
+      reqwest::Url::parse("https://user:password@thunderstore.io/mod#private").unwrap();
+    let next = reqwest::Url::parse("https://cdn.thunderstore.io/mod.zip").unwrap();
+    assert_eq!(
+      redirect_referer(&previous, &next).unwrap(),
+      "https://thunderstore.io/mod"
+    );
+    let downgrade = reqwest::Url::parse("http://cdn.thunderstore.io/mod.zip").unwrap();
+    assert!(redirect_referer(&previous, &downgrade).is_none());
   }
 }
