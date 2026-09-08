@@ -24,10 +24,10 @@ impl RequestGate {
     }
   }
 
-  // Hold the gate through response headers so another worker cannot miss a new cooldown.
+  // Keep other workers queued through retries so they cannot multiply the retry budget.
   async fn send(&self, request: RequestBuilder) -> Result<Response, ValheimModError> {
+    let mut next = self.next_request.lock().await;
     for attempt in 0..=MAX_RETRIES {
-      let mut next = self.next_request.lock().await;
       if let Some(deadline) = *next {
         sleep_until(deadline).await;
       }
@@ -71,7 +71,6 @@ impl RequestGate {
         attempt + 1,
         MAX_RETRIES
       );
-      // Release the lock before retrying; all queued workers share the deadline.
     }
     unreachable!("the final attempt returns its response")
   }
@@ -87,24 +86,76 @@ fn retry_after(value: &str, now: SystemTime) -> Option<Duration> {
   Some(deadline.duration_since(now).unwrap_or_default())
 }
 
-/// Pace Thunderstore lookups and downloads together, including retries after a 429.
-/// Other hosts keep their existing request behavior.
+/// Redirects are followed by `send` so each Thunderstore hop uses the shared gate.
+pub(crate) fn client_builder() -> reqwest::ClientBuilder {
+  reqwest::Client::builder().redirect(reqwest::redirect::Policy::none())
+}
+
+fn is_thunderstore(url: &reqwest::Url) -> bool {
+  url
+    .host_str()
+    .is_some_and(|host| host == "thunderstore.io" || host.ends_with(".thunderstore.io"))
+}
+
+/// Send a mod GET request, pacing and retrying each Thunderstore redirect hop.
+/// Callers must build their client with `client_builder`.
 pub(crate) async fn send(request: RequestBuilder, url: &str) -> Result<Response, ValheimModError> {
-  let is_thunderstore = reqwest::Url::parse(url).ok().is_some_and(|url| {
-    url
-      .host_str()
-      .is_some_and(|host| host == "thunderstore.io" || host.ends_with(".thunderstore.io"))
-  });
-  if is_thunderstore {
-    THUNDERSTORE
-      .send(with_thunderstore_auth(request, url))
-      .await
-  } else {
-    request
-      .send()
-      .await
-      .map_err(|e| ValheimModError::DownloadError(e.to_string()))
+  let (client, request) = with_thunderstore_auth(request, url).build_split();
+  let mut request = request.map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+  for hop in 0..=10 {
+    let builder = RequestBuilder::from_parts(
+      client.clone(),
+      request
+        .try_clone()
+        .ok_or_else(|| ValheimModError::DownloadError("Cannot retry mod request".into()))?,
+    );
+    let response = if is_thunderstore(request.url()) {
+      THUNDERSTORE.send(builder).await?
+    } else {
+      builder
+        .send()
+        .await
+        .map_err(|e| ValheimModError::DownloadError(e.to_string()))?
+    };
+    if !matches!(response.status().as_u16(), 301 | 302 | 303 | 307 | 308) {
+      return Ok(response);
+    }
+    let Some(location) = response.headers().get(reqwest::header::LOCATION) else {
+      return Ok(response);
+    };
+    if hop == 10 {
+      return Err(ValheimModError::DownloadError(
+        "Too many mod download redirects".into(),
+      ));
+    }
+    let location = location
+      .to_str()
+      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    let next = request
+      .url()
+      .join(location)
+      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+    if !matches!(next.scheme(), "http" | "https") {
+      return Err(ValheimModError::DownloadError(
+        "Unsupported mod redirect scheme".into(),
+      ));
+    }
+    if request.url().origin() != next.origin() {
+      // Match reqwest's protection against forwarding credentials to another origin.
+      for header in [
+        "authorization",
+        "cookie",
+        "cookie2",
+        "proxy-authorization",
+        "www-authenticate",
+        "host",
+      ] {
+        request.headers_mut().remove(header);
+      }
+    }
+    *request.url_mut() = next;
   }
+  unreachable!("the last redirect returns an error")
 }
 
 #[cfg(test)]
@@ -159,7 +210,7 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn stops_after_bounded_retries_with_backoff() {
+  async fn stops_queued_workers_after_bounded_retries_with_backoff() {
     let mut server = mockito::Server::new_async().await;
     let limited = server
       .mock("GET", "/mod")
@@ -170,10 +221,16 @@ mod tests {
       .await;
     let gate = RequestGate::new(Duration::ZERO, Duration::from_millis(10));
     let start = Instant::now();
-    let response = gate
-      .send(reqwest::Client::new().get(format!("{}/mod", server.url())))
-      .await
-      .unwrap();
+    let client = reqwest::Client::new();
+    let url = format!("{}/mod", server.url());
+    // Like the installer, cancel the other workers when the first request fails.
+    let response = tokio::select! {
+      result = gate.send(client.get(&url)) => result,
+      result = gate.send(client.get(&url)) => result,
+      result = gate.send(client.get(&url)) => result,
+      result = gate.send(client.get(&url)) => result,
+    }
+    .unwrap();
     assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
     assert!(start.elapsed() >= Duration::from_millis(70));
     limited.assert_async().await;
@@ -195,13 +252,16 @@ mod tests {
       .expect(1)
       .create_async()
       .await;
-    let client = reqwest::Client::new();
-    let response = send(
-      client.get(format!("{}/mod", server.url())),
-      "https://cdn.thunderstore.io/mod.zip",
-    )
-    .await
-    .unwrap();
+    let client = client_builder()
+      .no_proxy()
+      .resolve("cdn.thunderstore.io", server.socket_address())
+      .build()
+      .unwrap();
+    let url = format!(
+      "http://cdn.thunderstore.io:{}/mod",
+      server.socket_address().port()
+    );
+    let response = send(client.get(&url), &url).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     limited.assert_async().await;
     success.assert_async().await;
@@ -220,5 +280,88 @@ mod tests {
     .unwrap();
     assert_eq!(response.status(), StatusCode::TOO_MANY_REQUESTS);
     unrelated.assert_async().await;
+  }
+
+  #[tokio::test]
+  async fn paces_redirects_and_drops_cross_origin_credentials() {
+    let mut server = mockito::Server::new_async().await;
+    let port = server.socket_address().port();
+    let cdn_url = format!("http://cdn.thunderstore.io:{port}/redirect");
+    let origin = server
+      .mock("GET", "/origin")
+      .with_status(302)
+      .with_header("Location", &cdn_url)
+      .expect(1)
+      .create_async()
+      .await;
+    let redirect = server
+      .mock("GET", "/redirect")
+      .with_status(307)
+      .match_header("authorization", mockito::Matcher::Missing)
+      .match_header("cookie", mockito::Matcher::Missing)
+      .with_header("Location", "/final")
+      .expect(1)
+      .create_async()
+      .await;
+    let limited = server
+      .mock("GET", "/final")
+      .with_status(429)
+      .with_header("Retry-After", "0")
+      .expect(1)
+      .create_async()
+      .await;
+    let success = server
+      .mock("GET", "/final")
+      .with_status(200)
+      .match_header("authorization", mockito::Matcher::Missing)
+      .match_header("Range", "bytes=0-3")
+      .with_body("data")
+      .expect(1)
+      .create_async()
+      .await;
+    let client = client_builder()
+      .no_proxy()
+      .resolve("thunderstore.io", server.socket_address())
+      .resolve("cdn.thunderstore.io", server.socket_address())
+      .build()
+      .unwrap();
+    let url = format!("http://thunderstore.io:{port}/origin");
+    let start = Instant::now();
+    let response = send(
+      client
+        .get(&url)
+        .basic_auth("test", Some("test"))
+        .header("Cookie", "session=test")
+        .header("Range", "bytes=0-3"),
+      &url,
+    )
+    .await
+    .unwrap();
+    assert_eq!(response.url().path(), "/final");
+    assert_eq!(response.text().await.unwrap(), "data");
+    assert!(start.elapsed() >= Duration::from_secs(3));
+    origin.assert_async().await;
+    redirect.assert_async().await;
+    limited.assert_async().await;
+    success.assert_async().await;
+  }
+
+  #[tokio::test]
+  async fn stops_redirect_loops() {
+    let mut server = mockito::Server::new_async().await;
+    let redirect = server
+      .mock("GET", "/loop")
+      .with_status(302)
+      .with_header("Location", "/loop")
+      .expect(11)
+      .create_async()
+      .await;
+    let url = format!("{}/loop", server.url());
+    let result = send(client_builder().build().unwrap().get(&url), &url).await;
+    assert!(result
+      .unwrap_err()
+      .to_string()
+      .contains("Too many mod download redirects"));
+    redirect.assert_async().await;
   }
 }

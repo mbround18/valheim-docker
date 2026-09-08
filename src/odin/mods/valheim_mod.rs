@@ -1,7 +1,7 @@
 use crate::errors::ValheimModError;
 use crate::mods::manifest::Manifest;
 use crate::utils::normalize_paths::normalize_paths;
-use crate::utils::thunderstore_http::send;
+use crate::utils::thunderstore_http::{client_builder, send};
 use crate::utils::{is_valid_url, parse_mod_string};
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
@@ -10,7 +10,6 @@ use crate::{
 use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info, warn};
-use reqwest::Client;
 use reqwest::Url;
 use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
@@ -73,7 +72,7 @@ async fn thunderstore_list_versions(
     None
   }
 
-  let client = reqwest::Client::builder()
+  let client = client_builder()
     .timeout(Duration::from_secs(10))
     .user_agent("odin-valheim-docker/1.0 (+https://github.com/mbround18/valheim-docker)")
     .build()
@@ -397,7 +396,11 @@ impl ValheimMod {
 
     let semaphore = Arc::new(tokio::sync::Semaphore::new(MAX_WORKERS));
     let url = Arc::new(url.to_string());
-    let client = Arc::new(Client::new());
+    let client = Arc::new(
+      client_builder()
+        .build()
+        .map_err(|e| ValheimModError::DownloadError(e.to_string()))?,
+    );
     // Shared writable handle — write_at uses pwrite64 so concurrent non-overlapping
     // writes are safe without any additional locking.
     let file = Arc::new(
@@ -532,7 +535,9 @@ impl ValheimMod {
 
     // Perform request (to resolve redirects and final file type if needed).
     let parsed_url = Url::parse(&self.url).map_err(|_| ValheimModError::InvalidUrl)?;
-    let client = Client::new();
+    let client = client_builder()
+      .build()
+      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
     debug!("⬇️  Downloading from: {}", self.url);
     let response = send(client.get(parsed_url), &self.url)
       .await?
