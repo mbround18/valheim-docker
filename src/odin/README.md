@@ -30,6 +30,7 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | SHOW_SHADER_WARNINGS            | `0`                                     | FALSE    | Set to `1` to include shader warnings in `odin logs` output.                                                               |
 | STEAMCMD_RETRY_ATTEMPTS         | `3`                                     | FALSE    | Number of retry attempts for SteamCMD commands (`install`, app info queries).                                              |
 | STEAMCMD_RETRY_BASE_DELAY_SECS  | `5`                                     | FALSE    | Base delay in seconds used for exponential backoff between SteamCMD retries.                                               |
+| STEAMCMD_RESET_ON_FAILURE       | `1`                                     | FALSE    | Set to `0` to stop Odin clearing SteamCMD download state and retrying once after a failed app update (`state is 0x6`).     |
 | STAGED_UPDATES                  | `0`                                     | FALSE    | Set to `1` to install into a staging directory first and only promote to live after validation succeeds.                   |
 | STAGED_INSTALL_DIR              | `/home/steam/.staging/valheim-pending`  | FALSE    | Override the staging installation directory when `STAGED_UPDATES=1`.                                                       |
 | ODIN_SCHEDULER_STATE_FILE       | `${GAME_LOCATION}/logs/jobs_state.json` | FALSE    | Override where Odin persists scheduler runtime state.                                                                      |
