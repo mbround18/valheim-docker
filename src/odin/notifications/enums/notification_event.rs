@@ -2,14 +2,14 @@ use crate::errors::VariantNotFound;
 use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::player::PlayerStatus;
 use crate::notifications::{
-  discord::{is_discord_webhook, DiscordWebHookBody},
+  discord::{is_discord_webhook, with_components_query, DiscordWebHookBody},
   NotificationMessage, WEBHOOK_INCLUDE_PUBLIC_IP, WEBHOOK_URL,
 };
 use crate::utils::environment::fetch_var;
 use crate::utils::{fetch_public_address, get_server_name};
 use chrono::Local;
 use inflections::case::to_title_case;
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use reqwest::{blocking::RequestBuilder, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -88,7 +88,9 @@ impl NotificationEvent {
       let response_status = parsed_response.status();
       let response_message = parsed_response.text().unwrap();
       match response_status.as_u16() {
-        204 | 201 => info!("[{self}]: Webhook message sent successfully!"),
+        // A successful send is routine and fires on every player join/leave
+        // when PLAYER_EVENT_NOTIFICATIONS=1; only failures are worth surfacing.
+        204 | 201 => debug!("[{self}]: Webhook message sent successfully!"),
         _ => error!("Request failed! {response_status}, {response_message}"),
       }
     } else {
@@ -115,16 +117,23 @@ impl NotificationEvent {
       "Event Received: {}",
       serde_json::to_string_pretty(&notification).unwrap()
     );
-    let mut req = self.build_request(webhook_url);
-    req = if is_discord_webhook(webhook_url) {
-      info!("Sending discord notification <3");
-      req.json(&DiscordWebHookBody::from(notification))
+    let req = if is_discord_webhook(webhook_url) {
+      debug!("Sending discord notification <3");
+      let body = DiscordWebHookBody::from(notification);
+      // Components need an opt-in on the URL, so the body has to be built
+      // before the request target is known.
+      let url = if body.components.is_some() {
+        with_components_query(webhook_url)
+      } else {
+        webhook_url.to_string()
+      };
+      self.build_request(&url).json(&body)
     } else {
       debug!(
         "Webhook Payload: {}",
         serde_json::to_string(&notification).unwrap()
       );
-      req.json(&notification)
+      self.build_request(webhook_url).json(&notification)
     };
     self.handle_request(req);
   }
