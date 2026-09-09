@@ -2,13 +2,14 @@
 
 ## Environment Variables
 
-| Variable                   | Default             | Required | Description                                                                                                                                                                                     |
-| -------------------------- | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| WEBHOOK_URL                | `<nothing>`         | FALSE    | Set this to send status notifications to your webhook or Discord endpoint. [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
-| TITLE                      | `Broadcast`         | FALSE    | Default title used by `odin notify` when no `--title` argument is provided.                                                                                                                     |
-| MESSAGE                    | `Test Notification` | FALSE    | Default message used by `odin notify` when no `--message` argument is provided.                                                                                                                 |
-| WEBHOOK_INCLUDE_PUBLIC_IP  | `0`                 | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address.                                                                                   |
-| PLAYER_EVENT_NOTIFICATIONS | `0`                 | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                 |
+| Variable                       | Default             | Required | Description                                                                                                                                                                                     |
+| ------------------------------ | ------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| WEBHOOK_URL                    | `<nothing>`         | FALSE    | Set this to send status notifications to your webhook or Discord endpoint. [How to create a Discord webhook URL](https://help.dashe.io/en/articles/2521940-how-to-create-a-discord-webhook-url) |
+| TITLE                          | `Broadcast`         | FALSE    | Default title used by `odin notify` when no `--title` argument is provided.                                                                                                                     |
+| MESSAGE                        | `Test Notification` | FALSE    | Default message used by `odin notify` when no `--message` argument is provided.                                                                                                                 |
+| WEBHOOK_INCLUDE_PUBLIC_IP      | `0`                 | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address.                                                                                   |
+| PLAYER_EVENT_NOTIFICATIONS     | `0`                 | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                 |
+| WEBHOOK_SUPPRESS_NOTIFICATIONS | `0`                 | FALSE    | Set to `1` to deliver Discord messages silently. They still appear in the channel, but do not push a notification to members. Discord only.                                                     |
 
 ## POST Body Example
 
@@ -29,6 +30,46 @@
 | `event_type.status` | Status of the event         |
 | `event_message`     | A description of the event. |
 | `timestamp`         | ISO8601 timestamp           |
+
+## Silencing Discord Notifications
+
+Player join/leave events can make a busy server noisy. Setting
+`WEBHOOK_SUPPRESS_NOTIFICATIONS=1` adds Discord's `SUPPRESS_NOTIFICATIONS` flag
+(`4096`) to every message: it still posts to the channel, it just does not ping
+anyone.
+
+```yaml
+environment:
+  WEBHOOK_SUPPRESS_NOTIFICATIONS: 1
+```
+
+To silence only some events, set `flags` on that event in `discord.json`
+instead of using the variable:
+
+```json
+{
+  "events": {
+    "player_join": {
+      "content": "Notification: {{server_name}}",
+      "embeds": [
+        {
+          "title": "{{title}}",
+          "description": "{{description}}",
+          "color": 3447003
+        }
+      ],
+      "flags": 4096
+    }
+  }
+}
+```
+
+`flags` is a bitfield, and the two mechanisms combine: with the variable set,
+any flags already in the template are preserved rather than replaced. The key is
+optional and omitted from the payload when unset, so existing `discord.json`
+files need no change.
+
+This applies to Discord only. Generic webhook payloads are unaffected.
 
 ## Considerations
 

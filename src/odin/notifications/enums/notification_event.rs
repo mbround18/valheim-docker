@@ -9,7 +9,7 @@ use crate::utils::environment::fetch_var;
 use crate::utils::{fetch_public_address, get_server_name};
 use chrono::Local;
 use inflections::case::to_title_case;
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 use reqwest::{blocking::RequestBuilder, StatusCode, Url};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -88,7 +88,9 @@ impl NotificationEvent {
       let response_status = parsed_response.status();
       let response_message = parsed_response.text().unwrap();
       match response_status.as_u16() {
-        204 | 201 => info!("[{self}]: Webhook message sent successfully!"),
+        // A successful send is routine and fires on every player join/leave
+        // when PLAYER_EVENT_NOTIFICATIONS=1; only failures are worth surfacing.
+        204 | 201 => debug!("[{self}]: Webhook message sent successfully!"),
         _ => error!("Request failed! {response_status}, {response_message}"),
       }
     } else {
@@ -117,7 +119,7 @@ impl NotificationEvent {
     );
     let mut req = self.build_request(webhook_url);
     req = if is_discord_webhook(webhook_url) {
-      info!("Sending discord notification <3");
+      debug!("Sending discord notification <3");
       req.json(&DiscordWebHookBody::from(notification))
     } else {
       debug!(
