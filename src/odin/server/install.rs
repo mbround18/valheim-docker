@@ -158,6 +158,31 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
   let mut result = run_with_retries(&args);
 
+  // A failed app_update can leave SteamCMD's download bookkeeping stale, which
+  // it then reports as `state is 0x6 after update job` on every subsequent run.
+  // Plain retries cannot break that loop, so reset the download state once and
+  // give it a final attempt before giving up.
+  if should_attempt_download_state_recovery(&result) {
+    warn!(
+      "SteamCMD could not complete the app update (exit code 8). Resetting download state in {} and retrying once.",
+      install_dir
+    );
+    match reset_download_state(Path::new(&install_dir), app_id) {
+      Ok(removed) if removed.is_empty() => {
+        debug!("Download state reset: nothing to remove; skipping recovery retry");
+      }
+      Ok(removed) => {
+        for p in removed {
+          debug!("removed: {}", p);
+        }
+        result = run_with_retries(&args);
+      }
+      Err(e) => {
+        error!("Failed to reset SteamCMD download state: {e}");
+      }
+    }
+  }
+
   if staged_install {
     match &result {
       Ok(status) if status.success() => {
@@ -583,37 +608,79 @@ fn clear_steam_cache_if_enabled() {
   }
 }
 
+/// Steam client cache directories that are safe to wipe wholesale.
+///
+/// These live under Steam's own home directories and contain nothing the user
+/// owns, so the full sub-directory list is applied to each of them.
+const STEAM_CLIENT_CACHE_ROOTS: [&str; 4] = [
+  "/home/steam/Steam",
+  "/home/steam/.steam",
+  "/home/steam/.local/share/Steam",
+  "/home/steam/steamcmd",
+];
+
+const STEAM_CLIENT_CACHE_SUBDIRS: [&str; 7] = [
+  "appcache",
+  "depotcache",
+  "logs",
+  "package",
+  "steamapps/downloading",
+  "steamapps/temp",
+  "steamapps/shadercache",
+];
+
+/// Disposable scratch dirs SteamCMD leaves inside a `+force_install_dir` target.
+///
+/// Only these are cleared routinely. The broader [`STEAM_CLIENT_CACHE_SUBDIRS`]
+/// list must never be applied to the install dir: `logs/` under the game
+/// location holds the server's own auto-update and backup logs.
+///
+/// `steamapps/downloading` is deliberately absent so an interrupted download can
+/// still resume; it is only cleared by [`reset_download_state`] after a failure.
+const INSTALL_DIR_CACHE_SUBDIRS: [&str; 2] = ["steamapps/temp", "steamapps/shadercache"];
+
+/// Cache paths cleared routinely inside a SteamCMD `+force_install_dir` target.
+pub(crate) fn install_dir_cache_paths(install_dir: &Path) -> Vec<PathBuf> {
+  INSTALL_DIR_CACHE_SUBDIRS
+    .iter()
+    .map(|sub| install_dir.join(sub))
+    .collect()
+}
+
+/// Remove every path in `paths` that exists, collecting successes and failures.
+fn remove_existing_paths(paths: &[PathBuf], removed: &mut Vec<String>, errs: &mut Vec<String>) {
+  for path in paths {
+    if !path.exists() {
+      continue;
+    }
+    match remove_path_cautious(path) {
+      Ok(_) => removed.push(path.display().to_string()),
+      Err(e) => errs.push(format!("{}: {}", path.display(), e)),
+    }
+  }
+}
+
 fn clear_steam_cache() -> Result<Vec<String>, String> {
   let mut removed: Vec<String> = Vec::new();
   let mut errs: Vec<String> = Vec::new();
 
-  let roots = vec![
-    "/home/steam/Steam",
-    "/home/steam/.steam",
-    "/home/steam/.local/share/Steam",
-    "/home/steam/steamcmd",
-  ];
-  let subdirs = vec![
-    "appcache",
-    "depotcache",
-    "logs",
-    "package",
-    "steamapps/downloading",
-    "steamapps/temp",
-    "steamapps/shadercache",
-  ];
+  let client_paths: Vec<PathBuf> = STEAM_CLIENT_CACHE_ROOTS
+    .iter()
+    .flat_map(|root| {
+      STEAM_CLIENT_CACHE_SUBDIRS
+        .iter()
+        .map(move |sub| Path::new(root).join(sub))
+    })
+    .collect();
+  remove_existing_paths(&client_paths, &mut removed, &mut errs);
 
-  for root in &roots {
-    for sub in &subdirs {
-      let path = Path::new(root).join(sub);
-      if path.exists() {
-        match remove_path_cautious(&path) {
-          Ok(_) => removed.push(path.display().to_string()),
-          Err(e) => errs.push(format!("{}: {}", path.display(), e)),
-        }
-      }
-    }
-  }
+  // SteamCMD also leaves scratch dirs inside the +force_install_dir target,
+  // which the roots above never covered. Clear those too, narrowly.
+  remove_existing_paths(
+    &install_dir_cache_paths(Path::new(&resolve_install_dir())),
+    &mut removed,
+    &mut errs,
+  );
 
   // Also clear a limited set of steam temp files in /tmp (safe patterns).
   let tmp = Path::new("/tmp");
@@ -630,6 +697,61 @@ fn clear_steam_cache() -> Result<Vec<String>, String> {
       }
     }
   }
+
+  if errs.is_empty() {
+    Ok(removed)
+  } else {
+    Err(errs.join("; "))
+  }
+}
+
+/// SteamCMD exit codes that mean "the app update itself failed" rather than a
+/// transport or auth problem. These are the ones a download-state reset can fix.
+///
+/// 8 is what SteamCMD returns alongside `Error! App '<id>' state is 0x6 after
+/// update job`, the signature of a stale/corrupt appmanifest.
+pub(crate) fn is_recoverable_install_failure(code: Option<i32>) -> bool {
+  matches!(code, Some(8))
+}
+
+/// Whether a finished SteamCMD run warrants a download-state reset and one more try.
+///
+/// Only exit statuses count: an `Err` means SteamCMD never ran, which resetting
+/// cannot help. Gated by `STEAMCMD_RESET_ON_FAILURE` (default on).
+fn should_attempt_download_state_recovery(result: &io::Result<ExitStatus>) -> bool {
+  let Ok(status) = result else {
+    return false;
+  };
+  if status.success() {
+    return false;
+  }
+  if !is_recoverable_install_failure(status.code()) {
+    return false;
+  }
+  if !environment::is_env_var_truthy_with_default("STEAMCMD_RESET_ON_FAILURE", true) {
+    debug!("Skipping download state recovery: STEAMCMD_RESET_ON_FAILURE=0");
+    return false;
+  }
+  true
+}
+
+/// Reset SteamCMD's download bookkeeping for `app_id` inside `install_dir`.
+///
+/// Removes the transient download directories plus the app manifest, which
+/// forces SteamCMD to re-resolve the depot from scratch on the next attempt.
+/// Game files themselves are left in place, and saves live outside this dir.
+pub(crate) fn reset_download_state(install_dir: &Path, app_id: i64) -> Result<Vec<String>, String> {
+  let mut paths = install_dir_cache_paths(install_dir);
+  paths.push(install_dir.join("steamapps").join("downloading"));
+  paths.push(
+    install_dir
+      .join("steamapps")
+      .join(format!("appmanifest_{}.acf", app_id)),
+  );
+
+  let mut removed: Vec<String> = Vec::new();
+  let mut errs: Vec<String> = Vec::new();
+  remove_existing_paths(&paths, &mut removed, &mut errs);
 
   if errs.is_empty() {
     Ok(removed)
@@ -975,6 +1097,103 @@ mod tests {
     assert!(!live_dir.join("valheim_data/stale.txt").exists());
     assert!(live_dir.join("valheim_data/present.txt").exists());
     assert!(live_dir.join("BepInEx/plugins/custom.dll").exists());
+  }
+
+  #[test]
+  fn test_install_dir_cache_paths_are_limited_to_scratch_steamapps_dirs() {
+    let paths = install_dir_cache_paths(Path::new("/home/steam/valheim"));
+    let rendered: Vec<String> = paths.iter().map(|p| p.display().to_string()).collect();
+
+    assert_eq!(
+      rendered,
+      vec![
+        "/home/steam/valheim/steamapps/temp",
+        "/home/steam/valheim/steamapps/shadercache",
+      ]
+    );
+  }
+
+  #[test]
+  fn test_install_dir_cache_paths_leave_partial_downloads_resumable() {
+    // Routine cleanup must not discard an interrupted download; only the
+    // post-failure reset is allowed to.
+    let paths = install_dir_cache_paths(Path::new("/home/steam/valheim"));
+    assert!(!paths.iter().any(|p| p.ends_with("downloading")));
+  }
+
+  #[test]
+  fn test_install_dir_cache_paths_never_include_server_owned_dirs() {
+    // The game location holds the server's own logs and mods. Clearing those
+    // alongside Steam's caches would destroy user data.
+    let paths = install_dir_cache_paths(Path::new("/home/steam/valheim"));
+    for forbidden in ["logs", "BepInEx", "backups", "saves", "appcache", "package"] {
+      assert!(
+        !paths.iter().any(|p| p.ends_with(forbidden)),
+        "install dir cache list must not contain {forbidden}"
+      );
+    }
+  }
+
+  #[test]
+  fn test_reset_download_state_removes_manifest_and_transient_dirs() {
+    let dir = tempdir().unwrap();
+    let install_dir = dir.path();
+    let app_id = 896660_i64;
+
+    fs::create_dir_all(install_dir.join("steamapps/downloading/896660")).unwrap();
+    fs::create_dir_all(install_dir.join("steamapps/temp")).unwrap();
+    fs::write(
+      install_dir.join(format!("steamapps/appmanifest_{}.acf", app_id)),
+      "\"StateFlags\" \"6\"",
+    )
+    .unwrap();
+
+    let removed = reset_download_state(install_dir, app_id).unwrap();
+
+    assert!(!install_dir.join("steamapps/downloading").exists());
+    assert!(!install_dir.join("steamapps/temp").exists());
+    assert!(!install_dir
+      .join(format!("steamapps/appmanifest_{}.acf", app_id))
+      .exists());
+    assert_eq!(removed.len(), 3);
+    assert!(install_dir.join("steamapps").exists());
+  }
+
+  #[test]
+  fn test_reset_download_state_preserves_game_files_and_other_manifests() {
+    let dir = tempdir().unwrap();
+    let install_dir = dir.path();
+
+    fs::create_dir_all(install_dir.join("steamapps")).unwrap();
+    fs::create_dir_all(install_dir.join("BepInEx/plugins")).unwrap();
+    fs::create_dir_all(install_dir.join("logs")).unwrap();
+    fs::write(install_dir.join("valheim_server.x86_64"), "bin").unwrap();
+    fs::write(install_dir.join("BepInEx/plugins/custom.dll"), "mod").unwrap();
+    fs::write(install_dir.join("logs/auto-update.out"), "log").unwrap();
+    fs::write(install_dir.join("steamapps/appmanifest_1234.acf"), "other").unwrap();
+
+    reset_download_state(install_dir, 896660).unwrap();
+
+    assert!(install_dir.join("valheim_server.x86_64").exists());
+    assert!(install_dir.join("BepInEx/plugins/custom.dll").exists());
+    assert!(install_dir.join("logs/auto-update.out").exists());
+    assert!(install_dir.join("steamapps/appmanifest_1234.acf").exists());
+  }
+
+  #[test]
+  fn test_reset_download_state_is_a_noop_on_a_clean_dir() {
+    let dir = tempdir().unwrap();
+    let removed = reset_download_state(dir.path(), 896660).unwrap();
+    assert!(removed.is_empty());
+  }
+
+  #[test_case(Some(8), true ; "app update failure is recoverable")]
+  #[test_case(Some(0), false ; "success is not a failure")]
+  #[test_case(Some(1), false ; "generic failure is not download state")]
+  #[test_case(Some(5), false ; "login failure is not download state")]
+  #[test_case(None, false ; "signal termination is not recoverable")]
+  fn test_is_recoverable_install_failure(code: Option<i32>, expected: bool) {
+    assert_eq!(is_recoverable_install_failure(code), expected);
   }
 
   #[test]

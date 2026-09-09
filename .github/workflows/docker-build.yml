@@ -29,6 +29,13 @@ jobs:
       # Uncomment the line below to include shell script linting
       # - run: npx -y shellcheck ./.github/scripts/*.sh ./src/scripts/*.sh
 
+  test_scripts:
+    name: Test Shell Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: ./src/scripts/tests/entrypoint_test.sh
+
   step_summary_meta:
     runs-on: ubuntu-latest
     steps:

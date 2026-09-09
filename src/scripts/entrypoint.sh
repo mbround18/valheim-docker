@@ -137,44 +137,83 @@ validate_runtime_paths() {
   done
 }
 
+# Parse total memory, in whole MB, from /proc/meminfo content on stdin.
+# Prints nothing when the input has no MemTotal line.
+parse_total_memory_mb() {
+  awk '/^MemTotal:/ { printf "%d", $2 / 1024; exit }'
+}
+
+# Total system memory in whole MB, or empty if it cannot be determined.
+#
+# /proc/meminfo is used in preference to `free`, whose human-readable output is
+# both locale-dependent and suffixed ("31Gi" on current procps), which silently
+# broke the arithmetic this check used to do.
+total_memory_mb() {
+  if [ -r /proc/meminfo ]; then
+    parse_total_memory_mb </proc/meminfo
+  else
+    free -m 2>/dev/null | awk '/^Mem:/ { printf "%d", $2; exit }'
+  fi
+}
+
+# Render whole MB as GB with a single decimal place.
+format_memory_gb() {
+  awk -v mb="$1" 'BEGIN { printf "%.1f", mb / 1024 }'
+}
+
 # Function to check if the system has sufficient memory
 check_memory() {
-  local total_memory
-  total_memory=$(free -h | awk '/^Mem:/ {print $2}' | tr -d 'G')
-  if (($(echo "$total_memory < 2" | bc -l))); then
-  log "Your system has less than 2GB of RAM! Valheim might not run on your system."
+  local total_mb
+  total_mb=$(total_memory_mb)
+
+  case "$total_mb" in
+    "" | *[!0-9]*)
+      log "Unable to determine total system memory; skipping memory check"
+      return 0
+      ;;
+  esac
+
+  if [ "$total_mb" -lt 2048 ]; then
+    log "Your system has less than 2GB of RAM! Valheim might not run on your system."
   else
-    log "Total memory: ${total_memory} GB"
+    log "Total memory: $(format_memory_gb "$total_mb") GB"
   fi
 }
 
 # Main script execution
-log "Valheim Server - $(date)"
-log "Initializing your container..."
+main() {
+  log "Valheim Server - $(date)"
+  log "Initializing your container..."
 
-# Check current user and steam user details
-check_user_and_group
+  # Check current user and steam user details
+  check_user_and_group
 
-# Default ownership targets to current runtime UID/GID when not explicitly set.
-export PUID="${PUID:-$(id -u)}"
-export PGID="${PGID:-$(id -g)}"
+  # Default ownership targets to current runtime UID/GID when not explicitly set.
+  export PUID="${PUID:-$(id -u)}"
+  export PGID="${PGID:-$(id -g)}"
 
-# Set up environment
-setup_environment
+  # Set up environment
+  setup_environment
 
-# Check system memory
-check_memory
+  # Check system memory
+  check_memory
 
-# Set up the filesystem
-setup_filesystem
+  # Set up the filesystem
+  setup_filesystem
 
-# Validate runtime write access in rootless mode
-validate_runtime_paths
+  # Validate runtime write access in rootless mode
+  validate_runtime_paths
 
-# Navigate to the Valheim game directory
-log "Navigating to steam home..."
-cd /home/steam/valheim || exit 1
+  # Navigate to the Valheim game directory
+  log "Navigating to steam home..."
+  cd /home/steam/valheim || exit 1
 
-# Launch the Valheim server
-log "Launching server..."
-exec /home/steam/scripts/start_valheim.sh
+  # Launch the Valheim server
+  log "Launching server..."
+  exec /home/steam/scripts/start_valheim.sh
+}
+
+# Only run when executed, so tests can source this file for its functions.
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+  main "$@"
+fi
