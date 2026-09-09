@@ -34,6 +34,25 @@ fn should_suppress_notifications() -> bool {
   is_env_var_truthy_with_default(WEBHOOK_SUPPRESS_NOTIFICATIONS, false)
 }
 
+/// Escape a value for interpolation into a JSON string literal.
+///
+/// Handlebars defaults to HTML escaping, but this template renders JSON, not
+/// markup. HTML escaping turned any `=` in a message into `&#x3D;`, and `&`,
+/// `<`, `>`, `"` and `'` likewise, so the text arrived in Discord mangled.
+///
+/// Escaping cannot simply be disabled: the rendered string is parsed back with
+/// `serde_json`, so a message containing a quote, a backslash or a newline
+/// would produce invalid JSON. Serializing the value as a JSON string and
+/// trimming its surrounding quotes escapes exactly what JSON requires and
+/// nothing else.
+fn json_escape(data: &str) -> String {
+  match serde_json::to_string(data) {
+    // to_string on a &str always yields a quoted string, so the slice is safe.
+    Ok(encoded) => encoded[1..encoded.len() - 1].to_string(),
+    Err(_) => String::new(),
+  }
+}
+
 /// Add `SUPPRESS_NOTIFICATIONS` to any flags the template already set.
 ///
 /// Flags are a bitfield, so this ORs rather than replaces: a template opting a
@@ -156,6 +175,8 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
   fn from(event: &NotificationMessage) -> Self {
     let discord_file = load_discord();
     let mut handlebars = Handlebars::new();
+    // The template is JSON; escape for that, not for HTML.
+    handlebars.register_escape_fn(json_escape);
     let default_event = DiscordWebHookBody::default();
     let discord_event = &discord_file
       .events
@@ -334,6 +355,79 @@ mod tests {
     // Discord defines SUPPRESS_NOTIFICATIONS as 1 << 12.
     assert_eq!(SUPPRESS_NOTIFICATIONS, 1 << 12);
     assert_eq!(SUPPRESS_NOTIFICATIONS, 4096);
+  }
+
+  #[test]
+  fn test_json_escape_leaves_plain_punctuation_alone() {
+    // Regression: HTML escaping rendered "mode=0" as "mode&#x3D;0" in Discord.
+    assert_eq!(
+      json_escape("flag verification mode=0"),
+      "flag verification mode=0"
+    );
+    assert_eq!(json_escape("Bob & Alice's server"), "Bob & Alice's server");
+    assert_eq!(json_escape("<Ragnarok>"), "<Ragnarok>");
+  }
+
+  #[test]
+  fn test_json_escape_escapes_what_json_requires() {
+    assert_eq!(json_escape("say \"hi\""), "say \\\"hi\\\"");
+    assert_eq!(json_escape("back\\slash"), "back\\\\slash");
+    assert_eq!(json_escape("line\nbreak"), "line\\nbreak");
+    assert_eq!(json_escape("tab\there"), "tab\\there");
+  }
+
+  #[test]
+  #[serial]
+  fn test_message_with_equals_survives_rendering() {
+    set_var("NAME", "equals-server");
+    let notification = NotificationMessage {
+      author: String::from("Test Author"),
+      event_type: NotificationEvent::Broadcast.to_event_type(),
+      event_message: String::from("flag verification mode=0"),
+      timestamp: Local::now().to_rfc3339(),
+    };
+
+    let body: DiscordWebHookBody = (&notification).into();
+    assert_eq!(body.embeds[0].description, "flag verification mode=0");
+    assert!(!body.embeds[0].description.contains("&#x3D;"));
+  }
+
+  #[test]
+  #[serial]
+  fn test_message_with_quotes_still_renders_valid_json() {
+    // Disabling escaping outright would break the JSON parse on this input.
+    set_var("NAME", "quote-server");
+    let notification = NotificationMessage {
+      author: String::from("Test Author"),
+      event_type: NotificationEvent::Broadcast.to_event_type(),
+      event_message: String::from("player said \"hello\" & left\nbye"),
+      timestamp: Local::now().to_rfc3339(),
+    };
+
+    let body: DiscordWebHookBody = (&notification).into();
+    assert_eq!(
+      body.embeds[0].description,
+      "player said \"hello\" & left\nbye"
+    );
+  }
+
+  #[test]
+  #[serial]
+  fn test_server_name_with_ampersand_is_not_html_escaped() {
+    set_var("NAME", "Bob & Alice's Realm");
+    let notification = NotificationMessage {
+      author: String::from("Test Author"),
+      event_type: NotificationEvent::Broadcast.to_event_type(),
+      event_message: String::from("hello"),
+      timestamp: Local::now().to_rfc3339(),
+    };
+
+    let body: DiscordWebHookBody = (&notification).into();
+    assert!(
+      body.content.contains("Bob & Alice's Realm"),
+      "server name should not be HTML escaped: {}",
+      body.content
+    );
   }
 
   #[test]
