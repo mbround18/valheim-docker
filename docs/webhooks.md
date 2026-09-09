@@ -10,6 +10,7 @@
 | WEBHOOK_INCLUDE_PUBLIC_IP      | `0`                 | FALSE    | Optionally include your server's public IP in webhook notifications, useful if not using a static IP address.                                                                                   |
 | PLAYER_EVENT_NOTIFICATIONS     | `0`                 | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                 |
 | WEBHOOK_SUPPRESS_NOTIFICATIONS | `0`                 | FALSE    | Set to `1` to deliver Discord messages silently. They still appear in the channel, but do not push a notification to members. Discord only.                                                     |
+| WEBHOOK_JOIN_URL               | `<nothing>`         | FALSE    | An `https://` URL to put behind a **Join Server** button on successful start notifications. Blank means no button. Discord only.                                                                |
 
 ## POST Body Example
 
@@ -70,6 +71,46 @@ optional and omitted from the payload when unset, so existing `discord.json`
 files need no change.
 
 This applies to Discord only. Generic webhook payloads are unaffected.
+
+## Join Server Button
+
+Setting `WEBHOOK_JOIN_URL` adds a **Join Server** link button to the Discord
+notification sent when the server finishes starting.
+
+```yaml
+environment:
+  WEBHOOK_JOIN_URL: "https://valheim.example.com/connect/remote"
+```
+
+Leave it blank (the default) and no button is added.
+
+### The URL must be https
+
+Discord rejects a `steam://` URL on a button with a `400`, so the button cannot
+link straight into Steam. It has to point at something over HTTPS that then
+redirects to the `steam://` handoff.
+
+Huginn already serves exactly that: `GET /connect/remote` responds `302` to
+`steam://run/892970//+connect%20<host>:<port>`. Put Huginn behind a reverse
+proxy with TLS and point `WEBHOOK_JOIN_URL` at its `/connect/remote`. Any other
+redirect service works just as well -- Odin only checks that the URL parses and
+uses the `https` scheme, and posts it as-is.
+
+A plain `http://` URL is rejected with a warning and no button, because the link
+is posted publicly into a channel.
+
+### Which notification gets the button
+
+Only a **successful start**, when the server is actually up and joinable. Stop,
+failure, update and player events never carry one, since a join link on those
+would be misleading.
+
+### Why the request gains a query parameter
+
+Webhooks that are not owned by a Discord application drop `components` unless
+the request carries `with_components=true` -- Discord returns a normal success
+with the button silently missing. Odin appends that parameter automatically, and
+only when a button is actually attached.
 
 ## Considerations
 

@@ -3,9 +3,10 @@ use crate::notifications::enums::event_status::EventStatus;
 use crate::notifications::enums::notification_event::parse_server_name_for_notification;
 use crate::notifications::enums::player::PlayerStatus;
 use crate::notifications::NotificationMessage;
-use crate::utils::environment::is_env_var_truthy_with_default;
+use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
 use handlebars::Handlebars;
-use log::debug;
+use log::{debug, warn};
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq)]
@@ -32,6 +33,111 @@ pub const WEBHOOK_SUPPRESS_NOTIFICATIONS: &str = "WEBHOOK_SUPPRESS_NOTIFICATIONS
 /// Whether Discord messages should be delivered without pushing a notification.
 fn should_suppress_notifications() -> bool {
   is_env_var_truthy_with_default(WEBHOOK_SUPPRESS_NOTIFICATIONS, false)
+}
+
+/// Set to an `https://` URL to add a "Join Server" button to start notifications.
+///
+/// Blank (the default) means no button. Discord rejects `steam://` in a button
+/// URL, so this must point at something reachable over HTTPS -- typically a
+/// reverse-proxied Huginn `/connect/remote`, which redirects on to the
+/// `steam://` handoff, or any redirect service the operator prefers.
+pub const WEBHOOK_JOIN_URL: &str = "WEBHOOK_JOIN_URL";
+
+/// Discord component type for an action row.
+const COMPONENT_TYPE_ACTION_ROW: u8 = 1;
+/// Discord component type for a button.
+const COMPONENT_TYPE_BUTTON: u8 = 2;
+/// Discord button style for a link button (no interaction is sent to any app).
+const BUTTON_STYLE_LINK: u8 = 5;
+
+const JOIN_BUTTON_LABEL: &str = "Join Server";
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct DiscordButton {
+  #[serde(rename = "type")]
+  pub(crate) component_type: u8,
+  pub(crate) style: u8,
+  pub(crate) label: String,
+  pub(crate) url: String,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct DiscordActionRow {
+  #[serde(rename = "type")]
+  pub(crate) component_type: u8,
+  pub(crate) components: Vec<DiscordButton>,
+}
+
+/// The configured join URL, if it is set and usable.
+///
+/// Discord requires an `https://` (or `http://`) scheme on link buttons and
+/// rejects anything else with a 400. We require HTTPS specifically: the link is
+/// posted publicly in a channel, and an operator standing up a redirect service
+/// can serve it over TLS.
+fn join_button_url() -> Option<String> {
+  let configured = fetch_var(WEBHOOK_JOIN_URL, "");
+  let trimmed = configured.trim().trim_matches('"').trim();
+  if trimmed.is_empty() {
+    return None;
+  }
+
+  match Url::parse(trimmed) {
+    Ok(parsed) if parsed.scheme() == "https" => Some(trimmed.to_string()),
+    Ok(parsed) => {
+      warn!(
+        "{WEBHOOK_JOIN_URL} must use https://, got '{}://'. Skipping join button.",
+        parsed.scheme()
+      );
+      None
+    }
+    Err(e) => {
+      warn!("{WEBHOOK_JOIN_URL} is not a valid URL ({e}). Skipping join button.");
+      None
+    }
+  }
+}
+
+/// Whether this event is the one worth attaching a join button to.
+///
+/// Only a successful start means the server is actually up and joinable. A
+/// button on a stop, a failure, or a player-left event would be misleading.
+fn event_takes_join_button(event: &NotificationMessage) -> bool {
+  event.event_type.name.eq_ignore_ascii_case("start")
+    && event.event_type.status.eq_ignore_ascii_case("successful")
+}
+
+/// Build the single-button action row linking players at the join URL.
+fn join_button_components(url: String) -> Vec<DiscordActionRow> {
+  vec![DiscordActionRow {
+    component_type: COMPONENT_TYPE_ACTION_ROW,
+    components: vec![DiscordButton {
+      component_type: COMPONENT_TYPE_BUTTON,
+      style: BUTTON_STYLE_LINK,
+      label: String::from(JOIN_BUTTON_LABEL),
+      url,
+    }],
+  }]
+}
+
+/// Add `with_components=true` to a webhook URL.
+///
+/// A webhook that is not application-owned silently drops `components` unless
+/// this query parameter is present -- Discord returns a normal 204 with the
+/// button missing rather than an error. Returns the URL unchanged if it cannot
+/// be parsed, leaving the send to fail visibly rather than here.
+pub fn with_components_query(webhook_url: &str) -> String {
+  match Url::parse(webhook_url) {
+    Ok(mut parsed) => {
+      parsed
+        .query_pairs_mut()
+        .append_pair("with_components", "true");
+      parsed.to_string()
+    }
+    Err(e) => {
+      warn!("Could not add with_components to webhook URL ({e}); sending as-is.");
+      webhook_url.to_string()
+    }
+  }
 }
 
 /// Escape a value for interpolation into a JSON string literal.
@@ -124,6 +230,10 @@ pub struct DiscordWebHookBody {
   /// existing `discord.json` without this key round-trips unchanged.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub(crate) flags: Option<i32>,
+  /// Message components (the join button). Omitted when there are none, and
+  /// never present in a user's `discord.json`.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub(crate) components: Option<Vec<DiscordActionRow>>,
 }
 
 impl Clone for DiscordWebHookBody {
@@ -132,6 +242,7 @@ impl Clone for DiscordWebHookBody {
       content: String::from(&self.content),
       embeds: self.embeds.clone(),
       flags: self.flags,
+      components: self.components.clone(),
     }
   }
 }
@@ -146,6 +257,7 @@ impl Default for DiscordWebHookBody {
         color: Color::Generic as i32,
       }],
       flags: None,
+      components: None,
     }
   }
 }
@@ -215,6 +327,18 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
       discord_body.flags = with_suppress_flag(discord_body.flags);
     }
 
+    // Only a successful start gets a join button, and only when an operator has
+    // supplied a URL for it.
+    if event_takes_join_button(event) {
+      if let Some(url) = join_button_url() {
+        debug!(
+          "Attaching join button to {} notification",
+          event.event_type.name
+        );
+        discord_body.components = Some(join_button_components(url));
+      }
+    }
+
     discord_body
   }
 }
@@ -223,7 +347,7 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
 mod tests {
   use super::*;
   use crate::notifications::enums::event_status::EventStatus;
-  use crate::notifications::enums::notification_event::NotificationEvent;
+  use crate::notifications::enums::notification_event::{EventType, NotificationEvent};
   use crate::notifications::enums::player::PlayerStatus;
   use crate::notifications::NotificationMessage;
   use chrono::Local;
@@ -355,6 +479,210 @@ mod tests {
     // Discord defines SUPPRESS_NOTIFICATIONS as 1 << 12.
     assert_eq!(SUPPRESS_NOTIFICATIONS, 1 << 12);
     assert_eq!(SUPPRESS_NOTIFICATIONS, 4096);
+  }
+
+  fn start_successful(name: &str) -> NotificationMessage {
+    set_var("NAME", name);
+    NotificationMessage {
+      author: String::from("Test Author"),
+      event_type: NotificationEvent::Start(EventStatus::Successful).to_event_type(),
+      event_message: String::from("Server Status: Start Successful"),
+      timestamp: Local::now().to_rfc3339(),
+    }
+  }
+
+  // --- join button: URL validation ---
+
+  #[test]
+  #[serial]
+  fn test_join_url_blank_by_default() {
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(join_button_url(), None);
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_url_empty_string_is_no_button() {
+    set_var(WEBHOOK_JOIN_URL, "   ");
+    let got = join_button_url();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(got, None);
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_url_accepts_https() {
+    set_var(
+      WEBHOOK_JOIN_URL,
+      "https://valheim.example.com/connect/remote",
+    );
+    let got = join_button_url();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(
+      got,
+      Some(String::from("https://valheim.example.com/connect/remote"))
+    );
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_url_strips_surrounding_quotes() {
+    // Compose files routinely quote values.
+    set_var(WEBHOOK_JOIN_URL, "\"https://example.com/join\"");
+    let got = join_button_url();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(got, Some(String::from("https://example.com/join")));
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_url_rejects_plain_http() {
+    set_var(WEBHOOK_JOIN_URL, "http://example.com/join");
+    let got = join_button_url();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(got, None);
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_url_rejects_steam_scheme() {
+    // Discord answers a steam:// button URL with a 400, so it must never reach
+    // the API.
+    set_var(WEBHOOK_JOIN_URL, "steam://connect/1.2.3.4:2456");
+    let got = join_button_url();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(got, None);
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_url_rejects_garbage() {
+    set_var(WEBHOOK_JOIN_URL, "not a url");
+    let got = join_button_url();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert_eq!(got, None);
+  }
+
+  // --- join button: which events get one ---
+
+  #[test]
+  fn test_only_successful_start_takes_a_join_button() {
+    let cases = [
+      ("Start", "Successful", true),
+      ("Start", "Running", false),
+      ("Start", "Failed", false),
+      ("Stop", "Successful", false),
+      ("Update", "Successful", false),
+      ("Player", "Joined", false),
+      ("Broadcast", "Triggered", false),
+    ];
+    for (name, status, expected) in cases {
+      let event = NotificationMessage {
+        author: String::from("a"),
+        event_type: EventType {
+          name: String::from(name),
+          status: String::from(status),
+        },
+        event_message: String::from("m"),
+        timestamp: String::from("t"),
+      };
+      assert_eq!(
+        event_takes_join_button(&event),
+        expected,
+        "{name} {status} should{} take a join button",
+        if expected { "" } else { " not" }
+      );
+    }
+  }
+
+  // --- join button: payload shape ---
+
+  #[test]
+  #[serial]
+  fn test_no_components_when_join_url_unset() {
+    remove_var(WEBHOOK_JOIN_URL);
+    let body: DiscordWebHookBody = (&start_successful("no-button-server")).into();
+    assert!(body.components.is_none());
+    let payload = serde_json::to_string(&body).unwrap();
+    assert!(
+      !payload.contains("components"),
+      "components must be omitted entirely: {payload}"
+    );
+  }
+
+  #[test]
+  #[serial]
+  fn test_start_success_carries_join_button() {
+    set_var(WEBHOOK_JOIN_URL, "https://example.com/join");
+    let body: DiscordWebHookBody = (&start_successful("button-server")).into();
+    remove_var(WEBHOOK_JOIN_URL);
+
+    let rows = body.components.expect("expected components");
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].component_type, COMPONENT_TYPE_ACTION_ROW);
+    assert_eq!(rows[0].components.len(), 1);
+
+    let button = &rows[0].components[0];
+    assert_eq!(button.component_type, COMPONENT_TYPE_BUTTON);
+    assert_eq!(button.style, BUTTON_STYLE_LINK);
+    assert_eq!(button.label, JOIN_BUTTON_LABEL);
+    assert_eq!(button.url, "https://example.com/join");
+  }
+
+  #[test]
+  #[serial]
+  fn test_join_button_serializes_to_discords_shape() {
+    // Discord is strict about these numbers: action row 1, button 2, link 5.
+    set_var(WEBHOOK_JOIN_URL, "https://example.com/join");
+    let body: DiscordWebHookBody = (&start_successful("shape-server")).into();
+    remove_var(WEBHOOK_JOIN_URL);
+
+    let payload = serde_json::to_value(&body).unwrap();
+    let row = &payload["components"][0];
+    assert_eq!(row["type"], 1);
+    assert_eq!(row["components"][0]["type"], 2);
+    assert_eq!(row["components"][0]["style"], 5);
+    assert_eq!(row["components"][0]["url"], "https://example.com/join");
+    assert_eq!(row["components"][0]["label"], "Join Server");
+  }
+
+  #[test]
+  #[serial]
+  fn test_non_start_event_has_no_button_even_with_url_set() {
+    set_var(WEBHOOK_JOIN_URL, "https://example.com/join");
+    set_var("NAME", "player-event-server");
+    let notification = NotificationMessage {
+      author: String::from("Test Author"),
+      event_type: NotificationEvent::Player(PlayerStatus::Joined).to_event_type(),
+      event_message: String::from("Player has joined the game."),
+      timestamp: Local::now().to_rfc3339(),
+    };
+    let body: DiscordWebHookBody = (&notification).into();
+    remove_var(WEBHOOK_JOIN_URL);
+    assert!(body.components.is_none());
+  }
+
+  // --- with_components query parameter ---
+
+  #[test]
+  fn test_with_components_query_appends_param() {
+    let url = with_components_query("https://discord.com/api/webhooks/1/tok");
+    assert_eq!(
+      url,
+      "https://discord.com/api/webhooks/1/tok?with_components=true"
+    );
+  }
+
+  #[test]
+  fn test_with_components_query_preserves_existing_query() {
+    let url = with_components_query("https://discord.com/api/webhooks/1/tok?wait=true");
+    assert!(url.contains("wait=true"), "{url}");
+    assert!(url.contains("with_components=true"), "{url}");
+  }
+
+  #[test]
+  fn test_with_components_query_returns_unparseable_url_unchanged() {
+    assert_eq!(with_components_query("not a url"), "not a url");
   }
 
   #[test]
