@@ -36,6 +36,14 @@ else
   fi
 fi
 
+# The base image ships an `ubuntu` account on uid 1000. Retire whichever account holds
+# the target uid so `steam` (the documented `user: 1000:1000`) can own it.
+EXISTING_UID_USER="$(getent passwd "${PUID}" | cut -d: -f1 || true)"
+if [ -n "${EXISTING_UID_USER}" ] && [ "${EXISTING_UID_USER}" != "steam" ]; then
+  echo "uid ${PUID} is held by '${EXISTING_UID_USER}'; removing it in favour of 'steam'"
+  userdel -r "${EXISTING_UID_USER}" 2>/dev/null || userdel "${EXISTING_UID_USER}"
+fi
+
 # Create/update steam user
 if id -u steam >/dev/null 2>&1; then
   usermod -u "${PUID}" -g "${PGID}" -d /home/steam -s /bin/bash steam || true
@@ -48,3 +56,5 @@ mkdir -p /home/steam/.steam/steam/package
 mkdir -p /home/steam /home/steam/valheim /home/steam/.steam
 mkdir -p /tmp/dumps && chmod ugo+rw /tmp/dumps
 chown -R "${PUID}:${PGID}" /home/steam
+# Group-writable home so a runtime uid that only shares the gid (arbitrary-uid orchestrators) still works.
+chmod -R g+rwX /home/steam
