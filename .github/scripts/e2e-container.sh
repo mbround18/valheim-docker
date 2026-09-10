@@ -80,7 +80,9 @@ trap finish EXIT
 start() {
   local user="$1"
   stop
-  as_root 'rm -f /w/server/logs/valheim_server.log'
+  # A stale server log would satisfy wait_connected before the new server starts, and a
+  # stale events file would be replayed from the top by the new `odin logs --watch`.
+  as_root 'rm -f /w/server/logs/valheim_server.log /w/server/logs/e2e_events.log'
   docker run -d --name "${NAME}" --user "${user}" --security-opt no-new-privileges \
     -e NAME=ValheimE2E -e PASSWORD=valheime2e1 -e PUBLIC=0 -e TYPE=Vanilla -e HTTP_PORT=3000 \
     -p 127.0.0.1::3000 \
@@ -120,9 +122,14 @@ metrics() { curl -fsS "$(url)/metrics"; }
 in_container() { docker exec "${NAME}" sh -c "$1"; }
 player_list() { in_container 'cat /home/steam/.config/unity3d/IronGate/Valheim/player.list'; }
 
-# Appends a timestamped line to the server log the way Valheim writes it.
+# Writes a timestamped line in Valheim's log format to a file of its own in logs/. Odin
+# runs player tracking on every file there and reads new files from the start. The test
+# never appends to valheim_server.log itself: the server writes that file through a handle
+# without O_APPEND, so its next write lands at its own offset and overwrites an injected
+# line, which made presence checks fail at random.
+EVENTS_LOG=/home/steam/valheim/logs/e2e_events.log
 emit() {
-  in_container "echo \"\$(date +'%m/%d/%Y %H:%M:%S'): $1\" >> /home/steam/valheim/logs/valheim_server.log"
+  in_container "echo \"\$(date +'%m/%d/%Y %H:%M:%S'): $1\" >> ${EVENTS_LOG}"
 }
 
 names_are() { [ "$(names 2>/dev/null)" = "$1" ]; }
