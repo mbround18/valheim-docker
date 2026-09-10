@@ -59,7 +59,7 @@ These were cold runs. The GitHub Actions cache backend `paws-up` enables should 
 1. **The changelog listed every commit, not every PR. Fixed in paws, not released yet.**
    - The released `paws changelog` titles each commit with its PR's title, so one merged PR becomes as many identical lines as it has commits. `v3.7.2..main` rendered #1512 about 15 times.
    - It also included `[skip ci]` changelog commits.
-   - Fixed upstream in paws commit `f27d1b1` (branch `fix/changelog-one-line-per-pr`): one line per PR, keyed by PR number and rendered `- <title> (#<number>)`, with `[skip ci]`/`[ci skip]` commits left out. Built from that branch, the same `v3.7.2..main` run gives five lines, #1507, #1508, #1509, #1511 and #1512, where it gave 26.
+   - Fixed upstream in paws commit `a3b446b` (mbround18/paws#29): one line per PR, keyed by PR number and rendered `- <title> (#<number>)`, with `[skip ci]`/`[ci skip]` commits left out. Built from that branch, the same `v3.7.2..main` run gives five lines, #1507, #1508, #1509, #1511 and #1512, where it gave 26.
    - `release.yml` gets the fix once a paws release containing it is out.
 2. **`paws docker` doesn't load images into the runner's Docker.** The build happens inside Dagger, so the permission check and the container e2e still need their own `docker buildx build --load`. That's a second image build per run.
 3. **Registry build cache.** The old workflows wrote `mbround18/<image>:buildcache`, and paws uses Dagger's cache (the GitHub Actions backend that `paws-up` enables) instead. The `--cache-from` in the image job will go stale once nothing writes that cache any more.
