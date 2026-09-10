@@ -155,7 +155,7 @@ pub fn invoke() -> Json {
         },
         "PlayersResponse": {
           "type": "object",
-          "required": ["online", "players", "max_players", "names"],
+          "required": ["online", "players", "max_players", "names", "sessions"],
           "properties": {
             "online": { "type": "boolean" },
             "players": { "type": "integer", "format": "uint8", "minimum": 0, "maximum": 255 },
@@ -163,6 +163,17 @@ pub fn invoke() -> Json {
             "names": {
               "type": "array",
               "items": { "type": "string" }
+            },
+            "sessions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "joined_at"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "joined_at": { "type": "integer", "format": "int64", "description": "Unix time of the join" }
+                }
+              }
             }
           }
         },
