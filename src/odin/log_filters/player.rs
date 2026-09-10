@@ -3,10 +3,27 @@ use crate::notifications::enums::notification_event::NotificationEvent;
 use crate::notifications::enums::player::PlayerStatus::{Joined, Left};
 use crate::utils::environment::is_env_var_truthy;
 use chrono::Utc;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use std::path::Path;
+use std::sync::LazyLock;
+
+/// `Got character ZDOID from <name> : <peer id>:<zdo index>`; the peer id can be negative.
+static JOINED_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Got character ZDOID from (.*) : (-?\d+:\d+)")
+    .expect("Failed to compile joined_regex")
+});
+
+/// `Destroying abandoned non persistent zdo <zdo> owner <peer id>`, logged when a peer's
+/// objects are cleaned up after it disconnects.
+static LEFT_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(
+    r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Destroying abandoned non persistent zdo -?\d+:\d+ owner (-?\d+)",
+  )
+  .expect("Failed to compile left_regex")
+});
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Player {
@@ -58,8 +75,43 @@ pub struct PlayerList {
 }
 
 impl PlayerList {
+  /// Writes the list atomically. Huginn reads this file from another process on every
+  /// `/players` and `/metrics` request, so it is written to a sibling temp file and renamed
+  /// over the original: a reader sees the old list or the new one, never half of one.
   fn save(&self) -> bool {
-    self.write(self.to_string()) // Ensure this writes correctly
+    let path = self.path();
+    let tmp = format!("{path}.tmp");
+    let result = Path::new(&path)
+      .parent()
+      .map_or(Ok(()), std::fs::create_dir_all)
+      .and_then(|_| std::fs::write(&tmp, self.to_string()))
+      .and_then(|_| std::fs::rename(&tmp, &path));
+    match result {
+      Ok(()) => {
+        debug!("Saved player list to {path}");
+        true
+      }
+      Err(e) => {
+        error!("Failed to write player list {path}: {e}");
+        let _ = std::fs::remove_file(&tmp);
+        false
+      }
+    }
+  }
+
+  /// Reads the list from disk. A missing, unreadable or corrupt file is treated as an
+  /// empty list rather than a panic, since Huginn calls this while serving requests.
+  #[cfg(not(test))]
+  fn load() -> Self {
+    let empty = PlayerList { players: vec![] };
+    match std::fs::read_to_string(empty.path()) {
+      Ok(content) => PlayerList::from(content),
+      Err(e) if e.kind() == std::io::ErrorKind::NotFound => empty,
+      Err(e) => {
+        warn!("Could not read player list {}: {e}", empty.path());
+        empty
+      }
+    }
   }
 
   /// Records `id` as online under `name`; returns true if the player was not online before.
@@ -138,14 +190,7 @@ impl PlayerList {
 impl Default for PlayerList {
   #[cfg(not(test))]
   fn default() -> Self {
-    let list = PlayerList { players: vec![] };
-    let read_list = list.read();
-
-    if read_list.is_empty() {
-      list
-    } else {
-      PlayerList::from(read_list)
-    }
+    PlayerList::load()
   }
 
   #[cfg(test)]
@@ -166,10 +211,12 @@ impl FileManager for PlayerList {
 impl From<String> for PlayerList {
   fn from(value: String) -> Self {
     if value.trim().is_empty() {
-      PlayerList::default()
-    } else {
-      serde_json::from_str(&value).expect("Failed to parse player list! Was it modified?")
+      return PlayerList { players: vec![] };
     }
+    serde_json::from_str(&value).unwrap_or_else(|e| {
+      warn!("Ignoring unreadable player list ({e}); treating it as empty");
+      PlayerList { players: vec![] }
+    })
   }
 }
 
@@ -183,43 +230,69 @@ impl Display for PlayerList {
   }
 }
 
+/// A presence change parsed from one server log line.
+#[derive(Debug, PartialEq, Eq)]
+enum PlayerEvent {
+  Joined {
+    id: i64,
+    zdo_index: u16,
+    name: String,
+  },
+  Left {
+    id: i64,
+  },
+}
+
+/// Parses a server log line into a presence change, if it is one.
+fn parse_player_event(line: &str) -> Option<PlayerEvent> {
+  if let Some(captures) = JOINED_REGEX.captures(line) {
+    debug!("Matched joining event: '{captures:?}'");
+    return match extract_player_details(&captures) {
+      // `0:0` is the character despawning on death, not a join
+      Ok((_, 0, _)) => None,
+      Ok((name, id, zdo_index)) => Some(PlayerEvent::Joined {
+        id,
+        zdo_index,
+        name,
+      }),
+      Err(e) => {
+        error!("Failed to process joining event line '{line}': {e}");
+        None
+      }
+    };
+  }
+
+  if let Some(captures) = LEFT_REGEX.captures(line) {
+    debug!("Matched leaving event: '{captures:?}'");
+    return match captures[1].parse::<i64>() {
+      Ok(id) => Some(PlayerEvent::Left { id }),
+      Err(e) => {
+        error!("Failed to process leaving event line '{line}': {e}");
+        None
+      }
+    };
+  }
+
+  None
+}
+
 /// Handles player-related events such as joining or leaving.
 /// It uses regex to extract information from log lines and triggers appropriate events.
 ///
 /// # Arguments
 /// * `line` - A `&str` representing a single line from the log.
 pub fn handle_player_events(line: &str) {
-  // Regex to capture player joining event with player name, ID and ZDO index
-  let joined_regex =
-    Regex::new(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Got character ZDOID from (.*) : (-?\d+:\d+)")
-      .expect("Failed to compile joined_regex");
-
-  // Regex to capture player leaving event with the owning player ID
-  let left_regex = Regex::new(
-    r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Destroying abandoned non persistent zdo -?\d+:\d+ owner (-?\d+)"
-  ).expect("Failed to compile left_regex");
-
-  // Handle player joining event
-  if let Some(captures) = joined_regex.captures(line) {
-    debug!("Matched joining event: '{captures:?}'");
-    match extract_player_details(&captures) {
-      // `0:0` is the character despawning on death, not a join
-      Ok((_, 0, _)) => {}
-      Ok((name, id, zdo_index)) => {
-        debug!("Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining");
-        PlayerList::joined_event(id, zdo_index, name);
-      }
-      Err(e) => error!("Failed to process joining event line '{line}': {e}"),
+  match parse_player_event(line) {
+    Some(PlayerEvent::Joined {
+      id,
+      zdo_index,
+      name,
+    }) => {
+      debug!("Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining");
+      PlayerList::joined_event(id, zdo_index, name);
     }
-  }
-
-  // Handle player leaving event
-  if let Some(captures) = left_regex.captures(line) {
-    debug!("Matched leaving event: '{captures:?}'");
-    match captures[1].parse::<i64>() {
-      Ok(id) => PlayerList::left_event(id),
-      Err(e) => error!("Failed to process leaving event line '{line}': {e}"),
-    }
+    Some(PlayerEvent::Left { id }) => PlayerList::left_event(id),
+    None => {}
   }
 }
 
@@ -267,11 +340,44 @@ mod tests {
   use super::*;
   use chrono::Utc;
   use mockall::automock;
+  use serial_test::serial;
 
   #[automock]
   pub trait NotificationEventTrait {
     #[allow(dead_code)]
     fn send_notification(&self, message: Option<String>);
+  }
+
+  /// Points `SAVE_LOCATION` at a temp dir for the test's lifetime so tests never write
+  /// `player.list` into the developer's real Valheim save directory.
+  struct SaveDir {
+    dir: tempfile::TempDir,
+  }
+
+  impl SaveDir {
+    fn new() -> Self {
+      let dir = tempfile::tempdir().expect("tempdir");
+      std::env::set_var(crate::constants::SAVE_LOCATION, dir.path());
+      SaveDir { dir }
+    }
+
+    fn list_path(&self) -> std::path::PathBuf {
+      self.dir.path().join("player.list")
+    }
+  }
+
+  impl Drop for SaveDir {
+    fn drop(&mut self) {
+      std::env::remove_var(crate::constants::SAVE_LOCATION);
+    }
+  }
+
+  fn joined(id: i64, zdo_index: u16, name: &str) -> Option<PlayerEvent> {
+    Some(PlayerEvent::Joined {
+      id,
+      zdo_index,
+      name: name.to_string(),
+    })
   }
 
   #[test]
@@ -280,11 +386,56 @@ mod tests {
       extract_player_id_and_zdo_index(Some("-1234567890:1")),
       Ok((-1234567890, 1))
     );
-    let joined = Regex::new(
-      r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Got character ZDOID from (.*) : (-?\d+:\d+)",
-    )
-    .unwrap();
-    assert!(joined.is_match("09/10/2026 00:00:00: Got character ZDOID from Viking : -1234567890:1"));
+    assert!(
+      JOINED_REGEX.is_match("09/10/2026 00:00:00: Got character ZDOID from Viking : -1234567890:1")
+    );
+  }
+
+  /// A full session as it appears in `valheim_server.log`: join, die, respawn, leave.
+  #[test]
+  fn parses_a_session_from_real_log_lines() {
+    let lines = [
+      "09/10/2026 18:00:01: Got character ZDOID from Viking : 2130425389:1",
+      "09/10/2026 18:05:12: Got character ZDOID from Viking : 0:0",
+      "09/10/2026 18:05:20: Got character ZDOID from Viking : 2130425389:68",
+      "09/10/2026 18:30:00: Destroying abandoned non persistent zdo 2130425389:1204 owner 2130425389",
+    ];
+    let events: Vec<_> = lines.iter().map(|l| parse_player_event(l)).collect();
+    assert_eq!(
+      events,
+      [
+        joined(2130425389, 1, "Viking"),
+        None, // death is not a join
+        joined(2130425389, 68, "Viking"),
+        Some(PlayerEvent::Left { id: 2130425389 }),
+      ]
+    );
+  }
+
+  #[test]
+  fn parses_negative_peer_ids_and_names_with_spaces() {
+    assert_eq!(
+      parse_player_event("09/10/2026 18:00:01: Got character ZDOID from Sir Lance : -99:3"),
+      joined(-99, 3, "Sir Lance")
+    );
+    assert_eq!(
+      parse_player_event(
+        "09/10/2026 18:30:00: Destroying abandoned non persistent zdo -99:7 owner -99"
+      ),
+      Some(PlayerEvent::Left { id: -99 })
+    );
+  }
+
+  #[test]
+  fn ignores_unrelated_lines() {
+    for line in [
+      "",
+      "09/10/2026 18:00:00: Game server connected",
+      "09/10/2026 18:00:00: Got character ZDOID from Viking",
+      "Got character ZDOID from Viking : 1:1",
+    ] {
+      assert_eq!(parse_player_event(line), None, "{line:?}");
+    }
   }
 
   #[test]
@@ -303,15 +454,52 @@ mod tests {
     assert!(list.players.is_empty());
   }
 
+  /// Huginn parses this file while Odin rewrites it; garbage must never panic.
   #[test]
-  fn test_joined_event() {
-    let id = 1;
-    let name = "Player1".to_string();
-    PlayerList::joined_event(id, 0, name);
+  fn corrupt_or_truncated_lists_read_as_empty() {
+    for content in ["not json", "{\"players\": [{\"id\": 1, \"zdo_", "{}", "   "] {
+      let list = PlayerList::from(content.to_string());
+      assert!(list.players.is_empty(), "{content:?}");
+    }
   }
 
   #[test]
+  fn lists_from_before_joined_at_still_parse() {
+    let old = r#"{"players":[{"id":42,"zdo_index":1,"name":"Viking","last_seen":1700000000}]}"#;
+    let list = PlayerList::from(old.to_string());
+    assert_eq!(list.players.len(), 1);
+    assert_eq!(list.players[0].joined_at, 0);
+  }
+
+  #[test]
+  #[serial]
+  fn save_replaces_the_file_without_leaving_a_temp_file() {
+    let saves = SaveDir::new();
+    let mut list = PlayerList { players: vec![] };
+    list.join(7, 1, "Viking".to_string());
+    assert!(list.save());
+
+    let written = std::fs::read_to_string(saves.list_path()).expect("player.list");
+    let reread = PlayerList::from(written);
+    assert_eq!(reread.players.len(), 1);
+    assert_eq!(reread.players[0].name, "Viking");
+    assert!(
+      !saves.dir.path().join("player.list.tmp").exists(),
+      "temp file should be renamed away"
+    );
+  }
+
+  #[test]
+  #[serial]
+  fn test_joined_event() {
+    let _saves = SaveDir::new();
+    PlayerList::joined_event(1, 0, "Player1".to_string());
+  }
+
+  #[test]
+  #[serial]
   fn test_left_event() {
+    let _saves = SaveDir::new();
     let id = 1;
     let player = Player {
       id,
@@ -343,7 +531,9 @@ mod tests {
   }
 
   #[test]
+  #[serial]
   fn test_player_list_save() {
+    let _saves = SaveDir::new();
     let player_list = PlayerList {
       players: vec![Player::default()],
     };
