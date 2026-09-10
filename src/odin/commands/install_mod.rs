@@ -49,9 +49,19 @@ fn extract_mod_name(url: &str) -> String {
     .unwrap_or_else(|| "mod".to_string())
 }
 
+/// Name for log lines: the resolved package (`Author-Mod-1.0.0`) when there is one,
+/// otherwise the file name from the URL. Hexium CDN URLs end in just the version, so the
+/// URL alone would log every Hexium mod as its version number.
+fn mod_label(valheim_mod: &ValheimMod) -> String {
+  valheim_mod
+    .package
+    .clone()
+    .unwrap_or_else(|| extract_mod_name(&valheim_mod.url))
+}
+
 async fn process_mod(input: &str) -> Result<(), ValheimModError> {
   let mut valheim_mod = ValheimMod::async_from_url(input).await?;
-  let mod_name = extract_mod_name(&valheim_mod.url);
+  let mod_name = mod_label(&valheim_mod);
 
   info!("📦 Installing: {}", mod_name);
   debug!("   URL: {}", valheim_mod.url);
@@ -80,7 +90,7 @@ async fn process_mod(input: &str) -> Result<(), ValheimModError> {
 /// from the install phase (sequential).
 async fn download_mod_only(input: &str) -> Result<ValheimMod, ValheimModError> {
   let mut valheim_mod = ValheimMod::async_from_url(input).await?;
-  let mod_name = extract_mod_name(&valheim_mod.url);
+  let mod_name = mod_label(&valheim_mod);
 
   info!("📦 Downloading: {}", mod_name);
   let start = std::time::Instant::now();
@@ -389,7 +399,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
       }
       continue;
     };
-    let mod_name = extract_mod_name(&vmod.url);
+    let mod_name = mod_label(&vmod);
     let staging = vmod.staging_location.clone();
 
     let installed_paths = match vmod.install_with_report() {

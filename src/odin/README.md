@@ -45,6 +45,9 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 | MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                  |
 | THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Service account token (`tss_...`), sent as `Authorization: Bearer`. Optional: the endpoints Odin reads are public. |
 | THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                          |
+| MODS_REPOSITORY                 | `thunderstore`                          | FALSE    | Default repository for unprefixed `MODS` entries: `thunderstore`/`ts` or `hexium`/`hex`. Entries can override it with `ts:`/`hex:`. |
+| HEXIUM_TOKEN                    | `<unset>`                               | FALSE    | Optional Hexium API token (`hexium_...`), sent as `Authorization: Bearer` to `hexium.gg` and its subdomains only.          |
+| HEXIUM_BASE_URL                 | `https://hexium.gg`                     | FALSE    | Base URL for Hexium API lookups; override for mirrors or to mock in tests.                                                  |
 
 ## Mod Download Pool
 
@@ -67,12 +70,20 @@ failures.
 
 ### Testing
 
-Set `THUNDERSTORE_BASE_URL` to a local mock server to exercise the lookup and download
-paths without touching the network - this is how the wildcard resolution tests run.
+Set `THUNDERSTORE_BASE_URL` or `HEXIUM_BASE_URL` to a local mock server to exercise the
+lookup and download paths without touching the network - this is how the wildcard and
+repository resolution tests run.
 
-Two opt-in live tests hit the real services and are `#[ignore]`d by default:
+`tests/mod_repositories_e2e.rs` is an end-to-end suite: it runs the real `odin mod:install
+--from-var` binary against mock Thunderstore and Hexium servers and checks what lands on
+disk. It runs as part of `cargo test -p odin`, or on its own with
+`cargo test -p odin --test mod_repositories_e2e`. See
+[Mod Repositories](../../docs/tutorials/mod_repositories.md) for how Hexium support works.
+
+A few opt-in live tests hit the real services and are `#[ignore]`d by default:
 
 ```sh
+HEXIUM_LIVE_TEST=1 cargo test -p odin hexium_live -- --ignored
 THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_resolve -- --ignored
 THUNDERSTORE_TOKEN=tss_... cargo test -p odin thunderstore_live_auth -- --ignored
 THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_basic_auth_ignored -- --ignored

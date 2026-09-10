@@ -160,7 +160,7 @@ impl HttpPool {
     );
     if stats.rate_limited > 0 {
       warn!(
-        "Thunderstore rate limited {} request(s). Set CONCURRENT_DOWNLOADS_ENABLED=false \
+        "Mod repositories rate limited {} request(s). Set CONCURRENT_DOWNLOADS_ENABLED=false \
          or lower MAX_CONCURRENT_DOWNLOADS if this keeps happening.",
         stats.rate_limited
       );
