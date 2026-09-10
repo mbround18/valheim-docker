@@ -22,6 +22,9 @@ set -uo pipefail
 IMAGE="${1:?usage: $0 <image>}"
 NAME="valheim-e2e-$$"
 KEEP="${KEEP:-0}"
+# How long to wait for odin to pick up an injected log line. It rescans the log directory
+# every 2s and tails files asynchronously, so slow CI runners need real headroom.
+EVENT_TIMEOUT="${EVENT_TIMEOUT:-30}"
 if [ -n "${WORKDIR:-}" ]; then
   mkdir -p "${WORKDIR}"
 else
@@ -41,6 +44,19 @@ check() {
   if "$@"; then ok "${label}"; else bad "${label}"; fi
 }
 quiet() { "$@" >/dev/null 2>&1; }
+
+# Retries a condition until it holds or EVENT_TIMEOUT passes. Odin processes log lines
+# asynchronously, so asserting right after an injected line is a race, not a test.
+eventually() {
+  local deadline=$((SECONDS + EVENT_TIMEOUT))
+  until "$@"; do
+    if [ ${SECONDS} -ge ${deadline} ]; then
+      echo "  gave up after ${EVENT_TIMEOUT}s waiting for: $*"
+      return 1
+    fi
+    sleep 1
+  done
+}
 
 # File operations the host user may not be allowed to do (the volumes end up owned by
 # uid 1000 or 111, and CI runners are neither), done as root in a throwaway container.
@@ -102,13 +118,18 @@ players() { curl -fsS "$(url)/players"; }
 names() { players | jq -c '.names'; }
 metrics() { curl -fsS "$(url)/metrics"; }
 in_container() { docker exec "${NAME}" sh -c "$1"; }
-# Appends a timestamped line to the server log the way Valheim writes it, then gives
-# `odin logs --watch` a moment to process it.
+player_list() { in_container 'cat /home/steam/.config/unity3d/IronGate/Valheim/player.list'; }
+
+# Appends a timestamped line to the server log the way Valheim writes it.
 emit() {
   in_container "echo \"\$(date +'%m/%d/%Y %H:%M:%S'): $1\" >> /home/steam/valheim/logs/valheim_server.log"
-  sleep 2
 }
-player_list() { in_container 'cat /home/steam/.config/unity3d/IronGate/Valheim/player.list'; }
+
+names_are() { [ "$(names 2>/dev/null)" = "$1" ]; }
+# Compares a jq projection of player.list with the expected compact JSON.
+list_is() { [ "$(player_list 2>/dev/null | jq -c "$1" 2>/dev/null)" = "$2" ]; }
+metrics_has() { metrics 2>/dev/null | grep -qF "$1"; }
+metrics_lacks() { ! metrics_has "$1"; }
 
 echo "Image:   ${IMAGE}"
 echo "Workdir: ${WORKDIR}"
@@ -119,46 +140,48 @@ start 1000:1000
 check "A server connects as 1000:1000" wait_connected 1800
 check "A preflight passed" sh -c "! docker logs '${NAME}' 2>&1 | grep -q 'Preflight write check failed'"
 # Huginn starts before the server; give it a moment to answer.
-for _ in $(seq 1 12); do quiet players && break; sleep 5; done
+EVENT_TIMEOUT=60 eventually quiet players
 
 echo "=== B. player presence through Huginn"
 check "B /players answers" quiet players
-check "B nobody online yet" test "$(names)" = "[]"
+check "B nobody online yet" names_are "[]"
 
 emit "Got character ZDOID from Viking : 2130425389:1"
-check "B join -> [Viking]" test "$(names)" = '["Viking"]'
+check "B join -> [Viking]" eventually names_are '["Viking"]'
 joined_at="$(players | jq '.sessions[0].joined_at')"
 check "B session has joined_at" test "${joined_at:-0}" -gt 0
 check "B /metrics has valheim_player_online for Viking" \
-  sh -c "curl -fsS '$(url)/metrics' | grep -q 'valheim_player_online{player=\"Viking\"} 1'"
+  eventually metrics_has 'valheim_player_online{player="Viking"} 1'
 
 emit "Got character ZDOID from Viking : 0:0"
 emit "Got character ZDOID from Viking : 2130425389:68"
-check "B death + respawn keeps one entry" test "$(names)" = '["Viking"]'
+# Waiting on the new zdo index proves the respawn was processed, not just that nothing changed.
+check "B death + respawn keeps one entry" \
+  eventually list_is '[.players[] | [.name, .zdo_index]]' '[["Viking",68]]'
 check "B respawn keeps joined_at" test "$(players | jq '.sessions[0].joined_at')" = "${joined_at}"
 
 emit "Got character ZDOID from Sir Lance : -99:3"
-check "B second player with a negative peer id" test "$(names)" = '["Viking","Sir Lance"]'
+check "B second player with a negative peer id" eventually names_are '["Viking","Sir Lance"]'
 
 emit "Destroying abandoned non persistent zdo 2130425389:1204 owner 2130425389"
-check "B leave removes only Viking" test "$(names)" = '["Sir Lance"]'
-check "B /metrics drops Viking" sh -c "! curl -fsS '$(url)/metrics' | grep -q 'player=\"Viking\"'"
+check "B leave removes only Viking" eventually names_are '["Sir Lance"]'
+check "B /metrics drops Viking" eventually metrics_lacks 'player="Viking"'
 
 in_container "printf '{\"players\": [{\"id\": 1, \"zdo_' > /home/steam/.config/unity3d/IronGate/Valheim/player.list"
 check "B corrupt player.list: /players still answers" quiet players
 check "B corrupt player.list: /metrics still answers" quiet metrics
 
 emit "Got character ZDOID from Viking : 2130425389:1"
-check "B next event rewrites a valid list" test "$(player_list | jq -c '[.players[].name]')" = '["Viking"]'
+check "B next event rewrites a valid list" eventually list_is '[.players[].name]' '["Viking"]'
 check "B no temp file left behind" \
   in_container 'test ! -e /home/steam/.config/unity3d/IronGate/Valheim/player.list.tmp'
 
 echo "=== C. restart clears presence"
 start 1000:1000
 check "C server reconnects" wait_connected 900
-check "C player.list cleared by odin start" test "$(player_list | jq -c '.players')" = "[]"
-for _ in $(seq 1 12); do quiet players && break; sleep 5; done
-check "C /players empty after restart" test "$(names)" = "[]"
+check "C player.list cleared by odin start" list_is '.players' '[]'
+EVENT_TIMEOUT=60 eventually quiet players
+check "C /players empty after restart" names_are "[]"
 
 echo "=== D. legacy user 111:1000 on a 111-owned volume"
 stop
