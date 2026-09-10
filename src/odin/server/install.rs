@@ -185,6 +185,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   let mut result = run_with_retries(&args);
 
   if !matches!(&result, Ok(status) if status.success()) {
+    warn!("SteamCMD app update did not succeed; syncing app info for {app_id} and retrying");
     sync_app_info(app_id);
     result = run_with_retries(&args);
   }
