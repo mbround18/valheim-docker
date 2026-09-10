@@ -57,6 +57,14 @@ else
   useradd -u "${PUID}" -g "${PGID}" -d /home/steam -m -s /bin/bash steam
 fi
 
+# steam was uid 111 before it became 1000, and existing deployments still run as
+# `runAsUser: 111`. The Valheim server segfaults at startup (in PlayFab's logger) when its
+# uid has no passwd entry, so keep one for 111 that shares steam's group and home.
+LEGACY_UID=111
+if [ "${PUID}" != "${LEGACY_UID}" ] && ! getent passwd "${LEGACY_UID}" >/dev/null; then
+  useradd -u "${LEGACY_UID}" -g "${PGID}" -d /home/steam -M -s /bin/bash steam-legacy
+fi
+
 # Ensure directories and permissions
 mkdir -p /home/steam/.steam/steam/package
 mkdir -p /home/steam /home/steam/valheim /home/steam/.steam

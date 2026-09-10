@@ -43,7 +43,7 @@ For the most reliable experience, we recommend explicitly setting the **user dir
 | **Docker Run**     | Use the `--user 1000:1000` flag                    |
 | **Kubernetes**     | Define `runAsUser: 1000` in your `securityContext` |
 
-> **Quick Tip:** If you aren't sure what your IDs are, run `id -u` and `id -g` on your host machine to find the correct numbers to use!
+> **Keep the uid at `1000`.** The Valheim server only starts under a uid that has an account in the image (`1000`, or `111` for older setups), so do not replace it with your own `id -u` if that differs. Share the volumes with your host user through the group as shown above instead.
 
 6. **Update your `docker-compose.yml` file to set the `user` directive:**
 
@@ -54,7 +54,7 @@ services:
   valheim:
     image: mbround18/valheim:3
     container_name: valheim
-    user: "1000:1000" # Replace with your host user/group IDs
+    user: "1000:1000" # Keep uid 1000; the server does not start under other uids
     volumes:
       - ./saves:/home/steam/.config/unity3d/IronGate/Valheim
       - ./server:/home/steam/valheim
@@ -64,7 +64,7 @@ services:
     restart: unless-stopped
 ```
 
-Replace `1000:1000` with the output from `id -u` and `id -g` on your host if your IDs are different.
+Keep `1000:1000` even if your host IDs are different. The Valheim server crashes at startup under a uid that has no account in the image, so your own `id -u` will not work there; the `valheim` group from the steps above is what gives your host user access to the files.
 
 7. **Restart your Docker Compose services to apply the changes:**
 
