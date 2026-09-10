@@ -1,4 +1,5 @@
 use crate::fetch_info;
+use odin::log_filters::PlayerList;
 use shared::system::collect_system_metrics;
 
 fn escape_prom_label_value(value: &str) -> String {
@@ -17,6 +18,16 @@ pub fn invoke() -> String {
     version = escape_prom_label_value(&info.version),
     map = escape_prom_label_value(&info.map)
   );
+  let players = PlayerList::online().into_iter().flat_map(|p| {
+    let player = escape_prom_label_value(&p.name);
+    [
+      format!("valheim_player_online{{player=\"{player}\"}} 1"),
+      format!(
+        "valheim_player_joined_timestamp_seconds{{player=\"{player}\"}} {}",
+        p.joined_at
+      ),
+    ]
+  });
   let content = [
     format!(
       "valheim_online{labels} {online}",
@@ -65,5 +76,12 @@ pub fn invoke() -> String {
       sys.load_average_fifteen
     ),
   ];
-  format!("{}\n", content.join("\n"))
+  format!(
+    "{}\n",
+    content
+      .into_iter()
+      .chain(players)
+      .collect::<Vec<_>>()
+      .join("\n")
+  )
 }

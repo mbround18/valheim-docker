@@ -84,7 +84,7 @@ huginn &
 
 | Endpoint          | Description                                                                                                                                                                       |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/metrics`        | Provides Prometheus-compatible server status output. [Guide to setting up a dashboard](https://github.com/mbround18/valheim-docker/discussions/330).                              |
+| `/metrics`        | Provides Prometheus-compatible server status output, including `valheim_player_online{player="<name>"} 1` and `valheim_player_joined_timestamp_seconds{player="<name>"}` per player online. [Guide to setting up a dashboard](https://github.com/mbround18/valheim-docker/discussions/330). |
 | `/status`         | Provides a more traditional JSON output of the server status.                                                                                                                     |
 | `/connect/local`  | Redirect to `steam://run/<CONNECT_STEAM_APP_ID>//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.     |
 | `/connect/remote` | Redirect to `steam://run/<CONNECT_STEAM_APP_ID>//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility. |
@@ -92,7 +92,7 @@ huginn &
 | `/readiness`      | Kubernetes readiness probe; `200` only if the server is online.                                                                                                                   |
 | `/liveness`       | Kubernetes liveness probe; returns `200` when Huginn is alive.                                                                                                                    |
 | `/mods`           | Returns installed mod metadata.                                                                                                                                                   |
-| `/players`        | Returns player counts and player names when available.                                                                                                                            |
+| `/players`        | Returns player counts plus `names` and `sessions` (`name`, `joined_at` unix time) of the players online, from the server log via Odin (Valheim's Steam query carries no names).                                                |
 | `/metadata`       | Returns safe Odin/Huginn runtime metadata (ports, build id, beta mode, scheduler toggles/schedules, cache/runtime info).                                                          |
 | `/openapi.json`   | OpenAPI specification for the HTTP API.                                                                                                                                           |
 | `/docs`           | Swagger UI for interactive API documentation.                                                                                                                                     |

@@ -14,6 +14,8 @@ struct Player {
   zdo_index: u16,
   name: String,
   last_seen: i64,
+  #[serde(default)]
+  joined_at: i64,
 }
 
 impl Clone for Player {
@@ -23,8 +25,16 @@ impl Clone for Player {
       zdo_index: self.zdo_index,
       name: String::from(&self.name),
       last_seen: self.last_seen,
+      joined_at: self.joined_at,
     }
   }
+}
+
+/// A player currently online, as exposed to Huginn.
+pub struct OnlinePlayer {
+  pub name: String,
+  /// Unix timestamp of the join (kept across respawns).
+  pub joined_at: i64,
 }
 
 impl Default for Player {
@@ -37,6 +47,7 @@ impl Default for Player {
       zdo_index: 0,
       name: "Unknown".to_string(),
       last_seen: epoch,
+      joined_at: epoch,
     }
   }
 }
@@ -53,13 +64,21 @@ impl PlayerList {
 
   /// Records `id` as online under `name`; returns true if the player was not online before.
   fn join(&mut self, id: u64, zdo_index: u16, name: String) -> bool {
-    let is_new = !self.players.iter().any(|p| p.id == id);
+    let now = Utc::now().timestamp();
+    let existing = self
+      .players
+      .iter()
+      .find(|p| p.id == id)
+      .map(|p| p.joined_at);
+    let is_new = existing.is_none();
+    let joined_at = existing.unwrap_or(now);
     self.players.retain(|p| p.id != id);
     self.players.push(Player {
       id,
       zdo_index,
       name,
-      last_seen: Utc::now().timestamp(),
+      last_seen: now,
+      joined_at,
     });
     is_new
   }
@@ -97,12 +116,15 @@ impl PlayerList {
     PlayerList { players: vec![] }.save();
   }
 
-  /// Names of the players currently online.
-  pub fn online_names() -> Vec<String> {
+  /// The players currently online.
+  pub fn online() -> Vec<OnlinePlayer> {
     PlayerList::default()
       .players
       .into_iter()
-      .map(|p| p.name)
+      .map(|p| OnlinePlayer {
+        name: p.name,
+        joined_at: p.joined_at,
+      })
       .collect()
   }
 }
@@ -250,10 +272,12 @@ mod tests {
   fn test_join_and_leave() {
     let mut list = PlayerList { players: vec![] };
     assert!(list.join(1, 1, "Player1".to_string()));
+    let joined_at = list.players[0].joined_at;
     // respawn after death: same player, new zdo index, still one entry, no new join
     assert!(!list.join(1, 68, "Player1".to_string()));
     assert_eq!(list.players.len(), 1);
     assert_eq!(list.players[0].zdo_index, 68);
+    assert_eq!(list.players[0].joined_at, joined_at);
 
     assert!(list.leave(2).is_none());
     assert_eq!(list.leave(1).map(|p| p.name).as_deref(), Some("Player1"));
@@ -275,6 +299,7 @@ mod tests {
       zdo_index: 0,
       name: "Player1".to_string(),
       last_seen: Utc::now().timestamp(),
+      joined_at: Utc::now().timestamp(),
     };
 
     let player_list = PlayerList {
