@@ -56,11 +56,11 @@ These were cold runs. The GitHub Actions cache backend `paws-up` enables should 
 
 ## Gaps, most important first
 
-1. **The changelog listed every commit, not every PR. Fixed in paws, not released yet.**
-   - The released `paws changelog` titles each commit with its PR's title, so one merged PR becomes as many identical lines as it has commits. `v3.7.2..main` rendered #1512 about 15 times.
+1. **The changelog listed every commit, not every PR. Fixed in paws `v0.0.1-prerelease.45`.**
+   - Before that release, `paws changelog` titled each commit with its PR's title, so one merged PR became as many identical lines as it had commits. `v3.7.2..main` rendered #1512 about 15 times.
    - It also included `[skip ci]` changelog commits.
-   - Fixed upstream in paws commit `a3b446b` (mbround18/paws#29): one line per PR, keyed by PR number and rendered `- <title> (#<number>)`, with `[skip ci]`/`[ci skip]` commits left out. Built from that branch, the same `v3.7.2..main` run gives five lines, #1507, #1508, #1509, #1511 and #1512, where it gave 26.
-   - `release.yml` gets the fix once a paws release containing it is out.
+   - Fixed in mbround18/paws#29 (merged as `fe42c52`, released in `v0.0.1-prerelease.45`): one line per PR, keyed by PR number and rendered `- <title> (#<number>)`, with `[skip ci]`/`[ci skip]` commits left out.
+   - With the released `prerelease.45` binary, the same `v3.7.2..main` run gives five lines, #1507, #1508, #1509, #1511 and #1512, where it gave 26.
 2. **`paws docker` doesn't load images into the runner's Docker.** The build happens inside Dagger, so the permission check and the container e2e still need their own `docker buildx build --load`. That's a second image build per run.
 3. **Registry build cache.** The old workflows wrote `mbround18/<image>:buildcache`, and paws uses Dagger's cache (the GitHub Actions backend that `paws-up` enables) instead. The `--cache-from` in the image job will go stale once nothing writes that cache any more.
 4. **Clippy doesn't lint tests.** `paws ci` runs `cargo clippy -- -D warnings`, without `--all-targets`, so test code isn't linted. Current CI lints it. Fix upstream in paws.
@@ -70,7 +70,7 @@ These were cold runs. The GitHub Actions cache backend `paws-up` enables should 
    - odin was pushed on every PR build. Now both images push on a PR only with `canary`, which avoids failing on fork PRs, where secrets aren't available anyway.
    - Both images now also get `:<sha>` tags on every push to `main`.
    - Releases now run only from `main`. The old Release workflow ran on every branch push.
-8. **Pin paws.** `paws-up@main` with `version: latest` resolves to the newest _prerelease_. For stable CI, pin `paws-up` to a commit and set `version:` to a known release.
+8. **Pin paws. Done.** `paws-up@main` with `version: latest` resolves to the newest _prerelease_, so every workflow now uses `mbround18/paws/actions/paws-up@v0.0.1-prerelease.45` with `version: v0.0.1-prerelease.45`. That pins both the action and the binary it installs. Moving to a newer paws is a deliberate edit to those lines. Pinning the action to a commit SHA instead of the tag would also protect against the tag being moved.
 
 ## Not proven by the spike
 
@@ -78,13 +78,12 @@ The publishing half of `release.yml` only runs on `main`: `semver --push`, `chan
 
 ## Recommendation
 
-paws can take over the build side today. `paws ci` matched the current Rust job exactly, and `paws docker` built the images. The release side needs two things first:
+paws can take over the build side today. `paws ci` matched the current Rust job exactly, and `paws docker` built the images. The changelog fix (gap 1) is released and the spike is pinned to that release. The release side needs one more thing:
 
-- **The changelog fix** (gap 1). Otherwise every release note repeats each PR once per commit.
 - **A decision on the image tag format** (gap 6).
 
 A reasonable path:
 
 1. Adopt `ci.yml` now, with paws pinned.
-2. Keep the current release workflows until the changelog gap is fixed upstream.
+2. Decide on the image tag format.
 3. Then switch to `release.yml`.
