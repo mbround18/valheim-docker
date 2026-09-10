@@ -5,7 +5,7 @@ use crate::utils::normalize_paths::normalize_paths;
 use crate::utils::thunderstore_http::send;
 use crate::utils::{
   concurrent_downloads_enabled, is_valid_url, max_concurrent_downloads, parse_mod_string,
-  thunderstore_base_url,
+  split_repository_prefix, ModRepository,
 };
 use crate::{
   constants::SUPPORTED_FILE_TYPES,
@@ -30,7 +30,9 @@ struct ThunderstoreVersionEntry {
   version_number: String,
 }
 
-async fn thunderstore_list_versions(
+/// Lists the published versions of a package so a wildcard can pick one.
+async fn list_versions(
+  repo: ModRepository,
   namespace: &str,
   name: &str,
 ) -> Result<Vec<ThunderstoreVersionEntry>, ValheimModError> {
@@ -76,39 +78,47 @@ async fn thunderstore_list_versions(
     None
   }
 
-  let base = thunderstore_base_url();
+  let base = repo.base_url();
   let client = HttpPool::global().client();
-  let endpoints = vec![
-    // Experimental package endpoint (no community in path)
-    format!("{}/api/experimental/package/{}/{}/", base, namespace, name),
-    // Community-scoped experimental endpoint (if available)
-    format!(
-      "{}/api/experimental/community/valheim/package/{}/{}/",
-      base, namespace, name
-    ),
-    // Frontend JSON used by website (shape may change but often includes versions)
-    format!(
+  let endpoints = match repo {
+    ModRepository::Thunderstore => vec![
+      // Experimental package endpoint (no community in path)
+      format!("{}/api/experimental/package/{}/{}/", base, namespace, name),
+      // Community-scoped experimental endpoint (if available)
+      format!(
+        "{}/api/experimental/community/valheim/package/{}/{}/",
+        base, namespace, name
+      ),
+      // Frontend JSON used by website (shape may change but often includes versions)
+      format!(
+        "{}/api/experimental/frontend/c/valheim/p/{}/{}/",
+        base, namespace, name
+      ),
+    ],
+    // Hexium's package endpoint only carries `latest`; the frontend detail endpoint is the
+    // one that lists every version.
+    ModRepository::Hexium => vec![format!(
       "{}/api/experimental/frontend/c/valheim/p/{}/{}/",
       base, namespace, name
-    ),
-  ];
+    )],
+  };
 
   let mut last_err: Option<String> = None;
   for url in endpoints {
     for attempt in 1..=2 {
-      log::debug!("Thunderstore version query attempt {}: {}", attempt, url);
+      log::debug!("{} version query attempt {}: {}", repo, attempt, url);
       match send(
         client.get(&url),
         &url,
-        &format!("thunderstore {namespace}/{name}"),
+        &format!("{} {namespace}/{name}", repo.alias()),
       )
       .await
       {
         Ok(resp) => {
           if resp.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
-            return Err(ValheimModError::DownloadError(
-              "Thunderstore rate limit persisted after retries; try again later".to_string(),
-            ));
+            return Err(ValheimModError::DownloadError(format!(
+              "{repo} rate limit persisted after retries; try again later"
+            )));
           }
           if !resp.status().is_success() {
             last_err = Some(format!("status {} for {}", resp.status(), url));
@@ -137,6 +147,13 @@ async fn thunderstore_list_versions(
       // brief backoff before next attempt
       tokio::time::sleep(Duration::from_millis(500)).await;
     }
+  }
+
+  if repo != ModRepository::Thunderstore {
+    return Err(ValheimModError::DownloadError(format!(
+      "could not list {repo} versions for {namespace}-{name}: {}",
+      last_err.unwrap_or_else(|| "no versions returned".to_string())
+    )));
   }
 
   // HTML fallback: scrape latest download link from the package page as a last resort
@@ -182,6 +199,67 @@ async fn thunderstore_list_versions(
       page_url, e
     ))),
   }
+}
+
+fn thunderstore_download_url(namespace: &str, name: &str, version: &str) -> String {
+  format!(
+    "{}/package/download/{}/{}/{}/",
+    ModRepository::Thunderstore.base_url(),
+    namespace,
+    name,
+    version
+  )
+}
+
+/// Resolves an exact Hexium version to its download URL.
+///
+/// Hexium has no Thunderstore-style `/package/download/...` route; the version endpoint's
+/// `download_url` (on `cdn.hexium.gg`) is the only way to the file.
+async fn hexium_download_url(
+  namespace: &str,
+  name: &str,
+  version: &str,
+) -> Result<String, ValheimModError> {
+  let base = ModRepository::Hexium.base_url();
+  let url = format!("{base}/api/experimental/package/{namespace}/{name}/{version}/");
+  let resp = send(
+    HttpPool::global().client().get(&url),
+    &url,
+    &format!("hex {namespace}/{name}/{version}"),
+  )
+  .await?;
+
+  if resp.status() == reqwest::StatusCode::NOT_FOUND {
+    return Err(ValheimModError::DownloadError(format!(
+      "{namespace}-{name}-{version} was not found on Hexium ({url})"
+    )));
+  }
+  if !resp.status().is_success() {
+    return Err(ValheimModError::DownloadError(format!(
+      "status {} for {url}",
+      resp.status()
+    )));
+  }
+
+  let body: serde_json::Value = resp
+    .json()
+    .await
+    .map_err(|e| ValheimModError::DownloadError(format!("json error for {url}: {e}")))?;
+  let download_url = body
+    .get("download_url")
+    .and_then(|v| v.as_str())
+    .filter(|s| !s.is_empty())
+    .ok_or_else(|| {
+      ValheimModError::DownloadError(format!("no download_url in Hexium response for {url}"))
+    })?;
+
+  // Absolute in practice; joining also copes with a mirror that returns a relative path.
+  Url::parse(&url)
+    .and_then(|u| u.join(download_url))
+    .map(String::from)
+    .map_err(|e| {
+      ValheimModError::DownloadError(format!("invalid download_url {download_url:?}: {e}"))
+    })
 }
 
 fn is_wildcard_version(v: &str) -> bool {
@@ -253,7 +331,10 @@ pub struct ValheimMod {
   pub(crate) staging_location: PathBuf,
   pub(crate) installed: bool,
   pub(crate) downloaded: bool,
-  // Optionally, add fields like author or mod_name if needed later.
+  /// `Author-Mod-Version` when resolved from a dependency string. Names the staged file,
+  /// because a Hexium CDN URL ends in just the version (`/upload/48/1.8.18.zip`) and two
+  /// mods at the same version would otherwise share one cache entry.
+  pub(crate) package: Option<String>,
 }
 
 impl ValheimMod {
@@ -282,6 +363,22 @@ impl ValheimMod {
       staging_location: common_paths::mods_staging_directory().into(),
       installed: false,
       downloaded: false,
+      package: None,
+    }
+  }
+
+  fn from_package(url: &str, package: String) -> Self {
+    ValheimMod {
+      package: Some(package),
+      ..ValheimMod::new(url)
+    }
+  }
+
+  /// Staged file name: the package name when known, else the URL's last path segment.
+  fn staging_file_name(&self, url: &Url, file_type: &str) -> String {
+    match &self.package {
+      Some(package) => format!("{package}.{file_type}"),
+      None => parse_file_name(url, &format!("{}.{}", get_md5_hash(&self.url), file_type)),
     }
   }
 
@@ -492,10 +589,7 @@ impl ValheimMod {
       // Assume zip for mods when type cannot be parsed from URL.
       orig_file_type = "zip".to_string();
     }
-    let orig_file_name = parse_file_name(
-      &orig_url,
-      &format!("{}.{}", get_md5_hash(&self.url), orig_file_type),
-    );
+    let orig_file_name = self.staging_file_name(&orig_url, &orig_file_type);
     let orig_cache_path = staging_dir.join(&orig_file_name);
 
     // Cache hit: URL unchanged. For ZIPs require valid ZIP; for non-zip types (dll, cfg) accept cached file.
@@ -563,10 +657,7 @@ impl ValheimMod {
       }
     }
 
-    let file_name = parse_file_name(
-      &Url::parse(&self.url).unwrap(),
-      &format!("{}.{}", get_md5_hash(&self.url), self.file_type),
-    );
+    let file_name = self.staging_file_name(&Url::parse(&self.url).unwrap(), &self.file_type);
     let final_path = staging_dir.join(file_name);
     debug!("Downloading to: {:?}", final_path);
 
@@ -815,42 +906,38 @@ impl ValheimMod {
     }
   }
 
-  /// Async constructor that resolves Thunderstore wildcards.
-  pub async fn async_from_url(url: &str) -> Result<Self, ValheimModError> {
-    if is_valid_url(url) {
-      Ok(ValheimMod::new(url))
-    } else if let Some((author, mod_name, version)) = parse_mod_string(url) {
-      // Resolve wildcards for Thunderstore packages if present
-      let v_req = version.to_ascii_lowercase();
-      if is_wildcard_version(&v_req) {
-        let versions = thunderstore_list_versions(author, mod_name).await?;
-        if let Some(sel) = select_version_from_list(&v_req, &versions) {
-          let constructed_url = format!(
-            "{}/package/download/{}/{}/{}/",
-            thunderstore_base_url(),
-            author,
-            mod_name,
-            sel
-          );
-          Ok(ValheimMod::new(&constructed_url))
-        } else {
-          Err(ValheimModError::DownloadError(
-            "No matching version found for wildcard".to_string(),
-          ))
-        }
-      } else {
-        let constructed_url = format!(
-          "{}/package/download/{}/{}/{}/",
-          thunderstore_base_url(),
-          author,
-          mod_name,
-          version
-        );
-        Ok(ValheimMod::new(&constructed_url))
-      }
-    } else {
-      Err(ValheimModError::InvalidUrl)
+  /// Async constructor for a `MODS` entry: a URL, or a dependency string optionally
+  /// prefixed with a repository alias (`ts:`, `hex:`). Unprefixed dependency strings use
+  /// `MODS_REPOSITORY`. Wildcard versions are resolved against the chosen repository.
+  pub async fn async_from_url(input: &str) -> Result<Self, ValheimModError> {
+    // Strip the prefix first: `hex:Author-Mod-1.0.0` would otherwise parse as a URL
+    // with a `hex` scheme.
+    let (prefix, entry) = split_repository_prefix(input);
+    if is_valid_url(entry) {
+      return Ok(ValheimMod::new(entry));
     }
+    let (author, mod_name, version) = parse_mod_string(entry).ok_or(ValheimModError::InvalidUrl)?;
+    let repo = prefix.unwrap_or_else(ModRepository::from_env);
+
+    let version = if is_wildcard_version(version) {
+      let versions = list_versions(repo, author, mod_name).await?;
+      select_version_from_list(&version.to_ascii_lowercase(), &versions).ok_or_else(|| {
+        ValheimModError::DownloadError(format!(
+          "No matching version found for wildcard {entry} on {repo}"
+        ))
+      })?
+    } else {
+      version.to_string()
+    };
+
+    let url = match repo {
+      ModRepository::Thunderstore => thunderstore_download_url(author, mod_name, &version),
+      ModRepository::Hexium => hexium_download_url(author, mod_name, &version).await?,
+    };
+    Ok(ValheimMod::from_package(
+      &url,
+      format!("{author}-{mod_name}-{version}"),
+    ))
   }
 }
 
@@ -858,29 +945,29 @@ impl TryFrom<String> for ValheimMod {
   type Error = ValheimModError;
 
   fn try_from(url: String) -> Result<Self, Self::Error> {
-    if is_valid_url(&url) {
-      Ok(ValheimMod::new(&url))
-    } else if let Some((author, mod_name, version)) = parse_mod_string(&url) {
-      // For TryFrom (synchronous), only support exact versions.
-      // Wildcards must use async_from_url instead.
-      let v_req = version.to_ascii_lowercase();
-      if is_wildcard_version(&v_req) {
-        return Err(ValheimModError::DownloadError(
-          "Wildcard versions require async resolution. Use ValheimMod::async_from_url()."
-            .to_string(),
-        ));
-      }
-      let constructed_url = format!(
-        "{}/package/download/{}/{}/{}/",
-        thunderstore_base_url(),
-        author,
-        mod_name,
-        version
-      );
-      Ok(ValheimMod::new(&constructed_url))
-    } else {
-      Err(ValheimModError::InvalidUrl)
+    let (prefix, entry) = split_repository_prefix(&url);
+    if is_valid_url(entry) {
+      return Ok(ValheimMod::new(entry));
     }
+    let (author, mod_name, version) = parse_mod_string(entry).ok_or(ValheimModError::InvalidUrl)?;
+
+    // For TryFrom (synchronous), only exact Thunderstore versions can be built without a
+    // lookup. Wildcards and Hexium must use async_from_url instead.
+    if is_wildcard_version(version) {
+      return Err(ValheimModError::DownloadError(
+        "Wildcard versions require async resolution. Use ValheimMod::async_from_url().".to_string(),
+      ));
+    }
+    let repo = prefix.unwrap_or_else(ModRepository::from_env);
+    if repo != ModRepository::Thunderstore {
+      return Err(ValheimModError::DownloadError(format!(
+        "{repo} mod strings require async resolution. Use ValheimMod::async_from_url()."
+      )));
+    }
+    Ok(ValheimMod::from_package(
+      &thunderstore_download_url(author, mod_name, version),
+      format!("{author}-{mod_name}-{version}"),
+    ))
   }
 }
 
@@ -897,6 +984,7 @@ mod install_test {
       installed: false,
       downloaded: false,
       file_type: "zip".to_string(),
+      package: None,
     }
   }
 
@@ -988,6 +1076,7 @@ mod thunderstore_tests {
   use std::env;
 
   #[tokio::test]
+  #[serial]
   async fn transforms_mod_string_to_thunderstore_download_url() {
     let input = "ValheimModding-Jotunn-2.26.0".to_string();
     let vm = ValheimMod::try_from(input).expect("Should construct from mod string");
@@ -1452,5 +1541,363 @@ mod wildcard_resolution_tests {
       ),
     }
     remove_var(BASE_URL_VAR);
+  }
+}
+
+#[cfg(test)]
+mod repository_resolution_tests {
+  use super::*;
+  use serial_test::serial;
+  use std::env::{remove_var, set_var};
+  use std::io::{Cursor, Write};
+
+  const HEXIUM_BASE_URL_VAR: &str = "HEXIUM_BASE_URL";
+  const THUNDERSTORE_BASE_URL_VAR: &str = "THUNDERSTORE_BASE_URL";
+  const MODS_REPOSITORY_VAR: &str = "MODS_REPOSITORY";
+
+  fn clear_env() {
+    for var in [
+      HEXIUM_BASE_URL_VAR,
+      THUNDERSTORE_BASE_URL_VAR,
+      MODS_REPOSITORY_VAR,
+    ] {
+      remove_var(var);
+    }
+  }
+
+  /// Mocks Hexium's version endpoint for `package` (`Author/Mod/1.0.0`).
+  async fn mock_hexium_version(
+    server: &mut mockito::ServerGuard,
+    package: &str,
+    download_url: &str,
+  ) -> mockito::Mock {
+    server
+      .mock(
+        "GET",
+        format!("/api/experimental/package/{package}/").as_str(),
+      )
+      .with_status(200)
+      .with_header("content-type", "application/json")
+      .with_body(serde_json::json!({ "download_url": download_url }).to_string())
+      .create_async()
+      .await
+  }
+
+  fn zip_with_manifest(name: &str) -> Vec<u8> {
+    let mut buf: Vec<u8> = Vec::new();
+    {
+      let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      zipw.start_file("manifest.json", options).unwrap();
+      zipw
+        .write_all(serde_json::json!({ "name": name }).to_string().as_bytes())
+        .unwrap();
+      zipw
+        .start_file(format!("plugins/{name}.dll"), options)
+        .unwrap();
+      zipw.write_all(name.as_bytes()).unwrap();
+      zipw.finish().unwrap();
+    }
+    buf
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn hex_prefix_resolves_the_cdn_download_url() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let cdn = format!("{}/upload/48/1.8.18.zip", server.url());
+    let version = mock_hexium_version(&mut server, "Azumatt/AzuCraftyBoxes/1.8.18", &cdn).await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("hex:Azumatt-AzuCraftyBoxes-1.8.18")
+      .await
+      .unwrap();
+    assert_eq!(vmod.url, cdn);
+    assert_eq!(
+      vmod.package.as_deref(),
+      Some("Azumatt-AzuCraftyBoxes-1.8.18")
+    );
+    version.assert_async().await;
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn mods_repository_routes_unprefixed_strings_to_hexium() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let cdn = format!("{}/upload/1/1.0.0.zip", server.url());
+    let version = mock_hexium_version(&mut server, "Author/Mod/1.0.0", &cdn).await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+    set_var(MODS_REPOSITORY_VAR, "hexium");
+
+    let vmod = ValheimMod::async_from_url("Author-Mod-1.0.0")
+      .await
+      .unwrap();
+    assert_eq!(vmod.url, cdn);
+    version.assert_async().await;
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn ts_prefix_overrides_a_hexium_default() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let never = server
+      .mock("GET", mockito::Matcher::Any)
+      .expect(0)
+      .create_async()
+      .await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+    set_var(MODS_REPOSITORY_VAR, "hex");
+
+    let vmod = ValheimMod::async_from_url("ts:Author-Mod-1.0.0")
+      .await
+      .unwrap();
+    assert_eq!(
+      vmod.url,
+      "https://thunderstore.io/package/download/Author/Mod/1.0.0/"
+    );
+    never.assert_async().await;
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn hexium_wildcard_lists_versions_from_the_frontend_endpoint() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let listing = server
+      .mock("GET", "/api/experimental/frontend/c/valheim/p/Author/Mod/")
+      .with_status(200)
+      .with_body(
+        serde_json::json!({ "versions": [
+          { "version_number": "2.0.0" },
+          { "version_number": "1.10.0" },
+          { "version_number": "1.2.3" },
+        ]})
+        .to_string(),
+      )
+      .create_async()
+      .await;
+    let cdn = format!("{}/upload/9/1.10.0.zip", server.url());
+    let version = mock_hexium_version(&mut server, "Author/Mod/1.10.0", &cdn).await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("hex:Author-Mod-1.*")
+      .await
+      .unwrap();
+    assert_eq!(vmod.url, cdn);
+    assert_eq!(vmod.package.as_deref(), Some("Author-Mod-1.10.0"));
+    listing.assert_async().await;
+    version.assert_async().await;
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn missing_hexium_version_names_the_repository() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let _missing = server
+      .mock("GET", "/api/experimental/package/Author/Mod/9.9.9/")
+      .with_status(404)
+      .with_body(r#"{"detail":"Not found."}"#)
+      .create_async()
+      .await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+
+    let err = match ValheimMod::async_from_url("hex:Author-Mod-9.9.9").await {
+      Ok(m) => panic!("expected a failure, resolved to {}", m.url),
+      Err(e) => e.to_string(),
+    };
+    assert!(
+      err.contains("Author-Mod-9.9.9 was not found on Hexium"),
+      "unexpected error: {err}"
+    );
+    clear_env();
+  }
+
+  /// Hexium has no HTML page scrape to fall back on, so a missing listing must fail with
+  /// a message that says which repository was asked.
+  #[tokio::test]
+  #[serial]
+  async fn missing_hexium_listing_names_the_repository() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let _missing = server
+      .mock("GET", "/api/experimental/frontend/c/valheim/p/Author/Mod/")
+      .with_status(404)
+      .expect_at_least(1)
+      .create_async()
+      .await;
+    let no_scrape = server
+      .mock("GET", "/c/valheim/p/Author/Mod/")
+      .expect(0)
+      .create_async()
+      .await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+
+    let err = match ValheimMod::async_from_url("hex:Author-Mod-*").await {
+      Ok(m) => panic!("expected a failure, resolved to {}", m.url),
+      Err(e) => e.to_string(),
+    };
+    assert!(
+      err.contains("could not list Hexium versions for Author-Mod"),
+      "unexpected error: {err}"
+    );
+    no_scrape.assert_async().await;
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn relative_hexium_download_url_is_joined_to_the_base() {
+    clear_env();
+    let mut server = mockito::Server::new_async().await;
+    let _version = mock_hexium_version(
+      &mut server,
+      "Author/Mod/1.0.0",
+      "/files/Author-Mod-1.0.0.zip",
+    )
+    .await;
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+
+    let vmod = ValheimMod::async_from_url("hex:Author-Mod-1.0.0")
+      .await
+      .unwrap();
+    assert_eq!(
+      vmod.url,
+      format!("{}/files/Author-Mod-1.0.0.zip", server.url())
+    );
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn urls_ignore_the_repository_setting() {
+    clear_env();
+    set_var(MODS_REPOSITORY_VAR, "hexium");
+    for input in [
+      "https://example.com/mod.zip",
+      "hex:https://example.com/mod.zip",
+    ] {
+      let vmod = ValheimMod::async_from_url(input).await.unwrap();
+      assert_eq!(vmod.url, "https://example.com/mod.zip", "{input}");
+      assert!(vmod.package.is_none(), "{input}");
+    }
+    clear_env();
+  }
+
+  #[test]
+  #[serial]
+  fn try_from_defers_hexium_to_async_resolution() {
+    clear_env();
+    let err = ValheimMod::try_from("hex:Author-Mod-1.0.0".to_string())
+      .err()
+      .expect("Hexium needs a lookup, so TryFrom must refuse it")
+      .to_string();
+    assert!(err.contains("async"), "unexpected error: {err}");
+
+    let vmod = ValheimMod::try_from("ts:Author-Mod-1.0.0".to_string()).unwrap();
+    assert_eq!(
+      vmod.url,
+      "https://thunderstore.io/package/download/Author/Mod/1.0.0/"
+    );
+    clear_env();
+  }
+
+  /// Hexium CDN URLs end in just the version (`/upload/<id>/1.0.0.zip`), so two mods at
+  /// the same version must still stage to different files. Before the package name was
+  /// used for staging, the second mod was a cache hit on the first mod's zip.
+  #[tokio::test]
+  #[serial]
+  async fn hexium_mods_sharing_a_version_stage_separately() {
+    clear_env();
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    set_var(crate::constants::GAME_LOCATION, &game_dir);
+
+    let mut server = mockito::Server::new_async().await;
+    let mut mocks = Vec::new();
+    for (id, name) in [(1, "First"), (2, "Second")] {
+      let cdn_path = format!("/upload/{id}/1.0.0.zip");
+      let cdn_url = format!("{}{cdn_path}", server.url());
+      mocks.push(mock_hexium_version(&mut server, &format!("Author/{name}/1.0.0"), &cdn_url).await);
+      mocks.push(
+        server
+          .mock("GET", cdn_path.as_str())
+          .with_status(200)
+          .with_header("content-type", "application/zip")
+          .with_body(zip_with_manifest(name))
+          .create_async()
+          .await,
+      );
+    }
+    set_var(HEXIUM_BASE_URL_VAR, server.url());
+
+    let mut staged = Vec::new();
+    for name in ["First", "Second"] {
+      let mut vmod = ValheimMod::async_from_url(&format!("hex:Author-{name}-1.0.0"))
+        .await
+        .unwrap();
+      vmod.download().await.unwrap();
+      vmod.install().unwrap();
+      staged.push(vmod.staging_location.clone());
+    }
+
+    assert_ne!(staged[0], staged[1], "both mods staged to {:?}", staged[0]);
+    assert!(
+      staged[0].ends_with("Author-First-1.0.0.zip"),
+      "{:?}",
+      staged[0]
+    );
+    let plugins = PathBuf::from(common_paths::bepinex_plugin_directory());
+    assert!(plugins.join("First").join("First.dll").exists());
+    assert!(plugins.join("Second").join("Second.dll").exists());
+    for mock in &mocks {
+      mock.assert_async().await;
+    }
+    clear_env();
+  }
+
+  // Optional live test against Hexium; requires network.
+  // Enable with: HEXIUM_LIVE_TEST=1 cargo test -p odin hexium_live_resolve -- --ignored
+  #[tokio::test]
+  #[ignore]
+  #[serial]
+  async fn hexium_live_resolve() {
+    if std::env::var("HEXIUM_LIVE_TEST").unwrap_or_default() != "1" {
+      eprintln!("skipping live Hexium test; set HEXIUM_LIVE_TEST=1 to enable");
+      return;
+    }
+    clear_env();
+
+    for (pattern, expected_prefix) in [
+      ("hex:ValheimModding-Jotunn-*", "ValheimModding-Jotunn-"),
+      ("hex:ValheimModding-Jotunn-2.*", "ValheimModding-Jotunn-2."),
+      (
+        "hex:Azumatt-AzuCraftyBoxes-1.8.18",
+        "Azumatt-AzuCraftyBoxes-1.8.18",
+      ),
+    ] {
+      let vmod = ValheimMod::async_from_url(pattern)
+        .await
+        .unwrap_or_else(|e| panic!("{pattern} should resolve against the live API: {e}"));
+      assert!(
+        vmod.url.starts_with("https://cdn.hexium.gg/"),
+        "{pattern} should resolve to the Hexium CDN, got {}",
+        vmod.url
+      );
+      let package = vmod.package.as_deref().expect("package name");
+      assert!(
+        package.starts_with(expected_prefix),
+        "{pattern} resolved to {package}"
+      );
+      eprintln!("{pattern} -> {package} ({})", vmod.url);
+    }
   }
 }

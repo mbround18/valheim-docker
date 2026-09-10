@@ -11,6 +11,7 @@ pub mod steamcmd_args;
 pub use fetch_public_ip_address::fetch_public_address;
 
 pub mod is_valid_url;
+pub mod mod_repository;
 pub mod normalize_paths;
 pub mod parse_mod_string;
 pub mod thunderstore_auth;
@@ -21,6 +22,7 @@ pub use download_config::{
 };
 pub use http_pool::{send_with_backoff, HttpPool};
 pub use is_valid_url::is_valid_url;
+pub use mod_repository::{split_repository_prefix, ModRepository};
 pub use parse_mod_string::parse_mod_string;
 pub use thunderstore_auth::{is_thunderstore_host, thunderstore_base_url, with_thunderstore_auth};
 
