@@ -64,6 +64,22 @@ services:
         "
 ```
 
+### Choosing a Repository: Thunderstore or Hexium
+
+Dependency strings are looked up on Thunderstore by default. To use
+[Hexium](https://hexium.gg) instead, set `MODS_REPOSITORY=hexium`. To mix the two, prefix
+individual entries with `hex:` or `ts:`:
+
+```yaml
+environment:
+  - TYPE=BepInEx
+  - |
+    MODS=hex:Azumatt-AzuCraftyBoxes-1.8.18
+    ts:ValheimModding-Jotunn-2.30.0
+```
+
+See [Mod Repositories: Thunderstore and Hexium](./mod_repositories.md) for the details.
+
 ## Step 3: Run Docker Compose
 
 Once your configuration is set up, start your server by running:

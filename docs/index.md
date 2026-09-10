@@ -29,6 +29,8 @@ world backup support, and a user-friendly CLI interface.
 - [Rootless Design Guide](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/rootless_design.md)
 - [Getting Started With Mods](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/getting_started_with_mods.md)
   - Includes quick-start and wildcard version patterns
+- [Mod Repositories: Thunderstore and Hexium](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/mod_repositories.md)
+  - Pick a default with `MODS_REPOSITORY`, or mix per mod with `ts:` / `hex:` prefixes
 - [How to Transfer Files](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/how_to_transfer_files.md)
 - [Upgrading to Valheim 1.0](https://github.com/mbround18/valheim-docker/blob/main/docs/tutorials/upgrading_to_valheim_1_0.md)
   - Allowlist format change and recovering a stuck SteamCMD update

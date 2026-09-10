@@ -39,13 +39,7 @@ fn thunderstore_credentials() -> Option<(String, String)> {
 /// (`valheim.thunderstore.io`) and the package CDN (`gcdn.thunderstore.io`) are both
 /// Thunderstore-operated, so credentials belong on those too.
 pub fn is_thunderstore_host(host: &str) -> bool {
-  host.eq_ignore_ascii_case(THUNDERSTORE_HOST)
-    || host
-      .len()
-      .checked_sub(THUNDERSTORE_HOST.len() + 1)
-      .is_some_and(|split| {
-        host.as_bytes()[split] == b'.' && host[split + 1..].eq_ignore_ascii_case(THUNDERSTORE_HOST)
-      })
+  super::mod_repository::is_host_or_subdomain(host, THUNDERSTORE_HOST)
 }
 
 /// Attaches Thunderstore credentials to `builder` when `url` targets thunderstore.io or one

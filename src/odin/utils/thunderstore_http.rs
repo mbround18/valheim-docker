@@ -7,10 +7,11 @@
 //! paced, budgeted and retried on its own instead of disappearing inside a single
 //! `send()`. Mod downloads redirect from `thunderstore.io` to the package CDN, so the hop
 //! that actually transfers bytes is the one most worth pacing.
+//!
+//! Every mod repository in [`ModRepository`] goes through here, Hexium included, so each
+//! one gets the same pacing, credentials scoping and redirect handling.
 
-use super::thunderstore_auth::{
-  is_thunderstore_host, thunderstore_base_url, with_thunderstore_auth,
-};
+use super::mod_repository::{with_repository_auth, ModRepository};
 use crate::errors::ValheimModError;
 use crate::utils::http_pool::HttpPool;
 use reqwest::{RequestBuilder, Response};
@@ -53,21 +54,16 @@ fn is_redirect(status: reqwest::StatusCode) -> bool {
 
 /// Whether requests to `url` should go through the shared pool.
 ///
-/// Deliberately wider than [`is_thunderstore_host`], which gates *credentials*: a
-/// `THUNDERSTORE_BASE_URL` override points at a mirror that needs the same pacing and
-/// 429 handling, even though it must not receive our token.
+/// Deliberately wider than [`ModRepository::owns_host`], which gates *credentials*: a
+/// `THUNDERSTORE_BASE_URL` or `HEXIUM_BASE_URL` override points at a mirror that needs the
+/// same pacing and 429 handling, even though it must not receive our token.
 fn should_pace(url: &reqwest::Url) -> bool {
-  if url.host_str().is_some_and(is_thunderstore_host) {
-    return true;
-  }
-  reqwest::Url::parse(&thunderstore_base_url())
-    .ok()
-    .is_some_and(|base| base.host_str() == url.host_str() && base.port() == url.port())
+  ModRepository::ALL.iter().any(|repo| repo.serves(url))
 }
 
 /// Sends a mod request, following redirects by hand so every hop is paced.
 ///
-/// Hops to Thunderstore hosts go through the shared [`HttpPool`], picking up its
+/// Hops to mod repository hosts go through the shared [`HttpPool`], picking up its
 /// concurrency budget, rate-limit gate and `Retry-After` handling. Hops to anywhere else,
 /// such as a GitHub release asset, are sent directly since those hosts are not the ones
 /// rate limiting us.
@@ -76,7 +72,7 @@ pub(crate) async fn send(
   url: &str,
   label: &str,
 ) -> Result<Response, ValheimModError> {
-  let (client, request) = with_thunderstore_auth(request, url).build_split();
+  let (client, request) = with_repository_auth(request, url).build_split();
   let mut request = request.map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
 
   for hop in 0..=MAX_REDIRECTS {
