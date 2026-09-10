@@ -14,30 +14,37 @@ concurrency:
 
 jobs:
   images:
-    name: Publish ${{ matrix.image }}
+    name: Publish images
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        image: [odin, valheim]
+    env:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.46
         with:
           version: v0.0.1-prerelease.46
-      # Docker Hub and GHCR: :<major>.<minor>.<patch>, :<major>.<minor>, :<major> and
-      # :latest, with no `v` (--no-prefix), matching the tags published before paws.
-      - name: paws docker
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      # One job for both images, one after the other on the same Dagger engine. The
+      # Dockerfile compiles odin and huginn once, in odin-builder, and valheim copies them
+      # from the odin stage, so the valheim build reuses the layers the odin build just
+      # made. Separate jobs would each compile the Rust workspace from scratch.
+      #
+      # Tags, on Docker Hub and GHCR: :<major>.<minor>.<patch>, :<major>.<minor>, :<major>
+      # and :latest, with no `v` (--no-prefix), matching the tags published before paws.
+      - name: Publish odin
         run: >-
           paws docker
-          --image "mbround18/${{ matrix.image }}"
-          --target "${{ matrix.image }}"
+          --image mbround18/odin --target odin
           --version "${{ github.ref_name }}"
           --registries ghcr.io
-          --dockerhub-username mbround18
-          --ghcr-username mbround18
+          --dockerhub-username mbround18 --ghcr-username mbround18
+          --no-prefix --with-latest --tag-rollup
+      - name: Publish valheim
+        run: >-
+          paws docker
+          --image mbround18/valheim --target valheim
+          --version "${{ github.ref_name }}"
+          --registries ghcr.io
+          --dockerhub-username mbround18 --ghcr-username mbround18
           --no-prefix --with-latest --tag-rollup

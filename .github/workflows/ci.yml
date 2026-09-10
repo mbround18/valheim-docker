@@ -33,29 +33,27 @@ jobs:
       - run: paws ci --toolchain rust
 
   docker:
-    name: Docker (${{ matrix.image }})
+    name: Docker (odin, valheim)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        image: [odin, valheim]
+    env:
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.46
         with:
           version: v0.0.1-prerelease.46
+      # Both images in one job, on the same Dagger engine: valheim copies odin and huginn
+      # from the odin stage, so its build reuses the Rust compile the odin build just did.
       # Builds on every run. Pushes :<sha> tags on main, and on a PR only with the
       # `canary` label.
-      - name: paws docker
-        env:
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      - name: Docker odin
         run: >-
-          paws docker
-          --image "mbround18/${{ matrix.image }}"
-          --target "${{ matrix.image }}"
-          --dockerhub-username mbround18
-          --labels "$PR_LABELS"
-          --tag-sha
+          paws docker --image mbround18/odin --target odin
+          --dockerhub-username mbround18 --labels "$PR_LABELS" --tag-sha
+      - name: Docker valheim
+        run: >-
+          paws docker --image mbround18/valheim --target valheim
+          --dockerhub-username mbround18 --labels "$PR_LABELS" --tag-sha
 
   checks:
     name: Lint & shell tests
