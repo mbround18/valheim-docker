@@ -4,7 +4,7 @@ use crate::utils::get_server_name;
 use chrono::Local;
 use std::env;
 
-use log::{error, info};
+use log::{debug, error, info};
 
 pub fn invoke(title: String, message: String, webhook_url: Option<String>) {
   let name = env::var("TITLE").unwrap_or(title);
@@ -20,8 +20,11 @@ pub fn invoke(title: String, message: String, webhook_url: Option<String>) {
     timestamp: Local::now().to_rfc3339(),
   };
   if !webhook_url.is_empty() {
-    info!(
-      "Sending Broadcast: {}",
+    // Keep the confirmation concise: this is an interactive command, so one
+    // line is useful feedback, but the full payload is debugging detail.
+    info!("Sending Broadcast: {}", notification.event_type.name);
+    debug!(
+      "Broadcast payload: {}",
       serde_json::to_string_pretty(&notification).unwrap()
     );
     NotificationEvent::Broadcast.send_custom_notification(webhook_url.as_str(), &notification)

@@ -1,3 +1,34 @@
+# v3.7.2 (Wed Sep 09 2026)
+
+#### 🐛 Bug Fix
+
+- feat(webhooks): silent Discord notifications, Join Server button, JSON escaping fix [#1506](https://github.com/mbround18/valheim-docker/pull/1506) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+
+#### Authors: 2
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
+# v3.7.1 (Wed Sep 09 2026)
+
+#### 🐛 Bug Fix
+
+- fix: recover from stuck SteamCMD updates and repair the memory check [#1505](https://github.com/mbround18/valheim-docker/pull/1505) ([@mbround18](https://github.com/mbround18))
+- Update Rust crate reqwest to v0.13.5 [#1501](https://github.com/mbround18/valheim-docker/pull/1501) ([@renovate[bot]](https://github.com/renovate[bot]))
+
+#### 📝 Documentation
+
+- docs: fix relative links broken by the README move [#1500](https://github.com/mbround18/valheim-docker/pull/1500) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 2
+
+- [@renovate[bot]](https://github.com/renovate[bot])
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.7.0 (Tue Sep 08 2026)
 
 #### 🚀 Enhancement
