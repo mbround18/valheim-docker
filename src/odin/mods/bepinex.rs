@@ -103,8 +103,8 @@ impl BepInExEnvironment {
   #[cfg(test)]
   pub fn from_game_dir<P: AsRef<Path>>(game_dir_path: P) -> BepInExEnvironment {
     let game_dir = game_dir_path.as_ref().to_string_lossy().to_string();
-    let bepinex_dir = format!("{}/BepInEx", &game_dir);
-    let bepinex_preloader_dll = format!("{}/core/BepInEx.Preloader.dll", &bepinex_dir);
+    let bepinex_dir = format!("{}/BepInEx", game_dir);
+    let bepinex_preloader_dll = format!("{}/core/BepInEx.Preloader.dll", bepinex_dir);
 
     // Detect mode from the manifest and filesystem
     let mut doorstop_is_v4_plus =
@@ -115,15 +115,15 @@ impl BepInExEnvironment {
 
     debug!("Parsing Doorstop locations.");
     let doorstop_lib_default = if doorstop_is_v4_plus {
-      format!("{}/doorstop_libs/libdoorstop_x64.so", &game_dir)
+      format!("{}/doorstop_libs/libdoorstop_x64.so", game_dir)
     } else {
-      format!("{}/libdoorstop_x64.so", &game_dir)
+      format!("{}/libdoorstop_x64.so", game_dir)
     };
     let doorstop_lib = environment::fetch_var(DOORSTOP_LIB_VAR, &doorstop_lib_default);
     let doorstop_libs = parse_path(
       DOORSTOP_LIBS_VAR,
-      format!("{}/doorstop_libs", &game_dir),
-      format!("{}/doorstop", &bepinex_dir),
+      format!("{}/doorstop_libs", game_dir),
+      format!("{}/doorstop", bepinex_dir),
     );
     let doorstop_target_assembly =
       environment::fetch_var(DOORSTOP_TARGET_ASSEMBLY_VAR, &bepinex_preloader_dll);
@@ -132,15 +132,15 @@ impl BepInExEnvironment {
     // Prefer BepInEx/core_lib, fallback to BepInEx/core; no more game_dir/unstripped_corlib
     let doorstop_corlib_override_path = parse_path(
       DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
-      format!("{}/core_lib", &bepinex_dir),
-      format!("{}/core", &bepinex_dir),
+      format!("{}/core_lib", bepinex_dir),
+      format!("{}/core", bepinex_dir),
     );
 
     debug!("Parsing LD locations.");
     let ld_preload = environment::fetch_var(constants::LD_PRELOAD_VAR, "").add(&doorstop_lib);
     let ld_library_path = environment::fetch_var(
       constants::LD_LIBRARY_PATH_VAR,
-      format!("./linux64:{}", &doorstop_libs).as_str(),
+      format!("./linux64:{}", doorstop_libs).as_str(),
     );
 
     debug!("Returning environment");
