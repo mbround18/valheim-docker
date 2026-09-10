@@ -344,7 +344,7 @@ This repo includes a CLI tool called [Odin] for managing the server inside the c
 | CONNECT_REMOTE_HOST        | `<unset>`            | FALSE    | Optional host/IP override for `/connect/remote`. If unset, Huginn falls back to `PUBLIC_ADDRESS`, then `ADDRESS`, then Odin public IP resolution.                                  |
 | CONNECT_STEAM_APP_ID       | `892970`             | FALSE    | Steam app id used for connect deeplink generation (`steam://run/<APP_ID>//+connect%20HOST:PORT`).                                                                                  |
 
-- `/metrics` provides a Prometheus-style metrics output.
+- `/metrics` provides Prometheus metrics, listed in [metrics.md](./metrics.md).
 - `/status` provides a more traditional status page.
 - `/connect/local` redirects to `steam://run/892970//+connect%20127.0.0.1:PORT` (or returns JSON for browser CORS fetch clients).
 - `/connect/remote` redirects to `steam://run/892970//+connect%20<public host>:PORT` (or returns JSON for browser CORS fetch clients).
@@ -366,6 +366,10 @@ This repo includes a CLI tool called [Odin] for managing the server inside the c
 ### [BepInEx Support](./bepinex.md)
 
 As of [March 2021](./bepinex.md), the TYPE variable can be used to automatically install BepInEx. For details, see [Getting started with mods](./tutorials/getting_started_with_mods.md).
+
+### [Metrics](./metrics.md)
+
+Huginn exposes Prometheus metrics for the server, the players online and the host: [metrics reference](./metrics.md).
 
 ### [Webhook Support](./webhooks.md)
 
