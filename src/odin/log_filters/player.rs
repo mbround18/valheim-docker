@@ -10,7 +10,7 @@ use std::fmt::Display;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Player {
-  id: u64,
+  id: i64,
   zdo_index: u16,
   name: String,
   last_seen: i64,
@@ -63,7 +63,7 @@ impl PlayerList {
   }
 
   /// Records `id` as online under `name`; returns true if the player was not online before.
-  fn join(&mut self, id: u64, zdo_index: u16, name: String) -> bool {
+  fn join(&mut self, id: i64, zdo_index: u16, name: String) -> bool {
     let now = Utc::now().timestamp();
     let existing = self
       .players
@@ -83,12 +83,12 @@ impl PlayerList {
     is_new
   }
 
-  fn leave(&mut self, id: u64) -> Option<Player> {
+  fn leave(&mut self, id: i64) -> Option<Player> {
     let index = self.players.iter().position(|p| p.id == id)?;
     Some(self.players.remove(index))
   }
 
-  pub fn joined_event(id: u64, zdo_index: u16, name: String) {
+  pub fn joined_event(id: i64, zdo_index: u16, name: String) {
     let mut list = PlayerList::default();
     if list.join(id, zdo_index, name.clone()) {
       info!("Player '{name}' joined");
@@ -102,7 +102,7 @@ impl PlayerList {
     list.save();
   }
 
-  pub fn left_event(id: u64) {
+  pub fn left_event(id: i64) {
     let mut list = PlayerList::default();
     let Some(player) = list.leave(id) else {
       debug!("No player with ID '{id}' found.");
@@ -191,12 +191,12 @@ impl Display for PlayerList {
 pub fn handle_player_events(line: &str) {
   // Regex to capture player joining event with player name, ID and ZDO index
   let joined_regex =
-    Regex::new(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Got character ZDOID from (.*) : (\d+:\d+)")
+    Regex::new(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Got character ZDOID from (.*) : (-?\d+:\d+)")
       .expect("Failed to compile joined_regex");
 
   // Regex to capture player leaving event with the owning player ID
   let left_regex = Regex::new(
-    r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Destroying abandoned non persistent zdo \d+:\d+ owner (\d+)"
+    r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Destroying abandoned non persistent zdo -?\d+:\d+ owner (-?\d+)"
   ).expect("Failed to compile left_regex");
 
   // Handle player joining event
@@ -216,7 +216,7 @@ pub fn handle_player_events(line: &str) {
   // Handle player leaving event
   if let Some(captures) = left_regex.captures(line) {
     debug!("Matched leaving event: '{captures:?}'");
-    match captures[1].parse::<u64>() {
+    match captures[1].parse::<i64>() {
       Ok(id) => PlayerList::left_event(id),
       Err(e) => error!("Failed to process leaving event line '{line}': {e}"),
     }
@@ -224,7 +224,7 @@ pub fn handle_player_events(line: &str) {
 }
 
 /// Extracts the player name, ID, and ZDO index from regex captures for a joining event.
-fn extract_player_details(captures: &regex::Captures) -> Result<(String, u64, u16), String> {
+fn extract_player_details(captures: &regex::Captures) -> Result<(String, i64, u16), String> {
   debug!("Extracting player details from captures: '{captures:?}'");
   let name = captures
     .get(1)
@@ -242,7 +242,7 @@ fn extract_player_details(captures: &regex::Captures) -> Result<(String, u64, u1
 }
 
 /// Extracts the player ID and ZDO index from a string with the format `player_id:zdo_index`.
-fn extract_player_id_and_zdo_index(id_str: Option<&str>) -> Result<(u64, u16), String> {
+fn extract_player_id_and_zdo_index(id_str: Option<&str>) -> Result<(i64, u16), String> {
   debug!("Extracting player ID and ZDO index from string: '{id_str:?}'");
   match id_str {
     Some(id) => {
@@ -251,7 +251,7 @@ fn extract_player_id_and_zdo_index(id_str: Option<&str>) -> Result<(u64, u16), S
         return Err("ID split failed: Invalid format".to_string());
       }
       let player_id = parts[0]
-        .parse::<u64>()
+        .parse::<i64>()
         .map_err(|e| format!("ID parsing failed: {e}"))?;
       let zdo_index = parts[1]
         .parse::<u16>()
@@ -272,6 +272,19 @@ mod tests {
   pub trait NotificationEventTrait {
     #[allow(dead_code)]
     fn send_notification(&self, message: Option<String>);
+  }
+
+  #[test]
+  fn negative_session_ids_parse() {
+    assert_eq!(
+      extract_player_id_and_zdo_index(Some("-1234567890:1")),
+      Ok((-1234567890, 1))
+    );
+    let joined = Regex::new(
+      r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}: Got character ZDOID from (.*) : (-?\d+:\d+)",
+    )
+    .unwrap();
+    assert!(joined.is_match("09/10/2026 00:00:00: Got character ZDOID from Viking : -1234567890:1"));
   }
 
   #[test]
