@@ -39,12 +39,28 @@ All on this branch, with the paws CLI and dagger v0.21.8:
 | `paws release --local-build --no-upload --target x86_64-unknown-linux-gnu --package odin,huginn --binary-name odin,huginn` | ✅ 181 s. Both binaries built and passed the smoke test (`odin 2.2.0`, `huginn 0.1.1` after the fix above), then were packaged into `odin+huginn-<version>-x86_64-unknown-linux-gnu.zip` |
 | `paws workflow generate`                                                                                                   | detects Rust and Docker. Emits `paws-up`, then `paws ci --toolchain rust`, then `paws docker`, which is the starting point `ci.yml` builds on                                            |
 
+## What ran in GitHub Actions
+
+On the spike PR (`1811621`), every job in the new `ci.yml` passed on `ubuntu-latest`:
+
+| Job                                                           | Time   |
+| ------------------------------------------------------------- | ------ |
+| Rust (`paws ci`)                                              | 6 min  |
+| Docker (odin), build only                                     | 6 min  |
+| Docker (valheim), build only                                  | 8 min  |
+| Image checks (build, then permission check)                   | 3 min  |
+| Release rehearsal (`paws semver`, `paws release --no-upload`) | 4 min  |
+| Lint & shell tests                                            | <1 min |
+
+These were cold runs. The GitHub Actions cache backend `paws-up` enables should shorten repeat runs.
+
 ## Gaps, most important first
 
-1. **The changelog lists every commit, not every PR.**
-   - `paws changelog` titles each commit with its PR's title, so one merged PR becomes as many identical lines as it has commits. `v3.7.2..main` rendered #1512 about 15 times.
-   - It also includes `[skip ci]` changelog commits.
-   - `auto` wrote one line per PR. Fix it upstream in paws by grouping by PR and skipping `[skip ci]`, or keep `auto` for changelogs.
+1. **The changelog listed every commit, not every PR. Fixed in paws, not released yet.**
+   - The released `paws changelog` titles each commit with its PR's title, so one merged PR becomes as many identical lines as it has commits. `v3.7.2..main` rendered #1512 about 15 times.
+   - It also included `[skip ci]` changelog commits.
+   - Fixed upstream in paws commit `f27d1b1` (branch `fix/changelog-one-line-per-pr`): one line per PR, keyed by PR number and rendered `- <title> (#<number>)`, with `[skip ci]`/`[ci skip]` commits left out. Built from that branch, the same `v3.7.2..main` run gives five lines, #1507, #1508, #1509, #1511 and #1512, where it gave 26.
+   - `release.yml` gets the fix once a paws release containing it is out.
 2. **`paws docker` doesn't load images into the runner's Docker.** The build happens inside Dagger, so the permission check and the container e2e still need their own `docker buildx build --load`. That's a second image build per run.
 3. **Registry build cache.** The old workflows wrote `mbround18/<image>:buildcache`, and paws uses Dagger's cache (the GitHub Actions backend that `paws-up` enables) instead. The `--cache-from` in the image job will go stale once nothing writes that cache any more.
 4. **Clippy doesn't lint tests.** `paws ci` runs `cargo clippy -- -D warnings`, without `--all-targets`, so test code isn't linted. Current CI lints it. Fix upstream in paws.
