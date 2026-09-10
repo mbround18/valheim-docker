@@ -252,11 +252,17 @@ mod tests {
     );
   }
 
+  // Serial because it removes MODS_LOCATION: run alongside test_installed_mods_deduplication
+  // it could unset the variable between that test setting it and reading the mods.
   #[test]
+  #[serial]
   fn test_installed_mods_with_paths_empty_when_env_var_missing() {
-    let _ = env::var(MODS_LOCATION);
+    let original_mods_loc = env::var(MODS_LOCATION).ok();
     env::remove_var(MODS_LOCATION);
     let result = installed_mods_with_paths();
+    if let Some(loc) = original_mods_loc {
+      env::set_var(MODS_LOCATION, loc);
+    }
     assert!(result.is_empty());
   }
 
