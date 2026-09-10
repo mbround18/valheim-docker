@@ -91,7 +91,7 @@ username — so check the body, not just the status code.
 
 These predate the token support and are **non-functional**. Thunderstore ignores HTTP
 Basic auth rather than rejecting it: sending any username and password returns `200` as
-an *anonymous* user, so the pair never authenticated anything. They remain only for
+an _anonymous_ user, so the pair never authenticated anything. They remain only for
 backwards compatibility. Use `THUNDERSTORE_TOKEN`.
 
 ## Related

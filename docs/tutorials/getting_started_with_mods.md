@@ -151,13 +151,13 @@ environment:
 
 Related knobs, all optional:
 
-| Variable                       | Default | Description                                                                              |
-| ------------------------------ | ------- | ---------------------------------------------------------------------------------------- |
-| `CONCURRENT_DOWNLOADS_ENABLED` | `true`  | Set to `false` for one mod at a time and no chunked range downloads.                       |
+| Variable                       | Default | Description                                                                                 |
+| ------------------------------ | ------- | ------------------------------------------------------------------------------------------- |
+| `CONCURRENT_DOWNLOADS_ENABLED` | `true`  | Set to `false` for one mod at a time and no chunked range downloads.                        |
 | `MAX_CONCURRENT_DOWNLOADS`     | `4`     | Total requests in flight, across mods and chunks. Lower this (e.g. `2`) to reduce pressure. |
-| `DOWNLOAD_RETRY_ATTEMPTS`      | `5`     | Attempts per request before giving up.                                                     |
-| `DOWNLOAD_STAGGER_MS`          | `250`   | Milliseconds between concurrent download starts.                                           |
-| `MODS_CONTINUE_ON_FAILURE`     | `false` | Set to `true` to install the mods that succeeded instead of failing the whole run.         |
+| `DOWNLOAD_RETRY_ATTEMPTS`      | `5`     | Attempts per request before giving up.                                                      |
+| `DOWNLOAD_STAGGER_MS`          | `250`   | Milliseconds between concurrent download starts.                                            |
+| `MODS_CONTINUE_ON_FAILURE`     | `false` | Set to `true` to install the mods that succeeded instead of failing the whole run.          |
 
 By default one failed mod fails the entire install and the container restarts, which can
 turn a temporary rate limit into a restart loop. `MODS_CONTINUE_ON_FAILURE=true` starts

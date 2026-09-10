@@ -6,12 +6,12 @@ Huginn serves Prometheus metrics at `http://<host>:<HTTP_PORT>/metrics` (default
 
 Labels on every server metric: `name` (server name), `version` (Steam server version tag), `map` (world name).
 
-| Metric                         | Labels                 | Description                                                         |
-| ------------------------------ | ---------------------- | ------------------------------------------------------------------- |
+| Metric                         | Labels                 | Description                                                        |
+| ------------------------------ | ---------------------- | ------------------------------------------------------------------ |
 | `valheim_online`               | `name`,`version`,`map` | `1` when the server answers the Steam query, `0` when it does not. |
-| `valheim_current_player_count` | `name`,`version`,`map` | Players connected.                                                  |
-| `valheim_max_player_count`     | `name`,`version`,`map` | Player slots.                                                       |
-| `valheim_bepinex_installed`    | `name`,`version`,`map` | `1` when BepInEx is installed, else `0`.                            |
+| `valheim_current_player_count` | `name`,`version`,`map` | Players connected.                                                 |
+| `valheim_max_player_count`     | `name`,`version`,`map` | Player slots.                                                      |
+| `valheim_bepinex_installed`    | `name`,`version`,`map` | `1` when BepInEx is installed, else `0`.                           |
 
 ## Players
 

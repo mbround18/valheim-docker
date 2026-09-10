@@ -82,17 +82,17 @@ huginn &
 
 ## Endpoints
 
-| Endpoint          | Description                                                                                                                                                                       |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/metrics`        | Prometheus metrics for the server, players online and host; full list in [docs/metrics.md](../../docs/metrics.md). [Guide to setting up a dashboard](https://github.com/mbround18/valheim-docker/discussions/330).                                        |
-| `/status`         | Provides a more traditional JSON output of the server status.                                                                                                                     |
-| `/connect/local`  | Redirect to `steam://run/<CONNECT_STEAM_APP_ID>//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.     |
-| `/connect/remote` | Redirect to `steam://run/<CONNECT_STEAM_APP_ID>//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility. |
-| `/health`         | Returns `200` when the server is online, `503` when offline.                                                                                                                      |
-| `/readiness`      | Kubernetes readiness probe; `200` only if the server is online.                                                                                                                   |
-| `/liveness`       | Kubernetes liveness probe; returns `200` when Huginn is alive.                                                                                                                    |
-| `/mods`           | Returns installed mod metadata.                                                                                                                                                   |
-| `/players`        | Returns player counts plus `names` and `sessions` (`name`, `joined_at` unix time) of the players online, from the server log via Odin (Valheim's Steam query carries no names).                                                |
-| `/metadata`       | Returns safe Odin/Huginn runtime metadata (ports, build id, beta mode, scheduler toggles/schedules, cache/runtime info).                                                          |
-| `/openapi.json`   | OpenAPI specification for the HTTP API.                                                                                                                                           |
-| `/docs`           | Swagger UI for interactive API documentation.                                                                                                                                     |
+| Endpoint          | Description                                                                                                                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/metrics`        | Prometheus metrics for the server, players online and host; full list in [docs/metrics.md](../../docs/metrics.md). [Guide to setting up a dashboard](https://github.com/mbround18/valheim-docker/discussions/330). |
+| `/status`         | Provides a more traditional JSON output of the server status.                                                                                                                                                      |
+| `/connect/local`  | Redirect to `steam://run/<CONNECT_STEAM_APP_ID>//+connect%20127.0.0.1:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                                      |
+| `/connect/remote` | Redirect to `steam://run/<CONNECT_STEAM_APP_ID>//+connect%20<public host>:PORT`. Browser CORS fetch clients receive JSON `{ steam_url, host, port, redirect }` for compatibility.                                  |
+| `/health`         | Returns `200` when the server is online, `503` when offline.                                                                                                                                                       |
+| `/readiness`      | Kubernetes readiness probe; `200` only if the server is online.                                                                                                                                                    |
+| `/liveness`       | Kubernetes liveness probe; returns `200` when Huginn is alive.                                                                                                                                                     |
+| `/mods`           | Returns installed mod metadata.                                                                                                                                                                                    |
+| `/players`        | Returns player counts plus `names` and `sessions` (`name`, `joined_at` unix time) of the players online, from the server log via Odin (Valheim's Steam query carries no names).                                    |
+| `/metadata`       | Returns safe Odin/Huginn runtime metadata (ports, build id, beta mode, scheduler toggles/schedules, cache/runtime info).                                                                                           |
+| `/openapi.json`   | OpenAPI specification for the HTTP API.                                                                                                                                                                            |
+| `/docs`           | Swagger UI for interactive API documentation.                                                                                                                                                                      |
