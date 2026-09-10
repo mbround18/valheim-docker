@@ -1,5 +1,6 @@
 use crate::{
   files::config::load_config,
+  log_filters::PlayerList,
   notifications::enums::{event_status::EventStatus, notification_event::NotificationEvent},
   server,
 };
@@ -10,6 +11,7 @@ use std::process::exit;
 pub fn invoke(dry_run: bool) {
   info!(target: "commands_start", "Setting up start scripts...");
   NotificationEvent::Start(EventStatus::Running).send_notification(None);
+  PlayerList::clear();
   debug!(target: "commands_start", "Loading config file...");
   let config = load_config();
   debug!(target: "commands_start", "Dry run condition: {dry_run}");

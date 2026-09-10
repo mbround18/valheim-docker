@@ -9,45 +9,45 @@ Odin is a CLI tool for installing, starting, and stopping [Valheim] servers.
 > These are set automatically by Odin.
 > You usually do not need to set them unless you are intentionally overriding advanced behavior.
 
-| Variable                        | Default                                 | Required | Description                                                                                                                |
-| ------------------------------- | --------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| DEBUG_MODE                      | `0`                                     | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing.                                                       |
-| DRY_RUN                         | `0`                                     | FALSE    | Set to `1` to print command intent without executing mutating operations.                                                  |
-| I_ACCEPT_TO_RUN_THINGS_UNSAFELY | `0`                                     | FALSE    | Root-execution acknowledgement flag for restricted/safety-sensitive paths.                                                 |
-| ODIN_CONFIG_FILE                | `config.json`                           | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host |
-| ODIN_WORKING_DIR                | `$PWD`                                  | FALSE    | Sets the directory you wish to run `odin` commands in and can be used to set where valheim is managed from.                |
-| SERVER_EXECUTABLE_PATH          | `./valheim_server.x86_64`               | FALSE    | Override executable path used by generated config/start flow.                                                              |
-| SERVER_EXTRA_LAUNCH_ARGS        | ``                                      | FALSE    | Extra launch args appended to generated Valheim server start command.                                                      |
-| ADDITIONAL_SERVER_ARGS          | ``                                      | FALSE    | Legacy/compat extra launch args appended after `SERVER_EXTRA_LAUNCH_ARGS`.                                                 |
-| SAVE_INTERVAL                   | `<unset>`                               | FALSE    | Optional save interval (seconds) passed via configure flow.                                                                |
-| TITLE                           | `Broadcast`                             | FALSE    | Default title used by `odin notify` when no explicit title argument is provided.                                           |
-| MESSAGE                         | `Test Notification`                     | FALSE    | Default message used by `odin notify` when no explicit message argument is provided.                                       |
-| USE_PUBLIC_BETA                 | `0`                                     | FALSE    | Enables beta branch behavior when combined with `BETA_BRANCH`/`BETA_BRANCH_PASSWORD`.                                      |
-| VALIDATE_ON_INSTALL             | `1`                                     | FALSE    | Set to `0` to skip SteamCMD validation on install/update.                                                                  |
-| CLEAN_INSTALL                   | `0`                                     | FALSE    | Set to `1` to clean install directories before installing (with staged-update behavior exceptions).                        |
-| CLEAR_STEAM_CACHE_ON_INSTALL    | `1`                                     | FALSE    | Set to `0` to disable pre-install Steam cache cleanup.                                                                     |
-| SHOW_FALLBACK_HANDLER           | `0`                                     | FALSE    | Set to `1` to include fallback-handler noise in `odin logs` output.                                                        |
-| SHOW_SHADER_WARNINGS            | `0`                                     | FALSE    | Set to `1` to include shader warnings in `odin logs` output.                                                               |
-| STEAMCMD_RETRY_ATTEMPTS         | `3`                                     | FALSE    | Number of retry attempts for SteamCMD commands (`install`, app info queries).                                              |
-| STEAMCMD_RETRY_BASE_DELAY_SECS  | `5`                                     | FALSE    | Base delay in seconds used for exponential backoff between SteamCMD retries.                                               |
-| STEAMCMD_RESET_ON_FAILURE       | `1`                                     | FALSE    | Set to `0` to stop Odin clearing SteamCMD download state and retrying once after a failed app update (`state is 0x6`).     |
-| STAGED_UPDATES                  | `0`                                     | FALSE    | Set to `1` to install into a staging directory first and only promote to live after validation succeeds.                   |
-| STAGED_INSTALL_DIR              | `/home/steam/.staging/valheim-pending`  | FALSE    | Override the staging installation directory when `STAGED_UPDATES=1`.                                                       |
-| ODIN_SCHEDULER_STATE_FILE       | `${GAME_LOCATION}/logs/jobs_state.json` | FALSE    | Override where Odin persists scheduler runtime state.                                                                      |
-| CONCURRENT_DOWNLOADS_ENABLED    | `true`                                  | FALSE    | Set to `false` to download mods one at a time and skip chunked range downloads (avoids Thunderstore 429 rate limiting).     |
-| MAX_CONCURRENT_DOWNLOADS        | `4`                                     | FALSE    | Total requests in flight, shared across mod downloads and the range chunks each splits into.                               |
-| DOWNLOAD_RETRY_ATTEMPTS         | `5`                                     | FALSE    | Attempts per mod request; 429/5xx responses honor `Retry-After` and otherwise back off exponentially (capped at 60s).       |
-| DOWNLOAD_STAGGER_MS             | `250`                                   | FALSE    | Milliseconds between concurrent download starts so requests are spaced out. Set to `0` to disable.                          |
-| DOWNLOAD_POOL_MAX_IDLE_PER_HOST | `8`                                     | FALSE    | Idle keep-alive connections retained per host by the shared HTTP pool.                                                     |
-| DOWNLOAD_POOL_IDLE_TIMEOUT_SECS | `90`                                    | FALSE    | How long an idle pooled connection is kept before being dropped.                                                           |
-| DOWNLOAD_REQUEST_TIMEOUT_SECS   | `300`                                   | FALSE    | Whole-request timeout for mod downloads.                                                                                   |
-| DOWNLOAD_CONNECT_TIMEOUT_SECS   | `15`                                    | FALSE    | TCP/TLS connect timeout.                                                                                                   |
-| MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                  |
-| THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Service account token (`tss_...`), sent as `Authorization: Bearer`. Optional: the endpoints Odin reads are public. |
-| THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                          |
+| Variable                        | Default                                 | Required | Description                                                                                                                         |
+| ------------------------------- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| DEBUG_MODE                      | `0`                                     | FALSE    | Set to `1` if you want a noisy output and to see what Odin is doing.                                                                |
+| DRY_RUN                         | `0`                                     | FALSE    | Set to `1` to print command intent without executing mutating operations.                                                           |
+| I_ACCEPT_TO_RUN_THINGS_UNSAFELY | `0`                                     | FALSE    | Root-execution acknowledgement flag for restricted/safety-sensitive paths.                                                          |
+| ODIN_CONFIG_FILE                | `config.json`                           | FALSE    | This file stores start parameters to restart the instance, change if you run multiple container instances on the same host          |
+| ODIN_WORKING_DIR                | `$PWD`                                  | FALSE    | Sets the directory you wish to run `odin` commands in and can be used to set where valheim is managed from.                         |
+| SERVER_EXECUTABLE_PATH          | `./valheim_server.x86_64`               | FALSE    | Override executable path used by generated config/start flow.                                                                       |
+| SERVER_EXTRA_LAUNCH_ARGS        | ``                                      | FALSE    | Extra launch args appended to generated Valheim server start command.                                                               |
+| ADDITIONAL_SERVER_ARGS          | ``                                      | FALSE    | Legacy/compat extra launch args appended after `SERVER_EXTRA_LAUNCH_ARGS`.                                                          |
+| SAVE_INTERVAL                   | `<unset>`                               | FALSE    | Optional save interval (seconds) passed via configure flow.                                                                         |
+| TITLE                           | `Broadcast`                             | FALSE    | Default title used by `odin notify` when no explicit title argument is provided.                                                    |
+| MESSAGE                         | `Test Notification`                     | FALSE    | Default message used by `odin notify` when no explicit message argument is provided.                                                |
+| USE_PUBLIC_BETA                 | `0`                                     | FALSE    | Enables beta branch behavior when combined with `BETA_BRANCH`/`BETA_BRANCH_PASSWORD`.                                               |
+| VALIDATE_ON_INSTALL             | `1`                                     | FALSE    | Set to `0` to skip SteamCMD validation on install/update.                                                                           |
+| CLEAN_INSTALL                   | `0`                                     | FALSE    | Set to `1` to clean install directories before installing (with staged-update behavior exceptions).                                 |
+| CLEAR_STEAM_CACHE_ON_INSTALL    | `1`                                     | FALSE    | Set to `0` to disable pre-install Steam cache cleanup.                                                                              |
+| SHOW_FALLBACK_HANDLER           | `0`                                     | FALSE    | Set to `1` to include fallback-handler noise in `odin logs` output.                                                                 |
+| SHOW_SHADER_WARNINGS            | `0`                                     | FALSE    | Set to `1` to include shader warnings in `odin logs` output.                                                                        |
+| STEAMCMD_RETRY_ATTEMPTS         | `3`                                     | FALSE    | Number of retry attempts for SteamCMD commands (`install`, app info queries).                                                       |
+| STEAMCMD_RETRY_BASE_DELAY_SECS  | `5`                                     | FALSE    | Base delay in seconds used for exponential backoff between SteamCMD retries.                                                        |
+| STEAMCMD_RESET_ON_FAILURE       | `1`                                     | FALSE    | Set to `0` to stop Odin clearing SteamCMD download state and retrying once after a failed app update (`state is 0x6`).              |
+| STAGED_UPDATES                  | `0`                                     | FALSE    | Set to `1` to install into a staging directory first and only promote to live after validation succeeds.                            |
+| STAGED_INSTALL_DIR              | `/home/steam/.staging/valheim-pending`  | FALSE    | Override the staging installation directory when `STAGED_UPDATES=1`.                                                                |
+| ODIN_SCHEDULER_STATE_FILE       | `${GAME_LOCATION}/logs/jobs_state.json` | FALSE    | Override where Odin persists scheduler runtime state.                                                                               |
+| CONCURRENT_DOWNLOADS_ENABLED    | `true`                                  | FALSE    | Set to `false` to download mods one at a time and skip chunked range downloads (avoids Thunderstore 429 rate limiting).             |
+| MAX_CONCURRENT_DOWNLOADS        | `4`                                     | FALSE    | Total requests in flight, shared across mod downloads and the range chunks each splits into.                                        |
+| DOWNLOAD_RETRY_ATTEMPTS         | `5`                                     | FALSE    | Attempts per mod request; 429/5xx responses honor `Retry-After` and otherwise back off exponentially (capped at 60s).               |
+| DOWNLOAD_STAGGER_MS             | `250`                                   | FALSE    | Milliseconds between concurrent download starts so requests are spaced out. Set to `0` to disable.                                  |
+| DOWNLOAD_POOL_MAX_IDLE_PER_HOST | `8`                                     | FALSE    | Idle keep-alive connections retained per host by the shared HTTP pool.                                                              |
+| DOWNLOAD_POOL_IDLE_TIMEOUT_SECS | `90`                                    | FALSE    | How long an idle pooled connection is kept before being dropped.                                                                    |
+| DOWNLOAD_REQUEST_TIMEOUT_SECS   | `300`                                   | FALSE    | Whole-request timeout for mod downloads.                                                                                            |
+| DOWNLOAD_CONNECT_TIMEOUT_SECS   | `15`                                    | FALSE    | TCP/TLS connect timeout.                                                                                                            |
+| MODS_CONTINUE_ON_FAILURE        | `false`                                 | FALSE    | Set to `true` to install the mods that succeeded and warn about the rest instead of failing the whole run.                          |
+| THUNDERSTORE_TOKEN              | `<unset>`                               | FALSE    | Service account token (`tss_...`), sent as `Authorization: Bearer`. Optional: the endpoints Odin reads are public.                  |
+| THUNDERSTORE_BASE_URL           | `https://thunderstore.io`               | FALSE    | Base URL for Thunderstore API lookups and download URLs; override for mirrors or to mock in tests.                                  |
 | MODS_REPOSITORY                 | `thunderstore`                          | FALSE    | Default repository for unprefixed `MODS` entries: `thunderstore`/`ts` or `hexium`/`hex`. Entries can override it with `ts:`/`hex:`. |
-| HEXIUM_TOKEN                    | `<unset>`                               | FALSE    | Optional Hexium API token (`hexium_...`), sent as `Authorization: Bearer` to `hexium.gg` and its subdomains only.          |
-| HEXIUM_BASE_URL                 | `https://hexium.gg`                     | FALSE    | Base URL for Hexium API lookups; override for mirrors or to mock in tests.                                                  |
+| HEXIUM_TOKEN                    | `<unset>`                               | FALSE    | Optional Hexium API token (`hexium_...`), sent as `Authorization: Bearer` to `hexium.gg` and its subdomains only.                   |
+| HEXIUM_BASE_URL                 | `https://hexium.gg`                     | FALSE    | Base URL for Hexium API lookups; override for mirrors or to mock in tests.                                                          |
 
 ## Mod Download Pool
 
@@ -97,7 +97,7 @@ how to create one.
 
 Verified against the live API: `Authorization: Bearer <tss_ token>` is honoured - a bad
 token gets a 401 from `/api/experimental/current-user/`, which is what proves the scheme
-is correct. HTTP Basic auth is *ignored* rather than rejected, answering 200 as an
+is correct. HTTP Basic auth is _ignored_ rather than rejected, answering 200 as an
 anonymous user, so `THUNDERSTORE_USERNAME`/`THUNDERSTORE_PASSWORD` never actually
 authenticated anything and are kept only for backwards compatibility.
 

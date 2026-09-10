@@ -15,3 +15,9 @@ ln -s "$HOME/.local/share/Steam/steamcmd/linux64" "$HOME/.steam/sdk64"
 ln -s "$HOME/.steam/sdk32/steamclient.so" "$HOME/.steam/sdk32/steamservice.so"
 
 steamcmd +quit
+
+# Everything above (~/.local/share/Steam, steamcmd's install and self-update dir) is
+# created after setup-system.sh made /home/steam group-writable, so repeat that here. A
+# runtime uid that only shares the steam group - `runAsUser: 111` from before steam became
+# uid 1000, or an orchestrator-assigned uid - must still pass odin's install preflight.
+chmod -R g+rwX "$HOME"

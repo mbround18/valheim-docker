@@ -47,9 +47,29 @@ jobs:
             echo "> These are development images, expect bugs!!"
           fi
 
+  # Runs in-repo instead of through mbround18/gh-reusable's Dagger pipeline, which fails
+  # before cargo starts (`TypeError: Cannot read properties of undefined (reading
+  # 'ClassDeclaration')`) and so could not report anything about this code.
   build_rust:
     name: Build Rust
-    uses: mbround18/gh-reusable/.github/workflows/rust-build-n-test.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          toolchain: stable
+          components: clippy rustfmt
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --workspace
 
   build_docker:
     name: "Build Docker"
@@ -91,6 +111,7 @@ jobs:
           file: ./Dockerfile
           target: ${{ matrix.image }}
           push: ${{ matrix.push }}
+          load: ${{ matrix.image == 'valheim' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=mbround18/${{ matrix.image }}:buildcache
@@ -100,6 +121,10 @@ jobs:
             "GITHUB_REF=${GITHUB_REF}"
             "GITHUB_REPOSITORY=${GITHUB_REPOSITORY}"
             "ODIN_IMAGE_VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}"
+
+      - name: Check image permissions
+        if: matrix.image == 'valheim'
+        run: bash ./.github/scripts/check-image-permissions.sh "${{ fromJSON(steps.meta.outputs.json).tags[0] }}"
 
       - name: Publish Image Summary
         if: matrix.push

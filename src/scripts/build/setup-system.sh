@@ -36,6 +36,20 @@ else
   fi
 fi
 
+# The base image ships an `ubuntu` account on uid 1000. Retire whichever account holds
+# the target uid so `steam` (the documented `user: 1000:1000`) can own it.
+EXISTING_UID_USER="$(getent passwd "${PUID}" | cut -d: -f1 || true)"
+if [ -n "${EXISTING_UID_USER}" ] && [ "${EXISTING_UID_USER}" != "steam" ]; then
+  echo "uid ${PUID} is held by '${EXISTING_UID_USER}'; removing it in favour of 'steam'"
+  # userdel can delete the account yet still exit non-zero (e.g. no mail spool to remove),
+  # and a second userdel would then fail on the missing user. Check the outcome instead.
+  userdel -r "${EXISTING_UID_USER}" || true
+  if getent passwd "${PUID}" >/dev/null; then
+    echo "uid ${PUID} is still held by '$(getent passwd "${PUID}" | cut -d: -f1)'" >&2
+    exit 1
+  fi
+fi
+
 # Create/update steam user
 if id -u steam >/dev/null 2>&1; then
   usermod -u "${PUID}" -g "${PGID}" -d /home/steam -s /bin/bash steam || true
@@ -43,8 +57,18 @@ else
   useradd -u "${PUID}" -g "${PGID}" -d /home/steam -m -s /bin/bash steam
 fi
 
+# steam was uid 111 before it became 1000, and existing deployments still run as
+# `runAsUser: 111`. The Valheim server segfaults at startup (in PlayFab's logger) when its
+# uid has no passwd entry, so keep one for 111 that shares steam's group and home.
+LEGACY_UID=111
+if [ "${PUID}" != "${LEGACY_UID}" ] && ! getent passwd "${LEGACY_UID}" >/dev/null; then
+  useradd -u "${LEGACY_UID}" -g "${PGID}" -d /home/steam -M -s /bin/bash steam-legacy
+fi
+
 # Ensure directories and permissions
 mkdir -p /home/steam/.steam/steam/package
 mkdir -p /home/steam /home/steam/valheim /home/steam/.steam
 mkdir -p /tmp/dumps && chmod ugo+rw /tmp/dumps
 chown -R "${PUID}:${PGID}" /home/steam
+# Group-writable home so a runtime uid that only shares the gid (arbitrary-uid orchestrators) still works.
+chmod -R g+rwX /home/steam

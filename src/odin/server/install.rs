@@ -12,7 +12,11 @@ use std::{
 use crate::utils::common_paths;
 use crate::utils::fs::remove_path_cautious;
 use crate::utils::steamcmd_args::{compose_app_update_arg, BetaConfig};
-use crate::{constants, steamcmd::run_with_retries, utils::get_working_dir};
+use crate::{
+  constants,
+  steamcmd::{output_with_retries, run_with_retries},
+  utils::get_working_dir,
+};
 use crate::{executable::parse_command_args, utils::environment};
 use walkdir::WalkDir;
 
@@ -43,6 +47,28 @@ pub fn add_beta_args(
     args.push(String::from("validate"));
   } else {
     debug!("Skipping SteamCMD validate: VALIDATE_ON_INSTALL=0");
+  }
+}
+
+/// `+app_update` can race SteamCMD's own app-info sync (`Missing configuration`).
+pub(crate) fn app_info_sync_args(app_id: i64) -> Vec<String> {
+  vec![
+    String::from("+@ShutdownOnFailedCommand 1"),
+    String::from("+login anonymous"),
+    String::from("+app_info_update 1"),
+    format!("+app_info_print {app_id}"),
+    String::from("+quit"),
+  ]
+}
+
+fn sync_app_info(app_id: i64) {
+  match output_with_retries(&app_info_sync_args(app_id)) {
+    Ok(output) if output.status.success() => {}
+    Ok(output) => warn!(
+      "SteamCMD app info sync exited with {:?}",
+      output.status.code()
+    ),
+    Err(e) => warn!("SteamCMD app info sync could not run ({e})"),
   }
 }
 
@@ -157,6 +183,12 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   args = parse_command_args(args);
 
   let mut result = run_with_retries(&args);
+
+  if !matches!(&result, Ok(status) if status.success()) {
+    warn!("SteamCMD app update did not succeed; syncing app info for {app_id} and retrying");
+    sync_app_info(app_id);
+    result = run_with_retries(&args);
+  }
 
   // A failed app_update can leave SteamCMD's download bookkeeping stale, which
   // it then reports as `state is 0x6 after update job` on every subsequent run.
@@ -982,6 +1014,20 @@ mod tests {
     let mut args = vec![];
     add_beta_args(&mut args, use_public_beta, beta_branch, beta_password);
     assert_eq!(args, expected);
+  }
+
+  #[test]
+  fn test_app_info_sync_args_force_sync_then_wait_for_the_app() {
+    assert_eq!(
+      app_info_sync_args(896660),
+      vec![
+        "+@ShutdownOnFailedCommand 1",
+        "+login anonymous",
+        "+app_info_update 1",
+        "+app_info_print 896660",
+        "+quit"
+      ]
+    );
   }
 
   #[test]

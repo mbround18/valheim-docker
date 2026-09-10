@@ -52,7 +52,7 @@ USER root
 
 ENV TZ=America/Los_Angeles \
     DEBIAN_FRONTEND=noninteractive \
-    PUID=111 \
+    PUID=1000 \
     PGID=1000
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
