@@ -90,9 +90,14 @@ impl PlayerList {
 
   pub fn joined_event(id: u64, zdo_index: u16, name: String) {
     let mut list = PlayerList::default();
-    if list.join(id, zdo_index, name.clone()) && is_env_var_truthy("PLAYER_EVENT_NOTIFICATIONS") {
-      NotificationEvent::Player(Joined)
-        .send_notification(Some(format!("Player {name} has joined the adventure!")));
+    if list.join(id, zdo_index, name.clone()) {
+      info!("Player '{name}' joined");
+      if is_env_var_truthy("PLAYER_EVENT_NOTIFICATIONS") {
+        NotificationEvent::Player(Joined)
+          .send_notification(Some(format!("Player {name} has joined the adventure!")));
+      }
+    } else {
+      info!("Player '{name}' respawned");
     }
     list.save();
   }
@@ -103,8 +108,9 @@ impl PlayerList {
       debug!("No player with ID '{id}' found.");
       return;
     };
+    let name = &player.name;
+    info!("Player '{name}' left");
     if is_env_var_truthy("PLAYER_EVENT_NOTIFICATIONS") {
-      let name = &player.name;
       NotificationEvent::Player(Left)
         .send_notification(Some(format!("Player {name} has left the adventure")));
     }
@@ -200,7 +206,7 @@ pub fn handle_player_events(line: &str) {
       // `0:0` is the character despawning on death, not a join
       Ok((_, 0, _)) => {}
       Ok((name, id, zdo_index)) => {
-        info!("Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining");
+        debug!("Player '{name}' with ID '{id}' and ZDO index '{zdo_index}' is joining");
         PlayerList::joined_event(id, zdo_index, name);
       }
       Err(e) => error!("Failed to process joining event line '{line}': {e}"),
