@@ -46,6 +46,9 @@ docker-dev: setup ## Build and start docker services (dev)
 smoke-rootless: setup ## Smoke test container startup as default user and explicit 1000:1000
 	@bash ./.github/scripts/smoke-rootless-users.sh
 
+check-image-permissions: ## Check IMAGE=<valheim image> is writable by uid 1000, legacy 111 and a shared-group uid
+	@bash ./.github/scripts/check-image-permissions.sh "$(IMAGE)"
+
 test: ## Run Rust tests (cargo test)
 	cargo test
 

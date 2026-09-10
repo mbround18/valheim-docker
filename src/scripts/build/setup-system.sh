@@ -41,7 +41,13 @@ fi
 EXISTING_UID_USER="$(getent passwd "${PUID}" | cut -d: -f1 || true)"
 if [ -n "${EXISTING_UID_USER}" ] && [ "${EXISTING_UID_USER}" != "steam" ]; then
   echo "uid ${PUID} is held by '${EXISTING_UID_USER}'; removing it in favour of 'steam'"
-  userdel -r "${EXISTING_UID_USER}" 2>/dev/null || userdel "${EXISTING_UID_USER}"
+  # userdel can delete the account yet still exit non-zero (e.g. no mail spool to remove),
+  # and a second userdel would then fail on the missing user. Check the outcome instead.
+  userdel -r "${EXISTING_UID_USER}" || true
+  if getent passwd "${PUID}" >/dev/null; then
+    echo "uid ${PUID} is still held by '$(getent passwd "${PUID}" | cut -d: -f1)'" >&2
+    exit 1
+  fi
 fi
 
 # Create/update steam user
