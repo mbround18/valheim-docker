@@ -226,6 +226,16 @@ pub(crate) fn fetch_metadata() -> MetadataResponse {
 
 #[tokio::main]
 async fn main() {
+  // `huginn --version` prints and exits instead of starting the server. Release tooling
+  // (paws release's smoke test) checks a built binary by running `<binary> --version`.
+  if std::env::args()
+    .skip(1)
+    .any(|arg| arg == "--version" || arg == "-V")
+  {
+    println!("huginn {}", env!("CARGO_PKG_VERSION"));
+    return;
+  }
+
   // Logger
   init_logging_and_tracing().expect("Failed to initialize logging and tracing");
 

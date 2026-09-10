@@ -1,0 +1,106 @@
+name: CI
+
+# Every pipeline here is a `paws` command (https://github.com/mbround18/paws), so it runs
+# the same way on a laptop: see the `paws-*` targets in the Makefile. The only plain steps
+# are the repo's own scripts (prettier, shell tests, image checks), which have no paws
+# equivalent.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # PR labels, passed through the environment rather than interpolated into shell.
+  PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+
+jobs:
+  rust:
+    name: Rust (paws ci)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mbround18/paws/actions/paws-up@main
+      # cargo fmt --check, clippy -D warnings, build and test, in rust:1-bookworm.
+      - run: paws ci --toolchain rust
+
+  docker:
+    name: Docker (${{ matrix.image }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [odin, valheim]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mbround18/paws/actions/paws-up@main
+      # Builds on every run. Pushes :<sha> tags on main, and on a PR only with the
+      # `canary` label.
+      - name: paws docker
+        env:
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: >-
+          paws docker
+          --image "mbround18/${{ matrix.image }}"
+          --target "${{ matrix.image }}"
+          --dockerhub-username mbround18
+          --labels "$PR_LABELS"
+          --tag-sha
+
+  checks:
+    name: Lint & shell tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Prettier
+        run: npx -y prettier --check ./
+      - name: Shell tests
+        run: ./src/scripts/tests/entrypoint_test.sh
+
+  image:
+    name: Image checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+      # paws docker builds inside Dagger and does not load the result into the runner's
+      # Docker daemon, which these container-level checks run against.
+      - name: Build valheim image into the local daemon
+        run: >-
+          docker buildx build --load --target valheim -t valheim-docker:ci
+          --cache-from type=registry,ref=mbround18/valheim:buildcache .
+      - name: Image permissions
+        run: ./.github/scripts/check-image-permissions.sh valheim-docker:ci
+      # Downloads the ~2 GB dedicated server, so only on demand.
+      - name: Container end-to-end
+        if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')
+        run: ./.github/scripts/e2e-container.sh valheim-docker:ci
+
+  # Runs the release pipeline on every PR without publishing anything, so a broken
+  # release is caught before it reaches main.
+  release-rehearsal:
+    name: Release rehearsal
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: mbround18/paws/actions/paws-up@main
+      - name: Next version (not tagged)
+        id: semver
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: echo "version=$(paws semver --labels "$PR_LABELS" | tail -1)" >> "$GITHUB_OUTPUT"
+      - name: Build and smoke-test release binaries (not uploaded)
+        run: >-
+          paws release --local-build --no-upload
+          --target x86_64-unknown-linux-gnu
+          --package odin,huginn --binary-name odin,huginn
+          --tag "${{ steps.semver.outputs.version }}"

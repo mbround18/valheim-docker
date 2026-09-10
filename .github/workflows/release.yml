@@ -1,54 +1,69 @@
 name: Release
 
-on: [push]
-
-env:
-  GH_TOKEN: "${{ secrets.GH_TOKEN }}"
+# Replaces the Intuit `auto` release train and the separate Docker Release workflow with
+# paws: version from the merged PR's labels, tag + GitHub Release, changelog, binaries,
+# then images, all in one run so nothing depends on a release event re-triggering CI.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
-    name: Release Train WooohWoooohh
+    name: Tag, changelog & binaries
+    # The changelog commit carries [skip ci]; don't release it again.
+    if: "!contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, 'ci skip')"
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci')"
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+    env:
+      # A token that may push to main (the changelog commit) and whose release/tag writes
+      # count as a real user, as `auto` used before.
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
-      # Check out the repository
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: "${{ secrets.GH_TOKEN }}"
+      - uses: mbround18/paws/actions/paws-up@main
+      # Bump from the merged PR's major/minor/patch label, then tag + GitHub Release.
+      - name: Tag and GitHub Release
+        id: semver
+        run: echo "version=$(paws semver --push | tail -1)" >> "$GITHUB_OUTPUT"
+      - name: Changelog
+        run: paws changelog --version "${{ steps.semver.outputs.version }}" --commit
+      - name: Release binaries
+        run: >-
+          paws release --local-build
+          --target x86_64-unknown-linux-gnu
+          --package odin,huginn --binary-name odin,huginn
+          --tag "${{ steps.semver.outputs.version }}"
 
-      # Set up Rust with the stable toolchain
-      - name: Setup | Rust | Stable
-        uses: actions-rust-lang/setup-rust-toolchain@v2
-        with:
-          toolchain: stable
-          components: clippy rustfmt
-
-      # Cache Cargo build files to speed up builds
-      - uses: actions/cache@v6
-        name: Cache Cargo Files
-        with:
-          path: |
-            target/release
-            target/debug
-          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
-
-      # Build the project with the release profile
-      - name: Build Release
-        run: make release PROFILE=production
-
-      # Create a ZIP archive of the release binaries
-      - uses: vimtor/action-zip@v1
-        with:
-          files: target/release/odin target/release/huginn
-          dest: tmp/bundle.zip
-
-      # Use the Auto Release Tool by Intuit
-      - name: Auto Release Tool by Intuit
-        uses: mbround18/auto@v1.5.0
-        with:
-          token: ${{ secrets.GH_TOKEN }}
+  images:
+    name: Publish ${{ matrix.image }}
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [odin, valheim]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: mbround18/paws/actions/paws-up@main
+      # Docker Hub and GHCR: :<version>, :latest, :<major> and :<major>.<minor>, :sha-<sha>.
+      - name: paws docker
+        env:
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: >-
+          paws docker
+          --image "mbround18/${{ matrix.image }}"
+          --target "${{ matrix.image }}"
+          --version "${{ needs.release.outputs.version }}"
+          --registries ghcr.io
+          --dockerhub-username mbround18
+          --ghcr-username mbround18
+          --with-latest --tag-rollup --tag-sha
