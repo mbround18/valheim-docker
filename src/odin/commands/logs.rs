@@ -71,9 +71,7 @@ fn handle_line_core(path: &PathBuf, line: &str) {
     return;
   }
 
-  if is_env_var_truthy("PLAYER_EVENT_NOTIFICATIONS") {
-    handle_player_events(line);
-  }
+  handle_player_events(line);
 
   let file_name = match path.file_name().and_then(|name| name.to_str()) {
     Some(name) => name,

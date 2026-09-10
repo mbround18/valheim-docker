@@ -11,7 +11,7 @@ pub mod steamcmd;
 pub mod traits;
 pub mod utils;
 
-mod log_filters;
+pub mod log_filters;
 
 // Re-export commonly used types for convenience
 pub use mods::installed_mods::installed_mods_with_paths;
