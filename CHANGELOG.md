@@ -1,3 +1,24 @@
+# v3.8.0 (Thu Sep 10 2026)
+
+#### 🚀 Enhancement
+
+- Rootless uid 1000, SteamCMD app-info retry and Huginn player presence (from @ksc98) + follow-ups and container tests [#1512](https://github.com/mbround18/valheim-docker/pull/1512) ([@ksc98](https://github.com/ksc98) [@mbround18](https://github.com/mbround18))
+
+#### 🐛 Bug Fix
+
+- feat(mods): support Hexium as a mod repository [#1511](https://github.com/mbround18/valheim-docker/pull/1511) ([@mbround18](https://github.com/mbround18) [@kodiakhq[bot]](https://github.com/kodiakhq[bot]))
+- Merge branch 'pr-1509' into ksc98-local [#1509](https://github.com/mbround18/valheim-docker/pull/1509) ([@mbround18](https://github.com/mbround18))
+- Merge branch 'pr-1508' into ksc98-local [#1508](https://github.com/mbround18/valheim-docker/pull/1508) ([@mbround18](https://github.com/mbround18))
+- Merge branch 'pr-1507' into ksc98-local [#1507](https://github.com/mbround18/valheim-docker/pull/1507) ([@mbround18](https://github.com/mbround18))
+
+#### Authors: 3
+
+- [@kodiakhq[bot]](https://github.com/kodiakhq[bot])
+- kyle ([@ksc98](https://github.com/ksc98))
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.7.2 (Wed Sep 09 2026)
 
 #### 🐛 Bug Fix
