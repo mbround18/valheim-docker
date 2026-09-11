@@ -22,28 +22,20 @@ jobs:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v6
-      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.47
+      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.48
         with:
-          version: v0.0.1-prerelease.47
-      # One job for both images, one after the other on the same Dagger engine. The
-      # Dockerfile compiles odin and huginn once, in odin-builder, and valheim copies them
-      # from the odin stage, so the valheim build reuses the layers the odin build just
-      # made. Separate jobs would each compile the Rust workspace from scratch.
+          version: v0.0.1-prerelease.48
+      # One paws call for both images, against one Dagger engine. The Dockerfile compiles
+      # odin and huginn once, in odin-builder, and valheim copies them from the odin stage,
+      # so the valheim build reuses the layers the odin build just made. A call per image
+      # would compile the Rust workspace twice.
       #
       # Tags, on Docker Hub and GHCR: :<major>.<minor>.<patch>, :<major>.<minor>, :<major>
       # and :latest, with no `v` (--no-prefix), matching the tags published before paws.
-      - name: Publish odin
+      - name: Publish odin and valheim
         run: >-
           paws docker
-          --image mbround18/odin --target odin
-          --version "${{ github.ref_name }}"
-          --registries ghcr.io
-          --dockerhub-username mbround18 --ghcr-username mbround18
-          --no-prefix --with-latest --tag-rollup
-      - name: Publish valheim
-        run: >-
-          paws docker
-          --image mbround18/valheim --target valheim
+          --image mbround18/odin,mbround18/valheim --target odin,valheim
           --version "${{ github.ref_name }}"
           --registries ghcr.io
           --dockerhub-username mbround18 --ghcr-username mbround18
