@@ -40,8 +40,11 @@ jobs:
           --registries ghcr.io
           --dockerhub-username mbround18 --ghcr-username mbround18
           --no-prefix --with-latest --tag-rollup
+      # No Actions cache restore/save for the second image: see ci.yml's Docker job for why.
+      # The engine stays up between steps, so valheim still reuses odin's layers.
       - name: Publish valheim
         run: >-
+          env -u ACTIONS_RUNTIME_TOKEN
           paws docker
           --image mbround18/valheim --target valheim
           --version "${{ github.ref_name }}"

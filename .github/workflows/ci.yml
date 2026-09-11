@@ -50,8 +50,14 @@ jobs:
         run: >-
           paws docker --image mbround18/odin --target odin
           --dockerhub-username mbround18 --labels "$PR_LABELS" --tag-sha
+      # Without a runtime token paws picks no cache backend, so this step neither restores
+      # nor saves the Actions cache. The odin step already restored and saved once; a second
+      # restore would extract the cache over the engine it left running and corrupt its
+      # snapshot store (paws prerelease.46). The engine stays up between steps, so valheim
+      # still reuses odin's layers. Drop the `env -u` once paws restores once per job.
       - name: Docker valheim
         run: >-
+          env -u ACTIONS_RUNTIME_TOKEN
           paws docker --image mbround18/valheim --target valheim
           --dockerhub-username mbround18 --labels "$PR_LABELS" --tag-sha
 
