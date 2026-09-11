@@ -61,9 +61,11 @@ Then both images moved into one job, and paws got two fixes that job needed:
 | Two jobs, one per image (`1811621`)               | 14 runner-minutes (6 odin, 8 valheim) |
 | One job, two `paws docker` steps (`4b0a0fd`)      | 5.7 min (4.6 odin, 0.9 valheim)       |
 | One job, two steps on `prerelease.47` (`cad19f8`) | 2.2 min (1.3 odin, 0.8 valheim)       |
-| One job, one two-target call on `prerelease.48`   | see gap 3                             |
+| One job, one two-target call (`0c6d7f2`)          | 4.8 min, with a full Rust rebuild     |
 
 valheim costs under a minute because it reuses odin's Rust compile rather than repeating it. The drop from 5.7 to 2.2 is the cache fix in `prerelease.47`: odin's step had been spending about 2.5 minutes archiving the engine to a save the Actions cache then refused.
+
+The last row is slower for a reason unrelated to the single call. `.dockerignore` excludes `.github/` and `docs/`, so the two rows above it changed nothing the build context sees and every layer was reused. `0c6d7f2` also edited the `Makefile`, which the context does include — the builder stage runs `make release` — so `COPY . .` and the compile after it were rebuilt. Both images still built from the one call, odin then valheim, with a single cache restore for the pair.
 
 ## Gaps, most important first
 
@@ -87,6 +89,7 @@ valheim costs under a minute because it reuses odin's Rust compile rather than r
      - `--image` and `--target` take lists, paired in order, so `--image mbround18/odin,mbround18/valheim --target odin,valheim` builds both against one engine, with one cache cycle for the pair. mbround18/paws#32.
      - `make paws-docker` runs the same pair locally; `TARGET=odin` still builds one.
      - Measured locally on this Dockerfile, cold: the second target builds in 42 s against the first's 106 s, and runs no `cargo build` of its own.
+     - **The cached engine state never refreshes.** The key is fixed per Dagger version (`paws-dagger-engine-state-v2-<version>`), Actions cache entries are immutable, and `prerelease.47` now skips the save when the entry exists — so every run restores whatever the first save captured, and anything built since is rebuilt from scratch. Keying the save per run (`...-v2-<version>-<run_id>`) and restoring by prefix, which the Actions cache supports through `restore-keys`, would let it move forward. Worth raising upstream.
      - Not done: the targets still build one after the other. `docker buildx bake` with both targets took 116 s against 148 s for two sequential builds, because it overlaps valheim's apt install and SteamCMD download with the Rust compile. Closing that last gap needs concurrent Dagger sessions in paws.
 4. **Clippy doesn't lint tests.** `paws ci` runs `cargo clippy -- -D warnings`, without `--all-targets`, so test code isn't linted. Current CI lints it. Fix upstream in paws.
 5. **No Docker build args from the CLI.** paws only reads build args from a `compose.yml` service. `GITHUB_SHA`, `GITHUB_REF` and `GITHUB_REPOSITORY` are therefore not passed, and `/home/steam/.version` in the image says `not-set`. Nothing in the code reads that file today, so it only affects anyone inspecting the image by hand. `ODIN_IMAGE_VERSION` was never declared as an `ARG`, so dropping it changes nothing.
