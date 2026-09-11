@@ -22,9 +22,9 @@ jobs:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v6
-      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.46
+      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.47
         with:
-          version: v0.0.1-prerelease.46
+          version: v0.0.1-prerelease.47
       # One job for both images, one after the other on the same Dagger engine. The
       # Dockerfile compiles odin and huginn once, in odin-builder, and valheim copies them
       # from the odin stage, so the valheim build reuses the layers the odin build just
@@ -40,11 +40,8 @@ jobs:
           --registries ghcr.io
           --dockerhub-username mbround18 --ghcr-username mbround18
           --no-prefix --with-latest --tag-rollup
-      # No Actions cache restore/save for the second image: see ci.yml's Docker job for why.
-      # The engine stays up between steps, so valheim still reuses odin's layers.
       - name: Publish valheim
         run: >-
-          env -u ACTIONS_RUNTIME_TOKEN
           paws docker
           --image mbround18/valheim --target valheim
           --version "${{ github.ref_name }}"

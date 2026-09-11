@@ -62,7 +62,7 @@ With both images in one job (`4b0a0fd`, warm cache):
 | Docker valheim              | 0.9 min |
 | Docker job, including setup | 5.7 min |
 
-Before, the two images took 14 runner-minutes across two jobs (6 plus 8). Now they take 5.7 minutes in one job. valheim takes under a minute because it reuses odin's Rust compile instead of repeating it. About 2.5 of odin's 4.6 minutes is the cache save that the Actions cache then refuses (gap 3). paws#31 skips that save, so odin should drop to about 2 minutes once it's released.
+Before, the two images took 14 runner-minutes across two jobs (6 plus 8). Now they take 5.7 minutes in one job. valheim takes under a minute because it reuses odin's Rust compile instead of repeating it. About 2.5 of odin's 4.6 minutes was a cache save that the Actions cache then refused (gap 3), which `prerelease.47` skips.
 
 ## Gaps, most important first
 
@@ -76,12 +76,12 @@ Before, the two images took 14 runner-minutes across two jobs (6 plus 8). Now th
    - **One duplicate build remains.** The image-checks job still has its own `buildx` build, because paws can't load the image into the runner's Docker. A `--load` option on `paws docker`, feeding the checks from the same Dagger build, would remove it. That would be an upstream change like `--no-prefix`.
 3. **Build cache.**
    - **Registry cache.** The old workflows wrote `mbround18/<image>:buildcache`, and paws uses Dagger's cache (the GitHub Actions backend that `paws-up` enables) instead. The `--cache-from` in the image job will go stale once nothing writes that cache any more.
-   - **Two paws calls in one job broke the build. Worked around here, fixed upstream in mbround18/paws#31 (not released yet).**
+   - **Two paws calls in one job broke the build. Fixed in paws `v0.0.1-prerelease.47`.**
      - Every `paws docker` call restores the Actions cache when it starts: it stops the engine and extracts the cached archive onto its volume.
      - With odin and valheim built in one job, the valheim call extracted the archive over the engine the odin call had just used. The build then failed with `failed to rename .../snapshots/62: file exists`.
-     - Workaround: the second step runs with `ACTIONS_RUNTIME_TOKEN` unset (`env -u`), so paws picks no cache backend for it and neither restores nor saves. The engine stays up between steps, so valheim still reuses odin's layers.
+     - A first workaround ran the second step with `ACTIONS_RUNTIME_TOKEN` unset, so paws skipped the cache for it entirely. That is no longer needed.
      - Saving had a smaller problem. The cache key is fixed per Dagger version and Actions cache entries can't be overwritten, so every save after the first spent about 2.5 minutes archiving the engine volume and was then refused (409).
-     - paws#31 restores at most once per job and skips the save when the entry already exists. Once it's released, drop the `env -u` and bump the pin.
+     - Fixed in mbround18/paws#31 (merged as `9cef442`, released in `v0.0.1-prerelease.47`): the cache is restored at most once per job, and the save is skipped when the entry already exists. The spike is pinned to that release and the workaround is gone.
 4. **Clippy doesn't lint tests.** `paws ci` runs `cargo clippy -- -D warnings`, without `--all-targets`, so test code isn't linted. Current CI lints it. Fix upstream in paws.
 5. **No Docker build args from the CLI.** paws only reads build args from a `compose.yml` service. `GITHUB_SHA`, `GITHUB_REF` and `GITHUB_REPOSITORY` are therefore not passed, and `/home/steam/.version` in the image says `not-set`. Nothing in the code reads that file today, so it only affects anyone inspecting the image by hand. `ODIN_IMAGE_VERSION` was never declared as an `ARG`, so dropping it changes nothing.
 6. **Image tag format. Resolved in paws `v0.0.1-prerelease.46`.** paws used to tag versions `:v3.9.0` where `docker-meta` published `:3.9.0`. mbround18/paws#30 added `--version-prefix` and its shorthand `--no-prefix`, which set one prefix for the whole cascade. `images.yml` passes `--no-prefix`, so releases keep publishing `:3.9.0`, `:3.9`, `:3` and `:latest`, the same as before.
@@ -91,7 +91,7 @@ Before, the two images took 14 runner-minutes across two jobs (6 plus 8). Now th
    - Releases now run only from `main`. The old Release workflow ran on every branch push.
    - **Images publish from the release tag, not from `main`.** `paws docker` only adds `:latest` and the rollup tags when `GITHUB_REF` is a tag, so publishing in the same run as `paws semver --push`, a push to `main`, would silently skip them. `images.yml` runs on the `v*` tag push instead. That tag has to be created with a personal token (`GH_TOKEN`), because GitHub doesn't start workflows for tags pushed with the built-in `GITHUB_TOKEN`.
    - A release image no longer gets a `sha-<sha>` tag. `--tag-sha` only adds one when `--version` is itself a sha, which a release version isn't.
-8. **Pin paws. Done.** `paws-up@main` with `version: latest` resolves to the newest _prerelease_, so every workflow now uses `mbround18/paws/actions/paws-up@v0.0.1-prerelease.46` with `version: v0.0.1-prerelease.46`. That pins both the action and the binary it installs. Moving to a newer paws is a deliberate edit to those lines. Pinning the action to a commit SHA instead of the tag would also protect against the tag being moved.
+8. **Pin paws. Done.** `paws-up@main` with `version: latest` resolves to the newest _prerelease_, so every workflow now uses `mbround18/paws/actions/paws-up@v0.0.1-prerelease.47` with `version: v0.0.1-prerelease.47`. That pins both the action and the binary it installs. Moving to a newer paws is a deliberate edit to those lines. Pinning the action to a commit SHA instead of the tag would also protect against the tag being moved.
 
 ## Not proven by the spike
 
@@ -102,6 +102,6 @@ The publishing workflows can't run from a PR. `release.yml` runs on `main` (`sem
 paws can take over both halves:
 
 - **Build side:** `paws ci` matched the current Rust job exactly, and `paws docker` built the images.
-- **Release side:** both blockers are fixed upstream. The changelog is one line per PR (gap 1, `prerelease.45`), and releases keep the existing unprefixed image tags (gap 6, `prerelease.46`). The spike is pinned to `prerelease.46`.
+- **Release side:** both blockers are fixed upstream. The changelog is one line per PR (gap 1, `prerelease.45`), and releases keep the existing unprefixed image tags (gap 6, `prerelease.46`). Building both images in one job also needed the cache fix in `prerelease.47` (gap 3). The spike is pinned to `prerelease.47`.
 
 Gaps 2–5 are rough edges, not blockers. Watch the first release closely: it's the first time the publishing half runs for real.

@@ -27,9 +27,9 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.46
+      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.47
         with:
-          version: v0.0.1-prerelease.46
+          version: v0.0.1-prerelease.47
       # Bump from the merged PR's major/minor/patch label, then tag + GitHub Release.
       - name: Tag and GitHub Release
         id: semver
