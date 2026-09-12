@@ -105,7 +105,7 @@ The last row is slower for a reason unrelated to the single call. `.dockerignore
 - **Images publish from the release tag, not from `main`.** `paws docker` only adds `:latest` and the rollup tags when `GITHUB_REF` is a tag, so publishing in the same run as `paws semver --push`, a push to `main`, would silently skip them. `images.yml` runs on the `v*` tag push instead. That tag has to be created with a personal token (`GH_TOKEN`), because GitHub doesn't start workflows for tags pushed with the built-in `GITHUB_TOKEN`.
 - A release image no longer gets a `sha-<sha>` tag. `--tag-sha` only adds one when `--version` is itself a sha, which a release version isn't.
 
-11. **Pin paws. Done.** `paws-up@main` with `version: latest` resolves to the newest _prerelease_, so every workflow now uses `mbround18/paws/actions/paws-up@v0.0.1-prerelease.49` with `version: v0.0.1-prerelease.49`. That pins both the action and the binary it installs. Moving to a newer paws is a deliberate edit to those lines. Pinning the action to a commit SHA instead of the tag would also protect against the tag being moved.
+11. **Pin paws. Done.** `paws-up@main` with `version: latest` resolves to the newest _prerelease_, so every workflow now uses `mbround18/paws/actions/paws-up@v0.0.1-prerelease.50` with `version: v0.0.1-prerelease.50`. That pins both the action and the binary it installs. Moving to a newer paws is a deliberate edit to those lines. Pinning the action to a commit SHA instead of the tag would also protect against the tag being moved.
 
 ## Not proven by the spike
 
@@ -116,6 +116,6 @@ The publishing workflows can't run from a PR. `release.yml` runs on `main` (`sem
 paws can take over both halves:
 
 - **Build side:** `paws ci` matched the current Rust job exactly, and `paws docker` built the images.
-- **Release side:** both blockers are fixed upstream. The changelog is one line per PR (gap 1, `prerelease.45`), and releases keep the existing unprefixed image tags (gap 6, `prerelease.46`). Building both images in one job needed the cache fix in `prerelease.47`, and they now build in a single call thanks to `prerelease.48` (gap 3). The spike is pinned to `prerelease.49`.
+- **Release side:** both blockers are fixed upstream. The changelog is one line per PR (gap 1, `prerelease.45`), and releases keep the existing unprefixed image tags (gap 6, `prerelease.46`). Building both images in one job needed the cache fix in `prerelease.47`, and they now build in a single call thanks to `prerelease.48` (gap 3). The spike is pinned to `prerelease.50`.
 
 Gaps 2–5 are rough edges, not blockers. Watch the first release closely: it's the first time the publishing half runs for real.

@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.50
         with:
-          version: v0.0.1-prerelease.49
+          version: v0.0.1-prerelease.50
       # One paws call for both images, against one Dagger engine. The Dockerfile compiles
       # odin and huginn once, in odin-builder, and valheim copies them from the odin stage,
       # so the valheim build reuses the layers the odin build just made. A call per image
