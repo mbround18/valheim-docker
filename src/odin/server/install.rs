@@ -793,10 +793,6 @@ pub(crate) fn reset_download_state(install_dir: &Path, app_id: i64) -> Result<Ve
 }
 
 fn preflight_write_checks(staged_install: bool) -> Result<(), String> {
-  use std::fs::{remove_file, OpenOptions};
-  use std::io::Write;
-  use std::time::{SystemTime, UNIX_EPOCH};
-
   let workdir = get_working_dir();
   let paths = vec![
     "/home/steam/Steam".to_string(),
@@ -816,6 +812,30 @@ fn preflight_write_checks(staged_install: bool) -> Result<(), String> {
     paths.push("/home/steam/.staging".to_string());
   }
 
+  write_checks(&paths)?;
+  save_directory_write_checks()
+}
+
+/// The directories the game writes its world into. Valheim keeps running when a save fails
+/// (it logs `Error saving world!` and carries on in memory), so an unwritable save directory
+/// means every autosave silently fails and a restart loads a stale world.
+pub fn save_directory_write_checks() -> Result<(), String> {
+  let saves = common_paths::saves_directory();
+  let worlds = format!("{saves}/worlds_local");
+  let mut paths = vec![saves, worlds.clone()];
+  let world = environment::fetch_var("WORLD", "");
+  if !world.is_empty() {
+    paths.push(format!("{worlds}/{world}"));
+  }
+  write_checks(&paths)
+}
+
+/// Probe each existing directory with a temporary file; missing paths are skipped.
+fn write_checks(paths: &[String]) -> Result<(), String> {
+  use std::fs::{remove_file, OpenOptions};
+  use std::io::Write;
+  use std::time::{SystemTime, UNIX_EPOCH};
+
   let now_ns = SystemTime::now()
     .duration_since(UNIX_EPOCH)
     .map_err(|e| e.to_string())?
@@ -823,7 +843,7 @@ fn preflight_write_checks(staged_install: bool) -> Result<(), String> {
 
   for p in paths {
     debug!("Testing write access: {}", p);
-    let dir = Path::new(&p);
+    let dir = Path::new(p);
     if !dir.exists() {
       debug!("Skipping write check (missing): {}", p);
       continue;
@@ -980,6 +1000,33 @@ mod tests {
   use std::fs;
   use tempfile::tempdir;
   use test_case::test_case;
+
+  #[test]
+  #[serial_test::serial]
+  fn save_directory_write_checks_probe_the_world_directory() {
+    use std::os::unix::fs::PermissionsExt;
+    let saves = tempdir().unwrap();
+    let world = saves.path().join("worlds_local").join("Dedicated");
+    fs::create_dir_all(&world).unwrap();
+    env::set_var("SAVE_LOCATION", saves.path());
+    env::set_var("WORLD", "Dedicated");
+
+    assert!(save_directory_write_checks().is_ok());
+
+    // Root ignores directory modes, so the negative case only holds for other users.
+    fs::set_permissions(&world, fs::Permissions::from_mode(0o555)).unwrap();
+    let probe = world.join("probe");
+    let unprivileged = fs::File::create(&probe).is_err();
+    if unprivileged {
+      let err = save_directory_write_checks().unwrap_err();
+      assert!(err.contains("worlds_local/Dedicated"), "{err}");
+    }
+    fs::set_permissions(&world, fs::Permissions::from_mode(0o755)).unwrap();
+    let _ = fs::remove_file(probe);
+
+    env::remove_var("SAVE_LOCATION");
+    env::remove_var("WORLD");
+  }
 
   #[test_case(
     false,
