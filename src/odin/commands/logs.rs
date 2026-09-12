@@ -1,4 +1,4 @@
-use crate::log_filters::{handle_launch_probes, handle_player_events};
+use crate::log_filters::{handle_launch_probes, handle_player_events, handle_save_events};
 use crate::utils::common_paths::log_directory;
 use crate::utils::environment::is_env_var_truthy;
 use anyhow::{Context, Result};
@@ -72,6 +72,7 @@ fn handle_line_core(path: &PathBuf, line: &str) {
   }
 
   handle_player_events(line);
+  handle_save_events(line);
 
   let file_name = match path.file_name().and_then(|name| name.to_str()) {
     Some(name) => name,
@@ -98,7 +99,7 @@ fn handle_line_core(path: &PathBuf, line: &str) {
 
   let level = if line.contains("WARNING") {
     Level::Warn
-  } else if line.contains("ERROR") {
+  } else if line.contains("ERROR") || line.contains("Error saving world!") {
     Level::Error
   } else if line.contains("Fallback handler could not load library") {
     Level::Debug
