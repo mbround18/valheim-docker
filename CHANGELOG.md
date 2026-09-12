@@ -170,3 +170,8 @@
 - [@renovate[bot]](https://github.com/renovate[bot])
 - Jeff Terrace ([@jterrace](https://github.com/jterrace))
 - Michael ([@mbround18](https://github.com/mbround18))
+
+## v3.8.2 (2026-09-12)
+
+- spike(ci): replace GitHub Actions CI/CD with paws (#1513)
+- chore(deps): refresh the lockfile and align odin's reqwest requirement (#1520)
