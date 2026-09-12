@@ -20,6 +20,7 @@ pub enum NotificationEvent {
   Update(EventStatus),
   Start(EventStatus),
   Stop(EventStatus),
+  Save(EventStatus),
   Player(PlayerStatus),
 }
 
@@ -179,7 +180,7 @@ impl fmt::Display for NotificationEvent {
 impl std::str::FromStr for NotificationEvent {
   type Err = VariantNotFound;
   fn from_str(s: &str) -> Result<NotificationEvent, Self::Err> {
-    use NotificationEvent::{Broadcast, Player, Start, Stop, Update};
+    use NotificationEvent::{Broadcast, Player, Save, Start, Stop, Update};
     let parts: Vec<&str> = s.split(' ').collect();
     let event = parts[0];
     if event.eq(Broadcast.to_string().as_str()) {
@@ -194,6 +195,7 @@ impl std::str::FromStr for NotificationEvent {
         "Update" => Ok(Update(event_status)),
         "Start" => Ok(Start(event_status)),
         "Stop" => Ok(Stop(event_status)),
+        "Save" => Ok(Save(event_status)),
         _ => Err(VariantNotFound {
           v: String::from("Failed to find Notification Event"),
         }),

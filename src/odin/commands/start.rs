@@ -17,6 +17,18 @@ pub fn invoke(dry_run: bool) {
   debug!(target: "commands_start", "Dry run condition: {dry_run}");
   info!(target: "commands_start", "Looking for burial mounds...");
   if !dry_run {
+    if let Err(e) = server::save_directory_write_checks() {
+      error!(target: "commands_start", "Save directory is not writable: {e}");
+      error!(
+        target: "commands_start",
+        "The server would start, but every world save would fail and progress would be lost on restart."
+      );
+      error!(
+        target: "commands_start",
+        "Make the mounted save volume writable by the container's uid:gid (for example `chown -R` it on the host)."
+      );
+      exit(1);
+    }
     match server::start_daemonized(config) {
       Ok(_) => info!(target: "commands_start", "Success, daemonized"),
       Err(e) => {

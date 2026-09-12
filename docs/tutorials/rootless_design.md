@@ -48,6 +48,16 @@ starts under a uid that has an account in the image (see
 [below](#upgrading-from-images-where-steam-was-uid-111)). Give your host user access to the
 volumes through the group instead; see [Group File System Access](./group_file_system_access.md).
 
+## What Happens When a Volume Is Not Writable
+
+Odin refuses to start when the game or Steam directories are not writable
+(`Preflight write check failed`) and, since the save directory is checked too, when
+`worlds_local/<world>` is not writable (`Save directory is not writable`). The second check
+matters: the Valheim server itself keeps running when it cannot save, logging
+`Error saving world!` on every save interval while the world on disk (and every backup taken
+from it) stays stale. Fix the ownership of the mounted volumes rather than working around the
+check.
+
 ## Migration Checklist
 
 1. Stop the running container.

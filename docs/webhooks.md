@@ -32,6 +32,17 @@
 | `event_message`     | A description of the event. |
 | `timestamp`         | ISO8601 timestamp           |
 
+## World Save Failures
+
+Valheim keeps running when it cannot write its world (for example when the mounted save
+volume is owned by another user): it logs `Error saving world!` and carries on in memory,
+so the only visible symptom is a stale world after the next restart. Odin logs that line
+at `ERROR` and sends a `Save Failed` notification on the first failure of a streak, then
+`Save Successful` once a save goes through again. Both use the `WEBHOOK_STATUS_FAILED` /
+`WEBHOOK_STATUS_SUCCESSFUL` switches. Odin also refuses to start the server at all when the
+save directory is not writable, since a server that cannot save is worse than one that
+does not start.
+
 ## Silencing Discord Notifications
 
 Player join/leave events can make a busy server noisy. Setting
