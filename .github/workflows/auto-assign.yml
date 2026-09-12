@@ -4,7 +4,8 @@ name: Auto assign
 # reviews. `paws assign` gives a new PR to the owners of the files it changes and a new issue to
 # the owners of CODEOWNERS' catch-all rule. `pull_request_target` (not `pull_request`) so PRs
 # from forks still get a token that can assign; that is safe because nothing here checks out PR
-# code, and paws reads CODEOWNERS from the default branch through the API.
+# code, and paws reads CODEOWNERS from the default branch through the API. `--skip-bots` leaves
+# Renovate and other bot PRs unassigned.
 
 on:
   issues:
@@ -24,6 +25,6 @@ jobs:
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
         with:
           install-dagger: "false"
-      - run: paws assign
+      - run: paws assign --skip-bots
         env:
           GITHUB_TOKEN: ${{ github.token }}
