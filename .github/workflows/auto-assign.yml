@@ -1,0 +1,29 @@
+name: Auto assign
+
+# GitHub has no repo setting for default assignees, and CODEOWNERS on its own only requests
+# reviews. `paws assign` gives a new PR to the owners of the files it changes and a new issue to
+# the owners of CODEOWNERS' catch-all rule. `pull_request_target` (not `pull_request`) so PRs
+# from forks still get a token that can assign; that is safe because nothing here checks out PR
+# code, and paws reads CODEOWNERS from the default branch through the API.
+
+on:
+  issues:
+    types: [opened]
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
+        with:
+          install-dagger: "false"
+      - run: paws assign
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
