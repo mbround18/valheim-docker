@@ -1,3 +1,17 @@
+# v3.8.1 (Sat Sep 12 2026)
+
+#### 🐛 Bug Fix
+
+- fix(huginn): report memory and swap in bytes (from @ksc98) + a regression test [#1517](https://github.com/mbround18/valheim-docker/pull/1517) ([@ksc98](https://github.com/ksc98) [@mbround18](https://github.com/mbround18))
+- Huginn: report memory and swap in bytes (values were 1024× too large) [#1514](https://github.com/mbround18/valheim-docker/pull/1514) ([@ksc98](https://github.com/ksc98))
+
+#### Authors: 2
+
+- kyle ([@ksc98](https://github.com/ksc98))
+- Michael ([@mbround18](https://github.com/mbround18))
+
+---
+
 # v3.8.0 (Thu Sep 10 2026)
 
 #### 🚀 Enhancement
