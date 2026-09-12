@@ -177,3 +177,71 @@ pub fn format_perm_summary(perm: &PermSummary) -> String {
     if perm.can_write { "yes" } else { "no" },
   )
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Reads a `/proc/meminfo` field, which the kernel reports in KiB.
+  #[cfg(target_os = "linux")]
+  fn meminfo_kib(field: &str) -> Option<u64> {
+    let contents = std::fs::read_to_string("/proc/meminfo").ok()?;
+    contents.lines().find_map(|line| {
+      let rest = line.strip_prefix(field)?.strip_prefix(':')?;
+      rest.split_whitespace().next()?.parse::<u64>().ok()
+    })
+  }
+
+  /// sysinfo returned KiB up to 0.29 and bytes from 0.30 on, so a version
+  /// bump silently multiplied every memory metric by 1024 — `/metrics`
+  /// reported 8.3 TB on an 8 GB host (#1514). Compare what we publish
+  /// against the kernel's own number rather than against whichever unit
+  /// sysinfo currently uses.
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn memory_and_swap_are_reported_in_bytes() {
+    let Some(mem_total_kib) = meminfo_kib("MemTotal") else {
+      // No /proc/meminfo (an unusual container): nothing to compare to.
+      return;
+    };
+    let metrics = collect_system_metrics();
+    let kernel_bytes = mem_total_kib * 1024;
+
+    // sysinfo and the kernel can disagree slightly (sysinfo excludes some
+    // reserved regions), so allow a few percent, but nothing near the
+    // 1024x a unit mix-up produces.
+    let difference = metrics.total_memory_bytes.abs_diff(kernel_bytes);
+    assert!(
+      difference * 20 < kernel_bytes,
+      "total_memory_bytes {} is not within 5% of MemTotal {} bytes — check the unit sysinfo reports",
+      metrics.total_memory_bytes,
+      kernel_bytes
+    );
+
+    // Used memory is a subset of total, which a stray multiplier breaks
+    // even on a host whose MemTotal we couldn't read.
+    assert!(
+      metrics.used_memory_bytes <= metrics.total_memory_bytes,
+      "used_memory_bytes {} exceeds total_memory_bytes {}",
+      metrics.used_memory_bytes,
+      metrics.total_memory_bytes
+    );
+
+    if let Some(swap_total_kib) = meminfo_kib("SwapTotal") {
+      let kernel_swap_bytes = swap_total_kib * 1024;
+      let difference = metrics.total_swap_bytes.abs_diff(kernel_swap_bytes);
+      assert!(
+        difference * 20 < kernel_swap_bytes.max(1),
+        "total_swap_bytes {} is not within 5% of SwapTotal {} bytes",
+        metrics.total_swap_bytes,
+        kernel_swap_bytes
+      );
+    }
+    assert!(
+      metrics.used_swap_bytes <= metrics.total_swap_bytes,
+      "used_swap_bytes {} exceeds total_swap_bytes {}",
+      metrics.used_swap_bytes,
+      metrics.total_swap_bytes
+    );
+  }
+}
