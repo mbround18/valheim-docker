@@ -1,8 +1,13 @@
 name: Release
 
 # Replaces the Intuit `auto` release train with paws: version from the merged PR's labels,
-# tag + GitHub Release, changelog, then binaries. Images are published by images.yml when
-# the tag pushed here arrives, so that `paws docker` sees a real release tag.
+# binaries, tag + GitHub Release, changelog. Images are published by images.yml when the tag
+# pushed here arrives, so that `paws docker` sees a real release tag.
+#
+# A merge only releases when its PR carried the `release` label, which is what `auto`'s
+# `onlyPublishWithReleaseLabel` did. paws has no such gate of its own, so the `gate` job
+# below is it: without one, every merge — every Renovate bump kodiak auto-merges included —
+# would tag, publish and move `:latest`.
 on:
   push:
     branches: [main]
@@ -12,17 +17,58 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  release:
-    name: Tag, changelog & binaries
+  gate:
+    name: Release requested?
     # The changelog commit carries a CI-skip marker; don't release it again.
     if: "!contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, 'ci skip')"
+    runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.check.outputs.release }}
+      labels: ${{ steps.check.outputs.labels }}
+    steps:
+      - name: Look up the merged PR's labels
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          # A manual run is the deliberate override, for releasing something that
+          # landed without the label.
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "labels=" >> "$GITHUB_OUTPUT"
+            echo "Manual run: releasing regardless of labels."
+            exit 0
+          fi
+          labels="$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[].labels[].name] | unique | join(",")')"
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+          if grep -qE '(^|,)release(,|$)' <<<"$labels"; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Labels on the merged PR: ${labels:-<none>} — releasing."
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No \`release\` label on the merged PR (labels: ${labels:-<none>}); not releasing."
+          fi
+
+  release:
+    name: Tag, changelog & binaries
+    needs: gate
+    if: needs.gate.outputs.release == 'true'
     runs-on: ubuntu-latest
     env:
       # A personal token, as `auto` used, so it can push the changelog commit to main.
       # It is also what starts images.yml: GitHub doesn't run workflows for a tag pushed
       # with the built-in GITHUB_TOKEN, only for one pushed with a personal token.
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      PR_LABELS: ${{ needs.gate.outputs.labels }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -30,13 +76,43 @@ jobs:
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.48
         with:
           version: v0.0.1-prerelease.48
-      # Bump from the merged PR's major/minor/patch label, then tag + GitHub Release.
-      - name: Tag and GitHub Release
+      # Resolve the version from the merged PR's major/minor/patch label without
+      # tagging anything yet.
+      - name: Next version (not tagged yet)
         id: semver
-        run: echo "version=$(paws semver --push | tail -1)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(paws semver --labels "$PR_LABELS" | tail -1)" >> "$GITHUB_OUTPUT"
+      # `paws changelog` takes the newest tag as the range's base, which by then is the
+      # tag this run is about to create — comparing it against itself and writing an
+      # empty section. Record the tag we are releasing *from*, while it is still the
+      # newest one, and pass it explicitly below.
+      - name: Previous release tag
+        id: previous
+        run: echo "tag=$(git describe --tags --abbrev=0)" >> "$GITHUB_OUTPUT"
+      # Build before publishing anything. A tag and a GitHub Release can't be taken
+      # back, and images.yml starts the moment the tag lands, so a build that fails
+      # after tagging would leave a published release with no binaries and no way to
+      # re-run it.
+      - name: Build and smoke-test the binaries (not uploaded)
+        run: >-
+          paws release --local-build --no-upload
+          --target x86_64-unknown-linux-gnu
+          --package odin,huginn --binary-name odin,huginn
+          --tag "${{ steps.semver.outputs.version }}"
+      - name: Tag and GitHub Release
+        run: |
+          set -euo pipefail
+          pushed="$(paws semver --labels "$PR_LABELS" --push | tail -1)"
+          if [ "$pushed" != "${{ steps.semver.outputs.version }}" ]; then
+            echo "::error::version drifted between the two paws semver calls: built ${{ steps.semver.outputs.version }}, tagged $pushed"
+            exit 1
+          fi
       - name: Changelog
-        run: paws changelog --version "${{ steps.semver.outputs.version }}" --commit
-      - name: Release binaries
+        run: >-
+          paws changelog --version "${{ steps.semver.outputs.version }}"
+          --previous-ref "${{ steps.previous.outputs.tag }}" --commit
+      # Rebuilds against the same Dagger cache this job just filled, then uploads to
+      # the Release created above.
+      - name: Upload the release binaries
         run: >-
           paws release --local-build
           --target x86_64-unknown-linux-gnu

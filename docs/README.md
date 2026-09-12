@@ -8,8 +8,8 @@
 </a>
 
 <!-- Docker Release Workflow -->
-<a href="https://github.com/mbround18/valheim-docker/actions/workflows/docker-release.yml">
-  <img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/docker-release.yml?label=Docker&style=for-the-badge" alt="Docker Release Workflow">
+<a href="https://github.com/mbround18/valheim-docker/actions/workflows/images.yml">
+  <img src="https://img.shields.io/github/actions/workflow/status/mbround18/valheim-docker/images.yml?label=Docker&style=for-the-badge" alt="Publish Images Workflow">
 </a>
 
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
@@ -58,8 +58,8 @@
 ### From Release
 
 1. Navigate to [the latest release](https://github.com/mbround18/valheim-docker/releases/latest)
-2. Download the `bundle.zip` to your server
-3. Extract the `bundle.zip`
+2. Download the archive for your platform (`odin+huginn-<version>-x86_64-unknown-linux-gnu.zip`) to your server
+3. Extract it
 4. Make the files executable `chmod +x {odin,huginn}`
 5. Optional: Add the files to your PATH.
 6. Navigate to the folder where you want your server installed.

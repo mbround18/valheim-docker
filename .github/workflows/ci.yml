@@ -69,10 +69,11 @@ jobs:
       - uses: actions/checkout@v6
       # paws docker builds inside Dagger and does not load the result into the runner's
       # Docker daemon, which these container-level checks run against.
+      # No --cache-from: nothing writes mbround18/valheim:buildcache any more (paws
+      # builds inside Dagger, against its own Actions-backed cache), so reading it
+      # would only get staler.
       - name: Build valheim image into the local daemon
-        run: >-
-          docker buildx build --load --target valheim -t valheim-docker:ci
-          --cache-from type=registry,ref=mbround18/valheim:buildcache .
+        run: docker buildx build --load --target valheim -t valheim-docker:ci .
       - name: Image permissions
         run: ./.github/scripts/check-image-permissions.sh valheim-docker:ci
       # Downloads the ~2 GB dedicated server, so only on demand.
