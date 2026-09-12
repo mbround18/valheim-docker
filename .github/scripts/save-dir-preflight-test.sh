@@ -10,24 +10,32 @@
 set -euo pipefail
 
 IMAGE="${1:-valheim-docker:ci}"
+# The container runs as the image's own steam uid, which owns /home/steam — `odin
+# configure` writes there, so no other uid gets far enough to reach the check. It is not
+# assumed to own the *host* directories: on a CI runner it does not, which is the same
+# ownership mismatch that produces this bug in the first place, so the modes below are set
+# for "other" rather than for the owner.
+PROBE_UID=1000
 SAVES="$(mktemp -d)"
 WORLD_DIR="$SAVES/worlds_local/Dedicated"
 mkdir -p "$WORLD_DIR"
-trap 'chmod -R u+w "$SAVES" 2>/dev/null || true; rm -rf "$SAVES"' EXIT
+trap 'chmod -R u+rwx "$SAVES" 2>/dev/null || true; rm -rf "$SAVES"' EXIT
 
-# The container runs as 1000:1000 below, so the host side has to be owned by a uid the
-# check can fail against. Refuse to run as root, where mode bits are ignored and every
-# case would pass.
+# Root ignores directory modes, so every case would pass and prove nothing.
 if [ "$(id -u)" -eq 0 ]; then
   echo "::error::run this as a non-root user; root ignores directory modes"
   exit 1
 fi
 
+# Everything above the world directory has to be writable by the container's uid, whoever
+# owns it on the host, so that the world directory is the only thing under test.
+chmod 777 "$SAVES" "$SAVES/worlds_local"
+
 # `odin start` loads its config before checking anything, and `odin configure` insists on a
 # server executable, so stub one. It is never launched in the failing case, and in the
 # passing case it exits immediately.
 odin_start() {
-  docker run --rm --user 1000:1000 \
+  docker run --rm --user "$PROBE_UID:$PROBE_UID" \
     -e SAVE_LOCATION=/saves -e WORLD=Dedicated \
     -v "$SAVES:/saves" --entrypoint bash "$IMAGE" -c '
       printf "#!/bin/sh\nexit 0\n" > /home/steam/valheim/valheim_server.x86_64
@@ -39,6 +47,7 @@ odin_start() {
 }
 
 echo "==> An unwritable world directory must stop the server from starting"
+# r-x for everyone: the owner can still read it, nobody can write it.
 chmod 555 "$WORLD_DIR"
 set +e
 output="$(odin_start)"
@@ -60,7 +69,8 @@ grep -q "worlds_local/Dedicated" <<<"$output" || {
 echo "    refused to start, naming the directory: ok"
 
 echo "==> A writable world directory must let the server start"
-chmod 755 "$WORLD_DIR"
+# World-writable rather than 755: the container's uid does not own this directory.
+chmod 777 "$WORLD_DIR"
 set +e
 output="$(odin_start)"
 rc=$?
