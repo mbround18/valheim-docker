@@ -52,6 +52,19 @@ check-image-permissions: ## Check IMAGE=<valheim image> has accounts for, and is
 e2e-container: ## Boot IMAGE=<valheim image> for real (downloads ~2 GB): users, player presence via Huginn
 	@bash ./.github/scripts/e2e-container.sh "$(IMAGE)"
 
+# The same paws commands CI runs (.github/workflows/ci.yml), for running locally.
+paws-ci: ## Rust fmt/clippy/build/test exactly as CI runs it (paws ci)
+	paws ci --toolchain rust
+
+# TARGET defaults to both images in one call, which is what CI runs; set
+# TARGET=odin (or valheim) to build just one.
+TARGET ?= odin,valheim
+paws-docker: ## Build TARGET=odin|valheim|both exactly as CI does, without pushing (paws docker)
+	paws docker --image "$(shell echo "$(TARGET)" | sed 's|[^,]*|mbround18/&|g')" --target "$(TARGET)"
+
+paws-release-dry-run: ## Build and smoke-test the release binaries without uploading (paws release)
+	paws release --local-build --no-upload --target x86_64-unknown-linux-gnu --package odin,huginn --binary-name odin,huginn --tag v0.0.0-local
+
 test: ## Run Rust tests (cargo test)
 	cargo test
 
