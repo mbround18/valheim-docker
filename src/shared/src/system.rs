@@ -40,10 +40,10 @@ pub fn collect_system_metrics() -> SystemMetrics {
   let load = sysinfo::System::load_average();
 
   SystemMetrics {
-    total_memory_bytes: mem_total * 1024, // sysinfo reports in KiB
-    used_memory_bytes: mem_used * 1024,
-    total_swap_bytes: swap_total * 1024,
-    used_swap_bytes: swap_used * 1024,
+    total_memory_bytes: mem_total,
+    used_memory_bytes: mem_used,
+    total_swap_bytes: swap_total,
+    used_swap_bytes: swap_used,
     total_disk_bytes,
     available_disk_bytes,
     cpu_num_logical: cpus,
