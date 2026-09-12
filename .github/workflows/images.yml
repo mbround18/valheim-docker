@@ -22,9 +22,9 @@ jobs:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
     steps:
       - uses: actions/checkout@v6
-      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.48
+      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.49
         with:
-          version: v0.0.1-prerelease.48
+          version: v0.0.1-prerelease.49
       # One paws call for both images, against one Dagger engine. The Dockerfile compiles
       # odin and huginn once, in odin-builder, and valheim copies them from the odin stage,
       # so the valheim build reuses the layers the odin build just made. A call per image
@@ -32,11 +32,28 @@ jobs:
       #
       # Tags, on Docker Hub and GHCR: :<major>.<minor>.<patch>, :<major>.<minor>, :<major>
       # and :latest, with no `v` (--no-prefix), matching the tags published before paws.
+      #
+      # The OCI labels are the set `docker-meta` used to attach. GHCR reads
+      # `image.source` to link the published package back to this repository, so an
+      # image published without it loses that link along with its provenance.
       - name: Publish odin and valheim
-        run: >-
-          paws docker
-          --image mbround18/odin,mbround18/valheim --target odin,valheim
-          --version "${{ github.ref_name }}"
-          --registries ghcr.io
-          --dockerhub-username mbround18 --ghcr-username mbround18
-          --no-prefix --with-latest --tag-rollup
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          paws docker \
+            --image mbround18/odin,mbround18/valheim --target odin,valheim \
+            --version "$GITHUB_REF_NAME" \
+            --registries ghcr.io \
+            --dockerhub-username mbround18 --ghcr-username mbround18 \
+            --no-prefix --with-latest --tag-rollup \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.url=https://github.com/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.version=$version" \
+            --label "org.opencontainers.image.created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --label "org.opencontainers.image.title=valheim-docker" \
+            --label "org.opencontainers.image.description=Valheim Docker powered by Odin. The Valheim dedicated gameserver manager which is designed with resiliency in mind by providing automatic updates, world backup support, and a user friendly cli interface." \
+            --label "org.opencontainers.image.licenses=BSD-3-Clause" \
+            --build-arg "GITHUB_SHA=$GITHUB_SHA" \
+            --build-arg "GITHUB_REF=$GITHUB_REF" \
+            --build-arg "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
