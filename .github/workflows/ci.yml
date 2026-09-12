@@ -76,6 +76,10 @@ jobs:
         run: docker buildx build --load --target valheim -t valheim-docker:ci .
       - name: Image permissions
         run: ./.github/scripts/check-image-permissions.sh valheim-docker:ci
+      # Reproduces #1515: a save volume the container's uid cannot write. Cheap — it never
+      # installs the game — so it runs on every PR, unlike the full container e2e below.
+      - name: Save-directory preflight
+        run: ./.github/scripts/save-dir-preflight-test.sh valheim-docker:ci
       # Downloads the ~2 GB dedicated server, so only on demand.
       - name: Container end-to-end
         if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'e2e')
