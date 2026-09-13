@@ -1,4 +1,5 @@
 use crate::errors::ValheimModError;
+use crate::mods::install_routes::install_extracted_package;
 use crate::mods::manifest::Manifest;
 use crate::utils::http_pool::HttpPool;
 use crate::utils::normalize_paths::normalize_paths;
@@ -852,7 +853,7 @@ impl ValheimMod {
     // Validate mod type by inspecting the extracted files.
     let is_framework = self.is_mod_framework(temp_dir.path());
 
-    let mut options = CopyOptions {
+    let options = CopyOptions {
       overwrite: true,
       skip_exist: false,
       buffer_size: 0,
@@ -875,34 +876,13 @@ impl ValheimMod {
       Ok(vec![installed_root])
     } else {
       info!("Installing Mod...");
-      let final_dir = PathBuf::from(&common_paths::bepinex_plugin_directory()).join(&manifest.name);
-      // If a manifest exists, use its name for a subdirectory.
-      create_dir_all(&final_dir)
-        .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
-
-      // Path to the 'plugins' directory within the temp directory
-      let plugins_path = temp_dir.path().join("plugins");
-
-      if temp_dir.path().join("Plugins").exists() {
-        debug!("Looks like someone used Plugins instead of plugins, lets fix that.");
-        dir::move_dir(temp_dir.path().join("Plugins"), &plugins_path, &options)
-          .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
-      }
-
-      // Check if the 'plugins' directory exists
-      if plugins_path.exists() && plugins_path.is_dir() {
-        let mut plugin_options = options.clone();
-        plugin_options.copy_inside = true;
-        dir::move_dir(&plugins_path, &final_dir, &plugin_options)
-          .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
-        // Set options depth of one to maintain manifest.json
-        options.depth = 1
-      }
-      dir::move_dir(temp_dir, &final_dir, &options)
-        .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
-
+      let installed = install_extracted_package(
+        temp_dir.path(),
+        Path::new(&common_paths::bepinex_directory()),
+        &manifest.name,
+      )?;
       self.installed = true;
-      Ok(vec![final_dir])
+      Ok(installed)
     }
   }
 
