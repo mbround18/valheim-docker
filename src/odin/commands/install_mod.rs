@@ -584,6 +584,67 @@ mod from_var_state_tests {
     assert_eq!(new_state.mods[0].url, dll_url);
   }
 
+  /// Discussion #1516: a package with a `patchers/` folder (ArgusMagnus-ServersideQoL's
+  /// layout) must land its patcher in `BepInEx/patchers`, and removing the mod from MODS must
+  /// remove the patcher too, while leaving the config the server admin now owns.
+  #[tokio::test]
+  #[serial]
+  async fn from_var_routes_patchers_and_cleans_them_up() {
+    let mut buf: Vec<u8> = Vec::new();
+    {
+      let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
+      let files: [(&str, &[u8]); 4] = [
+        ("manifest.json", b"{\"name\":\"ServersideQoL\"}"),
+        ("patchers/ServersideQoL.Patchers.dll", b"patcher"),
+        ("plugins/ServersideQoL.dll", b"plugin"),
+        ("config/ServersideQoL.cfg", b"defaults"),
+      ];
+      for (name, contents) in files {
+        let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+        zipw.start_file(name, options).unwrap();
+        zipw.write_all(contents).unwrap();
+      }
+      zipw.finish().unwrap();
+    }
+
+    let mut server = Server::new_async().await;
+    let _zip_mock = server
+      .mock("GET", "/ServersideQoL.zip")
+      .with_status(200)
+      .with_header("content-type", "application/zip")
+      .with_body(buf)
+      .create();
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    std::fs::create_dir_all(&game_dir).unwrap();
+    env::set_var(crate::constants::GAME_LOCATION, &game_dir);
+
+    env::set_var("MODS", format!("{}/ServersideQoL.zip", server.url()));
+    process_mods_from_env().await.expect("install run");
+
+    let bepinex = PathBuf::from(crate::utils::common_paths::bepinex_directory());
+    let patcher = bepinex.join("patchers/ServersideQoL/ServersideQoL.Patchers.dll");
+    let plugin = bepinex.join("plugins/ServersideQoL/ServersideQoL.dll");
+    let config = bepinex.join("config/ServersideQoL.cfg");
+    assert_eq!(std::fs::read(&patcher).unwrap(), b"patcher");
+    assert_eq!(std::fs::read(&plugin).unwrap(), b"plugin");
+    assert_eq!(std::fs::read(&config).unwrap(), b"defaults");
+
+    env::set_var("MODS", "");
+    process_mods_from_env().await.expect("removal run");
+
+    assert!(
+      !bepinex.join("patchers/ServersideQoL").exists(),
+      "the patcher folder should be removed with the mod"
+    );
+    assert!(
+      !bepinex.join("plugins/ServersideQoL").exists(),
+      "the plugin folder should be removed with the mod"
+    );
+    assert!(config.exists(), "config is the admin's and must be kept");
+  }
+
   #[tokio::test]
   #[serial]
   async fn from_var_removes_dll_when_removed_from_mods() {

@@ -1,4 +1,5 @@
 pub mod bepinex;
+mod install_routes;
 pub mod installed_mods;
 pub mod manifest;
 mod valheim_mod;
