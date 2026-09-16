@@ -8,7 +8,7 @@ use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Seek, SeekFrom};
+use std::io::{BufRead, BufReader, ErrorKind, Read, Seek, SeekFrom};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -28,7 +28,14 @@ struct LogTail {
   position: u64,
   /// Identifies the open file so a new file at the same path is noticed.
   file_id: Option<u64>,
+  /// The bytes immediately before `position`, used to notice that the content under the
+  /// offset changed even when the file's length did not shrink below it.
+  anchor: Vec<u8>,
 }
+
+/// How much of the last line handled is kept as the continuity anchor. Long enough that a
+/// new run's output cannot plausibly match it, short enough to re-read on every poll.
+const ANCHOR_BYTES: usize = 256;
 
 impl LogTail {
   fn new(path: PathBuf) -> Self {
@@ -37,6 +44,7 @@ impl LogTail {
       reader: None,
       position: 0,
       file_id: None,
+      anchor: Vec::new(),
     }
   }
 
@@ -77,6 +85,7 @@ impl LogTail {
       .context("Failed to seek to start position")?;
     self.file_id = Self::identity(&metadata);
     self.position = position;
+    self.anchor.clear();
     self.reader = Some(reader);
     Ok(())
   }
@@ -90,6 +99,7 @@ impl LogTail {
     };
     let mut lines = Vec::new();
     let mut offset = position;
+    let mut anchor = None;
     loop {
       let mut buf = Vec::new();
       let bytes_read = reader
@@ -105,10 +115,48 @@ impl LogTail {
         break;
       }
       offset += bytes_read as u64;
+      anchor = Some(buf[buf.len().saturating_sub(ANCHOR_BYTES)..].to_vec());
       lines.push(String::from_utf8_lossy(&buf).to_string());
     }
     self.position = offset;
+    if let Some(anchor) = anchor {
+      self.anchor = anchor;
+    }
     Ok(lines)
+  }
+
+  /// Confirms the bytes just before the current offset are still the ones that were read
+  /// from there. Truncation is followed immediately by the new run writing its own output,
+  /// so by the time the next poll comes around the file can already be longer than the old
+  /// offset: the length check sees nothing wrong and the tail would resume from the middle
+  /// of the new run, silently skipping everything before it.
+  ///
+  /// This compares content rather than hashing it, and it is a heuristic: output that
+  /// repeats byte for byte with a period that happens to align with the anchor can still
+  /// look continuous. Real server output carries timestamps, and the length check covers the
+  /// ordinary case where the new run has not caught up yet, so the gap is theoretical.
+  fn is_continuous(&mut self) -> Result<bool> {
+    let position = self.position;
+    let len = self.anchor.len();
+    if len == 0 {
+      return Ok(true);
+    }
+    let Some(reader) = self.reader.as_mut() else {
+      return Ok(true);
+    };
+    reader
+      .seek(SeekFrom::Start(position - len as u64))
+      .context("Failed to seek back to the anchor")?;
+    let mut buf = vec![0u8; len];
+    let read = reader.read_exact(&mut buf);
+    reader
+      .seek(SeekFrom::Start(position))
+      .context("Failed to seek back to the current position")?;
+    match read {
+      Ok(()) => Ok(buf == self.anchor),
+      Err(e) if e.kind() == ErrorKind::UnexpectedEof => Ok(false),
+      Err(e) => Err(e).context("Failed to re-read the anchor"),
+    }
   }
 
   /// The lines written since the last call, reopening the file first if it was truncated or
@@ -118,7 +166,7 @@ impl LogTail {
       Ok(metadata) => {
         if self.reader.is_none() {
           self.open(0)?;
-        } else if self.needs_reopen(&metadata) {
+        } else if self.needs_reopen(&metadata) || !self.is_continuous()? {
           warn!(
             "{} was truncated or replaced, following it from the start",
             self.path.display()
@@ -130,6 +178,7 @@ impl LogTail {
         self.reader = None;
         self.position = 0;
         self.file_id = None;
+        self.anchor.clear();
         return Ok(Vec::new());
       }
     }
@@ -324,94 +373,76 @@ pub async fn invoke(lines: Option<u16>, watch: bool) {
 
 #[cfg(test)]
 mod tests {
-  use super::{is_already_formatted, LogTail};
+  use super::{is_already_formatted, tail_file, LogTail, ANCHOR_BYTES};
+  use serial_test::serial;
   use std::io::Write;
+  use std::path::{Path, PathBuf};
+  use std::time::{Duration, Instant};
 
-  fn append(path: &std::path::Path, contents: &str) {
-    let mut file = std::fs::OpenOptions::new()
-      .create(true)
-      .append(true)
-      .open(path)
-      .expect("open for append");
-    file.write_all(contents.as_bytes()).expect("append");
+  /// The tail end of a real `valheim_server.log` before a `SCHEDULED_RESTART`.
+  const FIRST_RUN: &[&str] = &[
+    "09/15/2026 08:41:12: Got character ZDOID from Skogsmaiden : 111222333:1",
+    "09/15/2026 09:00:01: World save (527/527) done. Total time [143ms]",
+    "09/15/2026 09:00:04: Destroying abandoned non persistent zdo 2130425389:1204 owner 2130425389",
+    "09/15/2026 09:00:06: Shutting down",
+    "09/15/2026 09:00:06: Steam manager on destroy",
+  ];
+
+  /// The head of the same file after the server restarted in place and truncated it. Note
+  /// that the previous run's lines are gone, and the new run starts at offset 0.
+  const SECOND_RUN: &[&str] = &[
+    "[UnityMemory] Configuration Parameters - Can be set up in boot.config",
+    "09/15/2026 09:00:31: Starting to load scene:start",
+    "09/15/2026 09:01:02: Game server connected",
+    "09/15/2026 09:12:44: Got character ZDOID from Viking : 2130425389:1",
+  ];
+
+  struct TempLog {
+    _dir: tempfile::TempDir,
+    path: PathBuf,
   }
 
-  /// The regression behind #1533: Valheim truncates its log on every start, including the
-  /// in-process restarts from `SCHEDULED_RESTART` and `odin update`.
-  #[test]
-  fn follows_the_file_across_truncation() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let path = dir.path().join("valheim_server.log");
-    append(&path, "09/15/2026 18:00:00: first run line\n");
+  impl TempLog {
+    fn new() -> Self {
+      let dir = tempfile::tempdir().expect("tempdir");
+      let path = dir.path().join("valheim_server.log");
+      TempLog { _dir: dir, path }
+    }
 
-    let mut tail = LogTail::new(path.clone());
-    assert_eq!(tail.poll().expect("first poll").len(), 1);
-    assert!(tail.poll().expect("no new lines").is_empty());
+    fn append(&self, lines: &[&str]) {
+      let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&self.path)
+        .expect("open log for append");
+      for line in lines {
+        writeln!(file, "{line}").expect("append line");
+      }
+    }
 
-    // The server restarts in place: same path, truncated to nothing, then written again.
-    std::fs::write(&path, "").expect("truncate");
-    append(&path, "[UnityMemory] Configuration Parameters\n");
-    append(&path, "09/15/2026 18:16:18: Game server connected\n");
+    /// What Valheim does to this file on every server start: same path, same inode, length
+    /// back to zero.
+    fn truncate_in_place(&self) {
+      std::fs::OpenOptions::new()
+        .write(true)
+        .truncate(true)
+        .open(&self.path)
+        .expect("truncate log");
+    }
 
-    let lines = tail.poll().expect("poll after truncation");
-    assert_eq!(lines.len(), 2, "{lines:?}");
-    assert!(lines[1].contains("Game server connected"));
-    assert!(tail.poll().expect("no new lines").is_empty());
+    fn tail(&self) -> LogTail {
+      LogTail::new(self.path.clone())
+    }
   }
 
-  #[test]
-  fn follows_the_path_when_the_file_is_replaced() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let path = dir.path().join("valheim_server.log");
-    append(&path, "old line one\nold line two\n");
-
-    let mut tail = LogTail::new(path.clone());
-    assert_eq!(tail.poll().expect("first poll").len(), 2);
-
-    // Replaced by a longer file at the same path, so the length check alone would miss it.
-    std::fs::remove_file(&path).expect("remove");
-    append(&path, "new line one\nnew line two\nnew line three\n");
-
-    let lines = tail.poll().expect("poll after replacement");
-    assert_eq!(lines.len(), 3, "{lines:?}");
-    assert!(lines[0].contains("new line one"));
-  }
-
-  #[test]
-  fn a_missing_file_yields_nothing_and_is_picked_up_when_it_returns() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let path = dir.path().join("valheim_server.log");
-
-    let mut tail = LogTail::new(path.clone());
-    assert!(tail
+  /// Convenience: poll and strip the trailing newlines so expectations read as plain lines.
+  fn poll(tail: &mut LogTail) -> Vec<String> {
+    tail
       .poll()
-      .expect("missing file is not an error")
-      .is_empty());
-
-    append(&path, "here now\n");
-    assert_eq!(tail.poll().expect("poll once created").len(), 1);
-  }
-
-  /// A line caught mid-write must not be surfaced as two lines, since the filters match on
-  /// whole lines.
-  #[test]
-  fn an_incomplete_line_is_held_until_its_newline_arrives() {
-    let dir = tempfile::tempdir().expect("tempdir");
-    let path = dir.path().join("valheim_server.log");
-    append(&path, "complete\n09/15/2026 18:00:00: Got character ZDOID");
-
-    let mut tail = LogTail::new(path.clone());
-    let lines = tail.poll().expect("first poll");
-    assert_eq!(lines.len(), 1, "{lines:?}");
-    assert!(lines[0].starts_with("complete"));
-
-    append(&path, " from Viking : 42:1\n");
-    let lines = tail.poll().expect("second poll");
-    assert_eq!(lines.len(), 1, "{lines:?}");
-    assert_eq!(
-      lines[0].trim_end(),
-      "09/15/2026 18:00:00: Got character ZDOID from Viking : 42:1"
-    );
+      .expect("poll")
+      .iter()
+      .map(|line| line.trim_end().to_string())
+      .collect()
   }
 
   #[test]
@@ -434,5 +465,229 @@ mod tests {
   fn non_formatted_lines_are_false() {
     assert!(!is_already_formatted("[Valheim] Server started"));
     assert!(!is_already_formatted("Some random game output..."));
+  }
+
+  /// #1533: Valheim truncates its log on every server start, including the in-process
+  /// restarts from `SCHEDULED_RESTART` and `odin update`. Every line of the new run has to
+  /// be surfaced, exactly once and in order.
+  #[test]
+  fn surfaces_every_line_of_a_run_that_restarted_in_place() {
+    let log = TempLog::new();
+    log.append(FIRST_RUN);
+
+    let mut tail = log.tail();
+    assert_eq!(poll(&mut tail), FIRST_RUN);
+
+    log.truncate_in_place();
+    log.append(SECOND_RUN);
+
+    assert_eq!(poll(&mut tail), SECOND_RUN);
+    assert!(poll(&mut tail).is_empty(), "the run must not be replayed");
+  }
+
+  /// The failure mode the length check alone does not catch: the restarted server writes
+  /// past the old offset before the next poll, so the file is *longer* than it was even
+  /// though it is a different run. Resuming from the old offset would skip the whole
+  /// beginning of the new run, `Game server connected` included.
+  #[test]
+  fn detects_a_truncation_that_refilled_past_the_old_offset() {
+    let log = TempLog::new();
+    let long_first_run: Vec<String> = (0..40)
+      .map(|i| {
+        format!(
+          "09/15/2026 09:00:0{}: World save ({i}/40) done. Total time [143ms]",
+          i % 10
+        )
+      })
+      .collect();
+    log.append(
+      &long_first_run
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>(),
+    );
+
+    let mut tail = log.tail();
+    assert_eq!(poll(&mut tail).len(), long_first_run.len());
+    let old_position = std::fs::metadata(&log.path).expect("metadata").len();
+
+    log.truncate_in_place();
+    let second_run: Vec<String> = (0..80)
+      .map(|i| format!("09/15/2026 09:01:0{}: second run line {i}", i % 10))
+      .collect();
+    log.append(&second_run.iter().map(String::as_str).collect::<Vec<_>>());
+    assert!(
+      std::fs::metadata(&log.path).expect("metadata").len() > old_position,
+      "this test is only meaningful while the new file is the longer one"
+    );
+
+    assert_eq!(poll(&mut tail), second_run);
+  }
+
+  /// Valheim emits the same world-save line over and over, so an anchor of one line would
+  /// often match across runs by accident. It spans several lines, bounded by `ANCHOR_BYTES`
+  /// so the re-read on every poll stays cheap.
+  #[test]
+  fn the_anchor_spans_more_than_one_short_line() {
+    let log = TempLog::new();
+    let repeated = "09/15/2026 09:00:01: World save (5/5) done. Total time [143ms]";
+    log.append(&[repeated, repeated, repeated, repeated, repeated]);
+
+    let mut tail = log.tail();
+    assert_eq!(poll(&mut tail).len(), 5);
+    assert!(
+      tail.anchor.len() > repeated.len(),
+      "the anchor should span more than the last line when lines are short: {}",
+      tail.anchor.len()
+    );
+    assert!(tail.anchor.len() <= ANCHOR_BYTES);
+
+    log.truncate_in_place();
+    log.append(&[repeated, "09/15/2026 09:01:02: Game server connected"]);
+    let lines = poll(&mut tail);
+    assert_eq!(lines.len(), 2, "{lines:?}");
+    assert!(lines[1].contains("Game server connected"));
+  }
+
+  /// A plain append, which is what happens for hours on end, must never reopen: a spurious
+  /// reopen would replay the file and re-fire every player join and save-failure webhook in
+  /// it.
+  #[test]
+  fn a_growing_file_is_never_replayed() {
+    let log = TempLog::new();
+    log.append(FIRST_RUN);
+
+    let mut tail = log.tail();
+    assert_eq!(poll(&mut tail).len(), FIRST_RUN.len());
+
+    for line in SECOND_RUN {
+      log.append(&[line]);
+      assert_eq!(poll(&mut tail), vec![line.to_string()]);
+      assert!(poll(&mut tail).is_empty());
+    }
+  }
+
+  /// Log rotation, or anything else that swaps a new file in at the same path. The new file
+  /// is deliberately longer than the old one, so only the inode check catches it.
+  #[test]
+  fn follows_the_path_when_the_file_is_replaced() {
+    let log = TempLog::new();
+    log.append(&["old line one", "old line two"]);
+
+    let mut tail = log.tail();
+    assert_eq!(poll(&mut tail).len(), 2);
+
+    std::fs::remove_file(&log.path).expect("remove");
+    log.append(&["new line one", "new line two", "new line three"]);
+
+    let lines = poll(&mut tail);
+    assert_eq!(
+      lines,
+      vec!["new line one", "new line two", "new line three"]
+    );
+  }
+
+  /// The tail is started from the log directory before the server has written anything, so
+  /// a missing file is normal and must not end the tail.
+  #[test]
+  fn a_missing_file_yields_nothing_and_is_picked_up_when_it_returns() {
+    let log = TempLog::new();
+    let mut tail = log.tail();
+
+    assert!(poll(&mut tail).is_empty());
+    assert!(poll(&mut tail).is_empty());
+
+    log.append(&["here now"]);
+    assert_eq!(poll(&mut tail), vec!["here now"]);
+
+    std::fs::remove_file(&log.path).expect("remove");
+    assert!(poll(&mut tail).is_empty());
+
+    log.append(&["and again"]);
+    assert_eq!(poll(&mut tail), vec!["and again"]);
+  }
+
+  /// A 100ms poll lands in the middle of a write eventually. The filters match whole lines,
+  /// so half a line must be held back rather than surfaced and matched as two.
+  #[test]
+  fn an_incomplete_line_is_held_until_its_newline_arrives() {
+    let log = TempLog::new();
+    let mut file = std::fs::File::create(&log.path).expect("create");
+    write!(file, "complete\n09/15/2026 09:12:44: Got character ZDOID").expect("partial write");
+    file.flush().expect("flush");
+
+    let mut tail = log.tail();
+    assert_eq!(poll(&mut tail), vec!["complete"]);
+    assert!(poll(&mut tail).is_empty(), "still incomplete");
+
+    writeln!(file, " from Viking : 2130425389:1").expect("finish the line");
+    file.flush().expect("flush");
+
+    assert_eq!(
+      poll(&mut tail),
+      vec!["09/15/2026 09:12:44: Got character ZDOID from Viking : 2130425389:1"]
+    );
+  }
+
+  /// Non UTF-8 bytes turn up in mod output; they must not abort the tail.
+  #[test]
+  fn invalid_utf8_is_read_lossily_rather_than_failing() {
+    let log = TempLog::new();
+    std::fs::write(&log.path, b"before\n\xff\xfe not utf8\nafter\n").expect("write");
+
+    let mut tail = log.tail();
+    let lines = poll(&mut tail);
+    assert_eq!(lines.len(), 3, "{lines:?}");
+    assert_eq!(lines[0], "before");
+    assert!(lines[1].contains("not utf8"));
+    assert_eq!(lines[2], "after");
+  }
+
+  /// End to end over the real tail loop: the symptom reported in #1533 was that player
+  /// events stopped arriving after a restart. `player.list` is what `handle_player_events`
+  /// writes for every join, so its contents stand in for the webhook here.
+  #[tokio::test]
+  #[serial]
+  async fn player_events_still_land_after_an_in_process_restart() {
+    let saves = tempfile::tempdir().expect("tempdir");
+    std::env::set_var(crate::constants::SAVE_LOCATION, saves.path());
+    std::env::remove_var("WEBHOOK_URL");
+    let player_list = saves.path().join("player.list");
+
+    let log = TempLog::new();
+    log.append(FIRST_RUN);
+    let handle = tokio::spawn(tail_file(log.path.clone()));
+
+    // The tail is live before the restart: the first run's join reaches the filters.
+    let before = wait_for(&player_list, "Skogsmaiden").await;
+
+    // The restart: Valheim truncates the log, the server comes back up, a player joins.
+    log.truncate_in_place();
+    log.append(SECOND_RUN);
+    let after = wait_for(&player_list, "Viking").await;
+
+    handle.abort();
+    std::env::remove_var(crate::constants::SAVE_LOCATION);
+
+    assert!(
+      before,
+      "the first run's join never reached the player filters"
+    );
+    assert!(
+      after,
+      "the join after the restart never reached the player filters; player.list: {:?}",
+      std::fs::read_to_string(&player_list)
+    );
+  }
+
+  async fn wait_for(path: &Path, needle: &str) -> bool {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while Instant::now() < deadline {
+      if std::fs::read_to_string(path).is_ok_and(|content| content.contains(needle)) {
+        return true;
+      }
+      tokio::time::sleep(Duration::from_millis(50)).await;
+    }
+    false
   }
 }
