@@ -181,3 +181,10 @@
 - fix(odin): refuse to start into an unwritable save directory (from @ksc98) + a container regression test (#1523)
 - chore(deps): update mbround18/paws action to v0.0.1-prerelease.50 - abandoned - autoclosed (#1522)
 - ci: pin paws to v0.0.1-prerelease.50 for the release-asset fix (#1521)
+
+## v3.8.4 (2026-09-14)
+
+- chore(deps): update mbround18/paws action to v0.0.1-prerelease.51 (#1524)
+- chore(deps): update mbround18/paws action to v0.0.1-prerelease.52 (#1526)
+- ci: auto-assign new issues and PRs to their CODEOWNERS (#1525)
+- fix(mods): install package folders to their BepInEx routes (#1527)

@@ -80,6 +80,23 @@ environment:
 
 See [Mod Repositories: Thunderstore and Hexium](./mod_repositories.md) for the details.
 
+### Where mod files are installed
+
+Odin installs Thunderstore packages the same way r2modman does, so mods that ship more than a
+plugin work without copying files by hand:
+
+| Folder in the mod package  | Installed to              |
+| -------------------------- | ------------------------- |
+| `plugins/` and loose files | `BepInEx/plugins/<mod>/`  |
+| `patchers/`                | `BepInEx/patchers/<mod>/` |
+| `core/`                    | `BepInEx/core/<mod>/`     |
+| `monomod/`                 | `BepInEx/monomod/<mod>/`  |
+| `config/`                  | `BepInEx/config/`         |
+
+Config files are only copied when they don't exist yet, so your edits survive restarts and mod
+updates. Removing a mod from `MODS` removes its files, but leaves its config behind. See
+[ADR 0001](../adr/0001-thunderstore-install-routes.md) for the details.
+
 ## Step 3: Run Docker Compose
 
 Once your configuration is set up, start your server by running:
