@@ -51,8 +51,11 @@ assert_not_contains() {
   fi
 }
 
-# The dispatcher, exactly as shipped.
-sed -n '/^case "\${TYPE}" in$/,/^esac$/p' "${SCRIPTS_DIR}/start_valheim.sh" >"${WORK_DIR}/dispatch.sh"
+# The TYPE normalization and the dispatcher, exactly as shipped.
+{
+  sed -n '/^TYPE="\$(normalize_type/,/^log "Found Type \${TYPE}"$/p' "${SCRIPTS_DIR}/start_valheim.sh"
+  sed -n '/^case "\${TYPE}" in$/,/^esac$/p' "${SCRIPTS_DIR}/start_valheim.sh"
+} >"${WORK_DIR}/dispatch.sh"
 if [ ! -s "${WORK_DIR}/dispatch.sh" ]; then
   echo "FAIL could not extract the TYPE dispatcher from start_valheim.sh" >&2
   exit 1
@@ -78,7 +81,7 @@ dispatch() {
   stderr_file="${WORK_DIR}/stderr"
   stdout="$(
     SCRIPTS_DIR="${SCRIPTS_DIR}" WORK_DIR="${WORK_DIR}" \
-      TYPE="${type,,}" MODS="${mods}" GAME_LOCATION="${game_location}" \
+      TYPE="${type}" MODS="${mods}" GAME_LOCATION="${game_location}" \
       bash "${WORK_DIR}/run.sh" 2>"${stderr_file}"
   )"
   status=$?
@@ -124,6 +127,7 @@ assert_eq "https://github.com/Grantapher/ValheimPlus/releases/download/0.10.1.2/
 cat >"${WORK_DIR}/run_without_utils.sh" <<'RUNNER'
 log() { printf 'LOG %s\n' "$*" >&2; }
 install_bepinex() { printf 'INSTALL_BEPINEX\n' >&2; }
+normalize_type() { printf '%s' "${1,,}"; }
 source "${WORK_DIR}/dispatch.sh"
 bash -c 'printf "%s" "${MODS-}"'
 RUNNER
@@ -153,6 +157,27 @@ assert_contains "$stderr" "Mods will NOT be installed" "Vanilla still warns abou
 dispatch "Nonsense"
 assert_eq "1" "$status" "an unknown type still fails the container"
 assert_contains "$stderr" "Unknown type: nonsense" "and says which type it did not know"
+
+# --- TYPE as compose's list-form environment delivers it --------------------
+
+dispatch '"Vanilla"'
+assert_eq "0" "$status" "a double-quoted TYPE is a known type"
+assert_contains "$stderr" "Found Type vanilla" "and the quotes are gone"
+
+dispatch "'BepInEx'" "Author-SomeMod-1.0.0"
+assert_eq "0" "$status" "a single-quoted TYPE is a known type"
+assert_contains "$stderr" "INSTALL_BEPINEX" "and dispatches as that type"
+
+dispatch '""'
+assert_eq "0" "$status" "an empty quoted TYPE runs vanilla"
+assert_contains "$stderr" "Found Type vanilla" "and says so"
+
+dispatch ""
+assert_eq "0" "$status" "an empty TYPE runs vanilla"
+assert_contains "$stderr" "Found Type vanilla" "and says so"
+
+dispatch "  Vanilla  "
+assert_eq "0" "$status" "surrounding whitespace is ignored"
 
 printf '\n%d assertion(s), %d failure(s)\n' "$assertions" "$failures"
 [ "$failures" -eq 0 ]
