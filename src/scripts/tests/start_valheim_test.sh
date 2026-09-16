@@ -119,6 +119,25 @@ VALHEIM_PLUS_RELEASE=0.10.1.2 dispatch "ValheimPlus"
 assert_eq "https://github.com/Grantapher/ValheimPlus/releases/download/0.10.1.2/ValheimPlus.dll" \
   "$stdout" "VALHEIM_PLUS_RELEASE reaches the dispatcher"
 
+# The helpers live in utils.sh, which start_valheim.sh only sources when present. Without
+# them the dispatcher has to say so rather than die on an undefined function.
+cat >"${WORK_DIR}/run_without_utils.sh" <<'RUNNER'
+log() { printf 'LOG %s\n' "$*" >&2; }
+install_bepinex() { printf 'INSTALL_BEPINEX\n' >&2; }
+source "${WORK_DIR}/dispatch.sh"
+bash -c 'printf "%s" "${MODS-}"'
+RUNNER
+
+stderr_file="${WORK_DIR}/stderr"
+stdout="$(
+  WORK_DIR="${WORK_DIR}" TYPE="valheimplus" MODS="" GAME_LOCATION="${WORK_DIR}/game" \
+    bash "${WORK_DIR}/run_without_utils.sh" 2>"${stderr_file}"
+)"
+status=$?
+stderr="$(cat "${stderr_file}")"
+assert_eq "1" "$status" "a missing utils.sh fails the dispatcher"
+assert_contains "$stderr" "needs /home/steam/scripts/utils.sh" "and says what is missing"
+
 # --- the types that already existed ----------------------------------------
 
 dispatch "BepInEx" "Author-SomeMod-1.0.0"
