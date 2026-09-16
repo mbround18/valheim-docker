@@ -63,7 +63,8 @@ jobs:
           status=0
           for test in ./src/scripts/tests/*_test.sh; do
             echo "== ${test}"
-            "${test}" || status=1
+            # Invoked through bash so the run does not depend on the file mode.
+            bash "${test}" || status=1
           done
           exit "${status}"
 
