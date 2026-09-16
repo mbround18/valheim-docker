@@ -4,7 +4,7 @@ ValheimPlus is a comprehensive mod that enhances Valheim with numerous quality-o
 
 ## Quick Start
 
-To install ValheimPlus, set your Docker environment variables like this:
+Set `TYPE` to `ValheimPlus`:
 
 ```yaml
 services:
@@ -12,38 +12,70 @@ services:
     image: mbround18/valheim:3
     user: "1000:1000"
     environment:
-      - TYPE=BepInEx
-      - MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/ValheimPlus.dll
+      - TYPE=ValheimPlus
 ```
 
-That's it! The server will automatically download the DLL, install it into BepInEx plugins, and download the ValheimPlus configuration file on startup.
+That is it. The server installs BepInEx, downloads the latest `ValheimPlus.dll` into
+`BepInEx/plugins/`, and downloads the matching `valheim_plus.cfg` into `BepInEx/config/` on
+startup.
 
-## Finding the Latest Version
+## Choosing a Version
 
-ValheimPlus releases are published on GitHub. To find the latest version:
+By default `TYPE=ValheimPlus` follows the newest release of
+[Grantapher's ValheimPlus](https://github.com/Grantapher/ValheimPlus), the maintained fork,
+and picks up new releases when the container restarts. That is the same policy the image
+already uses for BepInEx itself.
 
-1. Visit: [ValheimPlus Releases](https://github.com/Grantapher/ValheimPlus/releases)
-2. Find the latest release (usually at the top of the page)
-3. Look for the **Assets** section and find `ValheimPlus.dll`
-4. Copy the download link URL
-5. Replace the version number in the `MODS` environment variable
-
-### Example: Updating to a Newer Version
-
-If you see a release like `v0.9.17.0` on GitHub with a `ValheimPlus.dll` asset, update your config to:
+To stay on a known version instead, pin it:
 
 ```yaml
-- MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.9.17.0/ValheimPlus.dll
+environment:
+  - TYPE=ValheimPlus
+  - VALHEIM_PLUS_RELEASE=0.10.1.2
 ```
+
+| Variable                    | Default                    | What it does                                                                |
+| --------------------------- | -------------------------- | --------------------------------------------------------------------------- |
+| `VALHEIM_PLUS_RELEASE`      | `latest`                   | The release tag to install, or `latest`.                                    |
+| `VALHEIM_PLUS_REPOSITORY`   | `Grantapher/ValheimPlus`   | The GitHub repository to pull `ValheimPlus.dll` from, for other forks.      |
+| `VALHEIM_PLUS_DOWNLOAD_URL` | derived from the two above | A full URL to a `ValheimPlus.dll`, used as is. Overrides both of the above. |
 
 ## How It Works
 
-When you set `TYPE=BepInEx` and include a ValheimPlus DLL URL in the `MODS` variable:
+`TYPE=ValheimPlus` is `TYPE=BepInEx` plus one known plugin:
 
-1. **BepInEx is installed** as the mod loader framework
-2. **ValheimPlus.dll is downloaded** and placed in `BepInEx/plugins/`
-3. **valheim_plus.cfg** is automatically downloaded from the same GitHub release and placed in `BepInEx/config/`
-4. The server starts with ValheimPlus loaded and ready
+1. **BepInEx is installed** as the mod loader framework, exactly as for `TYPE=BepInEx`
+2. **The ValheimPlus download URL is added to `MODS`**, so it goes through the same install
+   path as any other mod: it is tracked, updated, and removed again if you change `TYPE`
+3. **ValheimPlus.dll is downloaded** and placed in `BepInEx/plugins/`
+4. **valheim_plus.cfg** is downloaded from the same release and placed in `BepInEx/config/`,
+   unless you already have one there, which is never overwritten
+5. The server starts with ValheimPlus loaded
+
+If you list ValheimPlus in `MODS` yourself, your entry is used and nothing is added.
+
+## Combining with Other Mods
+
+`MODS` works as usual; ValheimPlus is appended to whatever you set:
+
+```yaml
+environment:
+  - TYPE=ValheimPlus
+  - |
+    MODS=https://cdn.thunderstore.io/live/repository/packages/OdinPlus-OdinHorse-1.4.12.zip
+    https://cdn.thunderstore.io/live/repository/packages/ValheimModding-Jotunn-2.26.0.zip
+```
+
+## Installing It by Hand
+
+`TYPE=BepInEx` with an explicit DLL URL in `MODS` still works, and is the way to run a
+build that is not a GitHub release asset:
+
+```yaml
+environment:
+  - TYPE=BepInEx
+  - MODS=https://github.com/Grantapher/ValheimPlus/releases/download/0.10.1.2/ValheimPlus.dll
+```
 
 ## Configuration
 
@@ -72,7 +104,7 @@ You can install ValheimPlus alongside other mods by specifying multiple URLs in 
 
 - Check the server logs for errors
 - Verify the ValheimPlus.dll download URL is correct and accessible
-- Ensure `TYPE=BepInEx` is set
+- Ensure `TYPE` is set to `ValheimPlus` (or `BepInEx` if you are listing the DLL yourself)
 
 ### Mods Not Loading
 

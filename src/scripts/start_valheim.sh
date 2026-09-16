@@ -165,6 +165,26 @@ case "${TYPE}" in
     install_bepinex
   fi
   ;;
+"valheimplus" | "valheim_plus" | "valheim+")
+  # ValheimPlus is a BepInEx plugin, so this is the BepInEx path plus one mod.
+  if [ ! -d "${GAME_LOCATION}/BepInEx" ] || [ ! -f "${GAME_LOCATION}/BepInEx/core/BepInEx.dll" ] || [ "${UPDATE_ON_STARTUP:-0}" -eq 1 ] || [ "${FORCE_INSTALL:-0}" -eq 1 ]; then
+    install_bepinex
+  fi
+
+  if ! declare -F valheim_plus_download_url >/dev/null; then
+    log "TYPE=${TYPE} needs /home/steam/scripts/utils.sh, which is missing from this image"
+    exit 1
+  fi
+
+  VALHEIM_PLUS_URL="$(valheim_plus_download_url)"
+  if mods_include_valheim_plus "${MODS:-}"; then
+    log "MODS already names ValheimPlus; installing your entry rather than ${VALHEIM_PLUS_URL}"
+  else
+    log "Adding ValheimPlus to the mod list: ${VALHEIM_PLUS_URL}"
+  fi
+  MODS="$(mods_with_valheim_plus "${MODS:-}" "${VALHEIM_PLUS_URL}")"
+  export MODS
+  ;;
 *)
   log "Unknown type: ${TYPE}"
   exit 1
