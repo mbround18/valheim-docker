@@ -2,9 +2,9 @@ use crate::log_filters::{handle_launch_probes, handle_player_events, handle_save
 use crate::utils::common_paths::log_directory;
 use crate::utils::environment::is_env_var_truthy;
 use anyhow::{Context, Result};
-use log::error;
 use log::Level;
-use std::collections::HashMap;
+use log::{error, warn};
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::fs::File;
@@ -14,19 +14,126 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::task;
 
-/// Struct to keep track of each file's state, including its last read line position.
-#[derive(Clone)]
-struct FileTracker {
+/// Follows one file the way `tail -F` does: it keeps reading as the file grows, and starts
+/// over from the beginning when the file is truncated or replaced.
+///
+/// Valheim truncates `valheim_server.log` every time the server process starts, including
+/// the in-process restarts done by `SCHEDULED_RESTART` and `odin update`. A forward-only
+/// tail is left with an offset past the end of the new, shorter file and goes permanently
+/// blind after the first restart, which silently disables every log filter driven from it.
+struct LogTail {
   path: PathBuf,
-  last_position: u64,
+  reader: Option<BufReader<File>>,
+  /// Offset just past the last complete line handed out, into the currently open file.
+  position: u64,
+  /// Identifies the open file so a new file at the same path is noticed.
+  file_id: Option<u64>,
 }
 
-impl FileTracker {
+impl LogTail {
   fn new(path: PathBuf) -> Self {
     Self {
       path,
-      last_position: 0,
+      reader: None,
+      position: 0,
+      file_id: None,
     }
+  }
+
+  /// The inode of a file. `None` where the platform does not expose one, in which case
+  /// replacement is not detected and only truncation is.
+  fn identity(metadata: &fs::Metadata) -> Option<u64> {
+    #[cfg(unix)]
+    {
+      use std::os::unix::fs::MetadataExt;
+      Some(metadata.ino())
+    }
+    #[cfg(not(unix))]
+    {
+      let _ = metadata;
+      None
+    }
+  }
+
+  /// True when the path no longer refers to the file being read, or that file has been
+  /// truncated underneath the current offset.
+  fn needs_reopen(&self, metadata: &fs::Metadata) -> bool {
+    let replaced = matches!(
+      (self.file_id, Self::identity(metadata)),
+      (Some(open), Some(current)) if open != current
+    );
+    replaced || metadata.len() < self.position
+  }
+
+  fn open(&mut self, from: u64) -> Result<()> {
+    let file = File::open(&self.path).context("Unable to open file for tailing")?;
+    let metadata = file
+      .metadata()
+      .context("Unable to read metadata of file being tailed")?;
+    let position = from.min(metadata.len());
+    let mut reader = BufReader::new(file);
+    reader
+      .seek(SeekFrom::Start(position))
+      .context("Failed to seek to start position")?;
+    self.file_id = Self::identity(&metadata);
+    self.position = position;
+    self.reader = Some(reader);
+    Ok(())
+  }
+
+  /// Reads every complete line available right now. A trailing line without its newline is
+  /// still being written, so it is left in place rather than surfaced in two halves.
+  fn read_available(&mut self) -> Result<Vec<String>> {
+    let position = self.position;
+    let Some(reader) = self.reader.as_mut() else {
+      return Ok(Vec::new());
+    };
+    let mut lines = Vec::new();
+    let mut offset = position;
+    loop {
+      let mut buf = Vec::new();
+      let bytes_read = reader
+        .read_until(b'\n', &mut buf)
+        .context("Failed to read from log file")?;
+      if bytes_read == 0 {
+        break;
+      }
+      if !buf.ends_with(b"\n") {
+        reader
+          .seek(SeekFrom::Start(offset))
+          .context("Failed to rewind to the start of an incomplete line")?;
+        break;
+      }
+      offset += bytes_read as u64;
+      lines.push(String::from_utf8_lossy(&buf).to_string());
+    }
+    self.position = offset;
+    Ok(lines)
+  }
+
+  /// The lines written since the last call, reopening the file first if it was truncated or
+  /// replaced. A file that has gone missing yields nothing and is picked up when it returns.
+  fn poll(&mut self) -> Result<Vec<String>> {
+    match fs::metadata(&self.path) {
+      Ok(metadata) => {
+        if self.reader.is_none() {
+          self.open(0)?;
+        } else if self.needs_reopen(&metadata) {
+          warn!(
+            "{} was truncated or replaced, following it from the start",
+            self.path.display()
+          );
+          self.open(0)?;
+        }
+      }
+      Err(_) => {
+        self.reader = None;
+        self.position = 0;
+        self.file_id = None;
+        return Ok(Vec::new());
+      }
+    }
+    self.read_available()
   }
 }
 
@@ -126,33 +233,20 @@ fn handle_line(path: &PathBuf, raw: &str) {
 }
 
 /// Tails the given log file asynchronously, processing new lines as they are written.
-async fn tail_file(mut file_tracker: FileTracker) -> Result<()> {
-  let file = File::open(&file_tracker.path).context("Unable to open file for tailing")?;
-  let mut reader = BufReader::new(file);
-  reader
-    .seek(SeekFrom::Start(file_tracker.last_position))
-    .context("Failed to seek to start position")?;
-
+async fn tail_file(path: PathBuf) {
+  let mut tail = LogTail::new(path.clone());
   loop {
-    let mut new_lines = Vec::new();
-    loop {
-      let mut buf = Vec::new();
-      let bytes_read = reader
-        .read_until(b'\n', &mut buf)
-        .context("Failed to read from log file")?;
-      if bytes_read == 0 {
-        break;
+    match tail.poll() {
+      Ok(lines) => {
+        for line in lines {
+          handle_line(&path, &line);
+        }
       }
-      let line = String::from_utf8_lossy(&buf).to_string();
-      new_lines.push(line);
-    }
-
-    if !new_lines.is_empty() {
-      file_tracker.last_position = reader
-        .stream_position()
-        .context("Failed to get stream position")?;
-      for line in new_lines {
-        handle_line(&file_tracker.path, &line);
+      // Reading can fail while the server swaps the file out from under us; drop the handle
+      // and try again on the next tick rather than ending the tail for the whole run.
+      Err(e) => {
+        error!("Error tailing {}: {e:?}", path.display());
+        tail.reader = None;
       }
     }
 
@@ -162,7 +256,7 @@ async fn tail_file(mut file_tracker: FileTracker) -> Result<()> {
 
 pub async fn watch_logs(log_path: String) {
   let mut handles = Vec::new();
-  let mut watched_files: HashMap<PathBuf, FileTracker> = HashMap::new();
+  let mut watched_files: HashSet<PathBuf> = HashSet::new();
   let log_path = Arc::new(log_path);
 
   loop {
@@ -173,13 +267,8 @@ pub async fn watch_logs(log_path: String) {
       .collect::<Vec<_>>();
 
     for path in paths {
-      if path.is_file() {
-        watched_files.entry(path.clone()).or_insert_with(|| {
-          let tracker = FileTracker::new(path.clone());
-          let handle = task::spawn(tail_file(tracker.clone()));
-          handles.push(handle);
-          tracker
-        });
+      if path.is_file() && watched_files.insert(path.clone()) {
+        handles.push(task::spawn(tail_file(path)));
       }
     }
 
@@ -235,7 +324,95 @@ pub async fn invoke(lines: Option<u16>, watch: bool) {
 
 #[cfg(test)]
 mod tests {
-  use super::is_already_formatted;
+  use super::{is_already_formatted, LogTail};
+  use std::io::Write;
+
+  fn append(path: &std::path::Path, contents: &str) {
+    let mut file = std::fs::OpenOptions::new()
+      .create(true)
+      .append(true)
+      .open(path)
+      .expect("open for append");
+    file.write_all(contents.as_bytes()).expect("append");
+  }
+
+  /// The regression behind #1533: Valheim truncates its log on every start, including the
+  /// in-process restarts from `SCHEDULED_RESTART` and `odin update`.
+  #[test]
+  fn follows_the_file_across_truncation() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("valheim_server.log");
+    append(&path, "09/15/2026 18:00:00: first run line\n");
+
+    let mut tail = LogTail::new(path.clone());
+    assert_eq!(tail.poll().expect("first poll").len(), 1);
+    assert!(tail.poll().expect("no new lines").is_empty());
+
+    // The server restarts in place: same path, truncated to nothing, then written again.
+    std::fs::write(&path, "").expect("truncate");
+    append(&path, "[UnityMemory] Configuration Parameters\n");
+    append(&path, "09/15/2026 18:16:18: Game server connected\n");
+
+    let lines = tail.poll().expect("poll after truncation");
+    assert_eq!(lines.len(), 2, "{lines:?}");
+    assert!(lines[1].contains("Game server connected"));
+    assert!(tail.poll().expect("no new lines").is_empty());
+  }
+
+  #[test]
+  fn follows_the_path_when_the_file_is_replaced() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("valheim_server.log");
+    append(&path, "old line one\nold line two\n");
+
+    let mut tail = LogTail::new(path.clone());
+    assert_eq!(tail.poll().expect("first poll").len(), 2);
+
+    // Replaced by a longer file at the same path, so the length check alone would miss it.
+    std::fs::remove_file(&path).expect("remove");
+    append(&path, "new line one\nnew line two\nnew line three\n");
+
+    let lines = tail.poll().expect("poll after replacement");
+    assert_eq!(lines.len(), 3, "{lines:?}");
+    assert!(lines[0].contains("new line one"));
+  }
+
+  #[test]
+  fn a_missing_file_yields_nothing_and_is_picked_up_when_it_returns() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("valheim_server.log");
+
+    let mut tail = LogTail::new(path.clone());
+    assert!(tail
+      .poll()
+      .expect("missing file is not an error")
+      .is_empty());
+
+    append(&path, "here now\n");
+    assert_eq!(tail.poll().expect("poll once created").len(), 1);
+  }
+
+  /// A line caught mid-write must not be surfaced as two lines, since the filters match on
+  /// whole lines.
+  #[test]
+  fn an_incomplete_line_is_held_until_its_newline_arrives() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("valheim_server.log");
+    append(&path, "complete\n09/15/2026 18:00:00: Got character ZDOID");
+
+    let mut tail = LogTail::new(path.clone());
+    let lines = tail.poll().expect("first poll");
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert!(lines[0].starts_with("complete"));
+
+    append(&path, " from Viking : 42:1\n");
+    let lines = tail.poll().expect("second poll");
+    assert_eq!(lines.len(), 1, "{lines:?}");
+    assert_eq!(
+      lines[0].trim_end(),
+      "09/15/2026 18:00:00: Got character ZDOID from Viking : 42:1"
+    );
+  }
 
   #[test]
   fn detects_module_target_lines() {
