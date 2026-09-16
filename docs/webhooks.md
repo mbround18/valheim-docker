@@ -43,6 +43,19 @@ at `ERROR` and sends a `Save Failed` notification on the first failure of a stre
 save directory is not writable, since a server that cannot save is worse than one that
 does not start.
 
+## Steam Master Server Registration Failures
+
+A public server registers with the Steam master server so it shows up in the in-game
+browser. When that fails, Valheim logs `Game server connected failed` and keeps running,
+so players who know the address can still join, they just cannot find the server in the
+list. Odin logs that line at `ERROR` and sends a `Start Failed` notification on the first
+failure of a streak (`WEBHOOK_STATUS_FAILED`), then the usual `Start Successful` once
+registration goes through.
+
+Note that `Game server connected failed` contains the success line
+`Game server connected` as a prefix; the failure is matched first, so a failed
+registration never reports itself as a successful start.
+
 ## Silencing Discord Notifications
 
 Player join/leave events can make a busy server noisy. Setting
