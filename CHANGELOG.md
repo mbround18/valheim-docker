@@ -188,3 +188,11 @@
 - chore(deps): update mbround18/paws action to v0.0.1-prerelease.52 (#1526)
 - ci: auto-assign new issues and PRs to their CODEOWNERS (#1525)
 - fix(mods): install package folders to their BepInEx routes (#1527)
+
+## v3.8.5 (2026-09-16)
+
+- fix(odin): keep tailing valheim_server.log across truncation and replacement (#1535)
+- fix(odin): stop reporting failed Steam registration as a successful start (#1536)
+- chore(deps): update rust crate clap to v4.6.7 (#1532)
+- chore(deps): update rust crate cc to v1.4.6 (#1528)
+- feat(valheim): support TYPE=ValheimPlus again (#1537)
