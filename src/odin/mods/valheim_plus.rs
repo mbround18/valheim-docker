@@ -104,6 +104,23 @@ mod tests {
     assert!(result.is_err());
   }
 
+  /// The URLs `valheim_plus_download_url` in src/scripts/utils.sh hands to `MODS` for
+  /// `TYPE=ValheimPlus`. They have to be recognised here, since that is what pulls down the
+  /// matching `valheim_plus.cfg`, and the config has to resolve to a real release asset.
+  #[test]
+  fn the_type_valheim_plus_download_urls_are_recognised() {
+    for dll_url in [
+      "https://github.com/Grantapher/ValheimPlus/releases/latest/download/ValheimPlus.dll",
+      "https://github.com/Grantapher/ValheimPlus/releases/download/0.10.1.2/ValheimPlus.dll",
+    ] {
+      assert!(is_valheim_plus_dll_url(dll_url), "{dll_url}");
+      assert_eq!(
+        config_url_from_dll_url(dll_url).expect("config url"),
+        dll_url.replace("ValheimPlus.dll", "valheim_plus.cfg")
+      );
+    }
+  }
+
   #[test]
   fn test_is_valheim_plus_dll_url_true_cases() {
     assert!(is_valheim_plus_dll_url(

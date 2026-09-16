@@ -59,7 +59,13 @@ jobs:
       - name: Prettier
         run: npx -y prettier --check ./
       - name: Shell tests
-        run: ./src/scripts/tests/entrypoint_test.sh
+        run: |
+          status=0
+          for test in ./src/scripts/tests/*_test.sh; do
+            echo "== ${test}"
+            "${test}" || status=1
+          done
+          exit "${status}"
 
   image:
     name: Image checks

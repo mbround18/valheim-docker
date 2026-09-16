@@ -6,10 +6,11 @@ Follow these steps to configure and run mods on your Valheim server.
 
 Set the `TYPE` environment variable to one of the following options:
 
-| Type    | What It Installs                                                                                                                                                           |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Vanilla | The default and most common installation type. This will run Valheim normally.                                                                                             |
-| BepInEx | Installs [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/). It includes only the minimal components required for BepInEx. |
+| Type        | What It Installs                                                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vanilla     | The default and most common installation type. This will run Valheim normally.                                                                                                        |
+| BepInEx     | Installs [BepInEx from this package](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/). It includes only the minimal components required for BepInEx.            |
+| ValheimPlus | Installs BepInEx as above, then adds the [ValheimPlus](https://github.com/Grantapher/ValheimPlus) plugin and its config. See [Installing ValheimPlus](./valheimplus_installation.md). |
 
 ## Step 2: Configuring Mods
 
