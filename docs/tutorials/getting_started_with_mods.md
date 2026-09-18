@@ -81,6 +81,19 @@ environment:
 
 See [Mod Repositories: Thunderstore and Hexium](./mod_repositories.md) for the details.
 
+### Using a Gale Profile Sync Code
+
+If your players already share a [Gale](https://github.com/Kesomannen/gale) profile, point the
+server at its sync code and it installs the same mods at the same versions:
+
+```yaml
+environment:
+  - TYPE=BepInEx
+  - GALE_SYNC_CODE=abc123
+```
+
+See [Gale Profile Sync](./gale_profile_sync.md) for syncing configs and adding server-only mods.
+
 ### Where mod files are installed
 
 Odin installs Thunderstore packages the same way r2modman does, so mods that ship more than a

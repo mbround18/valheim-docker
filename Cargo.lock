@@ -1834,6 +1834,8 @@ dependencies = [
  "fs_extra",
  "glob",
  "handlebars",
+ "hex",
+ "indexmap 2.14.2",
  "inflections",
  "json-patch",
  "lazy_static",

@@ -1,4 +1,5 @@
 pub mod bepinex;
+pub mod gale;
 mod install_routes;
 pub mod installed_mods;
 pub mod manifest;
