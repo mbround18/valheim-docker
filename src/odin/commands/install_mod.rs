@@ -6,7 +6,6 @@ use crate::utils::environment::is_env_var_truthy_with_default;
 use crate::utils::{download_stagger, max_concurrent_downloads, HttpPool};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -134,25 +133,7 @@ fn from_var_state_path() -> PathBuf {
 }
 
 fn sha256_hex(path: &Path) -> Result<String, ValheimModError> {
-  let mut file =
-    std::fs::File::open(path).map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
-  let mut hasher = Sha256::new();
-  let mut buf = [0u8; 8192];
-  loop {
-    let n = std::io::Read::read(&mut file, &mut buf)
-      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-    if n == 0 {
-      break;
-    }
-    hasher.update(&buf[..n]);
-  }
-  let digest = hasher.finalize();
-  let mut hex = String::with_capacity(digest.len() * 2);
-  for byte in digest {
-    use std::fmt::Write as _;
-    write!(&mut hex, "{byte:02x}").map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-  }
-  Ok(hex)
+  crate::utils::fs::sha256_file_hex(path).map_err(|e| ValheimModError::FileOpenError(e.to_string()))
 }
 
 fn sha_sidecar_path(staging_path: &Path) -> PathBuf {
@@ -289,6 +270,13 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     .map(|s| s.to_string())
     .collect();
 
+  // GALE_SYNC_CODE contributes the profile's mods ahead of MODS. A failure here must stop the
+  // run: carrying on without the profile would reconcile every profile mod away.
+  let desired_mods = crate::mods::gale::merge_mod_entries(
+    crate::mods::gale::gale_mod_entries().await?,
+    desired_mods,
+  );
+
   // Load previous state so we can reconcile removed mods.
   let previous_state = load_from_var_state().unwrap_or_else(|e| {
     warn!("Failed reading from-var state; continuing without cleanup: {e}");
@@ -306,7 +294,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   }
 
   if desired_mods.is_empty() {
-    info!("No MODS entries after parsing; completed cleanup reconciliation.");
+    info!("No MODS or Gale profile entries after parsing; completed cleanup reconciliation.");
     let empty = FromVarState {
       schema_version: 1,
       mods: vec![],
@@ -316,7 +304,10 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     return Ok(());
   }
 
-  info!("Installing {} mod(s) from MODS env", desired_mods.len());
+  info!(
+    "Installing {} mod(s) from MODS env and Gale profile",
+    desired_mods.len()
+  );
 
   // By default one failed mod fails the whole run (and the container restarts).
   // MODS_CONTINUE_ON_FAILURE=true installs whatever succeeded and only warns,

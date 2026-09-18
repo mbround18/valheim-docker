@@ -19,5 +19,7 @@ pub fn invoke(dry_run: bool) {
       exit(1);
     }
     server::blocking_shutdown();
+    // An explicit stop wins over a restart an interrupted update still owed.
+    server::clear_restart_pending();
   }
 }

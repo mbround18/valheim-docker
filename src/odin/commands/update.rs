@@ -151,6 +151,9 @@ fn update_regular(run_action: RunAction, server_state: ServerState, update_state
       debug!("Updating the installation!");
       server::update_server()
     }
-    _ => debug!("No update available, nothing to do!"),
+    _ => {
+      debug!("No update available, nothing to do!");
+      server::resume_interrupted_update();
+    }
   }
 }
