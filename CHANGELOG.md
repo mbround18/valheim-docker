@@ -200,3 +200,7 @@
 ## v3.8.6 (2026-09-18)
 
 - Merge ksc98's fixes: quoted TYPE values (#1541) and BepInEx config preservation (#1542) (#1545)
+
+## v3.8.7 (2026-09-18)
+
+- feat(mods): Gale profile sync and recovery from interrupted updates (#1546)
