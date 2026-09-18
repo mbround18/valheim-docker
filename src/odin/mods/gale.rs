@@ -220,7 +220,11 @@ fn package_key(entry: &str) -> Option<String> {
 
 /// Profile entries first, then `MODS`. A `MODS` entry naming the same package as a profile
 /// entry replaces it, so a version can be pinned without editing the Gale profile.
+/// Without a profile, `MODS` passes through untouched.
 pub fn merge_mod_entries(profile: Vec<String>, mods: Vec<String>) -> Vec<String> {
+  if profile.is_empty() {
+    return mods;
+  }
   let overridden: HashSet<String> = mods.iter().filter_map(|m| package_key(m)).collect();
   let mut seen: HashSet<String> = HashSet::new();
   profile
@@ -393,6 +397,31 @@ mod tests {
   }
 
   #[test]
+  fn mods_pass_through_untouched_without_a_profile() {
+    let mods: Vec<String> = vec![
+      "Advize-PlantEasily-2.3.0".into(),
+      "Advize-PlantEasily-2.3.0".into(),
+      "hex:ValheimModding-Jotunn-*".into(),
+      "https://example.com/ServerOnly.dll".into(),
+    ];
+    assert_eq!(merge_mod_entries(vec![], mods.clone()), mods);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn no_sync_code_means_no_entries_and_no_requests() {
+    env::remove_var(GALE_SYNC_CODE_VAR);
+    // An unroutable base URL: any request attempt would fail the test.
+    env::set_var(GALE_SYNC_URL_VAR, "http://127.0.0.1:9/api");
+    assert!(gale_mod_entries().await.unwrap().is_empty());
+    env::set_var(GALE_SYNC_CODE_VAR, "   ");
+    assert!(gale_mod_entries().await.unwrap().is_empty());
+    env::remove_var(GALE_SYNC_CODE_VAR);
+    env::remove_var(GALE_SYNC_URL_VAR);
+  }
+
+  #[test]
+  #[serial]
   fn profile_url_encodes_the_code() {
     env::remove_var(GALE_SYNC_URL_VAR);
     assert_eq!(
