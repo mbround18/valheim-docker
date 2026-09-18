@@ -6,7 +6,6 @@ use crate::utils::environment::is_env_var_truthy_with_default;
 use crate::utils::{download_stagger, max_concurrent_downloads, HttpPool};
 use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -134,25 +133,7 @@ fn from_var_state_path() -> PathBuf {
 }
 
 fn sha256_hex(path: &Path) -> Result<String, ValheimModError> {
-  let mut file =
-    std::fs::File::open(path).map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
-  let mut hasher = Sha256::new();
-  let mut buf = [0u8; 8192];
-  loop {
-    let n = std::io::Read::read(&mut file, &mut buf)
-      .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-    if n == 0 {
-      break;
-    }
-    hasher.update(&buf[..n]);
-  }
-  let digest = hasher.finalize();
-  let mut hex = String::with_capacity(digest.len() * 2);
-  for byte in digest {
-    use std::fmt::Write as _;
-    write!(&mut hex, "{byte:02x}").map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-  }
-  Ok(hex)
+  crate::utils::fs::sha256_file_hex(path).map_err(|e| ValheimModError::FileOpenError(e.to_string()))
 }
 
 fn sha_sidecar_path(staging_path: &Path) -> PathBuf {

@@ -15,6 +15,7 @@ use crate::errors::ValheimModError;
 use crate::utils::common_paths::{bepinex_config_directory, mods_staging_directory};
 use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
 use crate::utils::{parse_mod_string, send_with_backoff, split_repository_prefix, ModRepository};
+use indexmap::IndexSet;
 use log::{debug, info, warn};
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -226,7 +227,6 @@ pub fn merge_mod_entries(profile: Vec<String>, mods: Vec<String>) -> Vec<String>
     return mods;
   }
   let overridden: HashSet<String> = mods.iter().filter_map(|m| package_key(m)).collect();
-  let mut seen: HashSet<String> = HashSet::new();
   profile
     .into_iter()
     .filter(|entry| match package_key(entry) {
@@ -237,7 +237,8 @@ pub fn merge_mod_entries(profile: Vec<String>, mods: Vec<String>) -> Vec<String>
       _ => true,
     })
     .chain(mods)
-    .filter(|entry| seen.insert(entry.clone()))
+    .collect::<IndexSet<String>>()
+    .into_iter()
     .collect()
 }
 
