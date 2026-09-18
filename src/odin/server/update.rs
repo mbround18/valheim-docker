@@ -1,11 +1,19 @@
 use log::{debug, error, info};
 
 use regex::Regex;
-use std::{env, fs, io::ErrorKind, path::Path, process::exit};
+use std::{
+  env, fs,
+  io::ErrorKind,
+  path::{Path, PathBuf},
+  process::exit,
+};
 
 use crate::{
-  constants, files::config::load_config, server, steamcmd::output_with_retries,
-  utils::get_working_dir,
+  constants,
+  files::config::load_config,
+  server,
+  steamcmd::output_with_retries,
+  utils::{common_paths::game_directory, get_working_dir},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -56,11 +64,65 @@ pub fn update_is_available() -> bool {
   info.update_available()
 }
 
+/// Marks that the server was stopped for an update and must come back once the update is in.
+/// Kept on disk so an update run that dies after stopping the server (#1543) still leaves the
+/// next run knowing the server should be online.
+fn restart_marker_path() -> PathBuf {
+  Path::new(&game_directory()).join(".odin_restart_after_update")
+}
+
+pub fn restart_pending() -> bool {
+  restart_marker_path().exists()
+}
+
+fn mark_restart_pending() {
+  let path = restart_marker_path();
+  if let Err(e) = fs::write(&path, chrono::Local::now().to_rfc3339()) {
+    error!("Failed to record restart intent at {}: {e}", path.display());
+  }
+}
+
+pub fn clear_restart_pending() {
+  match fs::remove_file(restart_marker_path()) {
+    Ok(_) => debug!("Cleared pending post-update restart"),
+    Err(e) if e.kind() == ErrorKind::NotFound => {}
+    Err(e) => error!("Failed to clear pending post-update restart: {e}"),
+  }
+}
+
+fn start_after_update() {
+  let config = load_config();
+  match server::start_daemonized(config) {
+    Ok(_) => info!("Server daemon started"),
+    Err(e) => {
+      error!("Error daemonizing: {e}");
+      exit(1);
+    }
+  }
+}
+
+/// Starts the server when an earlier update stopped it but never brought it back.
+pub fn resume_interrupted_update() {
+  if !restart_pending() {
+    return;
+  }
+  if server::is_running() {
+    clear_restart_pending();
+    return;
+  }
+  info!("A previous update stopped the server without restarting it; starting it now");
+  start_after_update();
+}
+
 pub fn update_server() {
-  // Shutdown the server if it's running
+  // Shutdown the server if it's running, remembering on disk that it has to come back.
   let server_was_running = server::is_running();
+  let restart_after = server_was_running || restart_pending();
   if server_was_running {
+    mark_restart_pending();
     server::blocking_shutdown();
+  } else if restart_after {
+    info!("A previous update stopped the server; it will be started after this update");
   }
 
   // Detect current build (if available) and whether beta branch will be used
@@ -112,15 +174,8 @@ pub fn update_server() {
   }
 
   // Bring the server up if it was running before
-  if server_was_running {
-    let config = load_config();
-    match server::start_daemonized(config) {
-      Ok(_) => info!("Server daemon started"),
-      Err(e) => {
-        error!("Error daemonizing: {e}");
-        exit(1);
-      }
-    }
+  if restart_after {
+    start_after_update();
   }
 }
 
@@ -214,6 +269,23 @@ mod tests {
     let filepath = TEST_ASSET_DIR.join(filename);
     fs::read_to_string(&filepath)
       .unwrap_or_else(|_| panic!("Sample file missing: '{}'", filepath.display()))
+  }
+
+  #[test]
+  #[serial_test::serial]
+  fn restart_marker_survives_until_cleared() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var(constants::GAME_LOCATION, game.path());
+
+    assert!(!restart_pending());
+    mark_restart_pending();
+    assert!(restart_pending());
+    clear_restart_pending();
+    assert!(!restart_pending());
+    // Clearing an absent marker is a no-op.
+    clear_restart_pending();
+
+    env::remove_var(constants::GAME_LOCATION);
   }
 
   #[test]

@@ -16,10 +16,8 @@ use fs_extra::dir;
 use fs_extra::dir::CopyOptions;
 use log::{debug, error, info, warn};
 use reqwest::Url;
-use sha2::{Digest, Sha256};
 use std::convert::TryFrom;
 use std::fs::{create_dir_all, File};
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tempfile::tempdir;
@@ -408,25 +406,8 @@ impl ValheimMod {
 
   /// Compute SHA-256 of a file at the given path.
   fn sha256_hex(path: &Path) -> Result<String, ValheimModError> {
-    let mut file = File::open(path).map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
-    let mut buf = [0u8; 8192];
-    let mut hasher = Sha256::new();
-    loop {
-      let n = file
-        .read(&mut buf)
-        .map_err(|e| ValheimModError::FileOpenError(e.to_string()))?;
-      if n == 0 {
-        break;
-      }
-      hasher.update(&buf[..n]);
-    }
-    let digest = hasher.finalize();
-    let mut hex = String::with_capacity(digest.len() * 2);
-    for byte in digest {
-      use std::fmt::Write as _;
-      write!(&mut hex, "{byte:02x}").map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-    }
-    Ok(hex)
+    crate::utils::fs::sha256_file_hex(path)
+      .map_err(|e| ValheimModError::FileOpenError(e.to_string()))
   }
 
   /// Try opening as a ZIP to validate integrity.
