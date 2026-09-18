@@ -196,3 +196,7 @@
 - chore(deps): update rust crate clap to v4.6.7 (#1532)
 - chore(deps): update rust crate cc to v1.4.6 (#1528)
 - feat(valheim): support TYPE=ValheimPlus again (#1537)
+
+## v3.8.6 (2026-09-18)
+
+- Merge ksc98's fixes: quoted TYPE values (#1541) and BepInEx config preservation (#1542) (#1545)
