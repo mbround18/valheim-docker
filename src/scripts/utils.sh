@@ -30,6 +30,26 @@ line() {
   log -p "#" "###########################################################################"
 }
 
+# --- TYPE --------------------------------------------------------------------
+#
+# The value of TYPE as the container receives it. Compose's list-form `environment:`
+# passes `- TYPE="Vanilla"` with the quotes in the value, and `- TYPE=""` as two quote
+# characters, neither of which is a server type. Strip surrounding whitespace and one pair
+# of matching quotes, lowercase, and read an empty value as vanilla.
+normalize_type() {
+  local type="${1-}"
+  type="${type#"${type%%[![:space:]]*}"}"
+  type="${type%"${type##*[![:space:]]}"}"
+  case "${type}" in
+    \"*\") type="${type#\"}"; type="${type%\"}" ;;
+    \'*\') type="${type#\'}"; type="${type%\'}" ;;
+  esac
+  type="${type#"${type%%[![:space:]]*}"}"
+  type="${type%"${type##*[![:space:]]}"}"
+  type="${type,,}"
+  printf '%s' "${type:-vanilla}"
+}
+
 # --- ValheimPlus (TYPE=ValheimPlus) ----------------------------------------
 #
 # ValheimPlus is a BepInEx plugin, so TYPE=ValheimPlus is TYPE=BepInEx plus one
