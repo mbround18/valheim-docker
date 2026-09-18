@@ -1,6 +1,6 @@
 use crate::constants;
 use log::{debug, error, info};
-use std::option::Option;
+use std::collections::HashSet;
 use sysinfo::{Pid, Signal, System};
 
 pub struct ServerProcess {
@@ -31,22 +31,8 @@ impl ServerProcess {
       .system
       .processes()
       .values()
-      .filter(|process| {
-        process.exe().is_some()
-          && process
-            .exe()
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .contains(constants::VALHEIM_EXECUTABLE_NAME)
-      })
+      .filter(|process| is_valheim_executable(process))
       .collect()
-  }
-
-  pub fn get_parent_process(process: &sysinfo::Process) -> Option<Pid> {
-    System::new_all()
-      .process(process.parent().unwrap())
-      .map(|parent| parent.pid())
   }
 
   pub fn are_process_running(&mut self) -> bool {
@@ -68,23 +54,29 @@ impl ServerProcess {
 
   pub fn send_interrupt(&mut self) {
     let processes = self.valheim_processes();
+    // Linux lists each thread of the server as its own entry, parented to the main process.
+    // Signal only the entries whose parent is not itself a Valheim entry from this same scan.
+    // Re-querying the parent instead races with a server that is already exiting: its
+    // executable can no longer be read, which is what used to panic here (#1543).
+    let valheim_pids: HashSet<Pid> = processes.iter().map(|process| process.pid()).collect();
     for process in processes {
-      if let Some(parent) = ServerProcess::get_parent_process(process) {
-        let s = System::new_all();
-        if !s
-          .process(parent)
-          .unwrap()
-          .exe()
-          .unwrap()
-          .to_str()
-          .unwrap()
-          .contains(constants::VALHEIM_EXECUTABLE_NAME)
-        {
-          let pid = process.pid();
-          info!("Found Valheim process with PID: {}", pid.as_u32());
-          ServerProcess::send_interrupt_to_pid(pid.as_u32());
-        }
+      if process
+        .parent()
+        .is_some_and(|parent| valheim_pids.contains(&parent))
+      {
+        continue;
       }
+      let pid = process.pid();
+      info!("Found Valheim process with PID: {}", pid.as_u32());
+      ServerProcess::send_interrupt_to_pid(pid.as_u32());
     }
   }
+}
+
+fn is_valheim_executable(process: &sysinfo::Process) -> bool {
+  process.exe().is_some_and(|exe| {
+    exe
+      .to_string_lossy()
+      .contains(constants::VALHEIM_EXECUTABLE_NAME)
+  })
 }

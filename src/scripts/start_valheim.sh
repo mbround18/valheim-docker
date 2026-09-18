@@ -110,6 +110,7 @@ log "Auto Backup Days To Live: ${AUTO_BACKUP_DAYS_TO_LIVE}"
 log "Auto Backup Nice Level: ${AUTO_BACKUP_NICE_LEVEL}"
 log "Update On Startup: ${UPDATE_ON_STARTUP}"
 log "Mods: ${MODS}"
+log "Gale Sync Code: ${GALE_SYNC_CODE:-}"
 log "-------------------------------------------------------------"
 
 # Export Steam App ID
@@ -155,7 +156,7 @@ export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
 
 case "${TYPE}" in
 "vanilla")
-  if [ -n "${MODS:=""}" ]; then
+  if [ -n "${MODS:=""}" ] || [ -n "${GALE_SYNC_CODE:-}" ]; then
     log "Mods supplied but you are running with Vanilla!!!"
     log "Mods will NOT be installed!."
   fi
@@ -193,8 +194,8 @@ esac
 
 # Install additional mods if not running vanilla
 if [ "${TYPE}" != "vanilla" ]; then
-  if [ -n "${MODS:=""}" ]; then
-    log "Installing mods from MODS env via Odin"
+  if [ -n "${MODS:=""}" ] || [ -n "${GALE_SYNC_CODE:-}" ]; then
+    log "Installing mods from MODS env and Gale profile via Odin"
     odin mod:install --from-var
   fi
 fi

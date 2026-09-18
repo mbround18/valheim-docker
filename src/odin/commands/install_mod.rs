@@ -289,6 +289,13 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     .map(|s| s.to_string())
     .collect();
 
+  // GALE_SYNC_CODE contributes the profile's mods ahead of MODS. A failure here must stop the
+  // run: carrying on without the profile would reconcile every profile mod away.
+  let desired_mods = crate::mods::gale::merge_mod_entries(
+    crate::mods::gale::gale_mod_entries().await?,
+    desired_mods,
+  );
+
   // Load previous state so we can reconcile removed mods.
   let previous_state = load_from_var_state().unwrap_or_else(|e| {
     warn!("Failed reading from-var state; continuing without cleanup: {e}");
@@ -306,7 +313,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   }
 
   if desired_mods.is_empty() {
-    info!("No MODS entries after parsing; completed cleanup reconciliation.");
+    info!("No MODS or Gale profile entries after parsing; completed cleanup reconciliation.");
     let empty = FromVarState {
       schema_version: 1,
       mods: vec![],
@@ -316,7 +323,10 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     return Ok(());
   }
 
-  info!("Installing {} mod(s) from MODS env", desired_mods.len());
+  info!(
+    "Installing {} mod(s) from MODS env and Gale profile",
+    desired_mods.len()
+  );
 
   // By default one failed mod fails the whole run (and the container restarts).
   // MODS_CONTINUE_ON_FAILURE=true installs whatever succeeded and only warns,

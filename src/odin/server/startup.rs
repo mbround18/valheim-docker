@@ -49,6 +49,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
     })
     .privileged_action(|| command)
     .start()
+    .inspect(|_| super::clear_restart_pending())
 }
 
 pub fn start(config: ValheimArguments) -> CommandResult {
