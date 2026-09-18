@@ -141,18 +141,19 @@ fi
 # Copy steamclient.so if it exists
 [ -f "/home/steam/steamcmd/linux64/steamclient.so" ] && cp /home/steam/steamcmd/linux64/steamclient.so /home/steam/valheim/linux64/
 
+# Check the server type; odin configure reads TYPE too, so it is normalized first
+log "Checking for TYPE flag"
+TYPE="$(normalize_type "${TYPE-}")"
+export TYPE
+log "Found Type ${TYPE}"
+log "Running with ${TYPE} Valheim <3"
+export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
+
 # Configure the server
 log "Initializing Variables...."
 odin configure || exit 1
 
-# Check the server type and handle mod installations
-log "Checking for TYPE flag"
-export TYPE="${TYPE:="vanilla"}"
-log "Found Type ${TYPE}"
-log "Running with ${TYPE} Valheim <3"
-export TYPE="${TYPE,,}"
-export GAME_LOCATION="${GAME_LOCATION:="/home/steam/valheim"}"
-
+# Handle mod installations
 case "${TYPE}" in
 "vanilla")
   if [ -n "${MODS:=""}" ]; then
@@ -186,7 +187,7 @@ case "${TYPE}" in
   export MODS
   ;;
 *)
-  log "Unknown type: ${TYPE}"
+  log "Unknown type: ${TYPE} (expected vanilla, bepinex or valheimplus)"
   exit 1
   ;;
 esac

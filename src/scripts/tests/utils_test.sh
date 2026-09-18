@@ -84,6 +84,20 @@ clear_valheim_plus_env
 assert_true '[[ "$(valheim_plus_download_url)" == *"/ValheimPlus.dll" ]]' \
   "the default URL ends in ValheimPlus.dll so odin fetches the config for it"
 
+# --- normalize_type ----------------------------------------------------------
+
+assert_eq "vanilla" "$(normalize_type "Vanilla")" "lowercases"
+assert_eq "bepinex" "$(normalize_type "BepInEx")" "lowercases every type"
+assert_eq "vanilla" "$(normalize_type "")" "empty is vanilla"
+assert_eq "vanilla" "$(normalize_type '""')" "an empty double-quoted value is vanilla"
+assert_eq "vanilla" "$(normalize_type "''")" "an empty single-quoted value is vanilla"
+assert_eq "vanilla" "$(normalize_type '"Vanilla"')" "surrounding double quotes are stripped"
+assert_eq "valheimplus" "$(normalize_type "'ValheimPlus'")" "surrounding single quotes are stripped"
+assert_eq "vanilla" "$(normalize_type '  "Vanilla"  ')" "whitespace around the quotes is stripped"
+assert_eq "vanilla" "$(normalize_type "  vanilla  ")" "whitespace alone is stripped"
+assert_eq '"vanilla' "$(normalize_type '"Vanilla')" "an unmatched quote is left alone"
+assert_eq '"' "$(normalize_type '"')" "a lone quote is left alone"
+
 # --- mods_include_valheim_plus ---------------------------------------------
 
 assert_false 'mods_include_valheim_plus ""' \

@@ -869,7 +869,9 @@ impl ValheimMod {
     if is_framework {
       info!("Installing Framework...");
       let final_dir = PathBuf::from(&common_paths::game_directory());
-      dir::move_dir(temp_dir.path().join(&manifest.name), &final_dir, &options)
+      let pack_root = temp_dir.path().join(&manifest.name);
+      preserve_existing_config(&pack_root, &final_dir)?;
+      dir::move_dir(&pack_root, &final_dir, &options)
         .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
       let installed_root = final_dir.join(&manifest.name);
       self.installed = true;
@@ -951,6 +953,35 @@ impl TryFrom<String> for ValheimMod {
   }
 }
 
+/// A framework install runs on every boot with `UPDATE_ON_STARTUP=1` (the default) and
+/// whenever `FORCE_INSTALL=1`, and the pack ships its own `BepInEx/config/BepInEx.cfg`.
+/// Moving the pack over the game directory with `overwrite` would reset that file (and any
+/// other config the pack carries) each time, so drop from the extracted pack every config
+/// file that already exists in the game directory: the move then only adds what is missing.
+fn preserve_existing_config(pack_root: &Path, game_dir: &Path) -> Result<(), ValheimModError> {
+  let src = pack_root.join("BepInEx").join("config");
+  if !src.is_dir() {
+    return Ok(());
+  }
+  let dest = game_dir.join("BepInEx").join("config");
+  for entry in WalkDir::new(&src)
+    .into_iter()
+    .flatten()
+    .filter(|e| e.file_type().is_file())
+  {
+    let rel = entry
+      .path()
+      .strip_prefix(&src)
+      .expect("entry is under the config dir");
+    if dest.join(rel).is_file() {
+      debug!("Keeping existing BepInEx config {}", rel.display());
+      std::fs::remove_file(entry.path())
+        .map_err(|e| ValheimModError::FileMoveError(e.to_string()))?;
+    }
+  }
+  Ok(())
+}
+
 #[cfg(test)]
 mod install_test {
   use super::*;
@@ -988,6 +1019,53 @@ mod install_test {
     let result = mod_inst.install();
     assert!(result.is_ok(), "{:?}", result.err());
     assert!(mod_inst.installed);
+
+    drop(tmp);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn test_install_framework_keeps_existing_config() {
+    // The pack carries BepInEx/config/BepInEx.cfg and BepInEx/core/BepInEx.dll. A re-install
+    // must keep the config the operator already has and still refresh the binaries.
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let game_dir = tmp.path().join("game");
+    let config_dir = game_dir.join("BepInEx").join("config");
+    let core_dir = game_dir.join("BepInEx").join("core");
+    std::fs::create_dir_all(&config_dir).unwrap();
+    std::fs::create_dir_all(&core_dir).unwrap();
+    std::fs::write(config_dir.join("BepInEx.cfg"), "mine").unwrap();
+    std::fs::write(config_dir.join("Some.Plugin.cfg"), "plugin").unwrap();
+    std::fs::write(core_dir.join("BepInEx.dll"), "old").unwrap();
+    let game_dir_str = game_dir.to_string_lossy().to_string();
+    std::env::set_var(crate::constants::GAME_LOCATION, &game_dir_str);
+
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let staging = PathBuf::from(format!(
+      "{}/tests/resources/manifest.framework.config.zip",
+      manifest_dir
+    ));
+    let mut mod_inst =
+      valheim_mod_with_staging("https://example.com/test.zip".to_string(), staging);
+    let result = mod_inst.install();
+    assert!(result.is_ok(), "{:?}", result.err());
+
+    assert_eq!(
+      std::fs::read(config_dir.join("BepInEx.cfg")).unwrap(),
+      b"mine"
+    );
+    assert_eq!(
+      std::fs::read(config_dir.join("Some.Plugin.cfg")).unwrap(),
+      b"plugin"
+    );
+    assert_eq!(
+      std::fs::read(core_dir.join("BepInEx.dll")).unwrap(),
+      b"pack"
+    );
+    assert_eq!(
+      std::fs::read(config_dir.join("Extra.cfg")).unwrap(),
+      b"pack"
+    );
 
     drop(tmp);
   }
