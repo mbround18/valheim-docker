@@ -22,7 +22,7 @@ jobs:
   assign:
     runs-on: ubuntu-latest
     steps:
-      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
+      - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.53
         with:
           install-dagger: "false"
       - run: paws assign --skip-bots
