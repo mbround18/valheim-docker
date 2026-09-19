@@ -25,7 +25,7 @@ jobs:
     name: Rust (paws ci)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
         with:
           version: v0.0.1-prerelease.50
@@ -38,7 +38,7 @@ jobs:
     env:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
         with:
           version: v0.0.1-prerelease.50
@@ -55,7 +55,7 @@ jobs:
     name: Lint & shell tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Prettier
         run: npx -y prettier --check ./
       - name: Shell tests
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       # paws docker builds inside Dagger and does not load the result into the runner's
       # Docker daemon, which these container-level checks run against.
       # No --cache-from: nothing writes mbround18/valheim:buildcache any more (paws
@@ -99,7 +99,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52

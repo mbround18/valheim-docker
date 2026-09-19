@@ -21,7 +21,7 @@ jobs:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
         with:
           version: v0.0.1-prerelease.50

@@ -70,7 +70,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       PR_LABELS: ${{ needs.gate.outputs.labels }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.52
