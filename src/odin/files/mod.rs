@@ -12,12 +12,11 @@ use std::process::exit;
 
 pub fn create_file(path: &str) -> File {
   let output_path = Path::new(path);
-  match File::create(output_path) {
-    Ok(file) => file,
-    Err(_) => {
-      error!("Failed to create {path}");
-      exit(1)
-    }
+  if let Ok(file) = File::create(output_path) {
+    file
+  } else {
+    error!("Failed to create {path}");
+    exit(1)
   }
 }
 
@@ -30,22 +29,19 @@ pub trait FileManager {
     if self.exists() {
       fs::read_to_string(self.path()).unwrap()
     } else {
-      "".to_string()
+      String::new()
     }
   }
   fn write(&self, content: String) -> bool {
     debug!("Writing file path: {}", self.path().as_str());
     create_dir_all(Path::new(self.path().as_str()).parent().unwrap()).unwrap();
     let mut file = create_file(self.path().as_str());
-    match file.write_all(content.as_bytes()) {
-      Ok(_) => {
-        info!("Successfully written {}", self.path());
-        true
-      }
-      _ => {
-        error!("Failed to write {}", self.path());
-        false
-      }
+    if let Ok(()) = file.write_all(content.as_bytes()) {
+      info!("Successfully written {}", self.path());
+      true
+    } else {
+      error!("Failed to write {}", self.path());
+      false
     }
   }
 }

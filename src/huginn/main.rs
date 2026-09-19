@@ -85,10 +85,7 @@ fn parse_u16_env(name: &str, default: u16) -> u16 {
   match raw.parse::<u16>() {
     Ok(v) => v,
     Err(e) => {
-      warn!(
-        "Invalid {}='{}' ({}). Falling back to {}.",
-        name, raw, e, default
-      );
+      warn!("Invalid {name}='{raw}' ({e}). Falling back to {default}.");
       default
     }
   }
@@ -104,7 +101,7 @@ fn parse_bool_env(name: &str, default: bool) -> bool {
 }
 
 fn cache_ttl() -> Duration {
-  Duration::from_secs(parse_u16_env("HUGINN_INFO_CACHE_TTL_SECS", 2) as u64)
+  Duration::from_secs(u64::from(parse_u16_env("HUGINN_INFO_CACHE_TTL_SECS", 2)))
 }
 
 fn default_query_address() -> String {
@@ -121,10 +118,7 @@ pub(crate) fn query_socket_addr() -> Option<SocketAddrV4> {
   match SocketAddrV4::from_str(&address) {
     Ok(socket) => Some(socket),
     Err(e) => {
-      error!(
-        "Invalid ADDRESS='{}'. Expected format host:port. Error: {}",
-        address, e
-      );
+      error!("Invalid ADDRESS='{address}'. Expected format host:port. Error: {e}");
       None
     }
   }

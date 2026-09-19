@@ -25,14 +25,14 @@ pub fn try_get_current_build_id() -> Option<String> {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use once_cell::sync::Lazy;
+
   use serial_test::serial;
   use std::env;
   use std::fs;
   use std::path::{Path, PathBuf};
   use tempfile::TempDir;
 
-  static TEST_ASSET_DIR: Lazy<PathBuf> = Lazy::new(|| {
+  static TEST_ASSET_DIR: std::sync::LazyLock<PathBuf> = std::sync::LazyLock::new(|| {
     Path::new(env!("CARGO_MANIFEST_DIR"))
       .join("tests")
       .join("assets")

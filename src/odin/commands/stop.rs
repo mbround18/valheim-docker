@@ -12,7 +12,7 @@ pub fn invoke(dry_run: bool) {
   );
   if dry_run {
     info!("This command would have run: ");
-    info!("kill -2 {}", constants::VALHEIM_EXECUTABLE_NAME)
+    info!("kill -2 {}", constants::VALHEIM_EXECUTABLE_NAME);
   } else {
     if !server::is_installed() {
       error!("Failed to find server executable!");

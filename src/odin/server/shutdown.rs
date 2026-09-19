@@ -11,12 +11,12 @@ pub fn blocking_shutdown() {
   loop {
     let mut server = server_process.clone();
     debug!("Checking if valheim is still running.");
-    if !server.are_process_running() {
-      debug!("Valheim process has been stopped successfully!");
-      break;
-    } else {
+    if server.are_process_running() {
       debug!("Sleeping for 5s to wait for process to stop.");
       thread::sleep(Duration::from_secs(5));
+    } else {
+      debug!("Valheim process has been stopped successfully!");
+      break;
     }
   }
 }

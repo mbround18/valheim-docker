@@ -8,12 +8,11 @@ use std::process::exit;
 use std::str::FromStr;
 
 fn parse_address(address: &str) -> SocketAddrV4 {
-  match SocketAddrV4::from_str(address) {
-    Ok(parsed_address) => parsed_address,
-    Err(_) => {
-      error!("Failed to parse supplied address! {address}");
-      exit(1)
-    }
+  if let Ok(parsed_address) = SocketAddrV4::from_str(address) {
+    parsed_address
+  } else {
+    error!("Failed to parse supplied address! {address}");
+    exit(1)
   }
 }
 
@@ -29,6 +28,6 @@ pub fn invoke(output_json: bool, use_local: bool, supplied_address: Option<Strin
   if output_json {
     println!("{}", serde_json::to_string_pretty(&server_info).unwrap());
   } else {
-    info!("{server_info}")
+    info!("{server_info}");
   }
 }

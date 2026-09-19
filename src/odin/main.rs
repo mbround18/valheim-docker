@@ -60,10 +60,9 @@ fn parse_modifiers(value: Option<String>) -> Option<Vec<Modifiers>> {
         Some((name, val)) if !name.trim().is_empty() && !val.trim().is_empty() => {
           parsed.push(Modifiers::from(format!("{}={}", name.trim(), val.trim())));
         }
-        _ => log::warn!(
-          "Ignoring invalid modifier entry '{}'; expected non-empty key=value",
-          modifier
-        ),
+        _ => {
+          log::warn!("Ignoring invalid modifier entry '{modifier}'; expected non-empty key=value")
+        }
       }
     }
   }
@@ -79,11 +78,11 @@ async fn handle_commands(cli: Cli) {
   match cli.commands {
     Commands::Log { message, level } => match level {
       // Print directly to avoid re-entry into the tracing/log bridge which can duplicate output.
-      LevelArg::Error => eprintln!("{}", message),
-      LevelArg::Warn => println!("WARN odin: {}", message),
-      LevelArg::Info => println!("INFO odin: {}", message),
-      LevelArg::Debug => println!("DEBUG odin: {}", message),
-      LevelArg::Trace => println!("TRACE odin: {}", message),
+      LevelArg::Error => eprintln!("{message}"),
+      LevelArg::Warn => println!("WARN odin: {message}"),
+      LevelArg::Info => println!("INFO odin: {message}"),
+      LevelArg::Debug => println!("DEBUG odin: {message}"),
+      LevelArg::Trace => println!("TRACE odin: {message}"),
     },
     Commands::Configure {
       name,

@@ -105,7 +105,7 @@ async fn list_versions(
   let mut last_err: Option<String> = None;
   for url in endpoints {
     for attempt in 1..=2 {
-      log::debug!("{} version query attempt {}: {}", repo, attempt, url);
+      log::debug!("{repo} version query attempt {attempt}: {url}");
       match send(
         client.get(&url),
         &url,
@@ -129,18 +129,18 @@ async fn list_versions(
                 if !out.is_empty() {
                   return Ok(out);
                 }
-                last_err = Some(format!("no versions found in response shape for {}", url));
+                last_err = Some(format!("no versions found in response shape for {url}"));
               } else {
-                last_err = Some(format!("unable to parse versions from {}", url));
+                last_err = Some(format!("unable to parse versions from {url}"));
               }
             }
             Err(e) => {
-              last_err = Some(format!("json error for {}: {}", url, e));
+              last_err = Some(format!("json error for {url}: {e}"));
             }
           }
         }
         Err(e) => {
-          last_err = Some(format!("request error for {}: {}", url, e));
+          last_err = Some(format!("request error for {url}: {e}"));
         }
       }
       // brief backoff before next attempt
@@ -156,7 +156,7 @@ async fn list_versions(
   }
 
   // HTML fallback: scrape latest download link from the package page as a last resort
-  let page_url = format!("{}/c/valheim/p/{}/{}/", base, namespace, name);
+  let page_url = format!("{base}/c/valheim/p/{namespace}/{name}/");
   match send(
     client.get(&page_url),
     &page_url,
@@ -166,7 +166,7 @@ async fn list_versions(
   {
     Ok(resp) if resp.status().is_success() => match resp.text().await {
       Ok(html) => {
-        let needle = format!("/package/download/{}/{}/", namespace, name);
+        let needle = format!("/package/download/{namespace}/{name}/");
         if let Some(pos) = html.find(&needle) {
           // capture characters after needle until next '/'
           let tail = &html[pos + needle.len()..];
@@ -184,8 +184,7 @@ async fn list_versions(
         )))
       }
       Err(e) => Err(ValheimModError::DownloadError(format!(
-        "HTML fallback text error: {}",
-        e
+        "HTML fallback text error: {e}"
       ))),
     },
     Ok(resp) => Err(ValheimModError::DownloadError(format!(
@@ -194,8 +193,7 @@ async fn list_versions(
       page_url
     ))),
     Err(e) => Err(ValheimModError::DownloadError(format!(
-      "HTML fallback request error for {}: {}",
-      page_url, e
+      "HTML fallback request error for {page_url}: {e}"
     ))),
   }
 }
@@ -421,7 +419,7 @@ impl ValheimMod {
     } else if bytes >= KB {
       format!("{:.2} KB", bytes as f64 / KB as f64)
     } else {
-      format!("{} B", bytes)
+      format!("{bytes} B")
     }
   }
 
@@ -455,23 +453,20 @@ impl ValheimMod {
   /// Determines whether the mod is a framework by inspecting the extracted files.
   fn is_mod_framework(&self, extract_path: &Path) -> bool {
     debug!("Checking mod if it is a framework like bepinex");
-    match Manifest::try_from(extract_path.join("manifest.json")) {
-      Ok(manifest) => {
-        debug!("Parsed manifest with name: {}", manifest.name);
-        manifest.name.to_lowercase().starts_with("bepinex")
-      }
-      Err(_) => {
-        for entry in WalkDir::new(extract_path).into_iter().flatten() {
-          if entry
-            .file_name()
-            .to_string_lossy()
-            .eq_ignore_ascii_case("winhttp.dll")
-          {
-            return true;
-          }
+    if let Ok(manifest) = Manifest::try_from(extract_path.join("manifest.json")) {
+      debug!("Parsed manifest with name: {}", manifest.name);
+      manifest.name.to_lowercase().starts_with("bepinex")
+    } else {
+      for entry in WalkDir::new(extract_path).into_iter().flatten() {
+        if entry
+          .file_name()
+          .to_string_lossy()
+          .eq_ignore_ascii_case("winhttp.dll")
+        {
+          return true;
         }
-        false
       }
+      false
     }
   }
 
@@ -495,24 +490,24 @@ impl ValheimMod {
         path
           .extension()
           .and_then(|e| e.to_str())
-          .map(|e| format!("{}.", e))
+          .map(|e| format!("{e}."))
           .unwrap_or_default()
       ));
       // Fallback simple name if extension building is awkward
       let sidecar = if sidecar
         .extension()
         .and_then(|e| e.to_str())
-        .filter(|e| e.ends_with("sha256"))
-        .is_some()
+        .as_ref()
+        .is_some_and(|e| e.ends_with("sha256"))
       {
         sidecar
       } else {
         let mut p = path.to_path_buf();
-        p.set_file_name(format!("{}.sha256", file_name));
+        p.set_file_name(format!("{file_name}.sha256"));
         p
       };
-      if let Err(e) = std::fs::write(&sidecar, format!("{}  {}\n", sha, file_name)) {
-        warn!("Failed to write sha256 sidecar: {}", e);
+      if let Err(e) = std::fs::write(&sidecar, format!("{sha}  {file_name}\n")) {
+        warn!("Failed to write sha256 sidecar: {e}");
       }
     }
   }
@@ -577,7 +572,7 @@ impl ValheimMod {
         let resp = send(
           client
             .get(url.as_str())
-            .header("Range", format!("bytes={}-{}", start_byte, end_byte)),
+            .header("Range", format!("bytes={start_byte}-{end_byte}")),
           &url,
           &format!("chunk {i}"),
         )
@@ -651,8 +646,8 @@ impl ValheimMod {
         if Self::is_valid_zip(&orig_cache_path) {
           if let Ok(metadata) = std::fs::metadata(&orig_cache_path) {
             let size = Self::format_bytes(metadata.len());
-            info!("⚡ Cache hit: reusing {} from cache", size);
-            debug!("   Path: {:?}", orig_cache_path);
+            info!("⚡ Cache hit: reusing {size} from cache");
+            debug!("   Path: {orig_cache_path:?}");
           } else {
             info!("⚡ Cache hit: reusing cached file");
           }
@@ -661,17 +656,14 @@ impl ValheimMod {
           self.downloaded = true;
           return Ok(());
         } else {
-          warn!(
-            "Cached file exists but is not a valid ZIP, removing: {:?}",
-            orig_cache_path
-          );
+          warn!("Cached file exists but is not a valid ZIP, removing: {orig_cache_path:?}");
           let _ = std::fs::remove_file(&orig_cache_path);
         }
       } else {
         if let Ok(metadata) = std::fs::metadata(&orig_cache_path) {
           let size = Self::format_bytes(metadata.len());
-          info!("⚡ Cache hit: reusing {} (non-zip)", size);
-          debug!("   Path: {:?}", orig_cache_path);
+          info!("⚡ Cache hit: reusing {size} (non-zip)");
+          debug!("   Path: {orig_cache_path:?}");
         } else {
           info!("⚡ Cache hit: reusing cached file (non-zip)");
         }
@@ -712,7 +704,7 @@ impl ValheimMod {
 
     let file_name = self.staging_file_name(&Url::parse(&self.url).unwrap(), &self.file_type);
     let final_path = staging_dir.join(file_name);
-    debug!("Downloading to: {:?}", final_path);
+    debug!("Downloading to: {final_path:?}");
 
     // If the final computed path already exists, reuse it for non-zip types or validate ZIPs.
     if final_path.exists() {
@@ -720,25 +712,21 @@ impl ValheimMod {
         if Self::is_valid_zip(&final_path) {
           if let Ok(metadata) = std::fs::metadata(&final_path) {
             let size = Self::format_bytes(metadata.len());
-            info!("⚡ Cache hit (post-redirect): reusing {}", size);
-            debug!("   Path: {:?}", final_path);
+            info!("⚡ Cache hit (post-redirect): reusing {size}");
+            debug!("   Path: {final_path:?}");
           } else {
             info!("⚡ Cache hit (post-redirect): reusing cached file");
           }
           self.staging_location = final_path;
           self.downloaded = true;
           return Ok(());
-        } else {
-          warn!(
-            "Existing file at destination is not a valid ZIP, overwriting: {:?}",
-            final_path
-          );
         }
+        warn!("Existing file at destination is not a valid ZIP, overwriting: {final_path:?}");
       } else {
         if let Ok(metadata) = std::fs::metadata(&final_path) {
           let size = Self::format_bytes(metadata.len());
-          info!("⚡ Cache hit (post-redirect): reusing {} (non-zip)", size);
-          debug!("   Path: {:?}", final_path);
+          info!("⚡ Cache hit (post-redirect): reusing {size} (non-zip)");
+          debug!("   Path: {final_path:?}");
         } else {
           info!("⚡ Cache hit (post-redirect): reusing cached file (non-zip)");
         }
@@ -756,8 +744,7 @@ impl ValheimMod {
         .headers()
         .get("accept-ranges")
         .and_then(|v| v.to_str().ok())
-        .map(|v| v != "none")
-        .unwrap_or(false);
+        .is_some_and(|v| v != "none");
       let content_length = response
         .headers()
         .get("content-length")
@@ -778,11 +765,7 @@ impl ValheimMod {
       drop(response);
       Self::download_chunked(&self.url, &final_path, total_size).await?;
       let elapsed = start_time.elapsed();
-      let size = Self::format_bytes(
-        std::fs::metadata(&final_path)
-          .map(|m| m.len())
-          .unwrap_or(total_size),
-      );
+      let size = Self::format_bytes(std::fs::metadata(&final_path).map_or(total_size, |m| m.len()));
       info!("✓ Downloaded {} in {:.1}s", size, elapsed.as_secs_f64());
     } else {
       info!("📦 Downloading mod...");
@@ -815,7 +798,7 @@ impl ValheimMod {
     // Validate based on file type. ZIP must be valid; non-zip types (dll, cfg) are accepted.
     if self.file_type == "zip" {
       if !Self::is_valid_zip(&final_path) {
-        error!("Downloaded file is not a valid ZIP: {:?}", final_path);
+        error!("Downloaded file is not a valid ZIP: {final_path:?}");
         return Err(ValheimModError::ZipArchiveError(
           "Invalid ZIP file after download".to_string(),
         ));
@@ -830,9 +813,9 @@ impl ValheimMod {
     match Self::sha256_hex(&final_path) {
       Ok(sha) => {
         Self::write_sha_sidecar(&final_path, &sha);
-        debug!("SHA-256: {}", sha);
+        debug!("SHA-256: {sha}");
       }
-      Err(e) => warn!("Failed computing SHA-256: {}", e),
+      Err(e) => warn!("Failed computing SHA-256: {e}"),
     }
 
     self.staging_location = final_path;
@@ -1078,8 +1061,7 @@ mod install_test {
 
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let staging = PathBuf::from(format!(
-      "{}/tests/resources/manifest.framework.zip",
-      manifest_dir
+      "{manifest_dir}/tests/resources/manifest.framework.zip"
     ));
     let mut mod_inst =
       valheim_mod_with_staging("https://example.com/test.zip".to_string(), staging);
@@ -1109,8 +1091,7 @@ mod install_test {
 
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let staging = PathBuf::from(format!(
-      "{}/tests/resources/manifest.framework.config.zip",
-      manifest_dir
+      "{manifest_dir}/tests/resources/manifest.framework.config.zip"
     ));
     let mut mod_inst =
       valheim_mod_with_staging("https://example.com/test.zip".to_string(), staging);
@@ -1148,7 +1129,7 @@ mod install_test {
     std::env::set_var(crate::constants::GAME_LOCATION, &game_dir_str);
 
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let staging = PathBuf::from(format!("{}/tests/resources/manifest.mod.zip", manifest_dir));
+    let staging = PathBuf::from(format!("{manifest_dir}/tests/resources/manifest.mod.zip"));
     let mut mod_inst =
       valheim_mod_with_staging("https://example.com/test.zip".to_string(), staging);
     let result = mod_inst.install();
@@ -1182,7 +1163,7 @@ mod install_test {
     assert!(mod_inst.installed);
 
     let dest = PathBuf::from(common_paths::bepinex_plugin_directory()).join("dummy.dll");
-    assert!(dest.exists(), "DLL should exist at {:?}", dest);
+    assert!(dest.exists(), "DLL should exist at {dest:?}");
 
     // Verify the copy actually happened
     let content = std::fs::read(&dest).expect("should read dll");

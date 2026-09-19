@@ -32,7 +32,7 @@ pub fn invoke() -> String {
     format!(
       "valheim_online{labels} {online}",
       labels = labels,
-      online = info.online as i32
+      online = i32::from(info.online)
     ),
     format!(
       "valheim_current_player_count{labels} {players}",
@@ -47,7 +47,7 @@ pub fn invoke() -> String {
     format!(
       "valheim_bepinex_installed{labels} {bepinex_installed}",
       labels = labels,
-      bepinex_installed = info.bepinex.enabled as i32
+      bepinex_installed = i32::from(info.bepinex.enabled)
     ),
     // System metrics (no labels beyond server identity)
     format!(

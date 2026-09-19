@@ -121,7 +121,7 @@ mod tests {
   #[test]
   fn test_read_discord_with_empty_content() {
     let mut mock_file = MockManagedFile::new();
-    mock_file.expect_read().return_const(String::from(""));
+    mock_file.expect_read().return_const(String::new());
 
     let config = read_discord(&mock_file);
 
@@ -194,7 +194,7 @@ mod tests {
   #[test]
   fn test_read_discord_without_events_key() {
     let mut mock_file = MockManagedFile::new();
-    let no_events_content = r#"{}"#;
+    let no_events_content = r"{}";
     mock_file
       .expect_read()
       .return_const(String::from(no_events_content));

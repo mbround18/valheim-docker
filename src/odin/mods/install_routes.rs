@@ -2,7 +2,7 @@
 //!
 //! Follows the install rules r2modman and Thunderstore publish for Valheim (see
 //! `docs/adr/0001-thunderstore-install-routes.md`): each known top-level folder of the package
-//! has its own BepInEx destination, and everything else lands in the mod's plugin folder.
+//! has its own `BepInEx` destination, and everything else lands in the mod's plugin folder.
 
 use crate::errors::ValheimModError;
 use fs_extra::dir::{self, CopyOptions};
@@ -59,7 +59,7 @@ const ROUTES: &[Route] = &[
   },
 ];
 
-/// MonoMod patches are recognised by this suffix when they sit loose in the package root.
+/// `MonoMod` patches are recognised by this suffix when they sit loose in the package root.
 const MONOMOD_SUFFIX: &str = ".mm.dll";
 
 fn move_error(e: impl std::fmt::Display) -> ValheimModError {

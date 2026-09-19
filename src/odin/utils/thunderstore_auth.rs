@@ -18,7 +18,7 @@ pub fn thunderstore_base_url() -> String {
 
 /// Returns the `THUNDERSTORE_TOKEN` service account token when set. Thunderstore issues
 /// these from a team's Service Accounts page (they look like `tss_...`) and expects them
-/// as `Authorization: Bearer <token>`. See https://thunderstore.io/api/docs/.
+/// as `Authorization: Bearer <token>`. See <https://thunderstore.io/api/docs>/.
 fn thunderstore_token() -> Option<String> {
   let token = fetch_var(THUNDERSTORE_TOKEN_VAR, "");
   (!token.is_empty()).then_some(token)
@@ -223,7 +223,7 @@ mod tests {
   /// the header name and scheme are right rather than merely being ignored.
   ///
   /// Enable with:
-  ///   THUNDERSTORE_TOKEN=tss_... cargo test -p odin thunderstore_live_auth -- --ignored
+  ///   `THUNDERSTORE_TOKEN=tss`_... cargo test -p odin `thunderstore_live_auth` -- --ignored
   #[tokio::test]
   #[ignore]
   #[serial]
@@ -272,11 +272,11 @@ mod tests {
   }
 
   /// Thunderstore ignores HTTP Basic auth entirely - garbage credentials come back 200
-  /// as an anonymous user rather than 401. Documents why THUNDERSTORE_TOKEN is the
+  /// as an anonymous user rather than 401. Documents why `THUNDERSTORE_TOKEN` is the
   /// scheme that actually works and the username/password pair is legacy only.
   ///
   /// Enable with:
-  ///   THUNDERSTORE_LIVE_TEST=1 cargo test -p odin thunderstore_live_basic_auth_ignored -- --ignored
+  ///   `THUNDERSTORE_LIVE_TEST=1` cargo test -p odin `thunderstore_live_basic_auth_ignored` -- --ignored
   #[tokio::test]
   #[ignore]
   #[serial]

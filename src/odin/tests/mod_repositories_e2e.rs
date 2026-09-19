@@ -6,7 +6,7 @@
 //! redirects, downloads, installation, and the state file that drives cleanup.
 //!
 //! The live test at the bottom talks to the real hexium.gg and is opt-in:
-//!   HEXIUM_LIVE_TEST=1 cargo test -p odin --test mod_repositories_e2e -- --ignored
+//!   `HEXIUM_LIVE_TEST=1` cargo test -p odin --test `mod_repositories_e2e` -- --ignored
 
 use std::io::{Cursor, Write};
 use std::path::PathBuf;

@@ -38,7 +38,7 @@ pub struct ValheimArguments {
   #[serde(skip_serializing_if = "Option::is_none")]
   pub(crate) modifiers: Option<Vec<Modifiers>>,
 
-  /// The set_key for launching the server, (Can be set with ENV variable SET_KEY)
+  /// The `set_key` for launching the server, (Can be set with ENV variable `SET_KEY`)
   #[serde(skip_serializing_if = "Option::is_none")]
   pub(crate) set_key: Option<String>,
 
@@ -48,14 +48,14 @@ pub struct ValheimArguments {
 }
 
 impl From<Configuration> for ValheimArguments {
-  /// Creates a new ValheimArguments from a Configuration
+  /// Creates a new `ValheimArguments` from a Configuration
   fn from(value: Configuration) -> Self {
-    let command = match fs::canonicalize(PathBuf::from(value.server_executable)) {
-      Ok(command_path) => command_path.to_str().unwrap().to_string(),
-      Err(_) => {
-        error!("Failed to find server executable! Please run `odin install`");
-        exit(1)
-      }
+    let command = if let Ok(command_path) = fs::canonicalize(PathBuf::from(value.server_executable))
+    {
+      command_path.to_str().unwrap().to_string()
+    } else {
+      error!("Failed to find server executable! Please run `odin install`");
+      exit(1)
     };
 
     ValheimArguments {
@@ -76,71 +76,71 @@ impl From<Configuration> for ValheimArguments {
 impl TryInto<Vec<String>> for ValheimArguments {
   type Error = String;
 
-  /// Converts the ValheimArguments into a vector of strings
+  /// Converts the `ValheimArguments` into a vector of strings
   fn try_into(self) -> Result<Vec<String>, Self::Error> {
     let mut args = Vec::new();
     // Sets the port of the server, (Can be set with ENV variable PORT)
     let port = fetch_var("PORT", &self.port);
-    debug!("Setting port to: {}", port);
+    debug!("Setting port to: {port}");
     args.push(String::from("-port"));
     args.push(port);
 
     // Sets the name of the server, (Can be set with ENV variable NAME)
     let name = fetch_var("NAME", &self.name);
-    debug!("Setting name to: {}", name);
+    debug!("Setting name to: {name}");
     args.push(String::from("-name"));
     // Arg processor needs the quotes around the name if it has spaces
-    args.push(format!("'{}'", name));
+    args.push(format!("'{name}'"));
 
     // Sets the world of the server, (Can be set with ENV variable WORLD)
     let world = fetch_var("WORLD", &self.world);
-    debug!("Setting world to: {}", world);
+    debug!("Setting world to: {world}");
     args.push(String::from("-world"));
     args.push(world);
 
     // Determines if the server is public or not
     let public = fetch_var("PUBLIC", &self.public);
-    debug!("Setting public to: {}", public);
+    debug!("Setting public to: {public}");
     args.push(String::from("-public"));
     args.push(public.clone());
 
     // Sets the save interval in seconds
     if let Some(save_interval) = &self.save_interval {
       let interval = save_interval.to_string();
-      debug!("Setting save interval to: {}", interval);
+      debug!("Setting save interval to: {interval}");
       args.push(String::from("-saveinterval"));
       args.push(interval);
-    };
+    }
 
     // Add set_key to the command - supports multiple keys separated by commas
     if let Some(set_key) = &self.set_key {
       set_key
         .split(',')
-        .map(|key| key.trim())
+        .map(str::trim)
         .filter(|key| !key.is_empty())
         .for_each(|key| {
-          debug!("Setting set_key to: {}", key);
+          debug!("Setting set_key to: {key}");
           args.push(String::from("-setkey"));
           args.push(key.to_string());
         });
-    };
+    }
 
     // Add preset to the command
     if let Some(preset) = &self.preset {
-      debug!("Setting preset to: {}", preset);
+      debug!("Setting preset to: {preset}");
       args.push(String::from("-preset"));
-      args.push(preset.to_string());
-    };
+      args.push(preset.clone());
+    }
 
     // Add modifiers to the command
     if let Some(modifiers) = &self.modifiers {
       modifiers.iter().for_each(|modifier| {
         debug!("Setting modifier to: {} {}", modifier.name, modifier.value);
         args.push(String::from("-modifier"));
-        args.push(modifier.name.to_string());
-        args.push(modifier.value.to_string());
+        args.push(modifier.name.clone());
+        args.push(modifier.value.clone());
       });
-    };
+    }
 
     // Handle password logic similar to configure_server_options
     let is_public = self.public.eq("1");
@@ -217,9 +217,10 @@ pub fn config_file() -> ManagedFile {
 /// Reads the config file
 pub fn read_config(config: ManagedFile) -> ValheimArguments {
   let content = config.read();
-  if content.is_empty() {
-    panic!("Please initialize odin with `odin configure`. See `odin configure --help`")
-  }
+  assert!(
+    !content.is_empty(),
+    "Please initialize odin with `odin configure`. See `odin configure --help`"
+  );
   serde_json::from_str(content.as_str()).unwrap()
 }
 

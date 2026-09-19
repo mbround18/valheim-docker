@@ -84,8 +84,8 @@ impl PlayerList {
     let result = Path::new(&path)
       .parent()
       .map_or(Ok(()), std::fs::create_dir_all)
-      .and_then(|_| std::fs::write(&tmp, self.to_string()))
-      .and_then(|_| std::fs::rename(&tmp, &path));
+      .and_then(|()| std::fs::write(&tmp, self.to_string()))
+      .and_then(|()| std::fs::rename(&tmp, &path));
     match result {
       Ok(()) => {
         debug!("Saved player list to {path}");

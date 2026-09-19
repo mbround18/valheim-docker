@@ -8,7 +8,7 @@ use crate::files::config::{config_file, write_config};
 use crate::files::discord::{discord_file, write_discord};
 use crate::utils::common_paths::log_directory;
 
-/// See: https://user-images.githubusercontent.com/34519392/273088066-b9c94664-9eef-419d-999a-8b8798462dee.PNG
+/// See: <https://user-images.githubusercontent.com/34519392/273088066-b9c94664-9eef-419d-999a-8b8798462dee.PNG>
 /// for a list of modifiers
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Modifiers {
@@ -54,7 +54,7 @@ pub struct Configuration {
   /// Sets flag modifiers for launching the server, (Can be set with ENV variable MODIFIERS)
   pub modifiers: Option<Vec<Modifiers>>,
 
-  /// Sets flag set_key for launching the server, (Can be set with ENV variable SET_KEY)
+  /// Sets flag `set_key` for launching the server, (Can be set with ENV variable `SET_KEY`)
   pub set_key: Option<String>,
 
   /// Sets the save interval in seconds
@@ -174,7 +174,7 @@ impl Configuration {
       }
     }
     if let Err(e) = fs::remove_file(&probe_path) {
-      warn!("Failed to cleanup logs probe file {:?}: {}", probe_path, e);
+      warn!("Failed to cleanup logs probe file {probe_path:?}: {e}");
     }
 
     Ok(())

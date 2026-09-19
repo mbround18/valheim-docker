@@ -162,25 +162,22 @@ impl LogTail {
   /// The lines written since the last call, reopening the file first if it was truncated or
   /// replaced. A file that has gone missing yields nothing and is picked up when it returns.
   fn poll(&mut self) -> Result<Vec<String>> {
-    match fs::metadata(&self.path) {
-      Ok(metadata) => {
-        if self.reader.is_none() {
-          self.open(0)?;
-        } else if self.needs_reopen(&metadata) || !self.is_continuous()? {
-          warn!(
-            "{} was truncated or replaced, following it from the start",
-            self.path.display()
-          );
-          self.open(0)?;
-        }
+    if let Ok(metadata) = fs::metadata(&self.path) {
+      if self.reader.is_none() {
+        self.open(0)?;
+      } else if self.needs_reopen(&metadata) || !self.is_continuous()? {
+        warn!(
+          "{} was truncated or replaced, following it from the start",
+          self.path.display()
+        );
+        self.open(0)?;
       }
-      Err(_) => {
-        self.reader = None;
-        self.position = 0;
-        self.file_id = None;
-        self.anchor.clear();
-        return Ok(Vec::new());
-      }
+    } else {
+      self.reader = None;
+      self.position = 0;
+      self.file_id = None;
+      self.anchor.clear();
+      return Ok(Vec::new());
     }
     self.read_available()
   }
@@ -230,12 +227,11 @@ fn handle_line_core(path: &PathBuf, line: &str) {
   handle_player_events(line);
   handle_save_events(line);
 
-  let file_name = match path.file_name().and_then(|name| name.to_str()) {
-    Some(name) => name,
-    None => {
-      error!("Failed to extract file name from path: {path:?}");
-      return;
-    }
+  let file_name = if let Some(name) = path.file_name().and_then(|name| name.to_str()) {
+    name
+  } else {
+    error!("Failed to extract file name from path: {path:?}");
+    return;
   };
 
   if !is_env_var_truthy("SHOW_FALLBACK_HANDLER")

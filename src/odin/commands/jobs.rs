@@ -401,7 +401,7 @@ fn prune_old_backups() {
     };
     if age > max_age {
       match fs::remove_file(&path) {
-        Ok(_) => info!("Removed old backup: {}", path.display()),
+        Ok(()) => info!("Removed old backup: {}", path.display()),
         Err(e) => warn!("Failed to remove old backup {}: {e}", path.display()),
       }
     }
@@ -424,7 +424,7 @@ fn run_odin(args: &[&str]) -> Result<i32, String> {
   let status = Command::new(exe)
     .args(args)
     .status()
-    .map_err(|e| format!("failed to launch odin {:?}: {e}", args))?;
+    .map_err(|e| format!("failed to launch odin {args:?}: {e}"))?;
   Ok(status.code().unwrap_or(1))
 }
 

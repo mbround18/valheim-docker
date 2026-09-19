@@ -8,12 +8,11 @@ use std::process::exit;
 pub fn invoke(input: String, output: String) {
   debug!("Creating archive of {input}");
   debug!("Output set to {output}");
-  let tar_gz = match File::create(&output) {
-    Ok(file) => file,
-    Err(_) => {
-      error!("Failed to create backup file at {}", output);
-      exit(1)
-    }
+  let tar_gz = if let Ok(file) = File::create(&output) {
+    file
+  } else {
+    error!("Failed to create backup file at {output}");
+    exit(1)
   };
   let enc = GzEncoder::new(tar_gz, Compression::default());
   let mut tar = tar::Builder::new(enc);
@@ -34,14 +33,14 @@ pub fn invoke(input: String, output: String) {
         );
 
         match tar.append_path_with_name(&name, name.replace(&format!("{input}/"), "")) {
-          Ok(_) => debug!("Successfully added {name} to backup file"),
+          Ok(()) => debug!("Successfully added {name} to backup file"),
           Err(err) => {
             error!("Failed to add {name} to backup file");
             error!("{err:?}");
             remove_file(&output).unwrap();
             exit(1)
           }
-        };
+        }
       }
       Err(e) => println!("{e:?}"),
     }
