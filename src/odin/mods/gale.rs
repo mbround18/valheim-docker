@@ -1,4 +1,4 @@
-//! Gale profile sync (https://github.com/Kesomannen/gale/wiki/Profile-sync).
+//! Gale profile sync (<https://github.com/Kesomannen/gale/wiki/Profile-sync>).
 //!
 //! A Gale user can publish a mod profile and hand out its sync code. `GALE_SYNC_CODE` makes the
 //! server install exactly the mods (and versions) of that profile, so clients who pull the same
@@ -29,7 +29,7 @@ pub const GALE_SYNC_CONFIGS_VAR: &str = "GALE_SYNC_CONFIGS";
 const GALE_SYNC_URL_VAR: &str = "GALE_SYNC_URL";
 const DEFAULT_GALE_SYNC_URL: &str = "https://gale.kesomannen.com/api";
 
-/// The container installs BepInEx itself (`TYPE=BepInEx`), so the pack entry is skipped.
+/// The container installs `BepInEx` itself (`TYPE=BepInEx`), so the pack entry is skipped.
 const BEPINEX_PACK_NAME: &str = "BepInExPack_Valheim";
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -89,7 +89,7 @@ fn profile_url(code: &str, meta: bool) -> Result<Url, ValheimModError> {
   {
     let mut segments = url
       .path_segments_mut()
-      .map_err(|_| ValheimModError::InvalidUrl)?;
+      .map_err(|()| ValheimModError::InvalidUrl)?;
     segments.pop_if_empty().push("profile").push(code);
     if meta {
       segments.push("meta");

@@ -50,17 +50,14 @@ impl ServerInfo {
     let query_client = match A2SClient::new() {
       Ok(c) => c,
       Err(e) => {
-        error!("Failed to initialize A2S client: {}", e);
+        error!("Failed to initialize A2S client: {e}");
         return ServerInfo::offline();
       }
     };
     match query_client.info(address) {
       Ok(a2s_info) => ServerInfo::from(a2s_info),
       Err(err) => {
-        error!(
-          "Failed to request server information from {}: {}",
-          address, err
-        );
+        error!("Failed to request server information from {address}: {err}");
         ServerInfo::offline()
       }
     }
@@ -125,7 +122,7 @@ impl Display for ServerInfo {
     ];
     if bepinex.enabled {
       let mods: Vec<String> = bepinex.mods.iter().map(|m| String::from(&m.name)).collect();
-      server_info.push(format!("BepInEx Mods: {}", mods.join(", ")))
+      server_info.push(format!("BepInEx Mods: {}", mods.join(", ")));
     }
     write!(f, "{}", server_info.join("\n"))
   }

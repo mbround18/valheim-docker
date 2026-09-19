@@ -43,7 +43,7 @@ fn is_webhook_enabled() -> bool {
     debug!("Webhook Url found!: {url}");
     let is_valid = Url::parse(url.as_str()).is_ok();
     if !is_valid {
-      warn!("Webhook provided but does not look valid!! Is this right? {url}")
+      warn!("Webhook provided but does not look valid!! Is this right? {url}");
     }
     return is_valid;
   }
@@ -149,7 +149,7 @@ impl NotificationEvent {
         event.event_message = msg;
       }
 
-      debug!("Checking ENV Var: {}", enabled_var);
+      debug!("Checking ENV Var: {enabled_var}");
       if fetch_var(&enabled_var, "0").eq("1") {
         self.send_custom_notification(&fetch_webhook_url(), &event);
       } else {

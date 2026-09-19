@@ -16,12 +16,11 @@ impl TryFrom<PathBuf> for Manifest {
   type Error = Box<dyn std::error::Error>;
 
   fn try_from(value: PathBuf) -> Result<Self, Self::Error> {
-    debug!("Reading Manifest from {:?}", value);
+    debug!("Reading Manifest from {value:?}");
 
     if !value.exists() {
       return Err(Box::new(ManifestDeserializeError(format!(
-        "Failed to find manifest at {:?}",
-        value
+        "Failed to find manifest at {value:?}"
       ))));
     }
 
@@ -31,8 +30,7 @@ impl TryFrom<PathBuf> for Manifest {
 
     if content.trim().is_empty() {
       return Err(Box::new(ManifestDeserializeError(format!(
-        "Manifest file at {:?} is empty",
-        value
+        "Manifest file at {value:?} is empty"
       ))));
     }
 
@@ -41,10 +39,10 @@ impl TryFrom<PathBuf> for Manifest {
       content = content.trim_start_matches('\u{FEFF}').to_string();
     }
 
-    debug!("Manifest content: {}", content);
+    debug!("Manifest content: {content}");
 
     let manifest: Manifest = serde_json::from_str(&content)
-      .map_err(|e| ManifestDeserializeError(format!("Failed to deserialize manifest: {}", e)))?;
+      .map_err(|e| ManifestDeserializeError(format!("Failed to deserialize manifest: {e}")))?;
 
     Ok(manifest)
   }

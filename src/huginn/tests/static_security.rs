@@ -22,7 +22,7 @@ fn static_file(path: &str) -> String {
 }
 
 fn parse_external_resources(file: &str, html: &str) -> Vec<ExternalResource> {
-  let tag_re = Regex::new(r#"<(?P<tag>script|link)\b(?P<attrs>[^>]*)>"#).unwrap();
+  let tag_re = Regex::new(r"<(?P<tag>script|link)\b(?P<attrs>[^>]*)>").unwrap();
   let attr_re =
     Regex::new(r#"(?P<name>[a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"(?P<value>[^"]*)""#).unwrap();
   let rel_ws_re = Regex::new(r"\s+").unwrap();
@@ -49,14 +49,11 @@ fn parse_external_resources(file: &str, html: &str) -> Vec<ExternalResource> {
     }
 
     let is_stylesheet = if tag == "link" {
-      attrs
-        .get("rel")
-        .map(|v| {
-          rel_ws_re
-            .split(v)
-            .any(|part| part.eq_ignore_ascii_case("stylesheet"))
-        })
-        .unwrap_or(false)
+      attrs.get("rel").is_some_and(|v| {
+        rel_ws_re
+          .split(v)
+          .any(|part| part.eq_ignore_ascii_case("stylesheet"))
+      })
     } else {
       false
     };

@@ -19,12 +19,11 @@ pub fn find_command(executable: &str) -> Option<Command> {
 }
 
 pub fn create_execution(executable: &str) -> Command {
-  match find_command(executable) {
-    Some(command) => command,
-    None => {
-      error!("Unable to launch command {executable}");
-      exit(1)
-    }
+  if let Some(command) = find_command(executable) {
+    command
+  } else {
+    error!("Unable to launch command {executable}");
+    exit(1)
   }
 }
 
@@ -79,30 +78,27 @@ pub fn parse_command_args(args: Vec<String>) -> Vec<String> {
 }
 
 pub fn execute_mut(command: &mut Command) -> std::io::Result<Child> {
-  debug!("Running command: {:?}", command);
+  debug!("Running command: {command:?}");
 
   command.spawn()
 }
 
 pub fn handle_exit_status(result: std::io::Result<ExitStatus>, success_message: String) {
-  match result {
-    Ok(exit_status) => {
-      if exit_status.success() {
-        info!("{success_message}");
-      } else {
-        match exit_status.code() {
-          Some(code) => {
-            error!("Exited with exit code: {code}");
-            exit(code)
-          }
-          None => info!("Process terminated by signal"),
+  if let Ok(exit_status) = result {
+    if exit_status.success() {
+      info!("{success_message}");
+    } else {
+      match exit_status.code() {
+        Some(code) => {
+          error!("Exited with exit code: {code}");
+          exit(code)
         }
+        None => info!("Process terminated by signal"),
       }
     }
-    _ => {
-      error!("An error has occurred and the command returned no exit code!");
-      exit(1)
-    }
+  } else {
+    error!("An error has occurred and the command returned no exit code!");
+    exit(1)
   }
 }
 

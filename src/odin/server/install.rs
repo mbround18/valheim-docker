@@ -50,7 +50,7 @@ pub fn add_beta_args(
   }
 }
 
-/// `+app_update` can race SteamCMD's own app-info sync (`Missing configuration`).
+/// `+app_update` can race `SteamCMD`'s own app-info sync (`Missing configuration`).
 pub(crate) fn app_info_sync_args(app_id: i64) -> Vec<String> {
   vec![
     String::from("+@ShutdownOnFailedCommand 1"),
@@ -77,7 +77,7 @@ fn add_additional_args(args: &mut Vec<String>) {
     let additional_args = String::from(extra_args.trim_start_matches('"').trim_end_matches('"'));
     if !additional_args.is_empty() {
       debug!("Adding additional arguments! {additional_args}");
-      args.push(additional_args)
+      args.push(additional_args);
     }
   }
 }
@@ -101,7 +101,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
   if staged_install {
     if let Err(e) = prepare_staging_dir(Path::new(&install_dir)) {
-      error!("Failed to prepare staged install dir: {}", e);
+      error!("Failed to prepare staged install dir: {e}");
       return Err(io::Error::other(e));
     }
   }
@@ -139,9 +139,9 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
     info!("Installing using default/stable branch");
   }
 
-  info!("Installing {} to {}", app_id, install_dir);
+  info!("Installing {app_id} to {install_dir}");
   let login = "+login anonymous".to_string();
-  let force_install_dir = format!("+force_install_dir {}", install_dir);
+  let force_install_dir = format!("+force_install_dir {install_dir}");
   // Build SteamCMD args with order:
   // 1) +@ control vars  2) +force_install_dir  3) +login  4) optional verbose  5) +app_update {id} [beta flags] [validate]
   let mut args = vec![
@@ -196,8 +196,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
   // give it a final attempt before giving up.
   if should_attempt_download_state_recovery(&result) {
     warn!(
-      "SteamCMD could not complete the app update (exit code 8). Resetting download state in {} and retrying once.",
-      install_dir
+      "SteamCMD could not complete the app update (exit code 8). Resetting download state in {install_dir} and retrying once."
     );
     match reset_download_state(Path::new(&install_dir), app_id) {
       Ok(removed) if removed.is_empty() => {
@@ -205,7 +204,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
       }
       Ok(removed) => {
         for p in removed {
-          debug!("removed: {}", p);
+          debug!("removed: {p}");
         }
         result = run_with_retries(&args);
       }
@@ -221,10 +220,10 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
         let staged_dir = Path::new(&install_dir);
         let live_dir = Path::new(&live_install_dir);
         if let Err(e) = validate_staged_install(staged_dir, app_id) {
-          error!("Staged install validation failed: {}", e);
+          error!("Staged install validation failed: {e}");
           result = Err(io::Error::other(e));
         } else if let Err(e) = promote_staged_install(staged_dir, live_dir, app_id) {
-          error!("Failed to promote staged install: {}", e);
+          error!("Failed to promote staged install: {e}");
           result = Err(io::Error::other(e));
         } else {
           info!(
@@ -240,7 +239,7 @@ pub fn install(app_id: i64) -> io::Result<ExitStatus> {
 
   // Attempt restore of stashed BepInEx regardless of result (best effort)
   if let Err(e) = restore_bepinex_after_install(maybe_stash) {
-    error!("Failed to restore BepInEx after install: {}", e);
+    error!("Failed to restore BepInEx after install: {e}");
   }
 
   // If the install failed, collect diagnostics to help identify issues (e.g., low disk space)
@@ -304,7 +303,7 @@ fn validate_staged_install(staged_dir: &Path, app_id: i64) -> Result<(), String>
   }
   let manifest = staged_dir
     .join("steamapps")
-    .join(format!("appmanifest_{}.acf", app_id));
+    .join(format!("appmanifest_{app_id}.acf"));
   if !manifest.exists() {
     return Err(format!(
       "staged appmanifest missing after install: {}",
@@ -340,7 +339,7 @@ fn promote_staged_install(staged_dir: &Path, live_dir: &Path, app_id: i64) -> Re
     let src_path = entry.path();
     let rel = src_path
       .strip_prefix(staged_dir)
-      .map_err(|e| format!("failed to compute relative staged path: {}", e))?;
+      .map_err(|e| format!("failed to compute relative staged path: {e}"))?;
     if rel.as_os_str().is_empty() {
       continue;
     }
@@ -421,7 +420,7 @@ fn prune_live_entries_missing_from_staged(
     let rel = entry
       .path()
       .strip_prefix(staged_dir)
-      .map_err(|e| format!("failed to compute staged relative path: {}", e))?;
+      .map_err(|e| format!("failed to compute staged relative path: {e}"))?;
     if rel.as_os_str().is_empty() {
       continue;
     }
@@ -439,7 +438,7 @@ fn prune_live_entries_missing_from_staged(
     let rel = entry
       .path()
       .strip_prefix(live_dir)
-      .map_err(|e| format!("failed to compute live relative path: {}", e))?;
+      .map_err(|e| format!("failed to compute live relative path: {e}"))?;
     if rel.as_os_str().is_empty() {
       continue;
     }
@@ -480,8 +479,7 @@ fn rollback_promotion(created_paths: &[PathBuf], backed_up_paths: &[(PathBuf, Pa
 fn rollback_root_dir(live_dir: &Path) -> PathBuf {
   let ts = SystemTime::now()
     .duration_since(UNIX_EPOCH)
-    .map(|d| d.as_secs())
-    .unwrap_or(0);
+    .map_or(0, |d| d.as_secs());
   live_dir.join(".odin").join("rollback").join(ts.to_string())
 }
 
@@ -513,7 +511,7 @@ fn stash_bepinex_before_clean() -> Option<(std::path::PathBuf, std::path::PathBu
   match fs_extra::dir::copy(&be_path, &stage_root, &fs_extra::dir::CopyOptions::new()) {
     Ok(_) => Some((be_path, stage_be)),
     Err(e) => {
-      debug!("Failed to stash BepInEx: {}", e);
+      debug!("Failed to stash BepInEx: {e}");
       None
     }
   }
@@ -581,7 +579,7 @@ fn clean_install_if_enabled() {
   let appcache = Path::new("/home/steam/Steam").join("appcache");
   if appcache.exists() {
     match std::fs::remove_dir_all(&appcache) {
-      Ok(_) => info!(
+      Ok(()) => info!(
         "Clean install: cleared Steam appcache: {}",
         appcache.display()
       ),
@@ -629,13 +627,13 @@ fn clear_steam_cache_if_enabled() {
       } else {
         debug!("Steam cache: cleared {} item(s)", removed.len());
         for p in removed {
-          debug!("removed: {}", p);
+          debug!("removed: {p}");
         }
       }
     }
     Err(e) => {
       // Not fatal; log and continue
-      error!("Steam cache clear encountered errors: {}", e);
+      error!("Steam cache clear encountered errors: {e}");
     }
   }
 }
@@ -661,7 +659,7 @@ const STEAM_CLIENT_CACHE_SUBDIRS: [&str; 7] = [
   "steamapps/shadercache",
 ];
 
-/// Disposable scratch dirs SteamCMD leaves inside a `+force_install_dir` target.
+/// Disposable scratch dirs `SteamCMD` leaves inside a `+force_install_dir` target.
 ///
 /// Only these are cleared routinely. The broader [`STEAM_CLIENT_CACHE_SUBDIRS`]
 /// list must never be applied to the install dir: `logs/` under the game
@@ -671,7 +669,7 @@ const STEAM_CLIENT_CACHE_SUBDIRS: [&str; 7] = [
 /// still resume; it is only cleared by [`reset_download_state`] after a failure.
 const INSTALL_DIR_CACHE_SUBDIRS: [&str; 2] = ["steamapps/temp", "steamapps/shadercache"];
 
-/// Cache paths cleared routinely inside a SteamCMD `+force_install_dir` target.
+/// Cache paths cleared routinely inside a `SteamCMD` `+force_install_dir` target.
 pub(crate) fn install_dir_cache_paths(install_dir: &Path) -> Vec<PathBuf> {
   INSTALL_DIR_CACHE_SUBDIRS
     .iter()
@@ -686,7 +684,7 @@ fn remove_existing_paths(paths: &[PathBuf], removed: &mut Vec<String>, errs: &mu
       continue;
     }
     match remove_path_cautious(path) {
-      Ok(_) => removed.push(path.display().to_string()),
+      Ok(()) => removed.push(path.display().to_string()),
       Err(e) => errs.push(format!("{}: {}", path.display(), e)),
     }
   }
@@ -723,7 +721,7 @@ fn clear_steam_cache() -> Result<Vec<String>, String> {
       if name.starts_with("steam") || name.starts_with("Steam") || name.starts_with(".steam") {
         let p = entry.path();
         match remove_path_cautious(&p) {
-          Ok(_) => removed.push(p.display().to_string()),
+          Ok(()) => removed.push(p.display().to_string()),
           Err(e) => errs.push(format!("{}: {}", p.display(), e)),
         }
       }
@@ -737,18 +735,18 @@ fn clear_steam_cache() -> Result<Vec<String>, String> {
   }
 }
 
-/// SteamCMD exit codes that mean "the app update itself failed" rather than a
+/// `SteamCMD` exit codes that mean "the app update itself failed" rather than a
 /// transport or auth problem. These are the ones a download-state reset can fix.
 ///
-/// 8 is what SteamCMD returns alongside `Error! App '<id>' state is 0x6 after
+/// 8 is what `SteamCMD` returns alongside `Error! App '<id>' state is 0x6 after
 /// update job`, the signature of a stale/corrupt appmanifest.
 pub(crate) fn is_recoverable_install_failure(code: Option<i32>) -> bool {
   matches!(code, Some(8))
 }
 
-/// Whether a finished SteamCMD run warrants a download-state reset and one more try.
+/// Whether a finished `SteamCMD` run warrants a download-state reset and one more try.
 ///
-/// Only exit statuses count: an `Err` means SteamCMD never ran, which resetting
+/// Only exit statuses count: an `Err` means `SteamCMD` never ran, which resetting
 /// cannot help. Gated by `STEAMCMD_RESET_ON_FAILURE` (default on).
 fn should_attempt_download_state_recovery(result: &io::Result<ExitStatus>) -> bool {
   let Ok(status) = result else {
@@ -767,10 +765,10 @@ fn should_attempt_download_state_recovery(result: &io::Result<ExitStatus>) -> bo
   true
 }
 
-/// Reset SteamCMD's download bookkeeping for `app_id` inside `install_dir`.
+/// Reset `SteamCMD`'s download bookkeeping for `app_id` inside `install_dir`.
 ///
 /// Removes the transient download directories plus the app manifest, which
-/// forces SteamCMD to re-resolve the depot from scratch on the next attempt.
+/// forces `SteamCMD` to re-resolve the depot from scratch on the next attempt.
 /// Game files themselves are left in place, and saves live outside this dir.
 pub(crate) fn reset_download_state(install_dir: &Path, app_id: i64) -> Result<Vec<String>, String> {
   let mut paths = install_dir_cache_paths(install_dir);
@@ -778,7 +776,7 @@ pub(crate) fn reset_download_state(install_dir: &Path, app_id: i64) -> Result<Ve
   paths.push(
     install_dir
       .join("steamapps")
-      .join(format!("appmanifest_{}.acf", app_id)),
+      .join(format!("appmanifest_{app_id}.acf")),
   );
 
   let mut removed: Vec<String> = Vec::new();
@@ -842,16 +840,16 @@ fn write_checks(paths: &[String]) -> Result<(), String> {
     .as_nanos();
 
   for p in paths {
-    debug!("Testing write access: {}", p);
+    debug!("Testing write access: {p}");
     let dir = Path::new(p);
     if !dir.exists() {
-      debug!("Skipping write check (missing): {}", p);
+      debug!("Skipping write check (missing): {p}");
       continue;
     }
     if !dir.is_dir() {
-      return Err(format!("path is not a directory: {}", p));
+      return Err(format!("path is not a directory: {p}"));
     }
-    let probe = dir.join(format!(".write_test_{}", now_ns));
+    let probe = dir.join(format!(".write_test_{now_ns}"));
     match OpenOptions::new()
       .create(true)
       .write(true)
@@ -861,18 +859,18 @@ fn write_checks(paths: &[String]) -> Result<(), String> {
       Ok(mut file) => {
         if let Err(e) = file.write_all(b"ok") {
           let _ = remove_file(&probe);
-          return Err(format!("WRITE FAIL {}: {}", p, e));
+          return Err(format!("WRITE FAIL {p}: {e}"));
         }
       }
       Err(e) => {
-        return Err(format!("WRITE FAIL {}: {}", p, e));
+        return Err(format!("WRITE FAIL {p}: {e}"));
       }
     }
     if let Err(e) = remove_file(&probe) {
       // Not fatal for writability, but report cleanup issue
       debug!("cleanup failed for {}: {}", probe.display(), e);
     }
-    debug!("Write check ok: {}", p);
+    debug!("Write check ok: {p}");
   }
 
   Ok(())
@@ -975,17 +973,17 @@ fn log_space_overview() {
       let low_space = fs.used_percent >= 85.0 || fs.available_bytes < (5.0 * gb) as u64;
       let high_inodes = fs.inodes_used_percent >= 85.0;
       if low_space || high_inodes {
-        warn!("{}", line);
+        warn!("{line}");
       } else {
-        debug!("{}", line);
+        debug!("{line}");
       }
     }
     if let Some(perm) = shared::system::perm_summary_for(p) {
       let msg = shared::system::format_perm_summary(&perm);
-      if !perm.can_write {
-        warn!("{}", msg);
+      if perm.can_write {
+        debug!("{msg}");
       } else {
-        debug!("{}", msg);
+        warn!("{msg}");
       }
     }
   }
@@ -1127,7 +1125,7 @@ mod tests {
 
   #[test]
   fn test_compose_app_update_no_beta_no_validate() {
-    let cfg = BetaConfig::from_parts(false, "ignored".to_string(), "".to_string());
+    let cfg = BetaConfig::from_parts(false, "ignored".to_string(), String::new());
     let s = compose_app_update_arg(896660, &cfg, false);
     assert_eq!(s, "+app_update 896660");
   }
@@ -1144,7 +1142,7 @@ mod tests {
     fs::create_dir_all(staged_dir.join("steamapps")).unwrap();
     fs::write(staged_dir.join("valheim_server.x86_64"), "new-bin").unwrap();
     fs::write(
-      staged_dir.join(format!("steamapps/appmanifest_{}.acf", app_id)),
+      staged_dir.join(format!("steamapps/appmanifest_{app_id}.acf")),
       "manifest",
     )
     .unwrap();
@@ -1173,7 +1171,7 @@ mod tests {
     fs::create_dir_all(staged_dir.join("steamapps")).unwrap();
     fs::write(staged_dir.join("valheim_server.x86_64"), "new-bin").unwrap();
     fs::write(
-      staged_dir.join(format!("steamapps/appmanifest_{}.acf", app_id)),
+      staged_dir.join(format!("steamapps/appmanifest_{app_id}.acf")),
       "manifest",
     )
     .unwrap();
@@ -1236,7 +1234,7 @@ mod tests {
     fs::create_dir_all(install_dir.join("steamapps/downloading/896660")).unwrap();
     fs::create_dir_all(install_dir.join("steamapps/temp")).unwrap();
     fs::write(
-      install_dir.join(format!("steamapps/appmanifest_{}.acf", app_id)),
+      install_dir.join(format!("steamapps/appmanifest_{app_id}.acf")),
       "\"StateFlags\" \"6\"",
     )
     .unwrap();
@@ -1246,7 +1244,7 @@ mod tests {
     assert!(!install_dir.join("steamapps/downloading").exists());
     assert!(!install_dir.join("steamapps/temp").exists());
     assert!(!install_dir
-      .join(format!("steamapps/appmanifest_{}.acf", app_id))
+      .join(format!("steamapps/appmanifest_{app_id}.acf"))
       .exists());
     assert_eq!(removed.len(), 3);
     assert!(install_dir.join("steamapps").exists());

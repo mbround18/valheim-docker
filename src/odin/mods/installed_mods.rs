@@ -17,19 +17,19 @@ pub fn installed_mods_with_paths() -> Vec<InstalledMod> {
   let mods_location = match env::var(MODS_LOCATION) {
     Ok(path) => path,
     Err(e) => {
-      error!("Failed to read MODS_LOCATION environment variable: {}", e);
+      error!("Failed to read MODS_LOCATION environment variable: {e}");
       return vec![];
     }
   };
 
   // Construct the glob pattern to find all manifest.json files
-  let pattern = format!("{}/**/manifest.json", mods_location);
+  let pattern = format!("{mods_location}/**/manifest.json");
 
   // Use glob to find files matching the pattern
   let paths = match glob(&pattern) {
     Ok(paths) => paths,
     Err(e) => {
-      error!("Failed to read glob pattern {}: {}", pattern, e);
+      error!("Failed to read glob pattern {pattern}: {e}");
       return vec![];
     }
   };
@@ -52,7 +52,7 @@ pub fn installed_mods_with_paths() -> Vec<InstalledMod> {
           Err(e) => error!("Failed to deserialize JSON from {}: {}", path.display(), e),
         }
       }
-      Err(e) => error!("Error reading path: {}", e),
+      Err(e) => error!("Error reading path: {e}"),
     }
   }
 
@@ -69,12 +69,12 @@ pub fn installed_mods_with_paths() -> Vec<InstalledMod> {
 
 fn discover_plugin_dlls() -> Vec<InstalledMod> {
   let plugin_dir = bepinex_plugin_directory();
-  let pattern = format!("{}/**/*.dll", plugin_dir);
+  let pattern = format!("{plugin_dir}/**/*.dll");
 
   let paths = match glob(&pattern) {
     Ok(paths) => paths,
     Err(e) => {
-      error!("Failed to read glob pattern {}: {}", pattern, e);
+      error!("Failed to read glob pattern {pattern}: {e}");
       return vec![];
     }
   };
@@ -90,7 +90,7 @@ fn discover_plugin_dlls() -> Vec<InstalledMod> {
           path: path.to_string_lossy().into(),
         });
       }
-      Err(e) => error!("Error reading path: {}", e),
+      Err(e) => error!("Error reading path: {e}"),
     }
   }
 
@@ -105,7 +105,7 @@ fn find_manifest_near_plugin(dll_path: &Path) -> Option<Manifest> {
       if candidate.exists() {
         return Manifest::try_from(candidate).ok();
       }
-      if dir.file_name().map(|n| n == "plugins").unwrap_or(false) {
+      if dir.file_name().is_some_and(|n| n == "plugins") {
         break;
       }
       dir_opt = dir.parent();
@@ -115,11 +115,10 @@ fn find_manifest_near_plugin(dll_path: &Path) -> Option<Manifest> {
 }
 
 fn manifest_from_dll(dll_path: &Path) -> Manifest {
-  let name = dll_path
-    .file_stem()
-    .and_then(|s| s.to_str())
-    .map(|s| s.to_string())
-    .unwrap_or_else(|| dll_path.to_string_lossy().into_owned());
+  let name = dll_path.file_stem().and_then(|s| s.to_str()).map_or_else(
+    || dll_path.to_string_lossy().into_owned(),
+    std::string::ToString::to_string,
+  );
 
   Manifest {
     name,
@@ -327,7 +326,7 @@ mod tests {
 
     for (path, expected_name) in test_cases {
       let manifest = manifest_from_dll(&PathBuf::from(path));
-      assert_eq!(manifest.name, expected_name, "Failed for path: {}", path);
+      assert_eq!(manifest.name, expected_name, "Failed for path: {path}");
     }
   }
 }

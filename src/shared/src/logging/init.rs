@@ -22,7 +22,7 @@ pub fn init_logging_and_tracing() -> Result<(), Box<dyn std::error::Error>> {
     let default_level = if is_debug { "debug" } else { "info" };
     // Append specific target overrides to silence noisy HTTP/2 and hyper internals by default.
     // Users can still override via RUST_LOG when needed.
-    let default_filter = format!("{},h2=warn,hyper=warn", default_level);
+    let default_filter = format!("{default_level},h2=warn,hyper=warn");
     EnvFilter::new(default_filter)
   });
 

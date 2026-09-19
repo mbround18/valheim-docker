@@ -16,7 +16,18 @@ pub fn invoke(dry_run: bool) {
   let config = load_config();
   debug!(target: "commands_start", "Dry run condition: {dry_run}");
   info!(target: "commands_start", "Looking for burial mounds...");
-  if !dry_run {
+  if dry_run {
+    info!(
+      target: "commands_start",
+      "This command would have launched\n{} -nographics -batchmode -port {} -name {} -world {} -password {} -public {}",
+      config.command,
+      config.port,
+      config.name,
+      config.world,
+      config.password,
+      config.public,
+    );
+  } else {
     if let Err(e) = server::save_directory_write_checks() {
       error!(target: "commands_start", "Save directory is not writable: {e}");
       error!(
@@ -36,16 +47,5 @@ pub fn invoke(dry_run: bool) {
         exit(1);
       }
     }
-  } else {
-    info!(
-      target: "commands_start",
-      "This command would have launched\n{} -nographics -batchmode -port {} -name {} -world {} -password {} -public {}",
-      config.command,
-      config.port,
-      config.name,
-      config.world,
-      config.password,
-      config.public,
-    )
   }
 }

@@ -295,7 +295,7 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
       .get(&event.event_type.name.as_str().to_lowercase())
       .unwrap_or(&default_event);
     let source = serde_json::to_string(&discord_event).unwrap();
-    debug!("Discord Notification Template: {}", source);
+    debug!("Discord Notification Template: {source}");
     handlebars
       .register_template_string("notification", source)
       .unwrap();
@@ -307,7 +307,7 @@ impl From<&NotificationMessage> for DiscordWebHookBody {
     );
     let rendered = match handlebars.render("notification", &values) {
       Ok(value) => {
-        debug!("Discord Notification Parsed: \n{}", value);
+        debug!("Discord Notification Parsed: \n{value}");
         value
       }
       Err(msg) => panic!("{}", msg.to_string()),
