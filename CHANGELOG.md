@@ -204,3 +204,7 @@
 ## v3.8.7 (2026-09-18)
 
 - feat(mods): Gale profile sync and recovery from interrupted updates (#1546)
+
+## v3.8.8 (2026-09-19)
+
+- Fix Gale sync when mods moved from Thunderstore to Hexium (#1551)

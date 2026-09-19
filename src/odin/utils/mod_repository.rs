@@ -128,13 +128,19 @@ pub(crate) fn is_host_or_subdomain(host: &str, domain: &str) -> bool {
 
 /// Splits a `MODS` entry into its repository prefix and the rest.
 ///
-/// `hex:Author-Mod-1.0.0` gives `(Some(Hexium), "Author-Mod-1.0.0")`. Anything without a
-/// recognised prefix, URLs included, is returned unchanged with `None`.
+/// `hex:Author-Mod-1.0.0` gives `(Some(Hexium), "Author-Mod-1.0.0")`.
+///
+/// The internal `auto:` prefix used by Gale profile sync also strips to `(None, rest)`, so
+/// downstream parsing sees a plain dependency string.
+/// Anything else without a recognised prefix, URLs included, is returned unchanged with `None`.
 pub fn split_repository_prefix(entry: &str) -> (Option<ModRepository>, &str) {
   if let Some((prefix, rest)) = entry.split_once(':') {
     if !rest.is_empty() && !rest.starts_with("//") {
       if let Some(repo) = ModRepository::parse(prefix) {
         return (Some(repo), rest);
+      }
+      if prefix.eq_ignore_ascii_case("auto") {
+        return (None, rest);
       }
     }
   }
@@ -304,6 +310,18 @@ mod tests {
     ] {
       assert_eq!(split_repository_prefix(input), (None, input), "{input}");
     }
+  }
+
+  #[test]
+  fn strips_internal_auto_prefix() {
+    assert_eq!(
+      split_repository_prefix("auto:Author-Mod-1.0.0"),
+      (None, "Author-Mod-1.0.0")
+    );
+    assert_eq!(
+      split_repository_prefix("AUTO:Author-Mod-*"),
+      (None, "Author-Mod-*")
+    );
   }
 
   #[test]
