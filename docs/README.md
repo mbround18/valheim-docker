@@ -436,8 +436,8 @@ If you want release notifications in your Discord server:
 - 1.0.0 (Stable): It works!
 
 [//]: <> "Links below"
-[Odin]: src/odin/README.md
-[Huginn]: src/huginn/README.md
+[Odin]: ../src/odin/README.md
+[Huginn]: ../src/huginn/README.md
 [Valheim]: https://www.valheimgame.com/
 
 ## External Guides
