@@ -22,6 +22,8 @@ version the profile pins:
 
 - Mods from Thunderstore become `ts:Author-Mod-1.2.3` entries, mods from Hexium become
   `hex:Author-Mod-1.2.3` (see [Mod Repositories](./mod_repositories.md)).
+- If Gale omits a mod's source, Odin resolves it automatically: it tries the default
+  repository first, then falls back to the other one when that version is missing.
 - Disabled mods are skipped.
 - `BepInExPack_Valheim` is skipped because the container installs BepInEx itself.
 

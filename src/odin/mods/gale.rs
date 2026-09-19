@@ -172,7 +172,11 @@ pub async fn fetch_manifest(code: &str) -> Result<GaleManifest, ValheimModError>
   }
 }
 
-/// Turns the enabled mods of a manifest into `MODS` entries (`ts:Author-Name-1.2.3`).
+/// Turns the enabled mods of a manifest into `MODS` entries.
+///
+/// - `source=Thunderstore|Hexium` keeps an explicit `ts:`/`hex:` prefix.
+/// - Missing `source` uses the internal `auto:` prefix so Odin can prefer the user's
+///   default repository and fall back to the other one during resolution.
 pub fn manifest_to_mod_entries(manifest: &GaleManifest) -> Vec<String> {
   manifest
     .mods
@@ -187,9 +191,9 @@ pub fn manifest_to_mod_entries(manifest: &GaleManifest) -> Vec<String> {
         return None;
       }
       let repository = match m.source.as_deref() {
-        None => ModRepository::Thunderstore,
+        None => None,
         Some(source) => match ModRepository::parse(source) {
-          Some(repository) => repository,
+          Some(repository) => Some(repository),
           None => {
             warn!(
               "Skipping Gale mod {} from unsupported source {source:?}",
@@ -200,14 +204,11 @@ pub fn manifest_to_mod_entries(manifest: &GaleManifest) -> Vec<String> {
         },
       };
       let v = &m.version;
-      Some(format!(
-        "{}:{}-{}.{}.{}",
-        repository.alias(),
-        m.name,
-        v.major,
-        v.minor,
-        v.patch
-      ))
+      let suffix = format!("{}-{}.{}.{}", m.name, v.major, v.minor, v.patch);
+      Some(match repository {
+        Some(repository) => format!("{}:{suffix}", repository.alias()),
+        None => format!("auto:{suffix}"),
+      })
     })
     .collect()
 }
@@ -356,6 +357,24 @@ mod tests {
     }
   }"#;
 
+  /// Shape copied from a real Gale profile where `source` is omitted and repository must be
+  /// inferred by Odin at install time.
+  const META_WITHOUT_SOURCES: &str = r#"{
+    "id": "9M5Z3V",
+    "createdAt": "2026-09-19T00:00:00Z",
+    "updatedAt": "2026-09-19T00:00:00Z",
+    "owner": { "name": "someone", "displayName": "Someone", "avatar": null },
+    "manifest": {
+      "profileName": "Mixed-Repo-Pack",
+      "community": "valheim",
+      "mods": [
+        { "name": "Azumatt-AzuCraftyBoxes", "version": { "major": 1, "minor": 8, "patch": 22 }, "enabled": true },
+        { "name": "Advize-PlantEverything", "version": { "major": 1, "minor": 21, "patch": 2 }, "enabled": true },
+        { "name": "Disabled-TestMod", "version": { "major": 9, "minor": 9, "patch": 9 }, "enabled": false }
+      ]
+    }
+  }"#;
+
   fn manifest() -> GaleManifest {
     serde_json::from_str::<GaleProfileMeta>(META)
       .unwrap()
@@ -369,7 +388,7 @@ mod tests {
       vec![
         "ts:Advize-PlantEasily-2.2.0",
         "hex:ValheimModding-YamlDotNet-16.3.1",
-        "ts:Old-Profile-1.0.0",
+        "auto:Old-Profile-1.0.0",
       ]
     );
   }
@@ -490,6 +509,34 @@ mod tests {
     let cached = fetch_manifest("abc123").await.unwrap();
     assert_eq!(cached.profile_name.as_deref(), Some("Valheim-1.0-Pack"));
     assert!(fetch_manifest("other1").await.is_err());
+
+    env::remove_var(GALE_SYNC_URL_VAR);
+    env::remove_var("GAME_LOCATION");
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn fetching_a_profile_without_sources_marks_entries_for_auto_resolution() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var("GAME_LOCATION", game.path());
+    let mut server = Server::new_async().await;
+    env::set_var(GALE_SYNC_URL_VAR, format!("{}/api", server.url()));
+    let _meta = server
+      .mock("GET", "/api/profile/9M5Z3V/meta")
+      .with_status(200)
+      .with_body(META_WITHOUT_SOURCES)
+      .create_async()
+      .await;
+
+    let manifest = fetch_manifest("9M5Z3V").await.unwrap();
+    let entries = manifest_to_mod_entries(&manifest);
+    assert_eq!(
+      entries,
+      vec![
+        "auto:Azumatt-AzuCraftyBoxes-1.8.22",
+        "auto:Advize-PlantEverything-1.21.2",
+      ]
+    );
 
     env::remove_var(GALE_SYNC_URL_VAR);
     env::remove_var("GAME_LOCATION");
