@@ -43,7 +43,7 @@ impl BetaConfig {
   }
 }
 
-/// Build the +app_update ... segment including any beta flags and validate toggle.
+/// Build the +`app_update` ... segment including any beta flags and validate toggle.
 pub fn compose_app_update_arg(app_id: i64, beta: &BetaConfig, do_validate: bool) -> String {
   let mut app_update = format!("+app_update {app_id}");
   if beta.beta_in_effect() {

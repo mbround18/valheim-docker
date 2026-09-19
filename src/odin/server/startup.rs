@@ -45,7 +45,7 @@ pub fn start_daemonized(config: ValheimArguments) -> Result<CommandResult, Error
       info!("Server has been started and Daemonize. It should be online shortly!");
       info!("Keep an eye out for 'Game server connected' in the log!");
       NotificationEvent::Start(EventStatus::Successful).send_notification(None);
-      info!("(this indicates its online without any errors.)")
+      info!("(this indicates its online without any errors.)");
     })
     .privileged_action(|| command)
     .start()
@@ -57,7 +57,7 @@ pub fn start(config: ValheimArguments) -> CommandResult {
   debug!("--------------------------------------------------------------------------------------------------------------");
   let (stdout, stderr) = create_log_files().unwrap();
 
-  debug!("Launching With Args: \n{:#?}", config);
+  debug!("Launching With Args: \n{config:#?}");
   let base_command = command
     .env(
       "SteamAppId",

@@ -105,9 +105,7 @@ fn steam_url(host: &str, port: u16) -> String {
 }
 
 fn should_return_json(sec_fetch_mode: Option<&str>) -> bool {
-  sec_fetch_mode
-    .map(|m| m.eq_ignore_ascii_case("cors"))
-    .unwrap_or(false)
+  sec_fetch_mode.is_some_and(|m| m.eq_ignore_ascii_case("cors"))
 }
 
 fn connect_reply(host: String, port: u16, sec_fetch_mode: Option<String>) -> Response {

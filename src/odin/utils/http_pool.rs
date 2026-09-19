@@ -171,7 +171,10 @@ impl HttpPool {
   async fn await_gate(&self) {
     loop {
       let wait = {
-        let gate = self.gate.lock().unwrap_or_else(|e| e.into_inner());
+        let gate = self
+          .gate
+          .lock()
+          .unwrap_or_else(std::sync::PoisonError::into_inner);
         gate.and_then(|until| until.checked_duration_since(Instant::now()))
       };
       match wait {
@@ -184,7 +187,10 @@ impl HttpPool {
   /// Records a host-wide pause, keeping the longest outstanding one.
   fn close_gate(&self, delay: Duration) {
     let until = Instant::now() + delay;
-    let mut gate = self.gate.lock().unwrap_or_else(|e| e.into_inner());
+    let mut gate = self
+      .gate
+      .lock()
+      .unwrap_or_else(std::sync::PoisonError::into_inner);
     if gate.is_none_or(|current| until > current) {
       *gate = Some(until);
     }
@@ -322,8 +328,7 @@ fn with_jitter(delay: Duration) -> Duration {
   }
   let entropy = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
-    .map(|d| d.subsec_nanos() as u64)
-    .unwrap_or(0);
+    .map_or(0, |d| u64::from(d.subsec_nanos()));
   let millis = delay.as_millis() as u64;
   Duration::from_millis(millis / 2 + entropy % (millis / 2 + 1))
 }

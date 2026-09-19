@@ -139,7 +139,7 @@ pub fn perm_summary_for<P: AsRef<Path>>(path: P) -> Option<PermSummary> {
   let euid = Uid::effective().as_raw();
   let egid = Gid::effective().as_raw();
   let groups: Vec<u32> = getgroups()
-    .map(|v| v.into_iter().map(|g| g.as_raw()).collect())
+    .map(|v| v.into_iter().map(nix::unistd::Gid::as_raw).collect())
     .unwrap_or_default();
 
   // Determine which class applies: owner, group (primary or supplemental), or other

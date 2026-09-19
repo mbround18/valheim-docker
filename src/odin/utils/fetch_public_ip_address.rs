@@ -66,7 +66,7 @@ impl IPConfig {
     for url in urls {
       match client.get(url).send() {
         Ok(response) => match response.json::<IPResponse>() {
-          Ok(json) => return Ok(json.ip.to_string()),
+          Ok(json) => return Ok(json.ip.clone()),
           Err(e) => {
             debug!("Failed to parse JSON: {e}");
             continue;

@@ -25,7 +25,7 @@ fn format_size(bytes: u64) -> String {
   } else if bytes >= KB {
     format!("{:.2} KB", bytes as f64 / KB as f64)
   } else {
-    format!("{} B", bytes)
+    format!("{bytes} B")
   }
 }
 
@@ -62,23 +62,23 @@ async fn process_mod(input: &str) -> Result<(), ValheimModError> {
   let mut valheim_mod = ValheimMod::async_from_url(input).await?;
   let mod_name = mod_label(&valheim_mod);
 
-  info!("📦 Installing: {}", mod_name);
+  info!("📦 Installing: {mod_name}");
   debug!("   URL: {}", valheim_mod.url);
 
   match valheim_mod.download().await {
-    Ok(_) => {
+    Ok(()) => {
       let staging_path = &valheim_mod.staging_location;
       if let Ok(metadata) = fs::metadata(staging_path) {
         let size = format_size(metadata.len());
-        debug!("   Downloaded size: {}", size);
+        debug!("   Downloaded size: {size}");
       }
 
       valheim_mod.install()?;
-      info!("✓ Installed: {}", mod_name);
+      info!("✓ Installed: {mod_name}");
       Ok(())
     }
     Err(message) => {
-      error!("✗ Download failed: {} ({})", mod_name, message);
+      error!("✗ Download failed: {mod_name} ({message})");
       Err(ValheimModError::DownloadFailed)
     }
   }
@@ -91,18 +91,17 @@ async fn download_mod_only(input: &str) -> Result<ValheimMod, ValheimModError> {
   let mut valheim_mod = ValheimMod::async_from_url(input).await?;
   let mod_name = mod_label(&valheim_mod);
 
-  info!("📦 Downloading: {}", mod_name);
+  info!("📦 Downloading: {mod_name}");
   let start = std::time::Instant::now();
 
   valheim_mod.download().await.map_err(|e| {
-    error!("✗ Download failed for {}: {}", mod_name, e);
+    error!("✗ Download failed for {mod_name}: {e}");
     ValheimModError::DownloadFailed
   })?;
 
   let elapsed = start.elapsed();
   let file_size = fs::metadata(&valheim_mod.staging_location)
-    .map(|m| format_size(m.len()))
-    .unwrap_or_else(|_| "unknown".to_string());
+    .map_or_else(|_| "unknown".to_string(), |m| format_size(m.len()));
   info!(
     "✓ Downloaded {} ({}) in {:.1}s",
     mod_name,
@@ -143,7 +142,7 @@ fn sha_sidecar_path(staging_path: &Path) -> PathBuf {
     .file_name()
     .and_then(|s| s.to_str())
     .unwrap_or("artifact");
-  p.set_file_name(format!("{}.sha256", file_name));
+  p.set_file_name(format!("{file_name}.sha256"));
   p
 }
 
@@ -203,7 +202,7 @@ fn cleanup_removed_mod(mod_state: &InstalledModState) {
       std::fs::remove_file(&path)
     };
     if let Err(e) = res {
-      warn!("Failed to remove {:?}: {}", path, e);
+      warn!("Failed to remove {path:?}: {e}");
     }
   }
 
@@ -220,7 +219,7 @@ fn cleanup_removed_mod(mod_state: &InstalledModState) {
       }
     }
     if let Err(e) = std::fs::remove_file(&staging) {
-      warn!("Failed to remove staging artifact {:?}: {}", staging, e);
+      warn!("Failed to remove staging artifact {staging:?}: {e}");
     }
   }
 
@@ -267,7 +266,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   let desired_mods: Vec<String> = normalized
     .split_whitespace()
     .filter(|s| !s.trim().is_empty())
-    .map(|s| s.to_string())
+    .map(std::string::ToString::to_string)
     .collect();
 
   // GALE_SYNC_CODE contributes the profile's mods ahead of MODS. A failure here must stop the
@@ -284,8 +283,10 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   });
 
   if let Some(prev) = &previous_state {
-    let desired_set: std::collections::HashSet<&str> =
-      desired_mods.iter().map(|s| s.as_str()).collect();
+    let desired_set: std::collections::HashSet<&str> = desired_mods
+      .iter()
+      .map(std::string::String::as_str)
+      .collect();
     for old in &prev.mods {
       if !desired_set.contains(old.url.as_str()) {
         cleanup_removed_mod(old);
@@ -318,7 +319,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   let mut valheim_plus_dll_url: Option<String> = None;
   for m in &desired_mods {
     if is_valheim_plus_dll_url(m) {
-      valheim_plus_dll_url = Some(m.to_string());
+      valheim_plus_dll_url = Some(m.clone());
       break;
     }
   }
@@ -396,7 +397,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     let installed_paths = match vmod.install_with_report() {
       Ok(paths) => paths,
       Err(e) => {
-        error!("✗ Install failed for {}: {}", mod_name, e);
+        error!("✗ Install failed for {mod_name}: {e}");
         failures.push(format!("{m}: {e}"));
         if !continue_on_failure {
           // Persist what installed cleanly so a retry doesn't redo the whole set.
@@ -417,7 +418,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
 
     let sha = sha256_hex(&staging).ok();
     new_states.push(InstalledModState {
-      url: m.to_string(),
+      url: m.clone(),
       file_type: vmod.file_type.clone(),
       staging_path: staging.to_string_lossy().into(),
       sha256: sha,
@@ -431,7 +432,7 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
   // After all mods are installed, ensure ValheimPlus config exists when ValheimPlus.dll was installed.
   if let Some(dll_url) = valheim_plus_dll_url {
     match ensure_valheim_plus_config_for_dll_url(&dll_url).await {
-      Ok(Some(path)) => info!("ValheimPlus config downloaded to: {:?}", path),
+      Ok(Some(path)) => info!("ValheimPlus config downloaded to: {path:?}"),
       Ok(None) => info!("ValheimPlus config already present; skipping download"),
       Err(e) => error!("ValheimPlus config download failed: {e}"),
     }
@@ -509,7 +510,7 @@ mod from_var_state_tests {
     let dll_url = format!("{}/ValheimPlus.dll", server.url());
 
     // First run installs both mods.
-    env::set_var("MODS", format!("{} {}", zip_url, dll_url));
+    env::set_var("MODS", format!("{zip_url} {dll_url}"));
     process_mods_from_env().await.expect("first run");
 
     let testmod_plugin = PathBuf::from(crate::utils::common_paths::bepinex_plugin_directory())
@@ -665,7 +666,7 @@ mod from_var_state_tests {
     let dll_url = format!("{}/CustomPlugin.dll", server.url());
 
     // Install both
-    env::set_var("MODS", format!("{} {}", zip_url, dll_url));
+    env::set_var("MODS", format!("{zip_url} {dll_url}"));
     process_mods_from_env().await.expect("install both");
 
     let dll_plugin = PathBuf::from(crate::utils::common_paths::bepinex_plugin_directory())
@@ -739,7 +740,7 @@ mod from_var_state_tests {
     let dll_url = format!("{}/AnotherMod.dll", server.url());
 
     // Install both
-    env::set_var("MODS", format!("{} {}", zip_url, dll_url));
+    env::set_var("MODS", format!("{zip_url} {dll_url}"));
     process_mods_from_env().await.expect("install both");
 
     let testmod_dir =
@@ -927,7 +928,7 @@ mod from_var_state_tests {
     let dll3_url = format!("{}/Plugin3.dll", server.url());
 
     // Install all three
-    env::set_var("MODS", format!("{} {} {}", dll1_url, dll2_url, dll3_url));
+    env::set_var("MODS", format!("{dll1_url} {dll2_url} {dll3_url}"));
     process_mods_from_env().await.expect("install three dlls");
 
     let plugin_dir = PathBuf::from(crate::utils::common_paths::bepinex_plugin_directory());
@@ -939,7 +940,7 @@ mod from_var_state_tests {
     assert_eq!(state.mods.len(), 3);
 
     // Remove the middle one
-    env::set_var("MODS", format!("{} {}", dll1_url, dll3_url));
+    env::set_var("MODS", format!("{dll1_url} {dll3_url}"));
     process_mods_from_env().await.expect("remove plugin2");
 
     assert!(
@@ -989,7 +990,7 @@ mod from_var_state_tests {
 
     let zip_url = format!("{}/testmod.zip", server.url());
     let missing_url = format!("{}/missing.dll", server.url());
-    env::set_var("MODS", format!("{} {}", zip_url, missing_url));
+    env::set_var("MODS", format!("{zip_url} {missing_url}"));
 
     let err = process_mods_from_env().await.expect_err("run should fail");
     let message = err.to_string();
@@ -1038,7 +1039,7 @@ mod from_var_state_tests {
 
     let zip_url = format!("{}/testmod.zip", server.url());
     let missing_url = format!("{}/missing.dll", server.url());
-    env::set_var("MODS", format!("{} {}", missing_url, zip_url));
+    env::set_var("MODS", format!("{missing_url} {zip_url}"));
 
     process_mods_from_env()
       .await
@@ -1088,7 +1089,7 @@ mod from_var_state_tests {
 
     let zip_url = format!("{}/testmod.zip", server.url());
     let flaky_url = format!("{}/flaky.dll", server.url());
-    env::set_var("MODS", format!("{} {}", zip_url, flaky_url));
+    env::set_var("MODS", format!("{zip_url} {flaky_url}"));
 
     process_mods_from_env()
       .await

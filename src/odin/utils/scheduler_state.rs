@@ -25,9 +25,10 @@ pub struct SchedulerState {
 }
 
 pub fn scheduler_state_file() -> PathBuf {
-  std::env::var("ODIN_SCHEDULER_STATE_FILE")
-    .map(PathBuf::from)
-    .unwrap_or_else(|_| PathBuf::from(log_directory()).join("jobs_state.json"))
+  std::env::var("ODIN_SCHEDULER_STATE_FILE").map_or_else(
+    |_| PathBuf::from(log_directory()).join("jobs_state.json"),
+    PathBuf::from,
+  )
 }
 
 pub fn load_scheduler_state() -> SchedulerState {
@@ -61,7 +62,7 @@ pub fn save_scheduler_state(state: &SchedulerState) {
   let serialized = match serde_json::to_string_pretty(state) {
     Ok(s) => s,
     Err(e) => {
-      warn!("Failed to serialize scheduler state: {}", e);
+      warn!("Failed to serialize scheduler state: {e}");
       return;
     }
   };

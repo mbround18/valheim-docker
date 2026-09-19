@@ -103,8 +103,8 @@ impl BepInExEnvironment {
   #[cfg(test)]
   pub fn from_game_dir<P: AsRef<Path>>(game_dir_path: P) -> BepInExEnvironment {
     let game_dir = game_dir_path.as_ref().to_string_lossy().to_string();
-    let bepinex_dir = format!("{}/BepInEx", game_dir);
-    let bepinex_preloader_dll = format!("{}/core/BepInEx.Preloader.dll", bepinex_dir);
+    let bepinex_dir = format!("{game_dir}/BepInEx");
+    let bepinex_preloader_dll = format!("{bepinex_dir}/core/BepInEx.Preloader.dll");
 
     // Detect mode from the manifest and filesystem
     let mut doorstop_is_v4_plus =
@@ -115,15 +115,15 @@ impl BepInExEnvironment {
 
     debug!("Parsing Doorstop locations.");
     let doorstop_lib_default = if doorstop_is_v4_plus {
-      format!("{}/doorstop_libs/libdoorstop_x64.so", game_dir)
+      format!("{game_dir}/doorstop_libs/libdoorstop_x64.so")
     } else {
-      format!("{}/libdoorstop_x64.so", game_dir)
+      format!("{game_dir}/libdoorstop_x64.so")
     };
     let doorstop_lib = environment::fetch_var(DOORSTOP_LIB_VAR, &doorstop_lib_default);
     let doorstop_libs = parse_path(
       DOORSTOP_LIBS_VAR,
-      format!("{}/doorstop_libs", game_dir),
-      format!("{}/doorstop", bepinex_dir),
+      format!("{game_dir}/doorstop_libs"),
+      format!("{bepinex_dir}/doorstop"),
     );
     let doorstop_target_assembly =
       environment::fetch_var(DOORSTOP_TARGET_ASSEMBLY_VAR, &bepinex_preloader_dll);
@@ -132,15 +132,15 @@ impl BepInExEnvironment {
     // Prefer BepInEx/core_lib, fallback to BepInEx/core; no more game_dir/unstripped_corlib
     let doorstop_corlib_override_path = parse_path(
       DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
-      format!("{}/core_lib", bepinex_dir),
-      format!("{}/core", bepinex_dir),
+      format!("{bepinex_dir}/core_lib"),
+      format!("{bepinex_dir}/core"),
     );
 
     debug!("Parsing LD locations.");
     let ld_preload = environment::fetch_var(constants::LD_PRELOAD_VAR, "").add(&doorstop_lib);
     let ld_library_path = environment::fetch_var(
       constants::LD_LIBRARY_PATH_VAR,
-      format!("./linux64:{}", doorstop_libs).as_str(),
+      format!("./linux64:{doorstop_libs}").as_str(),
     );
 
     debug!("Returning environment");
@@ -162,7 +162,7 @@ impl BepInExEnvironment {
   pub fn new() -> BepInExEnvironment {
     let game_dir = game_directory();
     let bepinex_dir = bepinex_directory();
-    let bepinex_preloader_dll = format!("{}/core/BepInEx.Preloader.dll", bepinex_dir);
+    let bepinex_preloader_dll = format!("{bepinex_dir}/core/BepInEx.Preloader.dll");
 
     // Detect BepInExPack_Valheim version from manifest.json if present and cross-check filesystem
     let mut doorstop_is_v4_plus =
@@ -173,15 +173,15 @@ impl BepInExEnvironment {
 
     debug!("Parsing Doorstop locations.");
     let doorstop_lib_default = if doorstop_is_v4_plus {
-      format!("{}/doorstop_libs/libdoorstop_x64.so", game_dir)
+      format!("{game_dir}/doorstop_libs/libdoorstop_x64.so")
     } else {
       String::from("libdoorstop_x64.so")
     };
     let doorstop_lib = environment::fetch_var(DOORSTOP_LIB_VAR, &doorstop_lib_default);
     let doorstop_libs = parse_path(
       DOORSTOP_LIBS_VAR,
-      format!("{}/doorstop_libs", game_dir),
-      format!("{}/doorstop", bepinex_dir),
+      format!("{game_dir}/doorstop_libs"),
+      format!("{bepinex_dir}/doorstop"),
     );
     let doorstop_target_assembly =
       environment::fetch_var(DOORSTOP_TARGET_ASSEMBLY_VAR, &bepinex_preloader_dll);
@@ -190,15 +190,15 @@ impl BepInExEnvironment {
     // Prefer BepInEx/core_lib, fallback to BepInEx/core; no more game_dir/unstripped_corlib
     let doorstop_corlib_override_path = parse_path(
       DOORSTOP_CORLIB_OVERRIDE_PATH_VAR,
-      format!("{}/core_lib", bepinex_dir),
-      format!("{}/core", bepinex_dir),
+      format!("{bepinex_dir}/core_lib"),
+      format!("{bepinex_dir}/core"),
     );
 
     debug!("Parsing LD locations.");
     let ld_preload = environment::fetch_var(constants::LD_PRELOAD_VAR, "").add(&doorstop_lib);
     let ld_library_path = environment::fetch_var(
       constants::LD_LIBRARY_PATH_VAR,
-      format!("./linux64:{}", doorstop_libs).as_str(),
+      format!("./linux64:{doorstop_libs}").as_str(),
     );
 
     debug!("Returning environment");
@@ -231,8 +231,8 @@ impl BepInExEnvironment {
       let dylib_exists = path_exists(&lib_dylib);
       let target_exists = path_exists(&self.doorstop_target_assembly);
       debug!("Doorstop v4+ checks:");
-      debug!(" - lib (so): {} => {}", lib_so, so_exists);
-      debug!(" - lib (dylib): {} => {}", lib_dylib, dylib_exists);
+      debug!(" - lib (so): {lib_so} => {so_exists}");
+      debug!(" - lib (dylib): {lib_dylib} => {dylib_exists}");
       debug!(
         " - target assembly: {} => {}",
         self.doorstop_target_assembly, target_exists
@@ -250,9 +250,9 @@ impl BepInExEnvironment {
       checks_v3.iter().all(|v| path_exists(v) == expected_state)
     };
     if output {
-      debug!("Yay! looks like we found all the required files for BepInEx to run! <3")
+      debug!("Yay! looks like we found all the required files for BepInEx to run! <3");
     } else {
-      debug!("We didn't find a modded instance! Launching a normal instance!")
+      debug!("We didn't find a modded instance! Launching a normal instance!");
     }
     output
   }
@@ -334,7 +334,7 @@ fn find_manifest_for_plugin(dll_path: &Path) -> Option<PathBuf> {
         return Some(candidate);
       }
       // Stop if we've reached the plugins root folder
-      if dir.file_name().map(|n| n == "plugins").unwrap_or(false) {
+      if dir.file_name().is_some_and(|n| n == "plugins") {
         break;
       }
       dir_opt = dir.parent();
@@ -423,8 +423,7 @@ mod bepinex_tests {
     write_text(
       &bepinex.join("manifest.json"),
       &format!(
-        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{}\"\n}}",
-        DOORSTOP_V4_MIN_VERSION_STR
+        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{DOORSTOP_V4_MIN_VERSION_STR}\"\n}}"
       ),
     );
 
@@ -473,8 +472,7 @@ mod bepinex_tests {
     write_text(
       &bepinex.join("manifest.json"),
       &format!(
-        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{}\"\n}}",
-        DOORSTOP_V4_MIN_VERSION_STR
+        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{DOORSTOP_V4_MIN_VERSION_STR}\"\n}}"
       ),
     );
     let doorstop_libs = game.join("doorstop_libs");
@@ -526,8 +524,7 @@ mod bepinex_tests {
     write_text(
       &bepinex.join("manifest.json"),
       &format!(
-        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{}\"\n}}",
-        DOORSTOP_V4_MIN_VERSION_STR
+        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{DOORSTOP_V4_MIN_VERSION_STR}\"\n}}"
       ),
     );
     let doorstop_libs = game.join("doorstop_libs");
@@ -560,8 +557,7 @@ mod bepinex_tests {
     write_text(
       &bepinex.join("manifest.json"),
       &format!(
-        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{}\"\n}}",
-        DOORSTOP_V4_MIN_VERSION_STR
+        "{{\n  \"name\": \"BepInExPack_Valheim\",\n  \"version_number\": \"{DOORSTOP_V4_MIN_VERSION_STR}\"\n}}"
       ),
     );
 

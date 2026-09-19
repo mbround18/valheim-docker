@@ -6,14 +6,14 @@ use reqwest::Client;
 use reqwest::Url;
 use std::path::PathBuf;
 
-/// Given a ValheimPlus DLL URL, return the expected config URL by replacing
+/// Given a `ValheimPlus` DLL URL, return the expected config URL by replacing
 /// the filename with `valheim_plus.cfg`.
 fn config_url_from_dll_url(dll_url: &str) -> Result<String, ValheimModError> {
   let mut url = Url::parse(dll_url).map_err(|_| ValheimModError::InvalidUrl)?;
   {
     let mut segs = url
       .path_segments_mut()
-      .map_err(|_| ValheimModError::InvalidUrl)?;
+      .map_err(|()| ValheimModError::InvalidUrl)?;
     segs.pop_if_empty();
     segs.pop();
     segs.push("valheim_plus.cfg");
@@ -32,14 +32,13 @@ pub fn is_valheim_plus_dll_url(url: &str) -> bool {
     Ok(u) => u
       .path_segments()
       .and_then(|mut s| s.next_back())
-      .map(|name| name.eq_ignore_ascii_case("ValheimPlus.dll"))
-      .unwrap_or(false),
+      .is_some_and(|name| name.eq_ignore_ascii_case("ValheimPlus.dll")),
     Err(_) => lower.ends_with("valheimplus.dll"),
   }
 }
 
-/// Download the valheim_plus.cfg from the release URL implied by a ValheimPlus DLL URL
-/// and place it into the BepInEx `config` directory.
+/// Download the `valheim_plus.cfg` from the release URL implied by a `ValheimPlus` DLL URL
+/// and place it into the `BepInEx` `config` directory.
 pub async fn ensure_valheim_plus_config_for_dll_url(
   dll_url: &str,
 ) -> Result<Option<PathBuf>, ValheimModError> {
@@ -49,9 +48,9 @@ pub async fn ensure_valheim_plus_config_for_dll_url(
     return Ok(None);
   }
 
-  debug!("Attempting to derive config URL from {}", dll_url);
+  debug!("Attempting to derive config URL from {dll_url}");
   let cfg_url = config_url_from_dll_url(dll_url)?;
-  info!("Downloading config from: '{}'", cfg_url);
+  info!("Downloading config from: '{cfg_url}'");
 
   let client = Client::new();
   let resp = with_thunderstore_auth(client.get(&cfg_url), &cfg_url)
@@ -267,13 +266,11 @@ mod tests {
 
     for (dll_url, expected_cfg) in test_cases {
       let result = config_url_from_dll_url(dll_url);
-      assert!(result.is_ok(), "Failed for URL: {}", dll_url);
+      assert!(result.is_ok(), "Failed for URL: {dll_url}");
       let cfg_url = result.unwrap();
       assert!(
         cfg_url.contains(expected_cfg),
-        "URL {} should contain {}",
-        cfg_url,
-        expected_cfg
+        "URL {cfg_url} should contain {expected_cfg}"
       );
     }
   }
@@ -318,7 +315,7 @@ mod tests {
 
     for url in test_urls {
       let result = config_url_from_dll_url(url);
-      assert!(result.is_ok(), "Should parse: {}", url);
+      assert!(result.is_ok(), "Should parse: {url}");
       let cfg_url = result.unwrap();
       assert!(cfg_url.starts_with("https://") || cfg_url.starts_with("http://"));
     }

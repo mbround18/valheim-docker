@@ -8,7 +8,7 @@
 //! letters (`ts`, `hex`) alongside its full name. The alias is what people put in front of
 //! dozens of `MODS` lines, so it should never need more than a glance to type.
 //!
-//! Hexium (https://hexium.gg) serves a Thunderstore-compatible API, but it is not a drop-in
+//! Hexium (<https://hexium.gg>) serves a Thunderstore-compatible API, but it is not a drop-in
 //! base URL swap: it has no `/package/download/...` route, and its package endpoint omits the
 //! version list. Resolution for each repository lives in `mods::valheim_mod`; this module
 //! owns naming, base URLs, host ownership and credentials.
@@ -103,8 +103,7 @@ impl ModRepository {
       return true;
     }
     Url::parse(&self.base_url())
-      .ok()
-      .is_some_and(|base| base.host_str() == url.host_str() && base.port() == url.port())
+      .is_ok_and(|base| base.host_str() == url.host_str() && base.port() == url.port())
   }
 }
 

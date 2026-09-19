@@ -84,7 +84,7 @@ fn mark_restart_pending() {
 
 pub fn clear_restart_pending() {
   match fs::remove_file(restart_marker_path()) {
-    Ok(_) => debug!("Cleared pending post-update restart"),
+    Ok(()) => debug!("Cleared pending post-update restart"),
     Err(e) if e.kind() == ErrorKind::NotFound => {}
     Err(e) => error!("Failed to clear pending post-update restart: {e}"),
   }
@@ -217,7 +217,10 @@ fn get_latest_build_id() -> String {
     &format!("+app_info_print {}", constants::GAME_ID),
     "+quit",
   ];
-  let arg_list = args.iter().map(|v| v.to_string()).collect::<Vec<_>>();
+  let arg_list = args
+    .iter()
+    .map(std::string::ToString::to_string)
+    .collect::<Vec<_>>();
   let app_info_output = output_with_retries(&arg_list).expect("Failed to run steamcmd");
   assert!(app_info_output.status.success());
 
@@ -248,11 +251,9 @@ pub(crate) fn extract_build_id_from_app_info(app_info: &str) -> &str {
 mod tests {
   use super::*;
 
-  use once_cell::sync::Lazy;
-
   use std::path::PathBuf;
 
-  static TEST_ASSET_DIR: Lazy<PathBuf> = Lazy::new(|| {
+  static TEST_ASSET_DIR: std::sync::LazyLock<PathBuf> = std::sync::LazyLock::new(|| {
     Path::new(env!("CARGO_MANIFEST_DIR"))
       .join("tests")
       .join("assets")

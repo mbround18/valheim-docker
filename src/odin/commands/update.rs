@@ -104,13 +104,13 @@ fn update_check(run_action: RunAction, update_state: UpdateState) {
       info!(
         "Dry run: An update is available. This would exit with {} to indicate this.",
         update_state.as_exit_code()
-      )
+      );
     }
     (RunAction::Dry, UpdateState::UpToDate) => {
       info!(
         "Dry run: No update is available. This would exit with {} to indicate this.",
         update_state.as_exit_code()
-      )
+      );
     }
     (_, update_state) => exit(update_state.as_exit_code()),
   }
@@ -119,10 +119,10 @@ fn update_check(run_action: RunAction, update_state: UpdateState) {
 fn update_force(run_action: RunAction, server_state: ServerState) {
   match (run_action, server_state) {
     (RunAction::Dry, ServerState::Running) => {
-      info!("Dry run: Server would be shutdown, updated, and brought back online")
+      info!("Dry run: Server would be shutdown, updated, and brought back online");
     }
     (RunAction::Dry, ServerState::Stopped) => {
-      info!("Dry run: The server is offline and would be updated")
+      info!("Dry run: The server is offline and would be updated");
     }
     _ => {
       debug!("Force updating!");
@@ -137,19 +137,19 @@ fn update_regular(run_action: RunAction, server_state: ServerState, update_state
       info!(
         "Dry run: An update is available and the server is ONLINE. The server would be shutdown \
           updated, and brought back online."
-      )
+      );
     }
     (RunAction::Dry, ServerState::Stopped, UpdateState::Pending) => {
       info!(
         "Dry run: An update is available and the server is OFFLINE. The server would be updated."
-      )
+      );
     }
     (RunAction::Dry, _, UpdateState::UpToDate) => {
-      info!("Dry run: No update is available. Nothing to do.")
+      info!("Dry run: No update is available. Nothing to do.");
     }
     (_, _, UpdateState::Pending) => {
       debug!("Updating the installation!");
-      server::update_server()
+      server::update_server();
     }
     _ => {
       debug!("No update available, nothing to do!");

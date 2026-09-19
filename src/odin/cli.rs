@@ -11,7 +11,7 @@ pub struct Cli {
   pub run_as_root: bool,
 
   /// Make everything noisy but very helpful to identify issues.
-  /// This will enable debugging, you can use the env variable DEBUG_MODE to set this as well.
+  /// This will enable debugging, you can use the env variable `DEBUG_MODE` to set this as well.
   #[arg(long, env = "DEBUG_MODE", value_parser  = parse_truthy)]
   pub debug: bool,
 
@@ -77,7 +77,7 @@ pub enum Commands {
     #[arg(long, env = "PRESET")]
     preset: Option<String>,
 
-    /// Sets flag set_key for launching the server, (Can be set with ENV variable SET_KEY)
+    /// Sets flag `set_key` for launching the server, (Can be set with ENV variable `SET_KEY`)
     #[arg(long, env = "SET_KEY")]
     set_key: Option<String>,
 
@@ -138,7 +138,7 @@ pub enum Commands {
     #[arg(default_value_t = String::from("Test Notification"))]
     message: String,
 
-    /// Sets the webhook to send a notification to, (Can be set with ENV variable WEBHOOK_URL)
+    /// Sets the webhook to send a notification to, (Can be set with ENV variable `WEBHOOK_URL`)
     #[arg(long, env = "WEBHOOK_URL")]
     webhook_url: Option<String>,
   },

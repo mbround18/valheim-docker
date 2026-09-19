@@ -19,11 +19,11 @@ mod as_one_or_zero_test {
 
   #[test]
   fn returns_one() {
-    debug_assert!({ true.as_string().eq("1") })
+    debug_assert!({ true.as_string().eq("1") });
   }
 
   #[test]
   fn returns_zero() {
-    debug_assert!({ false.as_string().eq("0") })
+    debug_assert!({ false.as_string().eq("0") });
   }
 }
