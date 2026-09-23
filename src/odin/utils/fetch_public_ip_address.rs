@@ -56,15 +56,29 @@ impl IPConfig {
     }
   }
 
-  pub fn fetch_ip_from_api(&self, client: &Client) -> Result<String, Box<dyn std::error::Error>> {
-    let urls = [
-      "https://api.ipify.org?format=json",
-      "https://api.seeip.org/jsonip?",
-      "https://ipinfo.io",
-    ];
+  /// The public-IP lookup services tried in order, first success wins.
+  const IP_LOOKUP_URLS: &'static [&'static str] = &[
+    "https://api.ipify.org?format=json",
+    "https://api.seeip.org/jsonip?",
+    "https://ipinfo.io",
+  ];
 
+  pub fn fetch_ip_from_api(&self, client: &Client) -> Result<String, Box<dyn std::error::Error>> {
+    self.fetch_ip_from(client, Self::IP_LOOKUP_URLS)
+  }
+
+  /// The body of [`Self::fetch_ip_from_api`], with the service list as a
+  /// parameter so it can be pointed at a local mock server. Without this the
+  /// only test of this function called out to three real third-party APIs, so
+  /// it failed on any machine without open outbound internet access rather
+  /// than when the code was actually wrong.
+  fn fetch_ip_from(
+    &self,
+    client: &Client,
+    urls: &[&str],
+  ) -> Result<String, Box<dyn std::error::Error>> {
     for url in urls {
-      match client.get(url).send() {
+      match client.get(*url).send() {
         Ok(response) => match response.json::<IPResponse>() {
           Ok(json) => return Ok(json.ip.clone()),
           Err(e) => {
@@ -176,10 +190,59 @@ mod tests {
 
   #[test]
   fn test_fetch_ip_from_api() {
-    let client = Client::new();
+    let mut server = mockito::Server::new();
+    let mock = server
+      .mock("GET", "/")
+      .with_status(200)
+      .with_header("content-type", "application/json")
+      .with_body(r#"{"ip":"203.0.113.7"}"#)
+      .create();
+
     let ip_config = IPConfig::default();
-    let result = ip_config.fetch_ip_from_api(&client);
-    assert!(result.is_ok());
+    let result = ip_config.fetch_ip_from(&Client::new(), &[&server.url()]);
+
+    mock.assert();
+    assert_eq!(result.unwrap(), "203.0.113.7");
+  }
+
+  /// The first service answering with something unparseable must not end the
+  /// search — the next one in the list still gets a turn.
+  #[test]
+  fn test_fetch_ip_falls_through_to_the_next_service() {
+    let mut broken = mockito::Server::new();
+    let broken_mock = broken
+      .mock("GET", "/")
+      .with_status(500)
+      .with_body("upstream on fire")
+      .create();
+
+    let mut working = mockito::Server::new();
+    let working_mock = working
+      .mock("GET", "/")
+      .with_status(200)
+      .with_header("content-type", "application/json")
+      .with_body(r#"{"ip":"198.51.100.4"}"#)
+      .create();
+
+    let ip_config = IPConfig::default();
+    let result = ip_config.fetch_ip_from(&Client::new(), &[&broken.url(), &working.url()]);
+
+    broken_mock.assert();
+    working_mock.assert();
+    assert_eq!(result.unwrap(), "198.51.100.4");
+  }
+
+  /// Every service failing is an error, not a silent fallback to the default.
+  #[test]
+  fn test_fetch_ip_errors_when_every_service_fails() {
+    let mut server = mockito::Server::new();
+    let mock = server.mock("GET", "/").with_status(503).create();
+
+    let ip_config = IPConfig::default();
+    let result = ip_config.fetch_ip_from(&Client::new(), &[&server.url()]);
+
+    mock.assert();
+    assert!(result.is_err());
   }
 
   #[test]

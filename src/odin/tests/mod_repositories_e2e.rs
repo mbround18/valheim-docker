@@ -70,7 +70,7 @@ impl Sandbox {
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_odin"));
     cmd
       .args(["mod:install", "--from-var"])
-      // A clean cwd so `dotenv` cannot pick up a stray .env file.
+      // A clean cwd so `dotenvy` cannot pick up a stray .env file.
       .current_dir(&self.game)
       .env("GAME_LOCATION", &self.game)
       .env("MODS", mods)
