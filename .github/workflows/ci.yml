@@ -6,7 +6,7 @@ name: CI
 # equivalent.
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
   workflow_dispatch:
@@ -21,8 +21,21 @@ env:
   PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
 
 jobs:
+  # Renovate/Dependabot runs wait here for a manual approval (the `bot-approval`
+  # environment has a required reviewer) before any other job starts. Runs from anyone
+  # else skip this job, and the jobs below still run.
+  approval:
+    name: Approve bot run
+    if: (github.actor == 'renovate[bot]' || github.actor == 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    environment: bot-approval
+    steps:
+      - run: echo "Approved bot run"
+
   rust:
     name: Rust (paws ci)
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -34,6 +47,8 @@ jobs:
 
   docker:
     name: Docker (odin, valheim)
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     env:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -53,6 +68,8 @@ jobs:
 
   checks:
     name: Lint & shell tests
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -70,6 +87,8 @@ jobs:
 
   image:
     name: Image checks
+    needs: approval
+    if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -96,7 +115,8 @@ jobs:
   # release is caught before it reaches main.
   release-rehearsal:
     name: Release rehearsal
-    if: github.event_name == 'pull_request'
+    needs: approval
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && !(github.actor == 'renovate[bot]' || github.actor == 'dependabot[bot]') && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
