@@ -22,7 +22,7 @@ name = "odin"
 path = "lib.rs"
 
 [build-dependencies]
-cc = "1.4.7"
+cc = "1.5.1"
 
 [dependencies]
 handlebars = "6.4.4"
