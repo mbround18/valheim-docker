@@ -73,8 +73,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Prettier
         run: npx -y prettier --check ./
+      - name: No agent session links in commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash ./.github/scripts/check-commit-messages.sh "$BASE_SHA" "$HEAD_SHA"
       - name: Shell tests
         run: |
           status=0

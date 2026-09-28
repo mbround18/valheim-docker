@@ -6,7 +6,7 @@ use std::{
 };
 use thiserror::Error;
 
-use crate::server::process::ServerProcess;
+use crate::server::process::{ForeignProcess, ServerProcess};
 use crate::utils::environment::fetch_var;
 
 /// How long to wait for the server to exit on its own after `SIGINT`, in seconds.
@@ -32,6 +32,12 @@ pub enum ShutdownError {
     kill: u64,
     grace_var: &'static str,
   },
+  #[error(
+    "Valheim is running as another user, so odin cannot signal it: {details}. \
+     Run odin as the same user that owns the server process, or stop the server \
+     as that user."
+  )]
+  NotOurs { details: String },
 }
 
 /// Stops the Valheim server and waits for it to actually be gone.
@@ -51,6 +57,15 @@ pub fn blocking_shutdown() -> Result<(), ShutdownError> {
     return Ok(());
   }
 
+  let foreign = server_process.foreign_owned_processes();
+  if !foreign.is_empty() {
+    // Every signal below would come back EPERM. Say so now instead of after
+    // grace + kill seconds of waiting for something that cannot happen.
+    return Err(ShutdownError::NotOurs {
+      details: describe_foreign(&foreign),
+    });
+  }
+
   let report = server_process.send_interrupt();
   if report.refused > 0 {
     warn!(
@@ -60,18 +75,18 @@ pub fn blocking_shutdown() -> Result<(), ShutdownError> {
     );
   }
 
-  if wait_for_exit(Duration::from_secs(grace)) {
+  if wait_for_exit(&mut server_process, Duration::from_secs(grace)) {
     info!("Valheim process has been stopped successfully!");
     return Ok(());
   }
 
   warn!("Valheim did not stop within {grace}s of SIGINT; escalating to SIGKILL.");
-  let report = ServerProcess::new().send_kill();
+  let report = server_process.send_kill();
   if report.refused > 0 {
     error!("{} Valheim process(es) refused SIGKILL.", report.refused);
   }
 
-  if wait_for_exit(Duration::from_secs(kill)) {
+  if wait_for_exit(&mut server_process, Duration::from_secs(kill)) {
     warn!("Valheim process was killed. The world may not have been saved cleanly.");
     return Ok(());
   }
@@ -91,13 +106,22 @@ fn timeout_secs(name: &str, default: u64) -> u64 {
     .unwrap_or(default)
 }
 
-/// Polls for the server to disappear. A fresh [`ServerProcess`] per check, because
-/// only a newly built process table reliably drops entries that have since exited.
-fn wait_for_exit(timeout: Duration) -> bool {
+fn describe_foreign(foreign: &[ForeignProcess]) -> String {
+  foreign
+    .iter()
+    .map(|process| format!("PID {} is owned by uid {}", process.pid, process.owner_uid))
+    .collect::<Vec<_>>()
+    .join(", ")
+}
+
+/// Polls for the server to disappear. Reuses one [`ServerProcess`]: each check calls
+/// `refresh_all`, which sysinfo documents as removing dead processes, so a rebuilt
+/// process table per poll would buy nothing and cost a full system scan every time.
+fn wait_for_exit(server_process: &mut ServerProcess, timeout: Duration) -> bool {
   wait_until(
     || {
       debug!("Checking if valheim is still running.");
-      !ServerProcess::new().are_process_running()
+      !server_process.are_process_running()
     },
     timeout,
     POLL_INTERVAL,
@@ -223,6 +247,31 @@ mod tests {
     unsafe { set_var(SHUTDOWN_KILL_TIMEOUT_VAR, "45") };
     assert_eq!(timeout_secs(SHUTDOWN_KILL_TIMEOUT_VAR, 30), 45);
     unsafe { remove_var(SHUTDOWN_KILL_TIMEOUT_VAR) };
+  }
+
+  #[test]
+  fn not_ours_error_names_every_offending_process() {
+    let message = ShutdownError::NotOurs {
+      details: describe_foreign(&[
+        ForeignProcess {
+          pid: 42,
+          owner_uid: "0".to_string(),
+        },
+        ForeignProcess {
+          pid: 43,
+          owner_uid: "1000".to_string(),
+        },
+      ]),
+    }
+    .to_string();
+    assert!(message.contains("PID 42 is owned by uid 0"));
+    assert!(message.contains("PID 43 is owned by uid 1000"));
+    assert!(message.contains("same user"));
+  }
+
+  #[test]
+  fn describe_foreign_is_empty_for_no_processes() {
+    assert_eq!(describe_foreign(&[]), "");
   }
 
   #[test]

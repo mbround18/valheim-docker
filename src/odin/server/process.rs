@@ -7,12 +7,6 @@ pub struct ServerProcess {
   system: System,
 }
 
-impl Clone for ServerProcess {
-  fn clone(&self) -> Self {
-    ServerProcess::new()
-  }
-}
-
 /// What came of signalling the Valheim root processes.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct SignalReport {
@@ -22,6 +16,13 @@ pub struct SignalReport {
   /// running as a different user than the server it is trying to stop, which
   /// is the situation behind #337.
   pub refused: usize,
+}
+
+/// A Valheim process odin has no permission to signal.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ForeignProcess {
+  pub pid: u32,
+  pub owner_uid: String,
 }
 
 impl ServerProcess {
@@ -48,6 +49,36 @@ impl ServerProcess {
 
   pub fn are_process_running(&mut self) -> bool {
     !self.valheim_processes().is_empty()
+  }
+
+  /// Valheim processes owned by a different user than the one odin is running as.
+  ///
+  /// Signalling these is going to fail with `EPERM` no matter how long we wait, so
+  /// [`crate::server::blocking_shutdown`] checks up front rather than spending both
+  /// of its timeouts discovering it (#337). Returns an empty list when the uids
+  /// cannot be read, which is the honest answer on platforms that do not report them.
+  pub fn foreign_owned_processes(&mut self) -> Vec<ForeignProcess> {
+    let Some(our_uid) = self.current_uid() else {
+      debug!("Could not determine odin's own uid; skipping the ownership check.");
+      return Vec::new();
+    };
+
+    self
+      .valheim_processes()
+      .iter()
+      .filter_map(|process| {
+        let owner = process.user_id()?;
+        (*owner != our_uid).then(|| ForeignProcess {
+          pid: process.pid().as_u32(),
+          owner_uid: owner.to_string(),
+        })
+      })
+      .collect()
+  }
+
+  fn current_uid(&self) -> Option<sysinfo::Uid> {
+    let pid = sysinfo::get_current_pid().ok()?;
+    self.system.process(pid)?.user_id().cloned()
   }
 
   pub fn send_interrupt(&mut self) -> SignalReport {
@@ -118,10 +149,13 @@ fn signal_pid(system: &System, pid: Pid, signal: Signal) -> bool {
   }
 }
 
+/// Matches on the executable's file name. A substring match over the whole path
+/// also caught unrelated processes that merely live under a directory named after
+/// the server, which mattered once odin started signalling what it found.
 fn is_valheim_executable(process: &sysinfo::Process) -> bool {
   process.exe().is_some_and(|exe| {
     exe
-      .to_string_lossy()
-      .contains(constants::VALHEIM_EXECUTABLE_NAME)
+      .file_name()
+      .is_some_and(|name| name == constants::VALHEIM_EXECUTABLE_NAME)
   })
 }
