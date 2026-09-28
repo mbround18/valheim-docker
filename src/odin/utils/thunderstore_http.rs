@@ -52,6 +52,25 @@ fn is_redirect(status: reqwest::StatusCode) -> bool {
   matches!(status.as_u16(), 301 | 302 | 303 | 307 | 308)
 }
 
+/// Whether following `previous` to `next` would drop TLS.
+///
+/// A base URL override that is plaintext to begin with stays allowed - only losing an
+/// encrypted hop we already had counts, because that is the case where an attacker on the
+/// path chooses the bytes we go on to unpack.
+fn is_downgrade(previous: &reqwest::Url, next: &reqwest::Url) -> bool {
+  previous.scheme() == "https" && next.scheme() == "http"
+}
+
+/// Whether a request must be paced regardless of the host it targets.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Pacing {
+  /// Pace mod repository hosts only. Anywhere else, such as a GitHub release asset, is
+  /// sent directly because those hosts are not the ones rate limiting us.
+  Auto,
+  /// Always pace, for a third-party API that rate limits us but is not a mod repository.
+  Always,
+}
+
 /// Whether requests to `url` should go through the shared pool.
 ///
 /// Deliberately wider than [`ModRepository::owns_host`], which gates *credentials*: a
@@ -72,11 +91,24 @@ pub(crate) async fn send(
   url: &str,
   label: &str,
 ) -> Result<Response, ValheimModError> {
+  send_with_pacing(request, url, label, Pacing::Auto).await
+}
+
+/// [`send`], with control over which hosts are paced.
+///
+/// [`Pacing::Always`] is for a host that rate limits us without being a mod repository, so
+/// [`should_pace`] would otherwise send it direct and unretried.
+pub(crate) async fn send_with_pacing(
+  request: RequestBuilder,
+  url: &str,
+  label: &str,
+  pacing: Pacing,
+) -> Result<Response, ValheimModError> {
   let (client, request) = with_repository_auth(request, url).build_split();
   let mut request = request.map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
 
   for hop in 0..=MAX_REDIRECTS {
-    let response = if should_pace(request.url()) {
+    let response = if pacing == Pacing::Always || should_pace(request.url()) {
       HttpPool::global()
         .execute_request(label, &request)
         .await
@@ -114,6 +146,15 @@ pub(crate) async fn send(
       return Err(ValheimModError::DownloadError(
         "Unsupported mod redirect scheme".into(),
       ));
+    }
+    // Refuse to lose TLS mid-download. Dropping the Referer is not enough: whatever the
+    // plaintext hop returns is what we unpack, so a redirect off an https URL must stay
+    // encrypted. Only the host is reported, to keep any credentials out of the message.
+    if is_downgrade(request.url(), &next) {
+      return Err(ValheimModError::DownloadError(format!(
+        "Refusing mod redirect that drops TLS, to http://{}",
+        next.host_str().unwrap_or("unknown host")
+      )));
     }
 
     if request.url().origin() != next.origin() {
@@ -154,6 +195,93 @@ mod tests {
     assert!(!referer.contains("secret"), "credentials leaked: {referer}");
     assert!(!referer.contains("user"), "credentials leaked: {referer}");
     assert!(!referer.contains('#'), "fragment leaked: {referer}");
+  }
+
+  #[test]
+  fn downgrade_is_detected_only_when_tls_is_lost() {
+    let cases = [
+      ("https://thunderstore.io/a", "http://evil.test/b", true),
+      ("https://thunderstore.io/a", "https://evil.test/b", false),
+      // A mirror that was already plaintext keeps working; nothing was lost.
+      ("http://localhost:4321/a", "http://localhost:4321/b", false),
+      (
+        "http://localhost:4321/a",
+        "https://thunderstore.io/b",
+        false,
+      ),
+    ];
+    for (previous, next, expected) in cases {
+      let previous = Url::parse(previous).unwrap();
+      let next = Url::parse(next).unwrap();
+      assert_eq!(
+        is_downgrade(&previous, &next),
+        expected,
+        "{previous} -> {next}"
+      );
+    }
+  }
+
+  /// `Pacing::Always` must route a non-repository host through the pool so it still gets
+  /// backoff. Without it the walker sends such hosts direct and unretried.
+  #[tokio::test]
+  #[serial]
+  async fn pacing_always_retries_a_non_repo_host() {
+    let mut server = mockito::Server::new_async().await;
+    let flaky = server
+      .mock("GET", "/profile/CODE")
+      .with_status(503)
+      .with_header("retry-after", "0")
+      .expect(1)
+      .create_async()
+      .await;
+    let ok = server
+      .mock("GET", "/profile/CODE")
+      .with_status(200)
+      .with_body("zip")
+      .expect(1)
+      .create_async()
+      .await;
+
+    let url = format!("{}/profile/CODE", server.url());
+    assert!(
+      !should_pace(&Url::parse(&url).unwrap()),
+      "the mock host must not be paced by host matching, or this proves nothing"
+    );
+
+    let client = reqwest::Client::builder()
+      .redirect(reqwest::redirect::Policy::none())
+      .build()
+      .unwrap();
+    let response = send_with_pacing(client.get(&url), &url, "gale", Pacing::Always)
+      .await
+      .unwrap();
+
+    assert!(response.status().is_success());
+    flaky.assert_async().await;
+    ok.assert_async().await;
+  }
+
+  /// The same host under `Pacing::Auto` is sent direct, so a 503 comes straight back.
+  #[tokio::test]
+  #[serial]
+  async fn pacing_auto_leaves_a_non_repo_host_unretried() {
+    let mut server = mockito::Server::new_async().await;
+    let once = server
+      .mock("GET", "/profile/CODE")
+      .with_status(503)
+      .expect(1)
+      .create_async()
+      .await;
+
+    let url = format!("{}/profile/CODE", server.url());
+    let client = reqwest::Client::builder()
+      .redirect(reqwest::redirect::Policy::none())
+      .build()
+      .unwrap();
+    let response = send(client.get(&url), &url, "test").await.unwrap();
+
+    assert_eq!(response.status().as_u16(), 503);
+    once.assert_async().await;
   }
 
   #[test]

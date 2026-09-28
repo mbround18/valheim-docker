@@ -15,7 +15,7 @@ use crate::errors::ValheimModError;
 use crate::utils::common_paths::{bepinex_config_directory, mods_staging_directory};
 use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
 use crate::utils::http_pool::HttpPool;
-use crate::utils::thunderstore_http::send;
+use crate::utils::thunderstore_http::{send_with_pacing, Pacing};
 use crate::utils::{parse_mod_string, send_with_backoff, split_repository_prefix, ModRepository};
 use indexmap::IndexSet;
 use log::{debug, info, warn};
@@ -23,7 +23,7 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::path::{Component, Path, PathBuf};
 
 pub const GALE_SYNC_CODE_VAR: &str = "GALE_SYNC_CODE";
@@ -33,6 +33,15 @@ const DEFAULT_GALE_SYNC_URL: &str = "https://gale.kesomannen.com/api";
 
 /// The container installs `BepInEx` itself (`TYPE=BepInEx`), so the pack entry is skipped.
 const BEPINEX_PACK_NAME: &str = "BepInExPack_Valheim";
+
+/// Largest profile zip accepted, compressed. A profile carries config text, so real ones
+/// are orders of magnitude under this; the cap is here so a hostile or truncated response
+/// cannot be read into memory without bound.
+const MAX_PROFILE_ZIP_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Largest total uncompressed payload written by one config sync, which is what bounds
+/// zip-bomb expansion: the compressed cap above says nothing about what it inflates to.
+const MAX_CONFIG_TOTAL_BYTES: u64 = 256 * 1024 * 1024;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GaleVersion {
@@ -268,9 +277,20 @@ fn safe_relative(path: &Path) -> Option<PathBuf> {
 /// Copies every file under `BepInEx/config/` in the profile zip into `dest`, overwriting.
 /// Returns the number of files written.
 pub fn extract_configs(zip_bytes: &[u8], dest: &Path) -> Result<usize, ValheimModError> {
+  extract_configs_capped(zip_bytes, dest, MAX_CONFIG_TOTAL_BYTES)
+}
+
+/// [`extract_configs`] with an explicit budget, so the cap itself can be tested without
+/// building a multi-hundred-megabyte archive.
+fn extract_configs_capped(
+  zip_bytes: &[u8],
+  dest: &Path,
+  max_total_bytes: u64,
+) -> Result<usize, ValheimModError> {
   let mut archive = zip::ZipArchive::new(Cursor::new(zip_bytes))
     .map_err(|e| ValheimModError::ZipArchiveError(e.to_string()))?;
   let mut written = 0;
+  let mut total: u64 = 0;
   for i in 0..archive.len() {
     let mut file = archive
       .by_index(i)
@@ -292,22 +312,68 @@ pub fn extract_configs(zip_bytes: &[u8], dest: &Path) -> Result<usize, ValheimMo
     }
     let mut out =
       fs::File::create(&target).map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
-    std::io::copy(&mut file, &mut out)
-      .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+    // Read one byte past what the budget allows: if that byte materialises the archive
+    // inflates beyond the cap, so stop rather than keep writing.
+    let remaining = max_total_bytes.saturating_sub(total);
+    let copied = std::io::copy(
+      &mut file.by_ref().take(remaining.saturating_add(1)),
+      &mut out,
+    )
+    .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+    if copied > remaining {
+      let _ = fs::remove_file(&target);
+      return Err(ValheimModError::ExtractionError(format!(
+        "Gale profile configs expand beyond {max_total_bytes} bytes; refusing to continue"
+      )));
+    }
+    total += copied;
     written += 1;
   }
   Ok(written)
 }
 
+/// Fetches the profile zip, following the redirect off the Gale API and refusing a body
+/// larger than [`MAX_PROFILE_ZIP_BYTES`].
+async fn download_profile_zip(url: &Url) -> Result<Vec<u8>, ValheimModError> {
+  // The zip redirects to the mod CDN and the pooled client does not follow redirects, so
+  // this goes through the redirect walker. Gale is not a mod repository host, so pacing is
+  // requested explicitly - otherwise the walker would send it direct, giving up the
+  // backoff and 429 handling every other download gets.
+  let request = HttpPool::global().client().get(url.clone());
+  let response = send_with_pacing(request, url.as_str(), "gale", Pacing::Always).await?;
+  let mut response = check_status(response, url)?;
+
+  let too_large = || {
+    ValheimModError::DownloadError(format!(
+      "Gale profile zip is larger than {MAX_PROFILE_ZIP_BYTES} bytes"
+    ))
+  };
+  // A declared length lets us bail before transferring anything; it is a hint, so the
+  // loop below still enforces the cap on what actually arrives.
+  if response
+    .content_length()
+    .is_some_and(|l| l > MAX_PROFILE_ZIP_BYTES)
+  {
+    return Err(too_large());
+  }
+
+  let mut bytes: Vec<u8> = Vec::new();
+  while let Some(chunk) = response
+    .chunk()
+    .await
+    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?
+  {
+    if bytes.len() as u64 + chunk.len() as u64 > MAX_PROFILE_ZIP_BYTES {
+      return Err(too_large());
+    }
+    bytes.extend_from_slice(&chunk);
+  }
+  Ok(bytes)
+}
+
 async fn sync_configs(code: &str) -> Result<(), ValheimModError> {
   let url = profile_url(code, false)?;
-  // The zip redirects to Thunderstore, and the pooled client doesn't follow redirects.
-  let request = HttpPool::global().client().get(url.clone());
-  let response = send(request, url.as_str(), "gale").await?;
-  let bytes = check_status(response, &url)?
-    .bytes()
-    .await
-    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+  let bytes = download_profile_zip(&url).await?;
   let dest = PathBuf::from(bepinex_config_directory());
   let written = extract_configs(&bytes, &dest)?;
   info!(
@@ -493,6 +559,35 @@ mod tests {
     );
     assert!(dest.join("sub/nested.yml").exists());
     assert!(!dir.path().join("escape.cfg").exists());
+  }
+
+  /// A profile that inflates past the budget must be refused, not written out. Built with
+  /// a small explicit cap so the test does not need a real zip bomb.
+  #[test]
+  fn refuses_configs_that_expand_past_the_cap() {
+    let mut buf = Vec::new();
+    {
+      let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      zipw.start_file("BepInEx/config/bomb.cfg", options).unwrap();
+      zipw.write_all(&vec![b'a'; 4096]).unwrap();
+      zipw.finish().unwrap();
+    }
+
+    let dir = tempfile::tempdir().unwrap();
+    let dest = dir.path().join("config");
+    let err = extract_configs_capped(&buf, &dest, 1024).expect_err("cap must be enforced");
+    assert!(
+      matches!(err, ValheimModError::ExtractionError(_)),
+      "unexpected error: {err:?}"
+    );
+    assert!(
+      !dest.join("bomb.cfg").exists(),
+      "the over-budget file must not be left behind"
+    );
+
+    // The same archive is fine when the budget accommodates it.
+    assert_eq!(extract_configs_capped(&buf, &dest, 8192).unwrap(), 1);
   }
 
   #[tokio::test]
