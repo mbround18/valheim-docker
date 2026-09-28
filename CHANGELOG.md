@@ -208,3 +208,10 @@
 ## v3.8.8 (2026-09-19)
 
 - Fix Gale sync when mods moved from Thunderstore to Hexium (#1551)
+
+## v3.8.9 (2026-09-28)
+
+- chore(clippy): scoped PR 1 mechanical format-args cleanup (#1552)
+- ci: require approval for Renovate/Dependabot runs (#1560)
+- ci: remove enforce-labels workflow (#1561)
+- fix(mods): follow the Gale profile redirect when syncing configs, paced and bounded (#1565)
