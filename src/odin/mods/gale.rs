@@ -289,7 +289,24 @@ fn extract_configs_capped(
 ) -> Result<usize, ValheimModError> {
   let mut archive = zip::ZipArchive::new(Cursor::new(zip_bytes))
     .map_err(|e| ValheimModError::ZipArchiveError(e.to_string()))?;
-  let mut written = 0;
+
+  // Entries are unpacked into a staging directory and only moved into `dest` once the
+  // whole archive has been read. Refusing partway through - the budget, a corrupt entry -
+  // then leaves the server's live configs exactly as they were rather than half synced.
+  // Staged beside `dest` so the moves below are same-filesystem renames, and dropped on
+  // every exit path, so a refusal cleans up after itself.
+  let staging_parent = match dest.parent() {
+    Some(parent) if !parent.as_os_str().is_empty() => parent,
+    _ => dest,
+  };
+  fs::create_dir_all(staging_parent)
+    .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+  let staging = tempfile::Builder::new()
+    .prefix(".gale-config-sync-")
+    .tempdir_in(staging_parent)
+    .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+
+  let mut staged: Vec<PathBuf> = Vec::new();
   let mut total: u64 = 0;
   for i in 0..archive.len() {
     let mut file = archive
@@ -305,7 +322,7 @@ fn extract_configs_capped(
     else {
       continue;
     };
-    let target = dest.join(relative);
+    let target = staging.path().join(&relative);
     if let Some(parent) = target.parent() {
       fs::create_dir_all(parent)
         .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
@@ -321,15 +338,25 @@ fn extract_configs_capped(
     )
     .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
     if copied > remaining {
-      let _ = fs::remove_file(&target);
       return Err(ValheimModError::ExtractionError(format!(
         "Gale profile configs expand beyond {max_total_bytes} bytes; refusing to continue"
       )));
     }
     total += copied;
-    written += 1;
+    staged.push(relative);
   }
-  Ok(written)
+
+  // The archive is whole and within budget, so the staged tree can replace what is live.
+  for relative in &staged {
+    let target = dest.join(relative);
+    if let Some(parent) = target.parent() {
+      fs::create_dir_all(parent)
+        .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+    }
+    fs::rename(staging.path().join(relative), &target)
+      .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+  }
+  Ok(staged.len())
 }
 
 /// Fetches the profile zip, following the redirect off the Gale API and refusing a body
@@ -569,6 +596,12 @@ mod tests {
     {
       let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
       let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      // An entry that fits precedes the one that blows the budget, so a partial write
+      // would be visible as `first.cfg` landing in dest.
+      zipw
+        .start_file("BepInEx/config/first.cfg", options)
+        .unwrap();
+      zipw.write_all(&vec![b'a'; 512]).unwrap();
       zipw.start_file("BepInEx/config/bomb.cfg", options).unwrap();
       zipw.write_all(&vec![b'a'; 4096]).unwrap();
       zipw.finish().unwrap();
@@ -576,6 +609,10 @@ mod tests {
 
     let dir = tempfile::tempdir().unwrap();
     let dest = dir.path().join("config");
+    // A config already on the server, to prove a refused sync leaves the live tree alone.
+    fs::create_dir_all(&dest).unwrap();
+    fs::write(dest.join("existing.cfg"), "keep me").unwrap();
+
     let err = extract_configs_capped(&buf, &dest, 1024).expect_err("cap must be enforced");
     assert!(
       matches!(err, ValheimModError::ExtractionError(_)),
@@ -585,9 +622,28 @@ mod tests {
       !dest.join("bomb.cfg").exists(),
       "the over-budget file must not be left behind"
     );
+    assert!(
+      !dest.join("first.cfg").exists(),
+      "a refusal must not leave earlier entries half applied"
+    );
+    assert_eq!(
+      fs::read_to_string(dest.join("existing.cfg")).unwrap(),
+      "keep me",
+      "a refused sync must not disturb the live configs"
+    );
+    assert!(
+      !fs::read_dir(dir.path()).unwrap().any(|e| e
+        .unwrap()
+        .file_name()
+        .to_string_lossy()
+        .starts_with(".gale-config-sync-")),
+      "the staging directory must not be left behind"
+    );
 
     // The same archive is fine when the budget accommodates it.
-    assert_eq!(extract_configs_capped(&buf, &dest, 8192).unwrap(), 1);
+    assert_eq!(extract_configs_capped(&buf, &dest, 8192).unwrap(), 2);
+    assert!(dest.join("bomb.cfg").exists());
+    assert!(dest.join("first.cfg").exists());
   }
 
   #[tokio::test]
