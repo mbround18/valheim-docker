@@ -353,10 +353,34 @@ fn extract_configs_capped(
       fs::create_dir_all(parent)
         .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
     }
-    fs::rename(staging.path().join(relative), &target)
-      .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+    move_into_place(&staging.path().join(relative), &target)?;
   }
   Ok(staged.len())
+}
+
+/// Moves a staged config into place, copying instead when the two sit on different
+/// filesystems.
+///
+/// Staging lives beside `BepInEx/config` so these are normally same-filesystem renames,
+/// but the config directory is sometimes its own bind mount or volume, and `rename` cannot
+/// cross a mount boundary - it fails with `EXDEV`. Falling back to a copy keeps config sync
+/// working there. Per file that is less atomic than a rename, but the whole archive has
+/// already been read and checked against the budget by this point, which is what staging is
+/// for; the alternative is the feature failing outright on such a layout.
+fn move_into_place(from: &Path, to: &Path) -> Result<(), ValheimModError> {
+  if fs::rename(from, to).is_ok() {
+    return Ok(());
+  }
+  copy_into_place(from, to)
+}
+
+/// The copy fallback for [`move_into_place`], split out so it can be tested directly
+/// rather than only on a host that happens to straddle two filesystems.
+fn copy_into_place(from: &Path, to: &Path) -> Result<(), ValheimModError> {
+  fs::copy(from, to).map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+  // Best effort: the staging directory is removed wholesale when it drops.
+  let _ = fs::remove_file(from);
+  Ok(())
 }
 
 /// Fetches the profile zip, following the redirect off the Gale API and refusing a body
@@ -644,6 +668,45 @@ mod tests {
     assert_eq!(extract_configs_capped(&buf, &dest, 8192).unwrap(), 2);
     assert!(dest.join("bomb.cfg").exists());
     assert!(dest.join("first.cfg").exists());
+  }
+
+  /// `BepInEx/config` is sometimes its own mount, where `rename` out of staging fails with
+  /// `EXDEV`. The copy fallback has to land the file and clear the staged copy, so config
+  /// sync keeps working on that layout.
+  #[test]
+  fn copy_fallback_lands_the_file_and_clears_staging() {
+    let dir = tempfile::tempdir().unwrap();
+    let staged = dir.path().join("staged.cfg");
+    let target = dir.path().join("config").join("landed.cfg");
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    fs::write(&staged, "value = 1").unwrap();
+
+    copy_into_place(&staged, &target).unwrap();
+
+    assert_eq!(fs::read_to_string(&target).unwrap(), "value = 1");
+    assert!(!staged.exists(), "the staged copy must be cleared");
+
+    // Overwriting an existing config is the documented behaviour of a sync.
+    let next = dir.path().join("next.cfg");
+    fs::write(&next, "value = 2").unwrap();
+    copy_into_place(&next, &target).unwrap();
+    assert_eq!(fs::read_to_string(&target).unwrap(), "value = 2");
+  }
+
+  /// `move_into_place` takes the rename when both sides share a filesystem, which is the
+  /// normal layout, and is what the fallback above stands in for when they do not.
+  #[test]
+  fn move_into_place_handles_the_same_filesystem_case() {
+    let dir = tempfile::tempdir().unwrap();
+    let staged = dir.path().join("staged.cfg");
+    let target = dir.path().join("config").join("landed.cfg");
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    fs::write(&staged, "value = 3").unwrap();
+
+    move_into_place(&staged, &target).unwrap();
+
+    assert_eq!(fs::read_to_string(&target).unwrap(), "value = 3");
+    assert!(!staged.exists());
   }
 
   #[tokio::test]
