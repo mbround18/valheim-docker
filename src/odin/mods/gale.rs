@@ -14,6 +14,8 @@
 use crate::errors::ValheimModError;
 use crate::utils::common_paths::{bepinex_config_directory, mods_staging_directory};
 use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
+use crate::utils::http_pool::HttpPool;
+use crate::utils::thunderstore_http::send;
 use crate::utils::{parse_mod_string, send_with_backoff, split_repository_prefix, ModRepository};
 use indexmap::IndexSet;
 use log::{debug, info, warn};
@@ -112,6 +114,13 @@ async fn get(url: &Url) -> Result<reqwest::Response, ValheimModError> {
   let response = send_with_backoff("gale", |client| client.get(url.clone()))
     .await
     .map_err(ValheimModError::DownloadError)?;
+  check_status(response, url)
+}
+
+fn check_status(
+  response: reqwest::Response,
+  url: &Url,
+) -> Result<reqwest::Response, ValheimModError> {
   let status = response.status();
   if status == reqwest::StatusCode::NOT_FOUND {
     return Err(ValheimModError::DownloadError(format!(
@@ -292,8 +301,10 @@ pub fn extract_configs(zip_bytes: &[u8], dest: &Path) -> Result<usize, ValheimMo
 
 async fn sync_configs(code: &str) -> Result<(), ValheimModError> {
   let url = profile_url(code, false)?;
-  let bytes = get(&url)
-    .await?
+  // The zip redirects to Thunderstore, and the pooled client doesn't follow redirects.
+  let request = HttpPool::global().client().get(url.clone());
+  let response = send(request, url.as_str(), "gale").await?;
+  let bytes = check_status(response, &url)?
     .bytes()
     .await
     .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
