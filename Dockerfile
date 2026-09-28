@@ -35,6 +35,16 @@ COPY --from=odin-cacher /usr/local/cargo/registry /usr/local/cargo/
 RUN make release PROFILE=production
 
 FROM debian:${DEBIAN_VERSION}-slim AS odin
+ENV DEBIAN_FRONTEND=noninteractive
+# debian-slim ships no CA bundle, so every HTTPS request odin makes - mod downloads, the
+# Gale profile API - fails at TLS before it reaches the network. The valheim image below
+# copies these binaries into a base that carries its own bundle, but this stage has an
+# entrypoint of its own and has to be able to run on it.
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /apps
 COPY --from=odin-builder /data/odin/target/release/odin /data/odin/target/release/huginn ./
 ENTRYPOINT ["/apps/odin"]

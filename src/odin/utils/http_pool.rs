@@ -4,6 +4,7 @@ use crate::utils::download_config::{
 };
 use log::{debug, info, warn};
 use reqwest::{Client, RequestBuilder, Response, StatusCode};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -70,14 +71,18 @@ pub struct PoolStatsSnapshot {
 ///   is what tripped Cloudflare to begin with. A single semaphore spans both layers, so
 ///   the real number of open requests never exceeds `max_concurrent` however the work
 ///   nests.
-/// - **One rate-limit gate.** A 429 answers for the whole host, not just the unlucky
-///   request that received it, so every in-flight worker pauses until the gate clears
-///   rather than each rediscovering the limit on its own.
+/// - **A rate-limit gate per host.** A 429 answers for the whole host, not just the
+///   unlucky request that received it, so every in-flight worker targeting that host
+///   pauses until the gate clears rather than each rediscovering the limit on its own.
+///   Keyed by host rather than pool-wide, so one slow third party - the Gale profile
+///   API, say - cannot stall mod downloads from a repository that is answering fine.
 pub struct HttpPool {
   client: Client,
   permits: tokio::sync::Semaphore,
-  /// Instant before which no new request may be sent, set from `Retry-After`.
-  gate: Mutex<Option<Instant>>,
+  /// Per host, the instant before which no new request to it may be sent, set from
+  /// `Retry-After`. Entries are dropped as they expire, so this stays the size of the
+  /// handful of hosts currently rate limiting us.
+  gate: Mutex<HashMap<String, Instant>>,
   stats: PoolStats,
   config: PoolConfig,
 }
@@ -104,7 +109,7 @@ impl HttpPool {
     Self {
       client,
       permits: tokio::sync::Semaphore::new(config.max_concurrent),
-      gate: Mutex::new(None),
+      gate: Mutex::new(HashMap::new()),
       stats: PoolStats::default(),
       config,
     }
@@ -167,15 +172,26 @@ impl HttpPool {
     }
   }
 
-  /// Blocks until any host-wide rate-limit pause has elapsed.
-  async fn await_gate(&self) {
+  /// Blocks until any rate-limit pause against `host` has elapsed. Other hosts are
+  /// unaffected, so a 429 from one does not hold up traffic to another.
+  async fn await_gate(&self, host: &str) {
     loop {
       let wait = {
-        let gate = self
+        let mut gate = self
           .gate
           .lock()
           .unwrap_or_else(std::sync::PoisonError::into_inner);
-        gate.and_then(|until| until.checked_duration_since(Instant::now()))
+        match gate.get(host) {
+          Some(until) => {
+            let remaining = until.checked_duration_since(Instant::now());
+            if remaining.is_none() {
+              // Elapsed, so drop it rather than let the map accumulate spent entries.
+              gate.remove(host);
+            }
+            remaining
+          }
+          None => None,
+        }
       };
       match wait {
         Some(remaining) if !remaining.is_zero() => tokio::time::sleep(remaining).await,
@@ -184,15 +200,16 @@ impl HttpPool {
     }
   }
 
-  /// Records a host-wide pause, keeping the longest outstanding one.
-  fn close_gate(&self, delay: Duration) {
+  /// Records a pause against `host`, keeping the longest outstanding one for it.
+  fn close_gate(&self, host: &str, delay: Duration) {
     let until = Instant::now() + delay;
     let mut gate = self
       .gate
       .lock()
       .unwrap_or_else(std::sync::PoisonError::into_inner);
-    if gate.is_none_or(|current| until > current) {
-      *gate = Some(until);
+    let current = gate.entry(host.to_string()).or_insert(until);
+    if until > *current {
+      *current = until;
     }
   }
 
@@ -239,11 +256,13 @@ impl HttpPool {
       .map_err(|e| format!("{label}: request permit closed: {e}"))?;
 
     for attempt in 1..=attempts {
-      self.await_gate().await;
-      self.stats.requests.fetch_add(1, Ordering::Relaxed);
-
+      // Built before gating, because which gate applies depends on the host it targets.
       let request = make_request()
         .ok_or_else(|| format!("{label}: request cannot be retried (non-clonable body)"))?;
+      let host = request.url().host_str().unwrap_or_default().to_string();
+
+      self.await_gate(&host).await;
+      self.stats.requests.fetch_add(1, Ordering::Relaxed);
 
       let delay = match self.client.execute(request).await {
         Ok(response) => {
@@ -254,14 +273,14 @@ impl HttpPool {
           last_err = format!("{label}: status {status}");
 
           // Retry-After is the server saying exactly how long to wait; honour it
-          // verbatim and apply it host-wide. Our own backoff gets jitter instead.
+          // verbatim and apply it across that host. Our own backoff gets jitter instead.
           let delay = match parse_retry_after(&response) {
             Some(retry_after) => retry_after,
             None => with_jitter(backoff),
           };
           if status == StatusCode::TOO_MANY_REQUESTS {
             self.stats.rate_limited.fetch_add(1, Ordering::Relaxed);
-            self.close_gate(delay);
+            self.close_gate(&host, delay);
           }
           if attempt == attempts {
             self.stats.failures.fetch_add(1, Ordering::Relaxed);
@@ -505,15 +524,15 @@ mod tests {
     assert_eq!(pool.available_permits(), 2, "permits should be returned");
   }
 
-  /// A 429 seen by one request pauses every other request against the host.
+  /// A 429 seen by one request pauses every other request against the same host.
   #[tokio::test]
   #[serial]
   async fn rate_limit_gate_is_shared() {
     let pool = HttpPool::with_config(test_config(4, 1));
-    pool.close_gate(Duration::from_millis(200));
+    pool.close_gate("thunderstore.io", Duration::from_millis(200));
 
     let started = Instant::now();
-    pool.await_gate().await;
+    pool.await_gate("thunderstore.io").await;
     let waited = started.elapsed();
 
     assert!(
@@ -522,16 +541,51 @@ mod tests {
     );
   }
 
+  /// The gate is per host, so a third party rate limiting us - the Gale profile API,
+  /// which is paced through this pool without being a mod repository - must not stall
+  /// downloads from a repository that is answering fine.
+  #[tokio::test]
+  #[serial]
+  async fn a_gate_on_one_host_does_not_hold_another() {
+    let pool = HttpPool::with_config(test_config(4, 1));
+    pool.close_gate("gale.kesomannen.com", Duration::from_secs(30));
+
+    let started = Instant::now();
+    pool.await_gate("thunderstore.io").await;
+    let waited = started.elapsed();
+
+    assert!(
+      waited < Duration::from_secs(1),
+      "an unrelated host must not be gated, waited {waited:?}"
+    );
+  }
+
   #[test]
   fn gate_keeps_the_longest_pause() {
     let pool = HttpPool::with_config(test_config(4, 1));
-    pool.close_gate(Duration::from_secs(30));
-    let long = *pool.gate.lock().unwrap();
-    pool.close_gate(Duration::from_secs(1));
+    pool.close_gate("thunderstore.io", Duration::from_secs(30));
+    let long = pool.gate.lock().unwrap()["thunderstore.io"];
+    pool.close_gate("thunderstore.io", Duration::from_secs(1));
     assert_eq!(
-      *pool.gate.lock().unwrap(),
+      pool.gate.lock().unwrap()["thunderstore.io"],
       long,
       "a shorter pause must not shorten an outstanding longer one"
+    );
+  }
+
+  /// An elapsed pause is dropped rather than accumulating in the map for the life of
+  /// the process.
+  #[tokio::test]
+  #[serial]
+  async fn an_elapsed_gate_is_forgotten() {
+    let pool = HttpPool::with_config(test_config(4, 1));
+    pool.close_gate("gale.kesomannen.com", Duration::from_millis(1));
+    tokio::time::sleep(Duration::from_millis(20)).await;
+
+    pool.await_gate("gale.kesomannen.com").await;
+    assert!(
+      pool.gate.lock().unwrap().is_empty(),
+      "a spent gate entry must not be retained"
     );
   }
 }

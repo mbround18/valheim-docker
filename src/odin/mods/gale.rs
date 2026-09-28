@@ -14,6 +14,8 @@
 use crate::errors::ValheimModError;
 use crate::utils::common_paths::{bepinex_config_directory, mods_staging_directory};
 use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
+use crate::utils::http_pool::HttpPool;
+use crate::utils::thunderstore_http::{send_with_pacing, Pacing};
 use crate::utils::{parse_mod_string, send_with_backoff, split_repository_prefix, ModRepository};
 use indexmap::IndexSet;
 use log::{debug, info, warn};
@@ -21,7 +23,7 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::fs;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::path::{Component, Path, PathBuf};
 
 pub const GALE_SYNC_CODE_VAR: &str = "GALE_SYNC_CODE";
@@ -31,6 +33,15 @@ const DEFAULT_GALE_SYNC_URL: &str = "https://gale.kesomannen.com/api";
 
 /// The container installs `BepInEx` itself (`TYPE=BepInEx`), so the pack entry is skipped.
 const BEPINEX_PACK_NAME: &str = "BepInExPack_Valheim";
+
+/// Largest profile zip accepted, compressed. A profile carries config text, so real ones
+/// are orders of magnitude under this; the cap is here so a hostile or truncated response
+/// cannot be read into memory without bound.
+const MAX_PROFILE_ZIP_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Largest total uncompressed payload written by one config sync, which is what bounds
+/// zip-bomb expansion: the compressed cap above says nothing about what it inflates to.
+const MAX_CONFIG_TOTAL_BYTES: u64 = 256 * 1024 * 1024;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GaleVersion {
@@ -112,6 +123,13 @@ async fn get(url: &Url) -> Result<reqwest::Response, ValheimModError> {
   let response = send_with_backoff("gale", |client| client.get(url.clone()))
     .await
     .map_err(ValheimModError::DownloadError)?;
+  check_status(response, url)
+}
+
+fn check_status(
+  response: reqwest::Response,
+  url: &Url,
+) -> Result<reqwest::Response, ValheimModError> {
   let status = response.status();
   if status == reqwest::StatusCode::NOT_FOUND {
     return Err(ValheimModError::DownloadError(format!(
@@ -259,9 +277,37 @@ fn safe_relative(path: &Path) -> Option<PathBuf> {
 /// Copies every file under `BepInEx/config/` in the profile zip into `dest`, overwriting.
 /// Returns the number of files written.
 pub fn extract_configs(zip_bytes: &[u8], dest: &Path) -> Result<usize, ValheimModError> {
+  extract_configs_capped(zip_bytes, dest, MAX_CONFIG_TOTAL_BYTES)
+}
+
+/// [`extract_configs`] with an explicit budget, so the cap itself can be tested without
+/// building a multi-hundred-megabyte archive.
+fn extract_configs_capped(
+  zip_bytes: &[u8],
+  dest: &Path,
+  max_total_bytes: u64,
+) -> Result<usize, ValheimModError> {
   let mut archive = zip::ZipArchive::new(Cursor::new(zip_bytes))
     .map_err(|e| ValheimModError::ZipArchiveError(e.to_string()))?;
-  let mut written = 0;
+
+  // Entries are unpacked into a staging directory and only moved into `dest` once the
+  // whole archive has been read. Refusing partway through - the budget, a corrupt entry -
+  // then leaves the server's live configs exactly as they were rather than half synced.
+  // Staged beside `dest` so the moves below are same-filesystem renames, and dropped on
+  // every exit path, so a refusal cleans up after itself.
+  let staging_parent = match dest.parent() {
+    Some(parent) if !parent.as_os_str().is_empty() => parent,
+    _ => dest,
+  };
+  fs::create_dir_all(staging_parent)
+    .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+  let staging = tempfile::Builder::new()
+    .prefix(".gale-config-sync-")
+    .tempdir_in(staging_parent)
+    .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+
+  let mut staged: Vec<PathBuf> = Vec::new();
+  let mut total: u64 = 0;
   for i in 0..archive.len() {
     let mut file = archive
       .by_index(i)
@@ -276,27 +322,109 @@ pub fn extract_configs(zip_bytes: &[u8], dest: &Path) -> Result<usize, ValheimMo
     else {
       continue;
     };
-    let target = dest.join(relative);
+    let target = staging.path().join(&relative);
     if let Some(parent) = target.parent() {
       fs::create_dir_all(parent)
         .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
     }
     let mut out =
       fs::File::create(&target).map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
-    std::io::copy(&mut file, &mut out)
-      .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
-    written += 1;
+    // Read one byte past what the budget allows: if that byte materialises the archive
+    // inflates beyond the cap, so stop rather than keep writing.
+    let remaining = max_total_bytes.saturating_sub(total);
+    let copied = std::io::copy(
+      &mut file.by_ref().take(remaining.saturating_add(1)),
+      &mut out,
+    )
+    .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+    if copied > remaining {
+      return Err(ValheimModError::ExtractionError(format!(
+        "Gale profile configs expand beyond {max_total_bytes} bytes; refusing to continue"
+      )));
+    }
+    total += copied;
+    staged.push(relative);
   }
-  Ok(written)
+
+  // The archive is whole and within budget, so the staged tree can replace what is live.
+  for relative in &staged {
+    let target = dest.join(relative);
+    if let Some(parent) = target.parent() {
+      fs::create_dir_all(parent)
+        .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
+    }
+    move_into_place(&staging.path().join(relative), &target)?;
+  }
+  Ok(staged.len())
+}
+
+/// Moves a staged config into place, copying instead when the two sit on different
+/// filesystems.
+///
+/// Staging lives beside `BepInEx/config` so these are normally same-filesystem renames,
+/// but the config directory is sometimes its own bind mount or volume, and `rename` cannot
+/// cross a mount boundary - it fails with `EXDEV`. Falling back to a copy keeps config sync
+/// working there. Per file that is less atomic than a rename, but the whole archive has
+/// already been read and checked against the budget by this point, which is what staging is
+/// for; the alternative is the feature failing outright on such a layout.
+fn move_into_place(from: &Path, to: &Path) -> Result<(), ValheimModError> {
+  if fs::rename(from, to).is_ok() {
+    return Ok(());
+  }
+  copy_into_place(from, to)
+}
+
+/// The copy fallback for [`move_into_place`], split out so it can be tested directly
+/// rather than only on a host that happens to straddle two filesystems.
+fn copy_into_place(from: &Path, to: &Path) -> Result<(), ValheimModError> {
+  fs::copy(from, to).map_err(|e| ValheimModError::ExtractionError(e.to_string()))?;
+  // Best effort: the staging directory is removed wholesale when it drops.
+  let _ = fs::remove_file(from);
+  Ok(())
+}
+
+/// Fetches the profile zip, following the redirect off the Gale API and refusing a body
+/// larger than [`MAX_PROFILE_ZIP_BYTES`].
+async fn download_profile_zip(url: &Url) -> Result<Vec<u8>, ValheimModError> {
+  // The zip redirects to the mod CDN and the pooled client does not follow redirects, so
+  // this goes through the redirect walker. Gale is not a mod repository host, so pacing is
+  // requested explicitly - otherwise the walker would send it direct, giving up the
+  // backoff and 429 handling every other download gets.
+  let request = HttpPool::global().client().get(url.clone());
+  let response = send_with_pacing(request, url.as_str(), "gale", Pacing::Always).await?;
+  let mut response = check_status(response, url)?;
+
+  let too_large = || {
+    ValheimModError::DownloadError(format!(
+      "Gale profile zip is larger than {MAX_PROFILE_ZIP_BYTES} bytes"
+    ))
+  };
+  // A declared length lets us bail before transferring anything; it is a hint, so the
+  // loop below still enforces the cap on what actually arrives.
+  if response
+    .content_length()
+    .is_some_and(|l| l > MAX_PROFILE_ZIP_BYTES)
+  {
+    return Err(too_large());
+  }
+
+  let mut bytes: Vec<u8> = Vec::new();
+  while let Some(chunk) = response
+    .chunk()
+    .await
+    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?
+  {
+    if bytes.len() as u64 + chunk.len() as u64 > MAX_PROFILE_ZIP_BYTES {
+      return Err(too_large());
+    }
+    bytes.extend_from_slice(&chunk);
+  }
+  Ok(bytes)
 }
 
 async fn sync_configs(code: &str) -> Result<(), ValheimModError> {
   let url = profile_url(code, false)?;
-  let bytes = get(&url)
-    .await?
-    .bytes()
-    .await
-    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
+  let bytes = download_profile_zip(&url).await?;
   let dest = PathBuf::from(bepinex_config_directory());
   let written = extract_configs(&bytes, &dest)?;
   info!(
@@ -482,6 +610,103 @@ mod tests {
     );
     assert!(dest.join("sub/nested.yml").exists());
     assert!(!dir.path().join("escape.cfg").exists());
+  }
+
+  /// A profile that inflates past the budget must be refused, not written out. Built with
+  /// a small explicit cap so the test does not need a real zip bomb.
+  #[test]
+  fn refuses_configs_that_expand_past_the_cap() {
+    let mut buf = Vec::new();
+    {
+      let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      // An entry that fits precedes the one that blows the budget, so a partial write
+      // would be visible as `first.cfg` landing in dest.
+      zipw
+        .start_file("BepInEx/config/first.cfg", options)
+        .unwrap();
+      zipw.write_all(&vec![b'a'; 512]).unwrap();
+      zipw.start_file("BepInEx/config/bomb.cfg", options).unwrap();
+      zipw.write_all(&vec![b'a'; 4096]).unwrap();
+      zipw.finish().unwrap();
+    }
+
+    let dir = tempfile::tempdir().unwrap();
+    let dest = dir.path().join("config");
+    // A config already on the server, to prove a refused sync leaves the live tree alone.
+    fs::create_dir_all(&dest).unwrap();
+    fs::write(dest.join("existing.cfg"), "keep me").unwrap();
+
+    let err = extract_configs_capped(&buf, &dest, 1024).expect_err("cap must be enforced");
+    assert!(
+      matches!(err, ValheimModError::ExtractionError(_)),
+      "unexpected error: {err:?}"
+    );
+    assert!(
+      !dest.join("bomb.cfg").exists(),
+      "the over-budget file must not be left behind"
+    );
+    assert!(
+      !dest.join("first.cfg").exists(),
+      "a refusal must not leave earlier entries half applied"
+    );
+    assert_eq!(
+      fs::read_to_string(dest.join("existing.cfg")).unwrap(),
+      "keep me",
+      "a refused sync must not disturb the live configs"
+    );
+    assert!(
+      !fs::read_dir(dir.path()).unwrap().any(|e| e
+        .unwrap()
+        .file_name()
+        .to_string_lossy()
+        .starts_with(".gale-config-sync-")),
+      "the staging directory must not be left behind"
+    );
+
+    // The same archive is fine when the budget accommodates it.
+    assert_eq!(extract_configs_capped(&buf, &dest, 8192).unwrap(), 2);
+    assert!(dest.join("bomb.cfg").exists());
+    assert!(dest.join("first.cfg").exists());
+  }
+
+  /// `BepInEx/config` is sometimes its own mount, where `rename` out of staging fails with
+  /// `EXDEV`. The copy fallback has to land the file and clear the staged copy, so config
+  /// sync keeps working on that layout.
+  #[test]
+  fn copy_fallback_lands_the_file_and_clears_staging() {
+    let dir = tempfile::tempdir().unwrap();
+    let staged = dir.path().join("staged.cfg");
+    let target = dir.path().join("config").join("landed.cfg");
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    fs::write(&staged, "value = 1").unwrap();
+
+    copy_into_place(&staged, &target).unwrap();
+
+    assert_eq!(fs::read_to_string(&target).unwrap(), "value = 1");
+    assert!(!staged.exists(), "the staged copy must be cleared");
+
+    // Overwriting an existing config is the documented behaviour of a sync.
+    let next = dir.path().join("next.cfg");
+    fs::write(&next, "value = 2").unwrap();
+    copy_into_place(&next, &target).unwrap();
+    assert_eq!(fs::read_to_string(&target).unwrap(), "value = 2");
+  }
+
+  /// `move_into_place` takes the rename when both sides share a filesystem, which is the
+  /// normal layout, and is what the fallback above stands in for when they do not.
+  #[test]
+  fn move_into_place_handles_the_same_filesystem_case() {
+    let dir = tempfile::tempdir().unwrap();
+    let staged = dir.path().join("staged.cfg");
+    let target = dir.path().join("config").join("landed.cfg");
+    fs::create_dir_all(target.parent().unwrap()).unwrap();
+    fs::write(&staged, "value = 3").unwrap();
+
+    move_into_place(&staged, &target).unwrap();
+
+    assert_eq!(fs::read_to_string(&target).unwrap(), "value = 3");
+    assert!(!staged.exists());
   }
 
   #[tokio::test]
