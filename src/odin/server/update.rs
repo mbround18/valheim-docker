@@ -120,7 +120,13 @@ pub fn update_server() {
   let restart_after = server_was_running || restart_pending();
   if server_was_running {
     mark_restart_pending();
-    server::blocking_shutdown();
+    if let Err(e) = server::blocking_shutdown() {
+      error!("{e}");
+      error!("Refusing to update: the server is still running and its files would be replaced underneath it.");
+      // Nothing stopped it, so nothing owes it a restart.
+      clear_restart_pending();
+      exit(1);
+    }
   } else if restart_after {
     info!("A previous update stopped the server; it will be started after this update");
   }

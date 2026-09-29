@@ -22,17 +22,26 @@ name = "odin"
 path = "lib.rs"
 
 [build-dependencies]
-cc = "1.4.5"
+cc = "1.5.1"
 
 [dependencies]
 handlebars = "6.4.4"
-dotenv = "0.15.0"
+# `dotenvy`, not `dotenv`: the original crate has been unmaintained since
+# 2021 (RUSTSEC-2021-0141). `dotenvy` is its maintained fork with the same
+# API, so this is a rename at the call site and nothing more.
+dotenvy = "0.15.7"
 log = "0.4.34"
-clap = { version = "4.6.6", features = ["derive", "env"] }
+clap = { version = "4.6.7", features = ["derive", "env"] }
 which = "8.0.6"
 serde = { version = "1.0.229", features = ["derive"], default-features = false }
 sysinfo = { version = "0.39.6" }
 serde_json = "1.0.151"
+# RUSTSEC-2025-0069: unmaintained, not vulnerable. Kept deliberately — it is
+# used in exactly one place (`server::start_daemonized`) to double-fork the
+# Valheim server, has no maintained drop-in equivalent, and the code it
+# replaces is a well-understood fixed sequence of POSIX calls. Revisit if an
+# actual advisory lands against it, or if `odin` ever runs under an init
+# system that makes the daemonizing unnecessary.
 daemonize = "0.5.0"
 tar = "0.4.46"
 flate2 = "1.1.10"
@@ -48,14 +57,14 @@ zip = { version = "8.6.0" }
 fs_extra = "1.3.0"
 glob = "0.3.4"
 a2s = "0.6.1"
-serde_with = "3.23.0"
+serde_with = "3.24.0"
 regex = "1.13.1"
 tokio = { version = "1.53.1", features = ["full"] }
 notify = "8.2.0"
 json-patch = "4.2.0"
 cached = "4.0.0"
 anyhow = "1.0.104"
-thiserror = "2.0.20"
+thiserror = "2.0.21"
 tempfile = "3.27.0"
 walkdir = "2.5.0"
 sha2 = "0.11.0"
@@ -68,11 +77,11 @@ workspace = true
 
 [dev-dependencies]
 once_cell = "1.21.4"
-rand = "0.10.2"
+rand = "0.10.3"
 serial_test = "4.0.1"
 mockito = "1.7.2"
 lazy_static = "1.5.0"
-test-case = "3.3.1"
+test-case = "3.4.0"
 mockall = "0.15.0"
 
 

@@ -38,7 +38,7 @@ jobs:
     if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.53
         with:
           version: v0.0.1-prerelease.53
@@ -53,7 +53,7 @@ jobs:
     env:
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.53
         with:
           version: v0.0.1-prerelease.53
@@ -72,9 +72,17 @@ jobs:
     if: ${{ !cancelled() && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Prettier
         run: npx -y prettier --check ./
+      - name: No agent session links in commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash ./.github/scripts/check-commit-messages.sh "$BASE_SHA" "$HEAD_SHA"
       - name: Shell tests
         run: |
           status=0
@@ -92,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       # paws docker builds inside Dagger and does not load the result into the runner's
       # Docker daemon, which these container-level checks run against.
       # No --cache-from: nothing writes mbround18/valheim:buildcache any more (paws
@@ -119,7 +127,7 @@ jobs:
     if: ${{ !cancelled() && github.event_name == 'pull_request' && !(github.actor == 'renovate[bot]' || github.actor == 'dependabot[bot]') && (needs.approval.result == 'success' || needs.approval.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: mbround18/paws/actions/paws-up@v0.0.1-prerelease.53
