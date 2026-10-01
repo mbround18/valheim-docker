@@ -253,9 +253,9 @@ dependencies = [
 
 [[package]]
 name = "cached"
-version = "4.0.0"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5a6cf8262820194a1488ece477f5fb5ba9256ef25229d525470e71d6e9a5835"
+checksum = "292f39b5c459538e148825347c400cb2005a618b897d0e6be183bad677d460b7"
 dependencies = [
  "ahash",
  "cached_proc_macro",
@@ -2706,7 +2706,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.60.2",
