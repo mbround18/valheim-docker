@@ -484,10 +484,10 @@ mod from_var_state_tests {
     {
       let cursor = Cursor::new(&mut buf);
       let mut zipw = zip::ZipWriter::new(cursor);
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zipw.start_file("manifest.json", options).unwrap();
       zipw.write_all(b"{\"name\":\"testmod\"}").unwrap();
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zipw.start_file("plugins/myplugin.dll", options).unwrap();
       zipw.write_all(b"plugindata").unwrap();
       zipw.finish().unwrap();
@@ -606,7 +606,7 @@ mod from_var_state_tests {
         ("config/ServersideQoL.cfg", b"defaults"),
       ];
       for (name, contents) in files {
-        let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+        let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
         zipw.start_file(name, options).unwrap();
         zipw.write_all(contents).unwrap();
       }
@@ -1164,7 +1164,7 @@ mod from_var_state_tests {
       let mut bytes = Vec::new();
       {
         let mut zip = zip::ZipWriter::new(Cursor::new(&mut bytes));
-        let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+        let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
         for (name, contents) in entries {
           zip.start_file(*name, options).unwrap();
           zip.write_all(contents.as_bytes()).unwrap();
