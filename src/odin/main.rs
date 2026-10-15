@@ -1,5 +1,5 @@
 use clap::Parser;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 
 use crate::cli::{Cli, Commands, LevelArg};
 use commands::configure::Configuration;

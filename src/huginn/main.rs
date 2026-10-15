@@ -11,7 +11,7 @@ use serde::Serialize;
 use shared::init_logging_and_tracing;
 use std::net::SocketAddrV4;
 use std::str::FromStr;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Mutex, MutexGuard, OnceLock};
 use std::time::{Duration, Instant};
 use warp::Filter;
 
@@ -25,6 +25,19 @@ struct CachedInfo {
 struct CachedMods {
   fetched_at: Instant,
   mods: Vec<(String, Option<String>)>, // (name, version)
+}
+
+/// Takes the lock, recovering it if a previous holder panicked.
+///
+/// These mutexes guard nothing but cached copies of data we can always fetch
+/// again, so a poisoned lock is not a reason to fail every later request. The
+/// `expect` that used to be here turned one panic anywhere into a status
+/// endpoint that returned 500 for the rest of the process's life.
+fn lock_cache<T>(cache: &Mutex<T>) -> MutexGuard<'_, T> {
+  cache.lock().unwrap_or_else(|poisoned| {
+    warn!("Cache mutex was poisoned by an earlier panic; recovering it.");
+    poisoned.into_inner()
+  })
 }
 
 static INFO_CACHE: OnceLock<Mutex<Option<CachedInfo>>> = OnceLock::new();
@@ -128,7 +141,7 @@ fn fetch_info() -> ServerInfo {
   let ttl = cache_ttl();
   let cache = INFO_CACHE.get_or_init(|| Mutex::new(None));
   {
-    let guard = cache.lock().expect("cache mutex poisoned");
+    let guard = lock_cache(cache);
     if let Some(entry) = guard.as_ref() {
       if entry.fetched_at.elapsed() <= ttl {
         return entry.info.clone();
@@ -141,7 +154,7 @@ fn fetch_info() -> ServerInfo {
   } else {
     ServerInfo::offline()
   };
-  let mut guard = cache.lock().expect("cache mutex poisoned");
+  let mut guard = lock_cache(cache);
   *guard = Some(CachedInfo {
     fetched_at: Instant::now(),
     info: fresh.clone(),
@@ -153,7 +166,7 @@ pub(crate) fn fetch_mods() -> Vec<(String, Option<String>)> {
   let ttl = cache_ttl();
   let cache = MODS_CACHE.get_or_init(|| Mutex::new(None));
   {
-    let guard = cache.lock().expect("cache mutex poisoned");
+    let guard = lock_cache(cache);
     if let Some(entry) = guard.as_ref() {
       if entry.fetched_at.elapsed() <= ttl {
         return entry.mods.clone();
@@ -167,7 +180,7 @@ pub(crate) fn fetch_mods() -> Vec<(String, Option<String>)> {
     .map(|m| (m.manifest.name, m.manifest.version_number))
     .collect();
 
-  let mut guard = cache.lock().expect("cache mutex poisoned");
+  let mut guard = lock_cache(cache);
   *guard = Some(CachedMods {
     fetched_at: Instant::now(),
     mods: fresh.clone(),
@@ -231,7 +244,11 @@ async fn main() {
   }
 
   // Logger
-  init_logging_and_tracing().expect("Failed to initialize logging and tracing");
+  if let Err(e) = init_logging_and_tracing() {
+    // No logger, so this is the one place that has to write to stderr directly.
+    eprintln!("huginn: failed to initialize logging and tracing: {e}");
+    std::process::exit(1);
+  }
 
   // Routes
   let root = warp::path::end().map(routes::invoke);

@@ -305,11 +305,18 @@ pub async fn watch_logs(log_path: String) {
   let log_path = Arc::new(log_path);
 
   loop {
-    let paths = fs::read_dir(&*log_path)
-      .expect("Could not read log directory")
-      .filter_map(Result::ok)
-      .map(|entry| entry.path())
-      .collect::<Vec<_>>();
+    let paths = match fs::read_dir(&*log_path) {
+      Ok(entries) => entries
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>(),
+      Err(e) => {
+        // The directory is created when the server first starts, so watching can
+        // legitimately begin before it exists. Keep waiting for it to show up.
+        warn!("Could not read log directory {}: {e}", *log_path);
+        Vec::new()
+      }
+    };
 
     for path in paths {
       if path.is_file() && watched_files.insert(path.clone()) {
@@ -326,15 +333,26 @@ pub async fn watch_logs(log_path: String) {
 /// - Reads files as raw bytes, converts to UTF-8 lossily.
 /// - Defaults to last 10 lines per file if `lines` is `None`.
 pub fn print_logs(log_path: String, lines: Option<u16>) {
-  let paths = fs::read_dir(log_path)
-    .expect("Could not read log directory")
-    .filter_map(Result::ok)
-    .map(|entry| entry.path())
-    .collect::<Vec<_>>();
+  let paths = match fs::read_dir(&log_path) {
+    Ok(entries) => entries
+      .filter_map(Result::ok)
+      .map(|entry| entry.path())
+      .collect::<Vec<_>>(),
+    Err(e) => {
+      error!("Could not read log directory {log_path}: {e}");
+      return;
+    }
+  };
 
   for path in paths {
     if path.is_file() && path.extension().and_then(OsStr::to_str) == Some("log") {
-      let bytes = fs::read(&path).expect("Could not read file");
+      let bytes = match fs::read(&path) {
+        Ok(bytes) => bytes,
+        Err(e) => {
+          warn!("Skipping {}: {e}", path.display());
+          continue;
+        }
+      };
       let content = String::from_utf8_lossy(&bytes);
       let lines_to_print = content
         .lines()
