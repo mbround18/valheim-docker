@@ -215,3 +215,12 @@
 - ci: require approval for Renovate/Dependabot runs (#1560)
 - ci: remove enforce-labels workflow (#1561)
 - fix(mods): follow the Gale profile redirect when syncing configs, paced and bounded (#1565)
+
+## v3.8.10 (2026-10-15)
+
+- fix(server): bound the shutdown wait, plus consolidated dependency refresh (#1566)
+- fix(gale): use selected mod stores from profile ZIP (85da56e)
+- fix(gale): reject symlinked config paths from profile ZIP (d77a274)
+- Merge branch 'integration/pr1577-review' (87996d5)
+- chore(deps): refresh Rust dependency set and harden Gale ZIP handling (#1578)
+- fix(notifications): clean up NAME env var in discord tests (#1579)
