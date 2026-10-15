@@ -733,10 +733,9 @@ mod tests {
     };
 
     let body: DiscordWebHookBody = (&notification).into();
-    assert_eq!(
-      body.embeds[0].description,
-      "player said \"hello\" & left\nbye"
-    );
+    let rendered = body.embeds[0].description.clone();
+    remove_var("NAME");
+    assert_eq!(rendered, "player said \"hello\" & left\nbye");
   }
 
   #[test]
@@ -751,8 +750,10 @@ mod tests {
     };
 
     let body: DiscordWebHookBody = (&notification).into();
+    let contains_server_name = body.content.contains("Bob & Alice's Realm");
+    remove_var("NAME");
     assert!(
-      body.content.contains("Bob & Alice's Realm"),
+      contains_server_name,
       "server name should not be HTML escaped: {}",
       body.content
     );
