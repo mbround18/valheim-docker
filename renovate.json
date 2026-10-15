@@ -1,4 +1,27 @@
 {
   "extends": ["config:recommended"],
-  "labels": ["dependencies", "patch", "automerge"]
+  "labels": ["dependencies", "patch"],
+  "automerge": true,
+  "platformAutomerge": true,
+  "automergeStrategy": "squash",
+  "packageRules": [
+    {
+      "description": "Major bumps get a human. Everything else merges itself once CI is green.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "description": "One PR for the lockfile instead of one per crate, which is what let six of them pile up.",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "rust dependencies"
+    },
+    {
+      "description": "Same for the workflow actions.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "github actions"
+    }
+  ],
+  "schedule": ["before 6am on monday"]
 }

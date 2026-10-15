@@ -18,7 +18,10 @@ pub fn invoke(dry_run: bool) {
       error!("Failed to find server executable!");
       exit(1);
     }
-    server::blocking_shutdown();
+    if let Err(e) = server::blocking_shutdown() {
+      error!("{e}");
+      exit(1);
+    }
     // An explicit stop wins over a restart an interrupted update still owed.
     server::clear_restart_pending();
   }
