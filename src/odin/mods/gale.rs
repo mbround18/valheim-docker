@@ -418,6 +418,46 @@ fn safe_relative(path: &Path) -> Option<PathBuf> {
   (!out.as_os_str().is_empty()).then_some(out)
 }
 
+/// Refuses to follow an existing symlink anywhere under `root` when resolving a profile
+/// config file. The zip is untrusted, so a symlinked path inside the live config tree can
+/// turn a "sync into config" operation into a write outside the intended directory.
+fn ensure_no_symlinks_in_path(root: &Path, relative: &Path) -> Result<(), ValheimModError> {
+  let mut current = root.to_path_buf();
+  for component in relative.components() {
+    match component {
+      Component::Normal(part) => {
+        current.push(part);
+        let meta = match fs::symlink_metadata(&current) {
+          Ok(meta) => meta,
+          Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
+          Err(e) => {
+            return Err(ValheimModError::FileCreateError(format!(
+              "Could not inspect config path {}: {e}",
+              current.display()
+            )));
+          }
+        };
+        if meta.file_type().is_symlink() {
+          return Err(ValheimModError::FileCreateError(format!(
+            "Refusing to sync config through symlinked path {}",
+            current.display()
+          )));
+        }
+      }
+      Component::CurDir | Component::RootDir | Component::Prefix(_) => {}
+      // `..` and similar are already rejected by `safe_relative`, but the helper keeps the
+      // path check explicit when a caller passes a path built another way.
+      Component::ParentDir => {
+        return Err(ValheimModError::FileCreateError(format!(
+          "Refusing to sync config through parent traversal: {}",
+          relative.display()
+        )));
+      }
+    }
+  }
+  Ok(())
+}
+
 /// Copies every file under `BepInEx/config/` in the profile zip into `dest`, overwriting.
 /// Returns the number of files written.
 pub fn extract_configs(zip_bytes: &[u8], dest: &Path) -> Result<usize, ValheimModError> {
@@ -471,6 +511,7 @@ fn extract_configs_capped(
       fs::create_dir_all(parent)
         .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
     }
+    ensure_no_symlinks_in_path(staging.path(), &relative)?;
     let mut out =
       fs::File::create(&target).map_err(|e| ValheimModError::FileCreateError(e.to_string()))?;
     // Read one byte past what the budget allows: if that byte materialises the archive
@@ -493,6 +534,7 @@ fn extract_configs_capped(
   // The archive is whole and within budget, so the staged tree can replace what is live.
   for relative in &staged {
     let target = dest.join(relative);
+    ensure_no_symlinks_in_path(dest, relative)?;
     if let Some(parent) = target.parent() {
       fs::create_dir_all(parent)
         .map_err(|e| ValheimModError::DirectoryCreationError(e.to_string()))?;
@@ -832,6 +874,37 @@ mod tests {
     );
     assert!(dest.join("sub/nested.yml").exists());
     assert!(!dir.path().join("escape.cfg").exists());
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn rejects_symlinked_config_paths() {
+    let dir = tempfile::tempdir().unwrap();
+    let dest = dir.path().join("config");
+    fs::create_dir_all(&dest).unwrap();
+
+    let outside = dir.path().join("outside");
+    fs::create_dir_all(&outside).unwrap();
+    let linked = dest.join("linked");
+    std::os::unix::fs::symlink(&outside, &linked).unwrap();
+
+    let mut buf = Vec::new();
+    {
+      let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      zipw
+        .start_file("BepInEx/config/linked/owned.cfg", options)
+        .unwrap();
+      zipw.write_all(b"bad\n").unwrap();
+      zipw.finish().unwrap();
+    }
+
+    let err = extract_configs(&buf, &dest).unwrap_err();
+    assert!(
+      err.to_string().contains("symlink"),
+      "unexpected error: {err:?}"
+    );
+    assert!(!outside.join("owned.cfg").exists());
   }
 
   /// A profile that inflates past the budget must be refused, not written out. Built with
