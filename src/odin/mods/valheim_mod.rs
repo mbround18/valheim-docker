@@ -1392,10 +1392,10 @@ mod thunderstore_tests {
     {
       let cursor = Cursor::new(&mut buf);
       let mut zipw = zip::ZipWriter::new(cursor);
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zipw.start_file("manifest.json", options).unwrap();
       zipw.write_all(b"{\"name\":\"testmod\"}").unwrap();
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zipw.start_file("plugins/myplugin.dll", options).unwrap();
       zipw.write_all(b"plugindata").unwrap();
       zipw.finish().unwrap();
@@ -1696,7 +1696,7 @@ mod repository_resolution_tests {
     let mut buf: Vec<u8> = Vec::new();
     {
       let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zipw.start_file("manifest.json", options).unwrap();
       zipw
         .write_all(serde_json::json!({ "name": name }).to_string().as_bytes())

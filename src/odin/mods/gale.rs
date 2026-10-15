@@ -243,7 +243,8 @@ fn manifest_from_zip(
   validate_raw_manifest_count(bytes, archive.central_directory_start())?;
   if archive
     .file_names()
-    .filter(|name| *name == "export.r2x")
+    .filter_map(|name| name.ok())
+    .filter(|name| name == "export.r2x")
     .count()
     != 1
   {
@@ -499,7 +500,10 @@ fn extract_configs_capped(
     if file.is_dir() {
       continue;
     }
-    let name = file.name().replace('\\', "/");
+    let name = file
+      .name()
+      .map_err(|e| ValheimModError::ExtractionError(e.to_string()))?
+      .replace('\\', "/");
     let Some(relative) = name
       .strip_prefix("BepInEx/config/")
       .and_then(|r| safe_relative(Path::new(r)))
@@ -721,7 +725,7 @@ mod tests {
     let mut bytes = Vec::new();
     {
       let mut zip = zip::ZipWriter::new(Cursor::new(&mut bytes));
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zip.start_file("export.r2x", options).unwrap();
       zip.write_all(b"profileName: ZIP\ncommunity: valheim\nmods:\n- name: Author-Mod\n  version: {major: 1, minor: 0, patch: 0}\n  enabled: true\n  source: Hexium\n").unwrap();
       zip.finish().unwrap();
@@ -763,7 +767,7 @@ mod tests {
     let mut bytes = Vec::new();
     {
       let mut writer = zip::ZipWriter::new(Cursor::new(&mut bytes));
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       for (name, contents) in entries {
         writer.start_file(*name, options).unwrap();
         writer.write_all(contents.as_bytes()).unwrap();
@@ -851,7 +855,7 @@ mod tests {
     let mut buf = Vec::new();
     {
       let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       for (name, body) in [
         ("export.r2x", "profileName: x"),
         ("BepInEx/config/advize.PlantEasily.cfg", "a = 1"),
@@ -891,7 +895,7 @@ mod tests {
     let mut buf = Vec::new();
     {
       let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       zipw
         .start_file("BepInEx/config/linked/owned.cfg", options)
         .unwrap();
@@ -914,7 +918,7 @@ mod tests {
     let mut buf = Vec::new();
     {
       let mut zipw = zip::ZipWriter::new(Cursor::new(&mut buf));
-      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      let options: zip::write::FileOptions<'_, '_, ()> = zip::write::FileOptions::default();
       // An entry that fits precedes the one that blows the budget, so a partial write
       // would be visible as `first.cfg` landing in dest.
       zipw
@@ -1074,7 +1078,8 @@ mod tests {
     assert_eq!(
       archive
         .file_names()
-        .filter(|name| *name == "export.r2x")
+        .filter_map(|name| name.ok())
+        .filter(|name| name == "export.r2x")
         .count(),
       1
     );
