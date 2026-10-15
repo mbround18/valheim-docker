@@ -226,7 +226,7 @@ async fn thunderstore_download_url_checked(
   .await?;
 
   if resp.status() == reqwest::StatusCode::NOT_FOUND {
-    return Err(ValheimModError::DownloadError(format!(
+    return Err(ValheimModError::PackageVersionNotFound(format!(
       "{namespace}-{name}-{version} was not found on Thunderstore ({probe_url})"
     )));
   }
@@ -258,7 +258,7 @@ async fn hexium_download_url(
   .await?;
 
   if resp.status() == reqwest::StatusCode::NOT_FOUND {
-    return Err(ValheimModError::DownloadError(format!(
+    return Err(ValheimModError::PackageVersionNotFound(format!(
       "{namespace}-{name}-{version} was not found on Hexium ({url})"
     )));
   }
@@ -389,6 +389,7 @@ async fn resolve_dependency_from_repository(
   Ok(ValheimMod::from_package(
     &url,
     format!("{author}-{mod_name}-{version}"),
+    repo,
   ))
 }
 
@@ -403,6 +404,8 @@ pub struct ValheimMod {
   /// because a Hexium CDN URL ends in just the version (`/upload/48/1.8.18.zip`) and two
   /// mods at the same version would otherwise share one cache entry.
   pub(crate) package: Option<String>,
+  /// Actual resolved store; legacy store-less artifacts must never satisfy these downloads.
+  repository: Option<ModRepository>,
 }
 
 impl ValheimMod {
@@ -432,12 +435,14 @@ impl ValheimMod {
       installed: false,
       downloaded: false,
       package: None,
+      repository: None,
     }
   }
 
-  fn from_package(url: &str, package: String) -> Self {
+  fn from_package(url: &str, package: String, repository: ModRepository) -> Self {
     ValheimMod {
       package: Some(package),
+      repository: Some(repository),
       ..ValheimMod::new(url)
     }
   }
@@ -445,7 +450,10 @@ impl ValheimMod {
   /// Staged file name: the package name when known, else the URL's last path segment.
   fn staging_file_name(&self, url: &Url, file_type: &str) -> String {
     match &self.package {
-      Some(package) => format!("{package}.{file_type}"),
+      Some(package) => format!(
+        "{}-{package}.{file_type}",
+        self.repository.expect("resolved package store").alias()
+      ),
       None => parse_file_name(url, &format!("{}.{}", get_md5_hash(&self.url), file_type)),
     }
   }
@@ -927,11 +935,9 @@ impl ValheimMod {
   /// prefixed with a repository alias (`ts:`, `hex:`). Unprefixed dependency strings use
   /// `MODS_REPOSITORY`. Wildcard versions are resolved against the chosen repository.
   pub async fn async_from_url(input: &str) -> Result<Self, ValheimModError> {
-    let (auto_resolution, raw_input) = if let Some(rest) = input.strip_prefix("auto:") {
-      (true, rest)
-    } else {
-      (false, input)
-    };
+    let auto_resolution =
+      input.starts_with("gale-ts:") || input.starts_with("gale-hex:") || input.starts_with("auto:");
+    let raw_input = input.strip_prefix("auto:").unwrap_or(input);
 
     // Strip the prefix first: `hex:Author-Mod-1.0.0` would otherwise parse as a URL
     // with a `hex` scheme.
@@ -941,13 +947,6 @@ impl ValheimMod {
     }
     let (author, mod_name, version) = parse_mod_string(entry).ok_or(ValheimModError::InvalidUrl)?;
     let preferred = prefix.unwrap_or_else(ModRepository::from_env);
-    if prefix.is_some() && !auto_resolution {
-      return resolve_dependency_from_repository(
-        preferred, author, mod_name, version, entry, false,
-      )
-      .await;
-    }
-
     if !auto_resolution {
       return resolve_dependency_from_repository(
         preferred, author, mod_name, version, entry, false,
@@ -959,16 +958,18 @@ impl ValheimMod {
       .await
     {
       Ok(mod_entry) => Ok(mod_entry),
-      Err(preferred_err) => {
+      Err(preferred_err @ ValheimModError::PackageVersionNotFound(_)) => {
         let fallback = alternate_repository(preferred);
-        warn!("Could not resolve {entry} on {preferred}: {preferred_err}; trying {fallback}");
-        resolve_dependency_from_repository(fallback, author, mod_name, version, entry, true)
+        let resolved = resolve_dependency_from_repository(fallback, author, mod_name, version, entry, true)
           .await.map_err(|fallback_err| {
           ValheimModError::DownloadError(format!(
             "Could not resolve {entry} on {preferred} ({preferred_err}) or {fallback} ({fallback_err})"
           ))
-        })
+        })?;
+        warn!("Gale package {entry}: preferred repository {preferred} is missing the exact version ({preferred_err}); using actual repository {fallback}");
+        Ok(resolved)
       }
+      Err(error) => Err(error),
     }
   }
 }
@@ -999,6 +1000,7 @@ impl TryFrom<String> for ValheimMod {
     Ok(ValheimMod::from_package(
       &thunderstore_download_url(author, mod_name, version),
       format!("{author}-{mod_name}-{version}"),
+      repo,
     ))
   }
 }
@@ -1046,6 +1048,7 @@ mod install_test {
       downloaded: false,
       file_type: "zip".to_string(),
       package: None,
+      repository: None,
     }
   }
 
@@ -1748,10 +1751,10 @@ mod repository_resolution_tests {
 
   #[tokio::test]
   #[serial]
-  async fn auto_prefixed_exact_version_falls_back_to_hexium_when_thunderstore_is_missing() {
+  async fn gale_thunderstore_preference_falls_back_to_exact_hexium_version() {
     clear_env();
     let mut thunderstore = mockito::Server::new_async().await;
-    let _missing_on_ts = thunderstore
+    let missing_on_ts = thunderstore
       .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
       .with_status(404)
       .create_async()
@@ -1764,20 +1767,22 @@ mod repository_resolution_tests {
     set_var(THUNDERSTORE_BASE_URL_VAR, thunderstore.url());
     set_var(HEXIUM_BASE_URL_VAR, hexium.url());
 
-    let vmod = ValheimMod::async_from_url("auto:Author-Mod-1.0.0")
+    let vmod = ValheimMod::async_from_url("gale-ts:Author-Mod-1.0.0")
       .await
       .unwrap();
     assert_eq!(vmod.url, cdn);
+    assert_eq!(vmod.repository, Some(ModRepository::Hexium));
+    missing_on_ts.assert_async().await;
     found_on_hex.assert_async().await;
     clear_env();
   }
 
   #[tokio::test]
   #[serial]
-  async fn auto_prefixed_exact_version_falls_back_to_thunderstore_when_hexium_is_missing() {
+  async fn gale_hexium_preference_falls_back_to_exact_thunderstore_version() {
     clear_env();
     let mut hexium = mockito::Server::new_async().await;
-    let _missing_on_hex = hexium
+    let missing_on_hex = hexium
       .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
       .with_status(404)
       .create_async()
@@ -1796,13 +1801,15 @@ mod repository_resolution_tests {
     set_var(HEXIUM_BASE_URL_VAR, hexium.url());
     set_var(THUNDERSTORE_BASE_URL_VAR, thunderstore.url());
 
-    let vmod = ValheimMod::async_from_url("auto:Author-Mod-1.0.0")
+    let vmod = ValheimMod::async_from_url("gale-hex:Author-Mod-1.0.0")
       .await
       .unwrap();
     assert_eq!(
       vmod.url,
       format!("{}/package/download/Author/Mod/1.0.0/", thunderstore.url())
     );
+    assert_eq!(vmod.repository, Some(ModRepository::Thunderstore));
+    missing_on_hex.assert_async().await;
     found_on_ts.assert_async().await;
     clear_env();
   }
@@ -2060,7 +2067,7 @@ mod repository_resolution_tests {
 
     assert_ne!(staged[0], staged[1], "both mods staged to {:?}", staged[0]);
     assert!(
-      staged[0].ends_with("Author-First-1.0.0.zip"),
+      staged[0].ends_with("hex-Author-First-1.0.0.zip"),
       "{:?}",
       staged[0]
     );
@@ -2070,6 +2077,311 @@ mod repository_resolution_tests {
     for mock in &mocks {
       mock.assert_async().await;
     }
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn gale_selected_store_wins_when_both_have_the_exact_version() {
+    for preferred in [ModRepository::Thunderstore, ModRepository::Hexium] {
+      clear_env();
+      let mut selected = mockito::Server::new_async().await;
+      let mut alternate = mockito::Server::new_async().await;
+      let selected_version = selected
+        .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+        .with_status(200)
+        .with_body(
+          serde_json::json!({"download_url": format!("{}/selected.zip", selected.url())})
+            .to_string(),
+        )
+        .expect(1)
+        .create_async()
+        .await;
+      let never = alternate
+        .mock("GET", mockito::Matcher::Any)
+        .with_status(200)
+        .with_body(r#"{"download_url":"https://alternate.test/mod.zip"}"#)
+        .expect(0)
+        .create_async()
+        .await;
+      let (selected_var, other_var, default) = match preferred {
+        ModRepository::Thunderstore => (THUNDERSTORE_BASE_URL_VAR, HEXIUM_BASE_URL_VAR, "hexium"),
+        ModRepository::Hexium => (
+          HEXIUM_BASE_URL_VAR,
+          THUNDERSTORE_BASE_URL_VAR,
+          "thunderstore",
+        ),
+      };
+      set_var(selected_var, selected.url());
+      set_var(other_var, alternate.url());
+      set_var(MODS_REPOSITORY_VAR, default);
+      let resolved =
+        ValheimMod::async_from_url(&format!("gale-{}:Author-Mod-1.0.0", preferred.alias()))
+          .await
+          .unwrap();
+      assert_eq!(resolved.repository, Some(preferred));
+      assert_eq!(resolved.package.as_deref(), Some("Author-Mod-1.0.0"));
+      assert!(
+        resolved.url.starts_with(&selected.url()),
+        "selected source must win: {}",
+        resolved.url
+      );
+      selected_version.assert_async().await;
+      never.assert_async().await;
+      clear_env();
+    }
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn selected_store_download_failure_does_not_switch_store_or_version() {
+    for preferred in [ModRepository::Thunderstore, ModRepository::Hexium] {
+      clear_env();
+      let game = tempfile::tempdir().unwrap();
+      set_var(crate::constants::GAME_LOCATION, game.path());
+      let mut selected = mockito::Server::new_async().await;
+      let mut alternate = mockito::Server::new_async().await;
+      let (selected_var, other_var) = match preferred {
+        ModRepository::Thunderstore => (THUNDERSTORE_BASE_URL_VAR, HEXIUM_BASE_URL_VAR),
+        ModRepository::Hexium => (HEXIUM_BASE_URL_VAR, THUNDERSTORE_BASE_URL_VAR),
+      };
+      set_var(selected_var, selected.url());
+      set_var(other_var, alternate.url());
+      let version = selected
+        .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+        .with_body(
+          serde_json::json!({"download_url": format!("{}/selected.zip", selected.url())})
+            .to_string(),
+        )
+        .expect(1)
+        .create_async()
+        .await;
+      let path = match preferred {
+        ModRepository::Thunderstore => "/package/download/Author/Mod/1.0.0/",
+        ModRepository::Hexium => "/selected.zip",
+      };
+      let missing_archive = selected
+        .mock("GET", path)
+        .with_status(404)
+        .expect(1)
+        .create_async()
+        .await;
+      let never = alternate
+        .mock("GET", mockito::Matcher::Any)
+        .expect(0)
+        .create_async()
+        .await;
+      let mut resolved =
+        ValheimMod::async_from_url(&format!("gale-{}:Author-Mod-1.0.0", preferred.alias()))
+          .await
+          .unwrap();
+      let error = resolved.download().await.unwrap_err();
+      assert!(matches!(error, ValheimModError::DownloadError(_)));
+      assert!(error.to_string().contains("404"));
+      assert_eq!(resolved.repository, Some(preferred));
+      assert_eq!(resolved.package.as_deref(), Some("Author-Mod-1.0.0"));
+      version.assert_async().await;
+      missing_archive.assert_async().await;
+      never.assert_async().await;
+      clear_env();
+      remove_var(crate::constants::GAME_LOCATION);
+    }
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn gale_nonmissing_errors_never_query_the_other_store() {
+    for preferred in [ModRepository::Thunderstore, ModRepository::Hexium] {
+      for status in [401, 403, 429, 503, 200] {
+        clear_env();
+        let mut selected = mockito::Server::new_async().await;
+        let mut alternate = mockito::Server::new_async().await;
+        let response = selected
+          .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+          .with_status(status)
+          .with_header("retry-after", "0")
+          .with_body("invalid json")
+          .expect_at_least(1)
+          .create_async()
+          .await;
+        let never = alternate
+          .mock("GET", mockito::Matcher::Any)
+          .with_status(200)
+          .with_body(r#"{"download_url":"https://alternate.test/mod.zip"}"#)
+          .expect(0)
+          .create_async()
+          .await;
+        let (selected_var, other_var) = match preferred {
+          ModRepository::Thunderstore => (THUNDERSTORE_BASE_URL_VAR, HEXIUM_BASE_URL_VAR),
+          ModRepository::Hexium => (HEXIUM_BASE_URL_VAR, THUNDERSTORE_BASE_URL_VAR),
+        };
+        set_var(selected_var, selected.url());
+        set_var(other_var, alternate.url());
+        let result =
+          ValheimMod::async_from_url(&format!("gale-{}:Author-Mod-1.0.0", preferred.alias())).await;
+        if status == 200 && preferred == ModRepository::Thunderstore {
+          // Thunderstore's exact endpoint is an existence probe; its body is not used.
+          assert!(result.is_ok());
+        } else {
+          let error = result.err().expect("non-missing error must be returned");
+          assert!(
+            matches!(error, ValheimModError::DownloadError(_)),
+            "{error:?}"
+          );
+          if status != 200 {
+            assert!(error.to_string().contains(&status.to_string()));
+          }
+        }
+        response.assert_async().await;
+        never.assert_async().await;
+        clear_env();
+      }
+    }
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn manual_prefixes_and_gale_author_keep_strict_repository_semantics() {
+    clear_env();
+    let mut hexium = mockito::Server::new_async().await;
+    let missing = hexium
+      .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+      .with_status(404)
+      .expect(1)
+      .create_async()
+      .await;
+    let mut thunderstore = mockito::Server::new_async().await;
+    let never = thunderstore
+      .mock("GET", mockito::Matcher::Any)
+      .expect(0)
+      .create_async()
+      .await;
+    set_var(HEXIUM_BASE_URL_VAR, hexium.url());
+    set_var(THUNDERSTORE_BASE_URL_VAR, thunderstore.url());
+    assert!(matches!(
+      ValheimMod::async_from_url("hex:Author-Mod-1.0.0").await,
+      Err(ValheimModError::PackageVersionNotFound(_))
+    ));
+    for entry in ["ts:Author-Mod-1.0.0", "gale-Mod-1.0.0"] {
+      let resolved = ValheimMod::async_from_url(entry).await.unwrap();
+      assert_eq!(resolved.repository, Some(ModRepository::Thunderstore));
+    }
+    missing.assert_async().await;
+    never.assert_async().await;
+    clear_env();
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn actual_store_isolates_artifact_caches_and_ignores_legacy_files() {
+    clear_env();
+    let game = tempfile::tempdir().unwrap();
+    set_var(crate::constants::GAME_LOCATION, game.path());
+    let mut thunderstore = mockito::Server::new_async().await;
+    let mut hexium = mockito::Server::new_async().await;
+    set_var(THUNDERSTORE_BASE_URL_VAR, thunderstore.url());
+    set_var(HEXIUM_BASE_URL_VAR, hexium.url());
+    let hex_url = format!("{}/hex.zip", hexium.url());
+    let version = mock_hexium_version(&mut hexium, "Author/Mod/1.0.0", &hex_url).await;
+    let ts_bytes = zip_with_manifest("ThunderstoreBytes");
+    let hex_bytes = zip_with_manifest("HexiumBytes");
+    let ts_download = thunderstore
+      .mock("GET", "/package/download/Author/Mod/1.0.0/")
+      .with_body(ts_bytes.clone())
+      .expect(1)
+      .create_async()
+      .await;
+    let hex_download = hexium
+      .mock("GET", "/hex.zip")
+      .with_body(hex_bytes.clone())
+      .expect(1)
+      .create_async()
+      .await;
+    let staging = PathBuf::from(common_paths::mods_staging_directory());
+    std::fs::create_dir_all(&staging).unwrap();
+    let legacy = staging.join("Author-Mod-1.0.0.zip");
+    let legacy_bytes = zip_with_manifest("LegacyWrongStore");
+    std::fs::write(&legacy, &legacy_bytes).unwrap();
+    let mut ts = ValheimMod::async_from_url("ts:Author-Mod-1.0.0")
+      .await
+      .unwrap();
+    ts.download().await.unwrap();
+    let mut hex = ValheimMod::async_from_url("hex:Author-Mod-1.0.0")
+      .await
+      .unwrap();
+    hex.download().await.unwrap();
+    assert_ne!(ts.staging_location, hex.staging_location);
+    assert_ne!(ts.staging_location, legacy);
+    assert_ne!(hex.staging_location, legacy);
+    assert_eq!(std::fs::read(&ts.staging_location).unwrap(), ts_bytes);
+    assert_eq!(std::fs::read(&hex.staging_location).unwrap(), hex_bytes);
+    assert_eq!(std::fs::read(&legacy).unwrap(), legacy_bytes);
+    // Warm boots reuse only the matching store's artifact.
+    ts.downloaded = false;
+    hex.downloaded = false;
+    ts.download().await.unwrap();
+    hex.download().await.unwrap();
+    assert_eq!(std::fs::read(&ts.staging_location).unwrap(), ts_bytes);
+    assert_eq!(std::fs::read(&hex.staging_location).unwrap(), hex_bytes);
+    version.assert_async().await;
+    ts_download.assert_async().await;
+    hex_download.assert_async().await;
+    clear_env();
+    remove_var(crate::constants::GAME_LOCATION);
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn fallback_failure_keeps_exact_version_and_queries_no_listings() {
+    clear_env();
+    let mut thunderstore = mockito::Server::new_async().await;
+    let mut hexium = mockito::Server::new_async().await;
+    set_var(THUNDERSTORE_BASE_URL_VAR, thunderstore.url());
+    set_var(HEXIUM_BASE_URL_VAR, hexium.url());
+    let ts_missing = thunderstore
+      .mock("GET", "/api/experimental/package/Author/Mod/9.9.9/")
+      .with_status(404)
+      .expect(1)
+      .create_async()
+      .await;
+    let hex_missing = hexium
+      .mock("GET", "/api/experimental/package/Author/Mod/9.9.9/")
+      .with_status(404)
+      .expect(1)
+      .create_async()
+      .await;
+    let ts_latest = thunderstore
+      .mock(
+        "GET",
+        mockito::Matcher::Regex(".*frontend.*|.*package/Author/Mod/$".into()),
+      )
+      .with_body(r#"{"versions":[{"version_number":"10.0.0"}]}"#)
+      .expect(0)
+      .create_async()
+      .await;
+    let hex_latest = hexium
+      .mock(
+        "GET",
+        mockito::Matcher::Regex(".*frontend.*|.*package/Author/Mod/$".into()),
+      )
+      .with_body(r#"{"versions":[{"version_number":"10.0.0"}]}"#)
+      .expect(0)
+      .create_async()
+      .await;
+    let error = ValheimMod::async_from_url("gale-ts:Author-Mod-9.9.9")
+      .await
+      .err()
+      .unwrap()
+      .to_string();
+    assert!(
+      error.contains("Author-Mod-9.9.9")
+        && error.contains("Thunderstore")
+        && error.contains("Hexium")
+    );
+    ts_missing.assert_async().await;
+    hex_missing.assert_async().await;
+    ts_latest.assert_async().await;
+    hex_latest.assert_async().await;
     clear_env();
   }
 

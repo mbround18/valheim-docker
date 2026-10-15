@@ -394,6 +394,20 @@ async fn process_mods_from_env() -> Result<(), ValheimModError> {
     let mod_name = mod_label(&vmod);
     let staging = vmod.staging_location.clone();
 
+    // The same Gale preference may resolve to a different actual store.
+    // Once its replacement is downloaded, remove the prior artifact and installed paths
+    // before installing, so no files from the previous package remain untracked.
+    if let Some(previous) = previous_state
+      .as_ref()
+      .and_then(|state| state.mods.iter().find(|old| old.url == *m))
+    {
+      if (m.starts_with("gale-ts:") || m.starts_with("gale-hex:"))
+        && Path::new(&previous.staging_path) != staging
+      {
+        cleanup_removed_mod(previous);
+      }
+    }
+
     let installed_paths = match vmod.install_with_report() {
       Ok(paths) => paths,
       Err(e) => {
@@ -1131,5 +1145,149 @@ mod from_var_state_tests {
 
     env::remove_var(DOWNLOAD_RETRY_ATTEMPTS_VAR);
     env::remove_var(MODS_CONTINUE_ON_FAILURE);
+  }
+  #[tokio::test]
+  #[serial]
+  async fn from_var_tracks_legacy_prefix_migration_source_switch_and_actual_fallback() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var(crate::constants::GAME_LOCATION, game.path());
+    env::set_var("CONCURRENT_DOWNLOADS_ENABLED", "false");
+    env::remove_var("GALE_SYNC_CODE");
+    env::remove_var("MODS_REPOSITORY");
+    let mut gale = Server::new_async().await;
+    let mut ts = Server::new_async().await;
+    let mut hex = Server::new_async().await;
+    env::set_var("GALE_SYNC_URL", gale.url());
+    env::set_var("THUNDERSTORE_BASE_URL", ts.url());
+    env::set_var("HEXIUM_BASE_URL", hex.url());
+    fn zip_files(entries: &[(&str, &str)]) -> Vec<u8> {
+      let mut bytes = Vec::new();
+      {
+        let mut zip = zip::ZipWriter::new(Cursor::new(&mut bytes));
+        let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+        for (name, contents) in entries {
+          zip.start_file(*name, options).unwrap();
+          zip.write_all(contents.as_bytes()).unwrap();
+        }
+        zip.finish().unwrap();
+      }
+      bytes
+    }
+    let ts_probe = ts
+      .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+      .with_status(200)
+      .expect(2)
+      .create_async()
+      .await;
+    let ts_download = ts
+      .mock("GET", "/package/download/Author/Mod/1.0.0/")
+      .with_body(zip_files(&[
+        ("manifest.json", r#"{"name":"Mod"}"#),
+        ("plugins/from-ts.dll", "Thunderstore"),
+      ]))
+      .expect(2)
+      .create_async()
+      .await;
+    let hex_version = hex
+      .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+      .with_body(serde_json::json!({"download_url": format!("{}/hex.zip", hex.url())}).to_string())
+      .expect(1)
+      .create_async()
+      .await;
+    let hex_download = hex
+      .mock("GET", "/hex.zip")
+      .with_body(zip_files(&[
+        ("manifest.json", r#"{"name":"Mod"}"#),
+        ("plugins/from-hex.dll", "Hexium"),
+      ]))
+      .expect(1)
+      .create_async()
+      .await;
+    // Previously persisted auto entries must migrate cleanly to the new source preference.
+    env::set_var("MODS", "auto:Author-Mod-1.0.0");
+    process_mods_from_env().await.unwrap();
+    let before = load_from_var_state().unwrap().unwrap();
+    let ts_staging = PathBuf::from(&before.mods[0].staging_path);
+    let plugins = PathBuf::from(crate::utils::common_paths::bepinex_plugin_directory()).join("Mod");
+    assert_eq!(
+      fs::read_to_string(plugins.join("from-ts.dll")).unwrap(),
+      "Thunderstore"
+    );
+    let yaml = "profileName: Migration\ncommunity: valheim\nmods:\n- name: Author-Mod\n  version: {major: 1, minor: 0, patch: 0}\n  enabled: true\n  source: Hexium\n";
+    let profile = gale
+      .mock("GET", "/profile/migration")
+      .with_body(zip_files(&[("export.r2x", yaml)]))
+      .expect(2)
+      .create_async()
+      .await;
+    env::set_var("GALE_SYNC_CODE", "migration");
+    env::set_var("MODS", "");
+    process_mods_from_env().await.unwrap();
+    let switched = load_from_var_state().unwrap().unwrap();
+    assert_eq!(switched.mods[0].url, "gale-hex:Author-Mod-1.0.0");
+    assert!(!ts_staging.exists());
+    assert!(!plugins.join("from-ts.dll").exists());
+    assert_eq!(
+      fs::read_to_string(plugins.join("from-hex.dll")).unwrap(),
+      "Hexium"
+    );
+    let hex_staging = PathBuf::from(&switched.mods[0].staging_path);
+    assert!(hex_staging.ends_with("hex-Author-Mod-1.0.0.zip"));
+    hex_version.assert_async().await;
+    hex_version.remove_async().await;
+    // The preference string stays identical, but actual fallback store and installed files change.
+    let missing = hex
+      .mock("GET", "/api/experimental/package/Author/Mod/1.0.0/")
+      .with_status(404)
+      .expect(1)
+      .create_async()
+      .await;
+    process_mods_from_env().await.unwrap();
+    let fallback = load_from_var_state().unwrap().unwrap();
+    assert_eq!(fallback.mods[0].url, switched.mods[0].url);
+    assert!(PathBuf::from(&fallback.mods[0].staging_path).ends_with("ts-Author-Mod-1.0.0.zip"));
+    assert!(!hex_staging.exists());
+    assert!(!plugins.join("from-hex.dll").exists());
+    assert_eq!(
+      fs::read_to_string(plugins.join("from-ts.dll")).unwrap(),
+      "Thunderstore"
+    );
+    // An invalid authoritative ZIP must stop before reconciliation touches installed files/state.
+    profile.assert_async().await;
+    profile.remove_async().await;
+    let invalid = gale
+      .mock("GET", "/profile/migration")
+      .with_body(zip_files(&[(
+        "export.r2x",
+        "community: othergame\nmods: []",
+      )]))
+      .expect(1)
+      .create_async()
+      .await;
+    assert!(process_mods_from_env().await.is_err());
+    assert_eq!(
+      load_from_var_state().unwrap().unwrap().mods[0].staging_path,
+      fallback.mods[0].staging_path
+    );
+    assert_eq!(
+      fs::read_to_string(plugins.join("from-ts.dll")).unwrap(),
+      "Thunderstore"
+    );
+    invalid.assert_async().await;
+    ts_probe.assert_async().await;
+    ts_download.assert_async().await;
+    hex_download.assert_async().await;
+    missing.assert_async().await;
+    for key in [
+      crate::constants::GAME_LOCATION,
+      "CONCURRENT_DOWNLOADS_ENABLED",
+      "GALE_SYNC_CODE",
+      "GALE_SYNC_URL",
+      "THUNDERSTORE_BASE_URL",
+      "HEXIUM_BASE_URL",
+      "MODS",
+    ] {
+      env::remove_var(key);
+    }
   }
 }

@@ -34,6 +34,9 @@ pub enum ValheimModError {
   ZipArchiveError(String),
   #[error("Download error: {0}")]
   DownloadError(String),
+  /// A definitive exact-version 404; authentication and transient failures stay distinct.
+  #[error("Package version not found: {0}")]
+  PackageVersionNotFound(String),
   #[error("File creation error: {0}")]
   FileCreateError(String),
   #[error("File move error: {0}")]

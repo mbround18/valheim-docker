@@ -17,13 +17,16 @@ services:
       - GALE_SYNC_CODE=abc123
 ```
 
-On every start, Odin reads the profile from Gale and installs each **enabled** mod at the
-version the profile pins:
+On every start, Odin downloads the profile ZIP from Gale, reads its `export.r2x` YAML
+manifest, and installs each **enabled** mod at the version the profile pins:
 
-- Mods from Thunderstore become `ts:Author-Mod-1.2.3` entries, mods from Hexium become
-  `hex:Author-Mod-1.2.3` (see [Mod Repositories](./mod_repositories.md)).
-- If Gale omits a mod's source, Odin resolves it automatically: it tries the default
-  repository first, then falls back to the other one when that version is missing.
+- Each mod prefers the source recorded in the ZIP (`Thunderstore` or `Hexium`), regardless
+  of `MODS_REPOSITORY` (see [Mod Repositories](./mod_repositories.md)).
+- Older ZIPs that omit a source prefer Thunderstore, matching Gale.
+- If that exact package/version is missing from the preferred store, Odin warns and uses
+  the same version from the other store. Authentication, rate limits, and temporary errors
+  fail the install; they do not switch stores. Explicit `ts:` and `hex:` entries in `MODS`
+  remain strict and do not fall back.
 - Disabled mods are skipped.
 - `BepInExPack_Valheim` is skipped because the container installs BepInEx itself.
 
@@ -60,14 +63,19 @@ environment:
 ```
 
 This overwrites any file with the same name, so edits you make on the server to those files
-are replaced at the next start. Config files that are not in the profile are left alone. If
-the configs cannot be downloaded, Odin logs a warning and starts with the configs it has.
+are replaced at the next start. Config files that are not in the profile are left alone. The
+same ZIP supplies both mods and configs, so enabling config sync adds no second download. If config extraction fails, Odin logs a warning and keeps the configs it has.
 
 ## When Gale is unreachable
 
-Odin keeps the last profile it fetched. If Gale is down, it installs from that copy and logs
-`using the last synced copy`. On the very first start there is no copy yet, so an unreachable
-Gale fails the mod install like any other failed download.
+Odin caches the last validated ZIP manifest, including every mod's source. If Gale is down,
+it installs from that snapshot, logs `using the last synced copy`, and keeps existing configs.
+Old metadata-only caches cannot be used because they lack authoritative sources. On the
+first start after upgrading, a successful ZIP download is required. Invalid manifests stop
+the sync before installed mods or configs are changed.
+
+Downloaded packages are cached separately for each store. Upgrading from an older version
+may download a package again to establish which store supplied its bytes.
 
 ## Settings
 
