@@ -4,10 +4,10 @@
 //! server install exactly the mods (and versions) of that profile, so clients who pull the same
 //! code never hit a version mismatch. The profile is read without authentication:
 //!
-//! - `GET {GALE_SYNC_URL}/profile/{code}/meta` returns JSON whose `manifest` lists every mod.
-//! - `GET {GALE_SYNC_URL}/profile/{code}` returns the profile zip, which carries `BepInEx/config`.
+//! `GET {GALE_SYNC_URL}/profile/{code}` returns a ZIP whose `export.r2x` YAML manifest
+//! carries authoritative package sources, alongside optional `BepInEx/config` files.
 //!
-//! Enabled mods become `ts:`/`hex:` entries that are merged ahead of `MODS`, so `MODS` can still
+//! Enabled mods become internal store-preference entries that are merged ahead of `MODS`, so `MODS` can still
 //! add server-only mods or pin a different version of a profile mod. `GALE_SYNC_CONFIGS=true`
 //! also copies the profile's `BepInEx/config` files over the server's.
 
@@ -16,7 +16,7 @@ use crate::utils::common_paths::{bepinex_config_directory, mods_staging_director
 use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
 use crate::utils::http_pool::HttpPool;
 use crate::utils::thunderstore_http::{send_with_pacing, Pacing};
-use crate::utils::{parse_mod_string, send_with_backoff, split_repository_prefix, ModRepository};
+use crate::utils::{get_md5_hash, parse_mod_string, split_repository_prefix, ModRepository};
 use indexmap::IndexSet;
 use log::{debug, info, warn};
 use reqwest::Url;
@@ -42,6 +42,9 @@ const MAX_PROFILE_ZIP_BYTES: u64 = 64 * 1024 * 1024;
 /// Largest total uncompressed payload written by one config sync, which is what bounds
 /// zip-bomb expansion: the compressed cap above says nothing about what it inflates to.
 const MAX_CONFIG_TOTAL_BYTES: u64 = 256 * 1024 * 1024;
+
+/// Bound the expanded YAML separately from config files.
+const MAX_MANIFEST_BYTES: u64 = 4 * 1024 * 1024;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct GaleVersion {
@@ -73,11 +76,19 @@ pub struct GaleManifest {
   #[serde(default)]
   pub profile_name: Option<String>,
   pub mods: Vec<GaleMod>,
+  #[serde(default)]
+  pub community: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct GaleProfileMeta {
+#[derive(Debug, Deserialize, Serialize)]
+struct CachedSnapshot {
+  schema_version: u32,
   manifest: GaleManifest,
+}
+
+struct GaleProfile {
+  manifest: GaleManifest,
+  zip_bytes: Option<Vec<u8>>,
 }
 
 /// The trimmed `GALE_SYNC_CODE`, if one is set.
@@ -93,37 +104,24 @@ fn gale_base_url() -> String {
     .to_string()
 }
 
-/// `{base}/profile/{code}[/meta]`, with the code percent-encoded as a single path segment
+/// `{base}/profile/{code}`, with the code percent-encoded as a single path segment
 /// (base64 codes may contain `/` or `+`).
-fn profile_url(code: &str, meta: bool) -> Result<Url, ValheimModError> {
+fn profile_url(code: &str) -> Result<Url, ValheimModError> {
   let mut url = Url::parse(&gale_base_url()).map_err(|_| ValheimModError::InvalidUrl)?;
   {
     let mut segments = url
       .path_segments_mut()
       .map_err(|()| ValheimModError::InvalidUrl)?;
     segments.pop_if_empty().push("profile").push(code);
-    if meta {
-      segments.push("meta");
-    }
   }
   Ok(url)
 }
 
-/// Where the last manifest fetched for a code is kept, so a Gale outage does not stop the
-/// server from booting with the mods it already had.
+/// A separate namespace excludes old source-less metadata. Include the API URL and exact
+/// code in the identity so different codes and self-hosted instances cannot share snapshots.
 fn cached_manifest_path(code: &str) -> PathBuf {
-  let safe: String = code
-    .chars()
-    .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
-    .collect();
-  PathBuf::from(mods_staging_directory()).join(format!("gale-{safe}.json"))
-}
-
-async fn get(url: &Url) -> Result<reqwest::Response, ValheimModError> {
-  let response = send_with_backoff("gale", |client| client.get(url.clone()))
-    .await
-    .map_err(ValheimModError::DownloadError)?;
-  check_status(response, url)
+  let identity = get_md5_hash(&format!("{}/{code}", gale_base_url()));
+  PathBuf::from(mods_staging_directory()).join(format!("gale-zip-v1-{identity}.json"))
 }
 
 fn check_status(
@@ -144,57 +142,206 @@ fn check_status(
   Ok(response)
 }
 
-async fn fetch_remote_manifest(code: &str) -> Result<GaleManifest, ValheimModError> {
-  let url = profile_url(code, true)?;
-  let body = get(&url)
-    .await?
-    .text()
-    .await
-    .map_err(|e| ValheimModError::DownloadError(e.to_string()))?;
-  let meta: GaleProfileMeta = serde_json::from_str(&body)
-    .map_err(|e| ValheimModError::ManifestDeserializeError(format!("Gale profile meta: {e}")))?;
-  Ok(meta.manifest)
+fn invalid_manifest(message: impl Into<String>) -> ValheimModError {
+  ValheimModError::ManifestDeserializeError(format!("Gale export.r2x: {}", message.into()))
 }
 
-/// Fetches the profile manifest for `code`, falling back to the last one fetched when Gale
-/// cannot be reached.
-pub async fn fetch_manifest(code: &str) -> Result<GaleManifest, ValheimModError> {
-  let cache = cached_manifest_path(code);
-  match fetch_remote_manifest(code).await {
-    Ok(manifest) => {
-      if let Some(parent) = cache.parent() {
-        let _ = fs::create_dir_all(parent);
-      }
-      match serde_json::to_string_pretty(&manifest) {
-        Ok(serialized) => {
-          if let Err(e) = fs::write(&cache, serialized) {
-            debug!("Could not cache Gale manifest at {}: {e}", cache.display());
-          }
-        }
-        Err(e) => debug!("Could not serialize Gale manifest: {e}"),
-      }
-      Ok(manifest)
-    }
-    Err(e) => {
-      let cached = fs::read_to_string(&cache)
-        .ok()
-        .and_then(|s| serde_json::from_str::<GaleManifest>(&s).ok());
-      match cached {
-        Some(manifest) => {
-          warn!("Could not fetch Gale profile ({e}); using the last synced copy");
-          Ok(manifest)
-        }
-        None => Err(e),
-      }
-    }
+/// Validate the complete snapshot before it can cause any reconciliation or be cached.
+fn validate_manifest(
+  manifest: &mut GaleManifest,
+  legacy_source_default: bool,
+) -> Result<(), ValheimModError> {
+  if manifest
+    .community
+    .as_deref()
+    .is_some_and(|c| c != "valheim")
+  {
+    return Err(invalid_manifest("community must be valheim"));
   }
+  let mut packages = HashSet::new();
+  for item in &mut manifest.mods {
+    let version = &item.version;
+    let entry = format!(
+      "{}-{}.{}.{}",
+      item.name, version.major, version.minor, version.patch
+    );
+    let Some((author, name, _)) = parse_mod_string(&entry) else {
+      return Err(invalid_manifest(format!(
+        "invalid package name {:?}",
+        item.name
+      )));
+    };
+    if ![author, name]
+      .iter()
+      .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'))
+    {
+      return Err(invalid_manifest(format!(
+        "invalid package name {:?}",
+        item.name
+      )));
+    }
+    if !packages.insert(item.name.to_ascii_lowercase()) {
+      return Err(invalid_manifest(format!("duplicate package {}", item.name)));
+    }
+    let repository = match item.source.as_deref() {
+      None if legacy_source_default => ModRepository::Thunderstore,
+      Some(source) => ModRepository::parse(source)
+        .ok_or_else(|| invalid_manifest(format!("unsupported source {source:?}")))?,
+      None => {
+        return Err(invalid_manifest(
+          "cached snapshot is missing a validated source",
+        ))
+      }
+    };
+    // Persist every validated source, including the legacy Thunderstore default.
+    item.source = Some(repository.to_string());
+  }
+  Ok(())
+}
+
+/// Zip 8 deduplicates raw names before exposing entries. Walk the original central
+/// directory to reject conflicting manifests before its last-entry selection can hide one.
+/// This only inspects bounded slices of the downloaded ZIP, without inflating any files.
+fn validate_raw_manifest_count(bytes: &[u8], directory_start: u64) -> Result<(), ValheimModError> {
+  let malformed = || invalid_manifest("truncated profile ZIP central directory");
+  let offset = usize::try_from(directory_start).map_err(|_| malformed())?;
+  let mut directory = bytes.get(offset..).ok_or_else(malformed)?;
+  let mut manifests = 0;
+  while directory.starts_with(b"PK\x01\x02") {
+    // APPNOTE central directory: 46 fixed bytes, then name, extra data and comment.
+    let header = directory.get(..46).ok_or_else(malformed)?;
+    let name_length = u16::from_le_bytes([header[28], header[29]]) as usize;
+    let extra_length = u16::from_le_bytes([header[30], header[31]]) as usize;
+    let comment_length = u16::from_le_bytes([header[32], header[33]]) as usize;
+    // Each length is a u16, so this sum fits usize on supported targets.
+    let entry_length = 46 + name_length + extra_length + comment_length;
+    let entry = directory.get(..entry_length).ok_or_else(malformed)?;
+    if &entry[46..46 + name_length] == b"export.r2x" {
+      manifests += 1;
+      if manifests > 1 {
+        return Err(invalid_manifest(
+          "profile ZIP must contain exactly one export.r2x",
+        ));
+      }
+    }
+    directory = &directory[entry_length..];
+  }
+  if manifests != 1 {
+    return Err(invalid_manifest(
+      "profile ZIP must contain exactly one export.r2x",
+    ));
+  }
+  Ok(())
+}
+
+fn manifest_from_zip(
+  bytes: &[u8],
+  max_manifest_bytes: u64,
+) -> Result<GaleManifest, ValheimModError> {
+  let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
+    .map_err(|e| invalid_manifest(format!("invalid profile ZIP: {e}")))?;
+  validate_raw_manifest_count(bytes, archive.central_directory_start())?;
+  if archive
+    .file_names()
+    .filter(|name| *name == "export.r2x")
+    .count()
+    != 1
+  {
+    return Err(invalid_manifest(
+      "profile ZIP must contain exactly one export.r2x",
+    ));
+  }
+  let mut file = archive
+    .by_name("export.r2x")
+    .map_err(|e| invalid_manifest(e.to_string()))?;
+  if file.size() > max_manifest_bytes {
+    return Err(invalid_manifest(format!(
+      "manifest exceeds {max_manifest_bytes} bytes"
+    )));
+  }
+  let mut yaml = Vec::new();
+  file
+    .by_ref()
+    .take(max_manifest_bytes.saturating_add(1))
+    .read_to_end(&mut yaml)
+    .map_err(|e| invalid_manifest(e.to_string()))?;
+  if yaml.len() as u64 > max_manifest_bytes {
+    return Err(invalid_manifest(format!(
+      "manifest exceeds {max_manifest_bytes} bytes"
+    )));
+  }
+  let mut manifest: GaleManifest =
+    serde_saphyr::from_slice(&yaml).map_err(|e| invalid_manifest(e.to_string()))?;
+  validate_manifest(&mut manifest, true)?;
+  Ok(manifest)
+}
+
+async fn fetch_profile(code: &str) -> Result<GaleProfile, ValheimModError> {
+  let cache = cached_manifest_path(code);
+  let bytes = match download_profile_zip(&profile_url(code)?).await {
+    Ok(bytes) => bytes,
+    Err(error @ ValheimModError::DownloadError(_)) => {
+      // Read bounded, versioned snapshots only; never trust the old /meta cache.
+      let cached = fs::File::open(&cache).ok().and_then(|file| {
+        let mut bytes = Vec::new();
+        file
+          .take(MAX_MANIFEST_BYTES + 1)
+          .read_to_end(&mut bytes)
+          .ok()?;
+        if bytes.len() as u64 > MAX_MANIFEST_BYTES {
+          return None;
+        }
+        let mut snapshot: CachedSnapshot = serde_json::from_slice(&bytes).ok()?;
+        if snapshot.schema_version != 1 {
+          return None;
+        }
+        validate_manifest(&mut snapshot.manifest, false).ok()?;
+        Some(snapshot.manifest)
+      });
+      if let Some(manifest) = cached {
+        warn!("Could not fetch Gale profile ({error}); using the last synced copy");
+        return Ok(GaleProfile {
+          manifest,
+          zip_bytes: None,
+        });
+      }
+      return Err(error);
+    }
+    Err(error) => return Err(error),
+  };
+  let manifest = manifest_from_zip(&bytes, MAX_MANIFEST_BYTES)?;
+  let snapshot = CachedSnapshot {
+    schema_version: 1,
+    manifest: manifest.clone(),
+  };
+  // Write beside the destination then rename, preserving the last complete snapshot.
+  let write_cache = || -> Result<(), Box<dyn std::error::Error>> {
+    let parent = cache.parent().ok_or("missing cache parent")?;
+    fs::create_dir_all(parent)?;
+    let mut staged = tempfile::NamedTempFile::new_in(parent)?;
+    serde_json::to_writer(staged.as_file_mut(), &snapshot)?;
+    staged.persist(&cache)?;
+    Ok(())
+  };
+  if let Err(error) = write_cache() {
+    debug!("Could not cache Gale profile: {error}");
+  }
+  Ok(GaleProfile {
+    manifest,
+    zip_bytes: Some(bytes),
+  })
+}
+
+/// Test convenience for fetching the manifest without optional config extraction.
+#[cfg(test)]
+async fn fetch_manifest(code: &str) -> Result<GaleManifest, ValheimModError> {
+  Ok(fetch_profile(code).await?.manifest)
 }
 
 /// Turns the enabled mods of a manifest into `MODS` entries.
 ///
-/// - `source=Thunderstore|Hexium` keeps an explicit `ts:`/`hex:` prefix.
-/// - Missing `source` uses the internal `auto:` prefix so Odin can prefer the user's
-///   default repository and fall back to the other one during resolution.
+/// Internal `gale-ts:`/`gale-hex:` prefixes express a preference with exact-version
+/// absence-only fallback. Legacy missing sources prefer Thunderstore, as in Gale.
 pub fn manifest_to_mod_entries(manifest: &GaleManifest) -> Vec<String> {
   manifest
     .mods
@@ -209,9 +356,9 @@ pub fn manifest_to_mod_entries(manifest: &GaleManifest) -> Vec<String> {
         return None;
       }
       let repository = match m.source.as_deref() {
-        None => None,
+        None => ModRepository::Thunderstore,
         Some(source) => match ModRepository::parse(source) {
-          Some(repository) => Some(repository),
+          Some(repository) => repository,
           None => {
             warn!(
               "Skipping Gale mod {} from unsupported source {source:?}",
@@ -223,10 +370,7 @@ pub fn manifest_to_mod_entries(manifest: &GaleManifest) -> Vec<String> {
       };
       let v = &m.version;
       let suffix = format!("{}-{}.{}.{}", m.name, v.major, v.minor, v.patch);
-      Some(match repository {
-        Some(repository) => format!("{}:{suffix}", repository.alias()),
-        None => format!("auto:{suffix}"),
-      })
+      Some(format!("gale-{}:{suffix}", repository.alias()))
     })
     .collect()
 }
@@ -386,6 +530,13 @@ fn copy_into_place(from: &Path, to: &Path) -> Result<(), ValheimModError> {
 /// Fetches the profile zip, following the redirect off the Gale API and refusing a body
 /// larger than [`MAX_PROFILE_ZIP_BYTES`].
 async fn download_profile_zip(url: &Url) -> Result<Vec<u8>, ValheimModError> {
+  download_profile_zip_capped(url, MAX_PROFILE_ZIP_BYTES).await
+}
+
+async fn download_profile_zip_capped(
+  url: &Url,
+  max_bytes: u64,
+) -> Result<Vec<u8>, ValheimModError> {
   // The zip redirects to the mod CDN and the pooled client does not follow redirects, so
   // this goes through the redirect walker. Gale is not a mod repository host, so pacing is
   // requested explicitly - otherwise the walker would send it direct, giving up the
@@ -395,16 +546,13 @@ async fn download_profile_zip(url: &Url) -> Result<Vec<u8>, ValheimModError> {
   let mut response = check_status(response, url)?;
 
   let too_large = || {
-    ValheimModError::DownloadError(format!(
-      "Gale profile zip is larger than {MAX_PROFILE_ZIP_BYTES} bytes"
+    ValheimModError::ManifestDeserializeError(format!(
+      "Gale profile zip is larger than {max_bytes} bytes"
     ))
   };
   // A declared length lets us bail before transferring anything; it is a hint, so the
   // loop below still enforces the cap on what actually arrives.
-  if response
-    .content_length()
-    .is_some_and(|l| l > MAX_PROFILE_ZIP_BYTES)
-  {
+  if response.content_length().is_some_and(|l| l > max_bytes) {
     return Err(too_large());
   }
 
@@ -414,7 +562,7 @@ async fn download_profile_zip(url: &Url) -> Result<Vec<u8>, ValheimModError> {
     .await
     .map_err(|e| ValheimModError::DownloadError(e.to_string()))?
   {
-    if bytes.len() as u64 + chunk.len() as u64 > MAX_PROFILE_ZIP_BYTES {
+    if bytes.len() as u64 + chunk.len() as u64 > max_bytes {
       return Err(too_large());
     }
     bytes.extend_from_slice(&chunk);
@@ -422,11 +570,9 @@ async fn download_profile_zip(url: &Url) -> Result<Vec<u8>, ValheimModError> {
   Ok(bytes)
 }
 
-async fn sync_configs(code: &str) -> Result<(), ValheimModError> {
-  let url = profile_url(code, false)?;
-  let bytes = download_profile_zip(&url).await?;
+fn sync_configs(bytes: &[u8]) -> Result<(), ValheimModError> {
   let dest = PathBuf::from(bepinex_config_directory());
-  let written = extract_configs(&bytes, &dest)?;
+  let written = extract_configs(bytes, &dest)?;
   info!(
     "Synced {written} config file(s) from the Gale profile into {}",
     dest.display()
@@ -441,7 +587,8 @@ pub async fn gale_mod_entries() -> Result<Vec<String>, ValheimModError> {
     return Ok(vec![]);
   };
 
-  let manifest = fetch_manifest(&code).await?;
+  let profile = fetch_profile(&code).await?;
+  let manifest = profile.manifest;
   let entries = manifest_to_mod_entries(&manifest);
   info!(
     "Gale profile {} provides {} mod(s)",
@@ -451,8 +598,13 @@ pub async fn gale_mod_entries() -> Result<Vec<String>, ValheimModError> {
 
   if is_env_var_truthy_with_default(GALE_SYNC_CONFIGS_VAR, false) {
     // Configs are a convenience; a failure here should not keep the server down.
-    if let Err(e) = sync_configs(&code).await {
-      warn!("Failed to sync Gale profile configs: {e}");
+    match profile.zip_bytes {
+      Some(bytes) => {
+        if let Err(e) = sync_configs(&bytes) {
+          warn!("Failed to sync Gale profile configs: {e}");
+        }
+      }
+      None => warn!("Gale is unavailable; keeping existing profile configs"),
     }
   }
 
@@ -466,6 +618,11 @@ mod tests {
   use serial_test::serial;
   use std::env;
   use std::io::Write;
+
+  #[derive(Deserialize)]
+  struct GaleProfileMeta {
+    manifest: GaleManifest,
+  }
 
   const META: &str = r#"{
     "id": "abc123",
@@ -486,7 +643,7 @@ mod tests {
   }"#;
 
   /// Shape copied from a real Gale profile where `source` is omitted and repository must be
-  /// inferred by Odin at install time.
+  /// defaulted to Thunderstore by Gale when read from export.r2x.
   const META_WITHOUT_SOURCES: &str = r#"{
     "id": "9M5Z3V",
     "createdAt": "2026-09-19T00:00:00Z",
@@ -509,14 +666,79 @@ mod tests {
       .manifest
   }
 
+  #[tokio::test]
+  #[serial]
+  async fn zip_manifest_is_authoritative_with_configs_disabled() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var("GAME_LOCATION", game.path());
+    env::set_var(GALE_SYNC_CODE_VAR, "zip-source");
+    env::set_var(GALE_SYNC_CONFIGS_VAR, "false");
+    env::set_var("MODS_REPOSITORY", "thunderstore");
+    let mut server = Server::new_async().await;
+    env::set_var(GALE_SYNC_URL_VAR, server.url());
+    let mut bytes = Vec::new();
+    {
+      let mut zip = zip::ZipWriter::new(Cursor::new(&mut bytes));
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      zip.start_file("export.r2x", options).unwrap();
+      zip.write_all(b"profileName: ZIP\ncommunity: valheim\nmods:\n- name: Author-Mod\n  version: {major: 1, minor: 0, patch: 0}\n  enabled: true\n  source: Hexium\n").unwrap();
+      zip.finish().unwrap();
+    }
+    let archive = server
+      .mock("GET", "/profile/zip-source")
+      .with_body(bytes)
+      .expect(1)
+      .create_async()
+      .await;
+    let meta = server
+      .mock("GET", "/profile/zip-source/meta")
+      .with_body(META_WITHOUT_SOURCES)
+      .expect(0)
+      .create_async()
+      .await;
+    assert_eq!(
+      gale_mod_entries().await.unwrap(),
+      vec!["gale-hex:Author-Mod-1.0.0"]
+    );
+    archive.assert_async().await;
+    meta.assert_async().await;
+    for key in [
+      "GAME_LOCATION",
+      GALE_SYNC_CODE_VAR,
+      GALE_SYNC_CONFIGS_VAR,
+      GALE_SYNC_URL_VAR,
+      "MODS_REPOSITORY",
+    ] {
+      env::remove_var(key);
+    }
+  }
+
+  fn profile_zip(manifest: &GaleManifest) -> Vec<u8> {
+    zip_entries(&[("export.r2x", &serde_saphyr::to_string(manifest).unwrap())])
+  }
+
+  fn zip_entries(entries: &[(&str, &str)]) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    {
+      let mut writer = zip::ZipWriter::new(Cursor::new(&mut bytes));
+      let options: zip::write::FileOptions<'_, ()> = zip::write::FileOptions::default();
+      for (name, contents) in entries {
+        writer.start_file(*name, options).unwrap();
+        writer.write_all(contents.as_bytes()).unwrap();
+      }
+      writer.finish().unwrap();
+    }
+    bytes
+  }
+
   #[test]
   fn converts_enabled_mods_to_prefixed_entries() {
     assert_eq!(
       manifest_to_mod_entries(&manifest()),
       vec![
-        "ts:Advize-PlantEasily-2.2.0",
-        "hex:ValheimModding-YamlDotNet-16.3.1",
-        "auto:Old-Profile-1.0.0",
+        "gale-ts:Advize-PlantEasily-2.2.0",
+        "gale-hex:ValheimModding-YamlDotNet-16.3.1",
+        "gale-ts:Old-Profile-1.0.0",
       ]
     );
   }
@@ -525,8 +747,8 @@ mod tests {
   fn mods_entries_are_appended_and_override_profile_versions() {
     let merged = merge_mod_entries(
       vec![
-        "ts:Advize-PlantEasily-2.2.0".into(),
-        "hex:ValheimModding-YamlDotNet-16.3.1".into(),
+        "gale-ts:Advize-PlantEasily-2.2.0".into(),
+        "gale-hex:ValheimModding-YamlDotNet-16.3.1".into(),
       ],
       vec![
         "Advize-PlantEasily-2.3.0".into(),
@@ -573,11 +795,11 @@ mod tests {
   fn profile_url_encodes_the_code() {
     env::remove_var(GALE_SYNC_URL_VAR);
     assert_eq!(
-      profile_url("ab/c+d==", true).unwrap().as_str(),
-      "https://gale.kesomannen.com/api/profile/ab%2Fc+d==/meta"
+      profile_url("ab/c+d==").unwrap().as_str(),
+      "https://gale.kesomannen.com/api/profile/ab%2Fc+d=="
     );
     assert_eq!(
-      profile_url("abc123", false).unwrap().as_str(),
+      profile_url("abc123").unwrap().as_str(),
       "https://gale.kesomannen.com/api/profile/abc123"
     );
   }
@@ -718,16 +940,16 @@ mod tests {
     env::set_var(GALE_SYNC_URL_VAR, format!("{}/api", server.url()));
 
     let ok = server
-      .mock("GET", "/api/profile/abc123/meta")
+      .mock("GET", "/api/profile/abc123")
       .with_status(200)
-      .with_body(META)
+      .with_body(profile_zip(&manifest()))
       .create_async()
       .await;
     assert_eq!(fetch_manifest("abc123").await.unwrap().mods.len(), 5);
     ok.remove_async().await;
 
     let _down = server
-      .mock("GET", "/api/profile/abc123/meta")
+      .mock("GET", "/api/profile/abc123")
       .with_status(404)
       .create_async()
       .await;
@@ -741,15 +963,19 @@ mod tests {
 
   #[tokio::test]
   #[serial]
-  async fn fetching_a_profile_without_sources_marks_entries_for_auto_resolution() {
+  async fn legacy_zip_sources_default_to_thunderstore() {
     let game = tempfile::tempdir().unwrap();
     env::set_var("GAME_LOCATION", game.path());
     let mut server = Server::new_async().await;
     env::set_var(GALE_SYNC_URL_VAR, format!("{}/api", server.url()));
     let _meta = server
-      .mock("GET", "/api/profile/9M5Z3V/meta")
+      .mock("GET", "/api/profile/9M5Z3V")
       .with_status(200)
-      .with_body(META_WITHOUT_SOURCES)
+      .with_body(profile_zip(
+        &serde_json::from_str::<GaleProfileMeta>(META_WITHOUT_SOURCES)
+          .unwrap()
+          .manifest,
+      ))
       .create_async()
       .await;
 
@@ -758,12 +984,323 @@ mod tests {
     assert_eq!(
       entries,
       vec![
-        "auto:Azumatt-AzuCraftyBoxes-1.8.22",
-        "auto:Advize-PlantEverything-1.21.2",
+        "gale-ts:Azumatt-AzuCraftyBoxes-1.8.22",
+        "gale-ts:Advize-PlantEverything-1.21.2",
       ]
     );
 
     env::remove_var(GALE_SYNC_URL_VAR);
     env::remove_var("GAME_LOCATION");
+  }
+  /// Produced with Python's zipfile writer, which preserves duplicate raw names;
+  /// zip 8's regular Rust writer rejects them and its reader silently keeps the last.
+  #[test]
+  fn rejects_conflicting_raw_duplicate_manifests_before_accepting_empty_profile() {
+    let bytes = include_bytes!("../tests/resources/gale.duplicate-manifest.zip");
+    let mut archive = zip::ZipArchive::new(Cursor::new(bytes)).unwrap();
+    assert_eq!(
+      archive
+        .file_names()
+        .filter(|name| *name == "export.r2x")
+        .count(),
+      1
+    );
+    let mut selected = String::new();
+    archive
+      .by_name("export.r2x")
+      .unwrap()
+      .read_to_string(&mut selected)
+      .unwrap();
+    assert_eq!(
+      selected, "mods: []\n",
+      "fixture must expose the lossy last-entry selection"
+    );
+    let error = manifest_from_zip(bytes, MAX_MANIFEST_BYTES)
+      .expect_err("ambiguous ZIP must never reconcile to an empty profile");
+    assert!(error.to_string().contains("exactly one export.r2x"));
+  }
+
+  #[test]
+  fn raw_manifest_scan_bounds_directory_offsets_headers_and_variable_lengths() {
+    let mut oversized_name = vec![0; 46];
+    oversized_name[..4].copy_from_slice(b"PK\x01\x02");
+    oversized_name[28..30].copy_from_slice(&u16::MAX.to_le_bytes());
+    for (bytes, offset) in [
+      (b"PK\x01\x02".to_vec(), 0),
+      (oversized_name, 0),
+      (vec![], u64::MAX),
+    ] {
+      let error = validate_raw_manifest_count(&bytes, offset).unwrap_err();
+      assert!(error
+        .to_string()
+        .contains("truncated profile ZIP central directory"));
+    }
+  }
+
+  #[test]
+  fn rejects_invalid_or_missing_zip_manifests() {
+    for bytes in [
+      b"not a zip".to_vec(),
+      zip_entries(&[("other.yml", "mods: []")]),
+      zip_entries(&[("export.r2x", "mods: [")]),
+      zip_entries(&[("export.r2x", "profileName: missing mods")]),
+    ] {
+      assert!(matches!(
+        manifest_from_zip(&bytes, MAX_MANIFEST_BYTES),
+        Err(ValheimModError::ManifestDeserializeError(_))
+      ));
+    }
+  }
+
+  #[test]
+  fn validates_all_sources_names_duplicates_and_community_before_accepting() {
+    for yaml in [
+      "community: othergame\nmods: []".to_string(),
+      "mods:\n- name: Author-Mod\n  source: OtherStore\n  version: {major: 1, minor: 0, patch: 0}".to_string(),
+      "mods:\n- name: ../Author-Mod\n  version: {major: 1, minor: 0, patch: 0}".to_string(),
+      "mods:\n- name: Author-Mod\n  version: {major: 1, minor: 0, patch: 0}\n- name: AUTHOR-mod\n  version: {major: 2, minor: 0, patch: 0}".to_string(),
+      "mods:\n- name: Author-Mod\n  enabled: false\n  source: OtherStore\n  version: {major: 1, minor: 0, patch: 0}".to_string(),
+    ] {
+      assert!(matches!(manifest_from_zip(&zip_entries(&[("export.r2x", &yaml)]), MAX_MANIFEST_BYTES), Err(ValheimModError::ManifestDeserializeError(_))), "accepted {yaml}");
+    }
+    let empty = manifest_from_zip(
+      &zip_entries(&[("export.r2x", "mods: []")]),
+      MAX_MANIFEST_BYTES,
+    )
+    .unwrap();
+    assert!(manifest_to_mod_entries(&empty).is_empty());
+  }
+
+  #[test]
+  fn expanded_manifest_limit_accepts_boundary_and_rejects_next_byte() {
+    let yaml = "profileName: Boundary\nmods: []\n";
+    let bytes = zip_entries(&[("export.r2x", yaml)]);
+    assert_eq!(
+      manifest_from_zip(&bytes, yaml.len() as u64)
+        .unwrap()
+        .profile_name
+        .as_deref(),
+      Some("Boundary")
+    );
+    let error = manifest_from_zip(&bytes, yaml.len() as u64 - 1).unwrap_err();
+    assert!(error.to_string().contains("manifest exceeds"));
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn compressed_profile_limit_bounds_declared_and_streamed_bodies() {
+    let mut server = Server::new_async().await;
+    let declared = server
+      .mock("GET", "/declared")
+      .with_body("12345")
+      .expect(1)
+      .create_async()
+      .await;
+    let streamed = server
+      .mock("GET", "/streamed")
+      .with_chunked_body(|writer| writer.write_all(b"12345"))
+      .expect(1)
+      .create_async()
+      .await;
+    let boundary = server
+      .mock("GET", "/boundary")
+      .with_body("1234")
+      .expect(1)
+      .create_async()
+      .await;
+    for path in ["declared", "streamed"] {
+      let error =
+        download_profile_zip_capped(&Url::parse(&format!("{}/{path}", server.url())).unwrap(), 4)
+          .await
+          .unwrap_err();
+      assert!(matches!(
+        error,
+        ValheimModError::ManifestDeserializeError(_)
+      ));
+      assert!(error.to_string().contains("larger than 4 bytes"));
+    }
+    assert_eq!(
+      download_profile_zip_capped(
+        &Url::parse(&format!("{}/boundary", server.url())).unwrap(),
+        4
+      )
+      .await
+      .unwrap(),
+      b"1234"
+    );
+    declared.assert_async().await;
+    streamed.assert_async().await;
+    boundary.assert_async().await;
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn config_sync_reuses_the_authoritative_zip_download() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var("GAME_LOCATION", game.path());
+    env::set_var(GALE_SYNC_CODE_VAR, "configs");
+    env::set_var(GALE_SYNC_CONFIGS_VAR, "true");
+    let mut server = Server::new_async().await;
+    env::set_var(GALE_SYNC_URL_VAR, server.url());
+    let yaml = serde_saphyr::to_string(&manifest()).unwrap();
+    let zip = server
+      .mock("GET", "/profile/configs")
+      .with_body(zip_entries(&[
+        ("export.r2x", &yaml),
+        ("BepInEx/config/test.cfg", "from same ZIP"),
+      ]))
+      .expect(1)
+      .create_async()
+      .await;
+    let meta = server
+      .mock("GET", "/profile/configs/meta")
+      .expect(0)
+      .create_async()
+      .await;
+    assert_eq!(gale_mod_entries().await.unwrap().len(), 3);
+    assert_eq!(
+      fs::read_to_string(PathBuf::from(bepinex_config_directory()).join("test.cfg")).unwrap(),
+      "from same ZIP"
+    );
+    zip.assert_async().await;
+    meta.assert_async().await;
+    for key in [
+      "GAME_LOCATION",
+      GALE_SYNC_CODE_VAR,
+      GALE_SYNC_CONFIGS_VAR,
+      GALE_SYNC_URL_VAR,
+    ] {
+      env::remove_var(key);
+    }
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn outage_cache_preserves_validated_sources_and_excludes_legacy_metadata() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var("GAME_LOCATION", game.path());
+    env::set_var("MODS_REPOSITORY", "hexium");
+    let mut server = Server::new_async().await;
+    env::set_var(GALE_SYNC_URL_VAR, server.url());
+    let valid = server
+      .mock("GET", "/profile/cache")
+      .with_body(profile_zip(&manifest()))
+      .expect(1)
+      .create_async()
+      .await;
+    let first = fetch_manifest("cache").await.unwrap();
+    valid.assert_async().await;
+    valid.remove_async().await;
+    let outage = server
+      .mock("GET", mockito::Matcher::Any)
+      .with_status(404)
+      .expect(5)
+      .create_async()
+      .await;
+    let cached = fetch_profile("cache").await.unwrap();
+    assert!(cached.zip_bytes.is_none());
+    assert_eq!(
+      manifest_to_mod_entries(&cached.manifest),
+      manifest_to_mod_entries(&first)
+    );
+    assert_eq!(
+      cached.manifest.mods.last().unwrap().source.as_deref(),
+      Some("Thunderstore")
+    );
+    fs::write(
+      PathBuf::from(mods_staging_directory()).join("gale-legacy.json"),
+      serde_json::to_vec(&manifest()).unwrap(),
+    )
+    .unwrap();
+    assert!(
+      fetch_manifest("legacy").await.is_err(),
+      "old metadata cache cannot be used"
+    );
+    let unvalidated = CachedSnapshot {
+      schema_version: 1,
+      manifest: manifest(),
+    };
+    fs::write(
+      cached_manifest_path("invalid"),
+      serde_json::to_vec(&unvalidated).unwrap(),
+    )
+    .unwrap();
+    assert!(
+      fetch_manifest("invalid").await.is_err(),
+      "source-less new cache must also be refused"
+    );
+    for (code, schema_version, source) in [
+      ("wrong-schema", 2, "Thunderstore"),
+      ("bad-source", 1, "OtherStore"),
+    ] {
+      let mut invalid = first.clone();
+      invalid.mods[0].source = Some(source.into());
+      fs::write(
+        cached_manifest_path(code),
+        serde_json::to_vec(&CachedSnapshot {
+          schema_version,
+          manifest: invalid,
+        })
+        .unwrap(),
+      )
+      .unwrap();
+      assert!(
+        fetch_manifest(code).await.is_err(),
+        "unvalidated snapshot {code} must be refused"
+      );
+    }
+    outage.assert_async().await;
+    for key in ["GAME_LOCATION", "MODS_REPOSITORY", GALE_SYNC_URL_VAR] {
+      env::remove_var(key);
+    }
+  }
+
+  #[tokio::test]
+  #[serial]
+  async fn invalid_remote_snapshot_does_not_replace_cache_or_configs() {
+    let game = tempfile::tempdir().unwrap();
+    env::set_var("GAME_LOCATION", game.path());
+    env::set_var(GALE_SYNC_CODE_VAR, "invalid");
+    env::set_var(GALE_SYNC_CONFIGS_VAR, "true");
+    let mut server = Server::new_async().await;
+    env::set_var(GALE_SYNC_URL_VAR, server.url());
+    let valid = server
+      .mock("GET", "/profile/invalid")
+      .with_body(profile_zip(&manifest()))
+      .create_async()
+      .await;
+    fetch_manifest("invalid").await.unwrap();
+    valid.remove_async().await;
+    let cache_before = fs::read(cached_manifest_path("invalid")).unwrap();
+    let dest = PathBuf::from(bepinex_config_directory());
+    fs::create_dir_all(&dest).unwrap();
+    fs::write(dest.join("test.cfg"), "keep").unwrap();
+    let bad = server
+      .mock("GET", "/profile/invalid")
+      .with_body(zip_entries(&[
+        ("export.r2x", "community: anothergame\nmods: []"),
+        ("BepInEx/config/test.cfg", "replace"),
+      ]))
+      .expect(1)
+      .create_async()
+      .await;
+    assert!(
+      gale_mod_entries().await.is_err(),
+      "invalid remote cannot use a stale cache to reconcile"
+    );
+    assert_eq!(
+      fs::read(cached_manifest_path("invalid")).unwrap(),
+      cache_before
+    );
+    assert_eq!(fs::read_to_string(dest.join("test.cfg")).unwrap(), "keep");
+    bad.assert_async().await;
+    for key in [
+      "GAME_LOCATION",
+      GALE_SYNC_CODE_VAR,
+      GALE_SYNC_CONFIGS_VAR,
+      GALE_SYNC_URL_VAR,
+    ] {
+      env::remove_var(key);
+    }
   }
 }
