@@ -129,13 +129,14 @@ pub(crate) fn is_host_or_subdomain(host: &str, domain: &str) -> bool {
 ///
 /// `hex:Author-Mod-1.0.0` gives `(Some(Hexium), "Author-Mod-1.0.0")`.
 ///
-/// The internal `auto:` prefix used by Gale profile sync also strips to `(None, rest)`, so
+/// Internal `gale-ts:`/`gale-hex:` preferences strip like repository aliases.
+/// The legacy internal `auto:` prefix also strips to `(None, rest)`, so
 /// downstream parsing sees a plain dependency string.
 /// Anything else without a recognised prefix, URLs included, is returned unchanged with `None`.
 pub fn split_repository_prefix(entry: &str) -> (Option<ModRepository>, &str) {
   if let Some((prefix, rest)) = entry.split_once(':') {
     if !rest.is_empty() && !rest.starts_with("//") {
-      if let Some(repo) = ModRepository::parse(prefix) {
+      if let Some(repo) = ModRepository::parse(prefix.strip_prefix("gale-").unwrap_or(prefix)) {
         return (Some(repo), rest);
       }
       if prefix.eq_ignore_ascii_case("auto") {

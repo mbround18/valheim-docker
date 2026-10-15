@@ -62,6 +62,7 @@ sha2 = "0.11.0"
 hex = "0.4.3"
 indexmap = "2.14.2"
 semver = "1.0.28"
+serde-saphyr = "2.0.0"
 
 [dependencies.shared]
 workspace = true
