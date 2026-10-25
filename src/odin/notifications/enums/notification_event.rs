@@ -17,6 +17,7 @@ use std::fmt;
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub enum NotificationEvent {
   Broadcast,
+  JoinCode,
   Update(EventStatus),
   Start(EventStatus),
   Stop(EventStatus),
@@ -160,6 +161,25 @@ impl NotificationEvent {
     }
   }
 
+  /// Sends a webhook notification without checking a `WEBHOOK_STATUS_*` switch.
+  ///
+  /// Some notifications are behind their own feature flags rather than event-status
+  /// gates (for example, join-code announcements) and should not depend on
+  /// `WEBHOOK_STATUS_SUCCESSFUL`.
+  pub fn send_notification_unchecked(&self, message: Option<String>) {
+    debug!("Checking for notification information...");
+    if is_webhook_enabled() {
+      debug!("Webhook found! Starting notification process...");
+      let mut event = self.create_notification_message();
+      if let Some(msg) = message {
+        event.event_message = msg;
+      }
+      self.send_custom_notification(&fetch_webhook_url(), &event);
+    } else {
+      debug!("Skipping notification, no webhook supplied!");
+    }
+  }
+
   pub(crate) fn to_event_type(&self) -> EventType {
     let event = self.to_string();
     let parsed_event: Vec<&str> = event.split(' ').collect();
@@ -180,11 +200,13 @@ impl fmt::Display for NotificationEvent {
 impl std::str::FromStr for NotificationEvent {
   type Err = VariantNotFound;
   fn from_str(s: &str) -> Result<NotificationEvent, Self::Err> {
-    use NotificationEvent::{Broadcast, Player, Save, Start, Stop, Update};
+    use NotificationEvent::{Broadcast, JoinCode, Player, Save, Start, Stop, Update};
     let parts: Vec<&str> = s.split(' ').collect();
     let event = parts[0];
     if event.eq(Broadcast.to_string().as_str()) {
       Ok(Broadcast)
+    } else if event.eq(JoinCode.to_string().as_str()) {
+      Ok(JoinCode)
     } else if event.eq("Player") {
       let player_status = PlayerStatus::from_str(parts[1])?;
       Ok(Player(player_status))
@@ -209,11 +231,12 @@ mod notification_event_tests {
   use super::*;
   use crate::notifications::enums::player::PlayerStatus;
   use std::str::FromStr;
-  use NotificationEvent::{Broadcast, Player};
+  use NotificationEvent::{Broadcast, JoinCode, Player};
 
   #[test]
   fn parse_enum_from_string() {
     assert_eq!(NotificationEvent::from_str("Broadcast").unwrap(), Broadcast);
+    assert_eq!(NotificationEvent::from_str("JoinCode").unwrap(), JoinCode);
   }
 
   #[test]
