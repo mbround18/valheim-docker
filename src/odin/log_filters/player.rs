@@ -4,10 +4,11 @@ use crate::notifications::enums::player::PlayerStatus::{Joined, Left};
 use crate::utils::environment::is_env_var_truthy;
 use chrono::Utc;
 use log::{debug, error, info, warn};
+use redb::{Database, DatabaseError, ReadableTable, TableDefinition, TableError};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 
 /// `Got character ZDOID from <name> : <peer id>:<zdo index>`; the peer id can be negative.
@@ -24,6 +25,8 @@ static LEFT_REGEX: LazyLock<Regex> = LazyLock::new(|| {
   )
   .expect("Failed to compile left_regex")
 });
+
+const PLAYERS_TABLE: TableDefinition<i64, &str> = TableDefinition::new("players");
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Player {
@@ -75,34 +78,168 @@ pub struct PlayerList {
 }
 
 impl PlayerList {
-  /// Writes the list atomically. Huginn reads this file from another process on every
-  /// `/players` and `/metrics` request, so it is written to a sibling temp file and renamed
-  /// over the original: a reader sees the old list or the new one, never half of one.
-  fn save(&self) -> bool {
-    let path = self.path();
-    let tmp = format!("{path}.tmp");
-    let result = Path::new(&path)
-      .parent()
-      .map_or(Ok(()), std::fs::create_dir_all)
-      .and_then(|()| std::fs::write(&tmp, self.to_string()))
-      .and_then(|()| std::fs::rename(&tmp, &path));
-    match result {
-      Ok(()) => {
-        debug!("Saved player list to {path}");
-        true
+  fn normalize_online_players(mut players: Vec<Player>, max_players: Option<usize>) -> Vec<Player> {
+    players.sort_by_key(|p| p.last_seen);
+    players.dedup_by(|a, b| a.name == b.name);
+    if let Some(limit) = max_players {
+      if players.len() > limit {
+        players = players.split_off(players.len() - limit);
       }
-      Err(e) => {
-        error!("Failed to write player list {path}: {e}");
-        let _ = std::fs::remove_file(&tmp);
-        false
-      }
+    }
+    players.sort_by_key(|p| p.joined_at);
+    players
+  }
+
+  fn redb_path() -> String {
+    format!(
+      "{}/player.redb",
+      crate::utils::common_paths::saves_directory()
+    )
+  }
+
+  fn open_redb(path: &Path) -> Result<Database, DatabaseError> {
+    if path.exists() {
+      Database::open(path)
+    } else {
+      Database::create(path)
     }
   }
 
-  /// Reads the list from disk. A missing, unreadable or corrupt file is treated as an
-  /// empty list rather than a panic, since Huginn calls this while serving requests.
-  #[cfg(not(test))]
-  fn load() -> Self {
+  #[cfg_attr(test, allow(dead_code))]
+  fn load_redb() -> Option<Self> {
+    let path = PathBuf::from(Self::redb_path());
+    let parent = path.parent()?;
+    if let Err(e) = std::fs::create_dir_all(parent) {
+      warn!("Could not create save directory for redb backend: {e}");
+      return None;
+    }
+    let db = match Self::open_redb(&path) {
+      Ok(db) => db,
+      Err(e) => {
+        warn!(
+          "Could not open redb player store at {}: {e}",
+          path.display()
+        );
+        return None;
+      }
+    };
+    let read_txn = match db.begin_read() {
+      Ok(txn) => txn,
+      Err(e) => {
+        warn!("Could not start redb read transaction: {e}");
+        return None;
+      }
+    };
+    let table = match read_txn.open_table(PLAYERS_TABLE) {
+      Ok(table) => table,
+      Err(TableError::TableDoesNotExist(_)) => return Some(PlayerList { players: vec![] }),
+      Err(e) => {
+        warn!("Could not open redb players table: {e}");
+        return None;
+      }
+    };
+    let iter = match table.iter() {
+      Ok(iter) => iter,
+      Err(e) => {
+        warn!("Could not iterate redb players table: {e}");
+        return None;
+      }
+    };
+    let mut players = Vec::new();
+    for entry in iter {
+      match entry {
+        Ok((_, value)) => match serde_json::from_str::<Player>(value.value()) {
+          Ok(player) => players.push(player),
+          Err(e) => warn!("Skipping unreadable player record in redb: {e}"),
+        },
+        Err(e) => warn!("Skipping unreadable redb players table row: {e}"),
+      }
+    }
+    Some(PlayerList { players })
+  }
+
+  fn save_redb(&self) -> bool {
+    let path = PathBuf::from(Self::redb_path());
+    let Some(parent) = path.parent() else {
+      error!("Invalid redb store path: {}", path.display());
+      return false;
+    };
+    if let Err(e) = std::fs::create_dir_all(parent) {
+      error!("Could not create save directory for redb backend: {e}");
+      return false;
+    }
+    let db = match Self::open_redb(&path) {
+      Ok(db) => db,
+      Err(e) => {
+        error!(
+          "Could not open redb player store at {}: {e}",
+          path.display()
+        );
+        return false;
+      }
+    };
+    let write_txn = match db.begin_write() {
+      Ok(txn) => txn,
+      Err(e) => {
+        error!("Could not start redb write transaction: {e}");
+        return false;
+      }
+    };
+    {
+      let mut table = match write_txn.open_table(PLAYERS_TABLE) {
+        Ok(table) => table,
+        Err(e) => {
+          error!("Could not open redb players table: {e}");
+          return false;
+        }
+      };
+
+      let iter = match table.iter() {
+        Ok(iter) => iter,
+        Err(e) => {
+          error!("Could not iterate redb players table: {e}");
+          return false;
+        }
+      };
+      let mut keys = Vec::new();
+      for entry in iter {
+        match entry {
+          Ok((key, _)) => keys.push(key.value()),
+          Err(e) => {
+            error!("Could not read redb players table row: {e}");
+            return false;
+          }
+        }
+      }
+      for key in keys {
+        if let Err(e) = table.remove(key) {
+          error!("Could not clear redb players table key {key}: {e}");
+          return false;
+        }
+      }
+      for player in &self.players {
+        let serialized = match serde_json::to_string(player) {
+          Ok(v) => v,
+          Err(e) => {
+            error!("Could not serialize player for redb: {e}");
+            return false;
+          }
+        };
+        if let Err(e) = table.insert(player.id, serialized.as_str()) {
+          error!("Could not insert player {} into redb: {e}", player.id);
+          return false;
+        }
+      }
+    }
+    if let Err(e) = write_txn.commit() {
+      error!("Could not commit redb player transaction: {e}");
+      return false;
+    }
+    true
+  }
+
+  #[cfg_attr(test, allow(dead_code))]
+  fn load_from_json_file() -> Self {
     let empty = PlayerList { players: vec![] };
     match std::fs::read_to_string(empty.path()) {
       Ok(content) => PlayerList::from(content),
@@ -112,6 +249,56 @@ impl PlayerList {
         empty
       }
     }
+  }
+
+  /// Writes the list atomically. Huginn reads this file from another process on every
+  /// `/players` and `/metrics` request, so it is written to a sibling temp file and renamed
+  /// over the original: a reader sees the old list or the new one, never half of one.
+  fn save(&self) -> bool {
+    let redb_ok = self.save_redb();
+    let path = self.path();
+    let tmp = format!("{path}.tmp");
+    let result = Path::new(&path)
+      .parent()
+      .map_or(Ok(()), std::fs::create_dir_all)
+      .and_then(|()| std::fs::write(&tmp, self.to_string()))
+      .and_then(|()| std::fs::rename(&tmp, &path));
+    (match result {
+      Ok(()) => {
+        debug!("Saved player list to {path}");
+        true
+      }
+      Err(e) => {
+        error!("Failed to write player list {path}: {e}");
+        let _ = std::fs::remove_file(&tmp);
+        false
+      }
+    }) && redb_ok
+  }
+
+  /// Reads the list from disk. A missing, unreadable or corrupt file is treated as an
+  /// empty list rather than a panic, since Huginn calls this while serving requests.
+  #[cfg(not(test))]
+  fn load() -> Self {
+    if let Some(redb_list) = Self::load_redb() {
+      if !redb_list.players.is_empty() {
+        return redb_list;
+      }
+
+      let legacy = Self::load_from_json_file();
+      if legacy.players.is_empty() {
+        return redb_list;
+      }
+
+      if legacy.save_redb() {
+        info!("Migrated player tracking state from player.list into redb");
+      } else {
+        warn!("Failed to migrate player.list state into redb; continuing with legacy list");
+      }
+      return legacy;
+    }
+    warn!("Falling back to player.list after redb player-store read failure");
+    Self::load_from_json_file()
   }
 
   /// Records `id` as online under `name`; returns true if the player was not online before.
@@ -124,7 +311,7 @@ impl PlayerList {
       .map(|p| p.joined_at);
     let is_new = existing.is_none();
     let joined_at = existing.unwrap_or(now);
-    self.players.retain(|p| p.id != id);
+    self.players.retain(|p| p.id != id && p.name != name);
     self.players.push(Player {
       id,
       zdo_index,
@@ -176,8 +363,15 @@ impl PlayerList {
 
   /// The players currently online.
   pub fn online() -> Vec<OnlinePlayer> {
-    PlayerList::default()
-      .players
+    Self::online_limited(None)
+  }
+
+  /// The players currently online, bounded by the current A2S-reported player count.
+  ///
+  /// If the local log-derived list grows beyond what the server reports, we keep the most
+  /// recently seen entries to avoid stale "ghost players" and duplicate same-name sessions.
+  pub fn online_limited(max_players: Option<usize>) -> Vec<OnlinePlayer> {
+    Self::normalize_online_players(PlayerList::default().players, max_players)
       .into_iter()
       .map(|p| OnlinePlayer {
         name: p.name,
@@ -454,6 +648,56 @@ mod tests {
     assert!(list.players.is_empty());
   }
 
+  #[test]
+  fn reconnect_with_new_peer_id_replaces_stale_same_name_entry() {
+    let mut list = PlayerList {
+      players: vec![Player {
+        id: 111,
+        zdo_index: 1,
+        name: "Viking".to_string(),
+        last_seen: 100,
+        joined_at: 100,
+      }],
+    };
+
+    assert!(list.join(222, 7, "Viking".to_string()));
+    assert_eq!(list.players.len(), 1);
+    assert_eq!(list.players[0].id, 222);
+    assert_eq!(list.players[0].name, "Viking");
+    assert_ne!(list.players[0].joined_at, 100);
+  }
+
+  #[test]
+  fn online_limited_dedupes_by_name_and_caps_to_server_count() {
+    let players = vec![
+      Player {
+        id: 1,
+        zdo_index: 1,
+        name: "Viking".to_string(),
+        last_seen: 10,
+        joined_at: 10,
+      },
+      Player {
+        id: 2,
+        zdo_index: 1,
+        name: "Viking".to_string(),
+        last_seen: 20,
+        joined_at: 20,
+      },
+      Player {
+        id: 3,
+        zdo_index: 1,
+        name: "Sir Lance".to_string(),
+        last_seen: 30,
+        joined_at: 30,
+      },
+    ];
+    let reconciled = PlayerList::normalize_online_players(players, Some(1));
+    assert_eq!(reconciled.len(), 1);
+    assert_eq!(reconciled[0].name, "Sir Lance");
+    assert_eq!(reconciled[0].joined_at, 30);
+  }
+
   /// Huginn parses this file while Odin rewrites it; garbage must never panic.
   #[test]
   fn corrupt_or_truncated_lists_read_as_empty() {
@@ -487,6 +731,16 @@ mod tests {
       !saves.dir.path().join("player.list.tmp").exists(),
       "temp file should be renamed away"
     );
+  }
+
+  #[test]
+  #[serial]
+  fn save_writes_redb_database() {
+    let saves = SaveDir::new();
+    let mut list = PlayerList { players: vec![] };
+    list.join(7, 1, "Viking".to_string());
+    assert!(list.save());
+    assert!(saves.dir.path().join("player.redb").exists());
   }
 
   #[test]
