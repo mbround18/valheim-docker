@@ -1,18 +1,28 @@
 use crate::notifications::enums::{
   event_status::EventStatus, notification_event::NotificationEvent,
 };
+use crate::utils::environment::is_env_var_truthy;
 use log::{debug, error};
+use regex::Regex;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{LazyLock, Mutex};
 
 /// Valheim logs a failed master-server registration as `Game server connected failed`,
 /// which has the success line as its prefix, so the failure has to be tested first.
 const CONNECT_FAILED: &str = "Game server connected failed";
 const CONNECT_OK: &str = "Game server connected";
 const STEAM_DESTROY: &str = "Steam manager on destroy";
+const JOIN_CODE_NOTIFICATION: &str = "JOIN_CODE_NOTIFICATION";
+
+static JOIN_CODE_REGEX: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(r"(?i)\b(?:join code|server code)\b[^a-zA-Z0-9]*([a-zA-Z0-9]{4,12})")
+    .expect("valid join-code regex")
+});
 
 /// Whether the last master-server registration attempt failed. Valheim retries every
 /// minute or so, so only the first failure of a streak sends a webhook.
 static REGISTRATION_FAILING: AtomicBool = AtomicBool::new(false);
+static LAST_JOIN_CODE: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 
 /// A launch/shutdown milestone parsed from one server log line.
 #[derive(Debug, PartialEq, Eq)]
@@ -37,7 +47,36 @@ fn classify(line: &str) -> Option<LaunchProbe> {
   }
 }
 
+fn extract_join_code(line: &str) -> Option<String> {
+  JOIN_CODE_REGEX
+    .captures(line)
+    .and_then(|caps| caps.get(1))
+    .map(|code| code.as_str().to_ascii_uppercase())
+}
+
+fn notify_join_code(line: &str) {
+  if !is_env_var_truthy(JOIN_CODE_NOTIFICATION) {
+    return;
+  }
+
+  let Some(code) = extract_join_code(line) else {
+    return;
+  };
+
+  let mut last = LAST_JOIN_CODE.lock().expect("join code mutex poisoned");
+  if last.as_deref() == Some(code.as_str()) {
+    debug!("Join code unchanged ({code}), skipping duplicate notification.");
+    return;
+  }
+  *last = Some(code.clone());
+
+  NotificationEvent::JoinCode
+    .send_notification_unchecked(Some(format!("PlayFab join code: {code}")));
+}
+
 pub fn handle_launch_probes(line: &str) {
+  notify_join_code(line);
+
   match classify(line) {
     Some(LaunchProbe::ConnectFailed) => {
       if REGISTRATION_FAILING.swap(true, Ordering::SeqCst) {
@@ -73,6 +112,7 @@ mod tests {
   const FAILED: &str = "09/15/2026 18:03:41: Game server connected failed";
   const CONNECTED: &str = "09/15/2026 18:16:18: Game server connected";
   const DESTROY: &str = "09/15/2026 18:20:02: Steam manager on destroy";
+  const JOIN_CODE: &str = "10/25/2026 14:07:02: Session ready with join code AB12CD";
 
   /// Points the notifier at a mock webhook with both status switches on, and resets the
   /// streak so every test starts from a server that has just come up. Restores the
@@ -89,6 +129,10 @@ mod tests {
       std::env::set_var("WEBHOOK_STATUS_SUCCESSFUL", "1");
       std::env::set_var("WEBHOOK_STATUS_FAILED", "1");
       REGISTRATION_FAILING.store(false, Ordering::SeqCst);
+      LAST_JOIN_CODE
+        .lock()
+        .expect("join code mutex poisoned")
+        .take();
       Webhook { server }
     }
 
@@ -114,10 +158,15 @@ mod tests {
         "WEBHOOK_URL",
         "WEBHOOK_STATUS_SUCCESSFUL",
         "WEBHOOK_STATUS_FAILED",
+        "JOIN_CODE_NOTIFICATION",
       ] {
         std::env::remove_var(var);
       }
       REGISTRATION_FAILING.store(false, Ordering::SeqCst);
+      LAST_JOIN_CODE
+        .lock()
+        .expect("join code mutex poisoned")
+        .take();
     }
   }
 
@@ -206,6 +255,43 @@ mod tests {
     handle_launch_probes(DESTROY);
 
     stopped.assert();
+  }
+
+  #[test]
+  fn parses_join_code_from_logs() {
+    assert_eq!(extract_join_code(JOIN_CODE), Some("AB12CD".to_string()));
+    assert_eq!(
+      extract_join_code("10/25/2026: Server code: xy89zt"),
+      Some("XY89ZT".to_string())
+    );
+    assert_eq!(
+      extract_join_code("10/25/2026: Sending PlayFab login request (attempt 1)"),
+      None
+    );
+  }
+
+  #[test]
+  #[serial]
+  fn join_code_notifications_are_opt_in_and_deduped() {
+    let mut webhook = Webhook::new();
+    let join_code = webhook.expect("JoinCode", "Triggered", 1);
+    std::env::set_var("JOIN_CODE_NOTIFICATION", "1");
+
+    handle_launch_probes(JOIN_CODE);
+    handle_launch_probes(JOIN_CODE);
+
+    join_code.assert();
+  }
+
+  #[test]
+  #[serial]
+  fn join_code_notifications_stay_off_without_flag() {
+    let mut webhook = Webhook::new();
+    let join_code = webhook.expect("JoinCode", "Triggered", 0);
+
+    handle_launch_probes(JOIN_CODE);
+
+    join_code.assert();
   }
 
   /// The failure rides on the existing `WEBHOOK_STATUS_FAILED` switch, so anyone who has
