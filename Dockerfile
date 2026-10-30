@@ -92,7 +92,6 @@ ENV HOME=/home/steam
 ENV USER=steam
 ARG EXPECTED_OCTAL
 
-ADD --chown=steam:${PGID} https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz /home/steam/steamcmd.tar.gz
 COPY --chmod=${EXPECTED_OCTAL} --chown=steam:${PGID} --from=valheim-root /home/steam/.version /home/steam/.version
 
 RUN --mount=type=bind,source=src/scripts/build/setup-steamcmd.sh,target=/tmp/setup-steamcmd.sh \

@@ -8,8 +8,6 @@ STEAMCMD_BOOTSTRAP_ATTEMPTS="${STEAMCMD_BOOTSTRAP_ATTEMPTS:-3}"
 STEAMCMD_BOOTSTRAP_BASE_DELAY_SECS="${STEAMCMD_BOOTSTRAP_BASE_DELAY_SECS:-5}"
 STEAMCMD_HOME="/home/steam/.local/share/Steam/steamcmd"
 
-mkdir -p /home/steam/.local/share/Steam/steamcmd
-
 setup_steam_symlinks() {
   mkdir -p "$HOME/.steam"
   ln -sfn "$STEAMCMD_HOME/linux32" "$HOME/.steam/sdk32"
@@ -21,10 +19,8 @@ bootstrap_steamcmd() {
   local attempt=1
   while [ "$attempt" -le "$STEAMCMD_BOOTSTRAP_ATTEMPTS" ]; do
     rm -rf "$STEAMCMD_HOME"
-    mkdir -p "$STEAMCMD_HOME"
-    tar -xvzf /home/steam/steamcmd.tar.gz -C "$STEAMCMD_HOME/"
-    setup_steam_symlinks
     if steamcmd +quit; then
+      setup_steam_symlinks
       return 0
     fi
     if [ "$attempt" -lt "$STEAMCMD_BOOTSTRAP_ATTEMPTS" ]; then
@@ -38,7 +34,6 @@ bootstrap_steamcmd() {
 }
 
 bootstrap_steamcmd
-rm /home/steam/steamcmd.tar.gz
 
 # Everything above (~/.local/share/Steam, steamcmd's install and self-update dir) is
 # created after setup-system.sh made /home/steam group-writable, so repeat that here. A
