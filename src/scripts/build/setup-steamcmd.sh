@@ -7,12 +7,15 @@ set -euxo pipefail
 STEAMCMD_BOOTSTRAP_ATTEMPTS="${STEAMCMD_BOOTSTRAP_ATTEMPTS:-3}"
 STEAMCMD_BOOTSTRAP_BASE_DELAY_SECS="${STEAMCMD_BOOTSTRAP_BASE_DELAY_SECS:-5}"
 STEAMCMD_HOME="/home/steam/.local/share/Steam/steamcmd"
+BOOTSTRAP_STEAMCMD_ON_BUILD="${BOOTSTRAP_STEAMCMD_ON_BUILD:-0}"
 
 setup_steam_symlinks() {
   mkdir -p "$HOME/.steam"
   ln -sfn "$STEAMCMD_HOME/linux32" "$HOME/.steam/sdk32"
   ln -sfn "$STEAMCMD_HOME/linux64" "$HOME/.steam/sdk64"
-  ln -sfn "$HOME/.steam/sdk32/steamclient.so" "$HOME/.steam/sdk32/steamservice.so"
+  if [ -e "$HOME/.steam/sdk32/steamclient.so" ]; then
+    ln -sfn "$HOME/.steam/sdk32/steamclient.so" "$HOME/.steam/sdk32/steamservice.so"
+  fi
 }
 
 bootstrap_steamcmd() {
@@ -33,7 +36,17 @@ bootstrap_steamcmd() {
   return 1
 }
 
-bootstrap_steamcmd
+mkdir -p "$STEAMCMD_HOME"
+setup_steam_symlinks
+
+case "$BOOTSTRAP_STEAMCMD_ON_BUILD" in
+  1|true|TRUE|yes|YES|on|ON)
+    bootstrap_steamcmd
+    ;;
+  *)
+    echo "Skipping steamcmd +quit bootstrap during image build"
+    ;;
+esac
 
 # Everything above (~/.local/share/Steam, steamcmd's install and self-update dir) is
 # created after setup-system.sh made /home/steam group-writable, so repeat that here. A
