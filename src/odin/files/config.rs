@@ -148,12 +148,19 @@ impl TryInto<Vec<String>> for ValheimArguments {
     let no_password = self.password.is_empty();
     let allow_blank_password = is_env_var_truthy_with_default("ALLOW_BLANK_PASSWORD", false);
 
-    if no_password && allow_blank_password {
-      debug!("No password found and ALLOW_BLANK_PASSWORD is set, skipping password flag.");
-    } else if !is_public && !is_vanilla && no_password {
-      debug!("No password found, skipping password flag.");
-    } else if no_password && (is_public || is_vanilla) {
-      return Err(String::from("Cannot run your server with no password! PUBLIC must be 0 and cannot be a Vanilla type server."));
+    if no_password {
+      if allow_blank_password {
+        if is_vanilla {
+          return Err(String::from(
+            "ALLOW_BLANK_PASSWORD cannot be used with TYPE=Vanilla. Vanilla dedicated servers require a password.",
+          ));
+        }
+        debug!("No password found and ALLOW_BLANK_PASSWORD is set, skipping password flag.");
+      } else if !is_public && !is_vanilla {
+        debug!("No password found, skipping password flag.");
+      } else {
+        return Err(String::from("Cannot run your server with no password! PUBLIC must be 0 and cannot be a Vanilla type server."));
+      }
     } else {
       debug!("Password found, adding password flag.");
       args.push(String::from("-password"));
@@ -462,7 +469,7 @@ mod tests {
   #[test]
   #[serial]
   fn test_blank_password_allowed_with_env() {
-    env::remove_var("TYPE");
+    env::set_var("TYPE", "BepInEx");
 
     for value in ["1", "true", "TRUE", "yes", "on"] {
       env::set_var("ALLOW_BLANK_PASSWORD", value);
@@ -485,6 +492,14 @@ mod tests {
         "Expected blank password to be rejected when ALLOW_BLANK_PASSWORD={value}"
       );
     }
+
+    env::remove_var("TYPE");
+    env::set_var("ALLOW_BLANK_PASSWORD", "true");
+    let vanilla_result: Result<Vec<String>, String> = blank_password_args("1").try_into();
+    assert!(
+      vanilla_result.is_err(),
+      "Expected blank password to be rejected for vanilla even when ALLOW_BLANK_PASSWORD=true"
+    );
 
     env::remove_var("ALLOW_BLANK_PASSWORD");
   }
