@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::commands::configure::{Configuration, Modifiers};
 use crate::files::{FileManager, ManagedFile};
 use crate::traits::AsOneOrZero;
-use crate::utils::environment::fetch_var;
+use crate::utils::environment::{fetch_var, is_env_var_truthy_with_default};
 
 const ODIN_CONFIG_FILE_VAR: &str = "ODIN_CONFIG_FILE";
 
@@ -146,11 +146,21 @@ impl TryInto<Vec<String>> for ValheimArguments {
     let is_public = self.public.eq("1");
     let is_vanilla = fetch_var("TYPE", "vanilla").eq_ignore_ascii_case("vanilla");
     let no_password = self.password.is_empty();
+    let allow_blank_password = is_env_var_truthy_with_default("ALLOW_BLANK_PASSWORD", false);
 
-    if !is_public && !is_vanilla && no_password {
-      debug!("No password found, skipping password flag.");
-    } else if no_password && (is_public || is_vanilla) {
-      return Err(String::from("Cannot run your server with no password! PUBLIC must be 0 and cannot be a Vanilla type server."));
+    if no_password {
+      if allow_blank_password {
+        if is_vanilla {
+          return Err(String::from(
+            "ALLOW_BLANK_PASSWORD cannot be used with TYPE=Vanilla. Vanilla dedicated servers require a password.",
+          ));
+        }
+        debug!("No password found and ALLOW_BLANK_PASSWORD is set, skipping password flag.");
+      } else if !is_public && !is_vanilla {
+        debug!("No password found, skipping password flag.");
+      } else {
+        return Err(String::from("Cannot run your server with no password! PUBLIC must be 0 and cannot be a Vanilla type server."));
+      }
     } else {
       debug!("Password found, adding password flag.");
       args.push(String::from("-password"));
@@ -242,6 +252,7 @@ mod tests {
   use std::env::current_dir;
 
   use rand::RngExt;
+  use serial_test::serial;
 
   use super::*;
 
@@ -428,5 +439,68 @@ mod tests {
       !has_setkey,
       "Expected no -setkey argument when set_key is None"
     );
+  }
+
+  fn blank_password_args(public: &str) -> ValheimArguments {
+    ValheimArguments {
+      port: "2456".to_string(),
+      name: "Test".to_string(),
+      world: "TestWorld".to_string(),
+      public: public.to_string(),
+      password: "".to_string(),
+      command: "/bin/echo".to_string(),
+      preset: None,
+      modifiers: None,
+      set_key: None,
+      save_interval: None,
+    }
+  }
+
+  #[test]
+  #[serial]
+  fn test_blank_password_rejected_by_default() {
+    env::remove_var("ALLOW_BLANK_PASSWORD");
+    env::remove_var("TYPE");
+
+    let result: Result<Vec<String>, String> = blank_password_args("1").try_into();
+    assert!(result.is_err(), "Expected blank password to be rejected");
+  }
+
+  #[test]
+  #[serial]
+  fn test_blank_password_allowed_with_env() {
+    env::set_var("TYPE", "BepInEx");
+
+    for value in ["1", "true", "TRUE", "yes", "on"] {
+      env::set_var("ALLOW_BLANK_PASSWORD", value);
+
+      let result: Result<Vec<String>, String> = blank_password_args("1").try_into();
+      assert!(
+        result.is_ok(),
+        "Expected blank password to be allowed when ALLOW_BLANK_PASSWORD={value}"
+      );
+      let has_password = result.unwrap().iter().any(|x| x == "-password");
+      assert!(!has_password, "Expected no -password argument");
+    }
+
+    for value in ["0", "false", "no", "off"] {
+      env::set_var("ALLOW_BLANK_PASSWORD", value);
+
+      let result: Result<Vec<String>, String> = blank_password_args("1").try_into();
+      assert!(
+        result.is_err(),
+        "Expected blank password to be rejected when ALLOW_BLANK_PASSWORD={value}"
+      );
+    }
+
+    env::remove_var("TYPE");
+    env::set_var("ALLOW_BLANK_PASSWORD", "true");
+    let vanilla_result: Result<Vec<String>, String> = blank_password_args("1").try_into();
+    assert!(
+      vanilla_result.is_err(),
+      "Expected blank password to be rejected for vanilla even when ALLOW_BLANK_PASSWORD=true"
+    );
+
+    env::remove_var("ALLOW_BLANK_PASSWORD");
   }
 }

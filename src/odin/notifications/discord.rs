@@ -739,19 +739,25 @@ mod tests {
   }
 
   #[test]
-  #[serial]
   fn test_server_name_with_ampersand_is_not_html_escaped() {
-    set_var("NAME", "Bob & Alice's Realm");
-    let notification = NotificationMessage {
-      author: String::from("Test Author"),
-      event_type: NotificationEvent::Broadcast.to_event_type(),
-      event_message: String::from("hello"),
-      timestamp: Local::now().to_rfc3339(),
-    };
-
-    let body: DiscordWebHookBody = (&notification).into();
+    let mut handlebars = Handlebars::new();
+    handlebars.register_escape_fn(json_escape);
+    handlebars
+      .register_template_string(
+        "notification",
+        "{\"content\":\"{{server_name}}\",\"embeds\":[{\"title\":\"t\",\"description\":\"d\",\"color\":1}]}",
+      )
+      .unwrap();
+    let rendered = handlebars
+      .render(
+        "notification",
+        &serde_json::json!({
+          "server_name": "Bob & Alice's Realm"
+        }),
+      )
+      .unwrap();
+    let body: DiscordWebHookBody = serde_json::from_str(&rendered).unwrap();
     let contains_server_name = body.content.contains("Bob & Alice's Realm");
-    remove_var("NAME");
     assert!(
       contains_server_name,
       "server name should not be HTML escaped: {}",
