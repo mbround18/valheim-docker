@@ -224,3 +224,7 @@
 - Merge branch 'integration/pr1577-review' (87996d5)
 - chore(deps): refresh Rust dependency set and harden Gale ZIP handling (#1578)
 - fix(notifications): clean up NAME env var in discord tests (#1579)
+
+## v3.8.11 (2026-10-31)
+
+- Harden #1585 integration and stabilize CI (#1586)
