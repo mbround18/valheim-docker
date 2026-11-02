@@ -15,7 +15,7 @@ Labels on every server metric: `name` (server name), `version` (Steam server ver
 
 ## Players
 
-One series per player currently online. Names come from the server log (`Got character ZDOID from <name>`), which Odin tracks in `player.list`; Valheim does not publish names over the Steam query. Series disappear when the player leaves.
+One series per player currently online. Names come from the server log (`Got character ZDOID from <name>`), which Odin tracks in `player.list`; Valheim does not publish names over the Steam query. Huginn bounds exported sessions by the current A2S player count and deduplicates same-name stale sessions so reconnects do not emit duplicate label sets.
 
 | Metric                                    | Labels   | Description                                                   |
 | ----------------------------------------- | -------- | ------------------------------------------------------------- |

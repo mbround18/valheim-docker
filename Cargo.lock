@@ -1145,12 +1145,15 @@ dependencies = [
  "a2s",
  "cargo-husky",
  "cc",
+ "chrono",
  "log",
  "odin",
+ "redb",
  "regex",
  "serde",
  "serde_json",
  "shared",
+ "tempfile",
  "tokio",
  "warp",
 ]
@@ -1917,6 +1920,7 @@ dependencies = [
  "notify",
  "once_cell",
  "rand 0.10.3",
+ "redb",
  "regex",
  "reqwest",
  "semver",
@@ -2261,6 +2265,15 @@ name = "rand_core"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+
+[[package]]
+name = "redb"
+version = "2.6.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d64e07496d293ad8ed401c4d193d5b9f0f97671fbd5bf21d691a0c7d2c53dc8"
+dependencies = [
+ "libc",
+]
 
 [[package]]
 name = "redox_syscall"

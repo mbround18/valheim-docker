@@ -88,9 +88,23 @@ impl From<SocketAddrV4> for ServerInfo {
 /// Whatever is on the other end of the query decides what to put here, and it is
 /// free to send nothing. Unwrapping it meant a server that omitted the field took
 /// down `/status` with a panic.
+///
+/// Current Valheim sends `g=<game version>,n=<network version>,m=<modifiers>`, e.g.
+/// `g=1.0.20,n=41,m=`; the game version is the `g` entry. Anything without one is
+/// passed through as it is.
 fn version_from_keywords(keywords: Option<&str>) -> String {
+  let game_version = keywords.and_then(|keywords| {
+    keywords
+      .split(',')
+      .find_map(|entry| entry.trim().strip_prefix("g="))
+      .map(str::trim)
+      .filter(|version| !version.is_empty())
+  });
+  if let Some(version) = game_version {
+    return version.to_string();
+  }
   match keywords {
-    Some(keywords) if !keywords.trim().is_empty() => keywords.to_string(),
+    Some(keywords) if !keywords.trim().is_empty() => keywords.trim().to_string(),
     _ => {
       error!("Server did not report a version in its A2S keywords field");
       String::from("Unknown")
@@ -152,6 +166,18 @@ mod tests {
   #[test]
   fn version_is_the_reported_keywords() {
     assert_eq!(version_from_keywords(Some("0.217.46")), "0.217.46");
+  }
+
+  /// The keywords a Valheim 1.0.20 server sent in local testing.
+  #[test]
+  fn version_is_the_game_entry_of_structured_keywords() {
+    assert_eq!(version_from_keywords(Some("g=1.0.20,n=41,m=")), "1.0.20");
+    assert_eq!(version_from_keywords(Some("n=41, g=1.0.20")), "1.0.20");
+  }
+
+  #[test]
+  fn structured_keywords_without_a_game_version_pass_through() {
+    assert_eq!(version_from_keywords(Some("g=,n=41,m=")), "g=,n=41,m=");
   }
 
   #[test]
