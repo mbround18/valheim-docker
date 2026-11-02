@@ -36,7 +36,17 @@ bootstrap_steamcmd() {
   return 1
 }
 
-mkdir -p "$STEAMCMD_HOME"
+# Seed steamcmd from the packaged copy, the same way /usr/bin/steamcmd does on first run.
+# The wrapper only seeds when $STEAMCMD_HOME is missing, so an empty directory here makes
+# every runtime call exec a steamcmd.sh that isn't there (exit 127). steamcmd replaces
+# these files with newer ones itself on first run.
+seed_steamcmd() {
+  mkdir -p "$STEAMCMD_HOME/linux32"
+  cp /usr/lib/games/steam/steamcmd.sh "$STEAMCMD_HOME/"
+  cp /usr/lib/games/steam/steamcmd "$STEAMCMD_HOME/linux32/"
+}
+
+seed_steamcmd
 setup_steam_symlinks
 
 case "$BOOTSTRAP_STEAMCMD_ON_BUILD" in
