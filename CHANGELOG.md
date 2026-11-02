@@ -228,3 +228,7 @@
 ## v3.8.11 (2026-10-31)
 
 - Harden #1585 integration and stabilize CI (#1586)
+
+## v3.8.12 (2026-11-02)
+
+- fix(docker): seed steamcmd from packaged copy instead of an empty dir (#1589)
