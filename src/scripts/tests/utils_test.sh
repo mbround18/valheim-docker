@@ -143,5 +143,17 @@ assert_eq "Author-SomeMod-1.0.0 https://example.com/ValheimPlus.dll" \
   "$(mods_with_valheim_plus "Author-SomeMod-1.0.0 https://example.com/ValheimPlus.dll" "${url}")" \
   "ValheimPlus is not added twice when it is already in a longer list"
 
+# --- is_truthy ---------------------------------------------------------------
+
+for value in 1 true TRUE True yes Y on; do
+  is_truthy "$value"
+  assert_eq "0" "$?" "is_truthy accepts ${value}"
+done
+
+for value in "" 0 false no n off maybe; do
+  is_truthy "$value"
+  assert_eq "1" "$?" "is_truthy rejects '${value}'"
+done
+
 printf '\n%d assertion(s), %d failure(s)\n' "$assertions" "$failures"
 [ "$failures" -eq 0 ]

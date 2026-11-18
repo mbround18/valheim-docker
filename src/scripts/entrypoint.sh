@@ -85,6 +85,22 @@ setup_environment() {
   run_privileged_or_warn sh -c 'printf "%s\n" "$1" > /etc/timezone' sh "$TZ"
 }
 
+# STEAMCMD_64BIT=1 makes odin run SteamCMD's 64-bit binary (it sets STEAM_PLATFORM=linux64
+# for every steamcmd call). Fail early when the image does not ship that binary: the 32-bit
+# fallback cannot run under the runtimes this option exists for (gVisor, Kata).
+check_steamcmd_64bit() {
+  local steamcmd_dir="${1:-${HOME}/.local/share/Steam/steamcmd}"
+  is_truthy "${STEAMCMD_64BIT:-0}" || return 0
+
+  if [ -x "${steamcmd_dir}/linux64/steamcmd" ]; then
+    log "STEAMCMD_64BIT is set: SteamCMD runs as 64-bit (linux64)"
+    return 0
+  fi
+
+  log "STEAMCMD_64BIT is set but ${steamcmd_dir}/linux64/steamcmd is missing or not executable. Use an image built with STEAMCMD_64BIT_BINARIES=1, and do not mount a volume over ${steamcmd_dir}."
+  return 1
+}
+
 # Function to safely shut down the server
 clean_up() {
   log "Safely shutting down..."
@@ -194,6 +210,9 @@ main() {
 
   # Set up environment
   setup_environment
+
+  # Verify the 64-bit SteamCMD opt-in can be honoured
+  check_steamcmd_64bit || exit 1
 
   # Check system memory
   check_memory

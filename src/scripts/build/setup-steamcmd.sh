@@ -8,6 +8,7 @@ STEAMCMD_BOOTSTRAP_ATTEMPTS="${STEAMCMD_BOOTSTRAP_ATTEMPTS:-3}"
 STEAMCMD_BOOTSTRAP_BASE_DELAY_SECS="${STEAMCMD_BOOTSTRAP_BASE_DELAY_SECS:-5}"
 STEAMCMD_HOME="/home/steam/.local/share/Steam/steamcmd"
 BOOTSTRAP_STEAMCMD_ON_BUILD="${BOOTSTRAP_STEAMCMD_ON_BUILD:-0}"
+STEAMCMD_64BIT_BINARIES="${STEAMCMD_64BIT_BINARIES:-0}"
 
 setup_steam_symlinks() {
   mkdir -p "$HOME/.steam"
@@ -49,14 +50,25 @@ seed_steamcmd() {
 seed_steamcmd
 setup_steam_symlinks
 
-case "$BOOTSTRAP_STEAMCMD_ON_BUILD" in
-  1|true|TRUE|yes|YES|on|ON)
-    bootstrap_steamcmd
-    ;;
-  *)
-    echo "Skipping steamcmd +quit bootstrap during image build"
-    ;;
-esac
+# Same accepted values as odin's parse_truthy. This script runs in the build stage without
+# src/scripts/utils.sh, so it carries its own copy.
+is_truthy() {
+  case "${1,,}" in
+    1|true|yes|y|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+if is_truthy "$BOOTSTRAP_STEAMCMD_ON_BUILD" || is_truthy "$STEAMCMD_64BIT_BINARIES"; then
+  bootstrap_steamcmd
+  # The bootstrap's self-update also installs the steamrt64 binaries into linux64/.
+  if is_truthy "$STEAMCMD_64BIT_BINARIES" && [ ! -x "$STEAMCMD_HOME/linux64/steamcmd" ]; then
+    echo "STEAMCMD_64BIT_BINARIES=1 but the bootstrap did not provide $STEAMCMD_HOME/linux64/steamcmd" >&2
+    exit 1
+  fi
+else
+  echo "Skipping steamcmd +quit bootstrap during image build"
+fi
 
 # Everything above (~/.local/share/Steam, steamcmd's install and self-update dir) is
 # created after setup-system.sh made /home/steam group-writable, so repeat that here. A

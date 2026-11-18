@@ -56,4 +56,5 @@ jobs:
             --label "org.opencontainers.image.licenses=BSD-3-Clause" \
             --build-arg "GITHUB_SHA=$GITHUB_SHA" \
             --build-arg "GITHUB_REF=$GITHUB_REF" \
-            --build-arg "GITHUB_REPOSITORY=$GITHUB_REPOSITORY"
+            --build-arg "GITHUB_REPOSITORY=$GITHUB_REPOSITORY" \
+            --build-arg "STEAMCMD_64BIT_BINARIES=1"
