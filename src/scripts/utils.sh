@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# Return 0 when the value is truthy. Same accepted values as odin's parse_truthy
+# (case-insensitive 1, true, yes, y, on).
+is_truthy() {
+  case "${1,,}" in
+    1|true|yes|y|on) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 # Function to log messages via `odin log` with optional prefix and level
 log() {
   local prefix="[Valheim]"

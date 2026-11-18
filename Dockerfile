@@ -94,6 +94,11 @@ ARG EXPECTED_OCTAL
 
 COPY --chmod=${EXPECTED_OCTAL} --chown=steam:${PGID} --from=valheim-root /home/steam/.version /home/steam/.version
 
+# STEAMCMD_64BIT_BINARIES=1 runs the SteamCMD bootstrap at build time so the image ships
+# SteamCMD's 64-bit (linux64) binaries. They only appear after a self-update, and the
+# 32-bit binary that performs it cannot run under gVisor or Kata. Needed for
+# STEAMCMD_64BIT=1. Off by default so local and CI builds stay offline.
+ARG STEAMCMD_64BIT_BINARIES=0
 RUN --mount=type=bind,source=src/scripts/build/setup-steamcmd.sh,target=/tmp/setup-steamcmd.sh \
     bash /tmp/setup-steamcmd.sh
 
