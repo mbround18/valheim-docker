@@ -1,0 +1,31 @@
+name: Discord release post
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_RELEASE_WEBHOOK }}
+          ROLE_ID: ${{ vars.DISCORD_ROLE_ID }}
+          NAME: ${{ github.event.release.name || github.event.release.tag_name }}
+          URL: ${{ github.event.release.html_url }}
+          BODY: ${{ github.event.release.body }}
+          REPO: ${{ github.repository }}
+        run: |
+          jq -n --arg role "$ROLE_ID" --arg name "$NAME" --arg url "$URL" \
+                --arg body "$BODY" --arg repo "$REPO" '{
+            content: (if $role == "" then null else "<@&\($role)>" end),
+            allowed_mentions: { roles: [$role] | map(select(. != "")) },
+            embeds: [{
+              title: "\($repo) \($name)",
+              url: $url,
+              description: ($body | if length > 3500 then .[:3500] + "…" else . end),
+              color: 5793266
+            }]
+          }' | curl -fsS -H "Content-Type: application/json" -d @- "$WEBHOOK"
