@@ -24,7 +24,7 @@ jobs:
             embeds: [{
               title: "\($repo) \($name)",
               url: $url,
-              description: ($body | if length > 3500 then .[:3500] + "…" else . end),
+              description: (($body | if length > 3500 then .[:3500] + "…" else . end) + "\n\n[☕ Support on Ko-fi](https://ko-fi.com/mbround18)"),
               color: 5793266
             }]
           } + (if $role == "" then {} else { content: "<@&\($role)>" } end)' | curl -fsS -H "Content-Type: application/json" -d @- "$WEBHOOK"
