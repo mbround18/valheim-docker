@@ -8,8 +8,8 @@ ARG EXPECTED_OCTAL=775
 
 FROM rust:${RUST_VERSION} AS odin-base
 ENV DEBIAN_FRONTEND=noninteractive
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends cmake && \
     rm -rf /var/lib/apt/lists/*
@@ -40,8 +40,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Gale profile API - fails at TLS before it reaches the network. The valheim image below
 # copies these binaries into a base that carries its own bundle, but this stage has an
 # entrypoint of its own and has to be able to run on it.
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
