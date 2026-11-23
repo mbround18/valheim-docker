@@ -232,3 +232,7 @@
 ## v3.8.12 (2026-11-02)
 
 - fix(docker): seed steamcmd from packaged copy instead of an empty dir (#1589)
+
+## v3.8.13 (2026-11-23)
+
+- feat: opt-in 64-bit SteamCMD for gVisor and Kata (integrates #1596) (#1599)
