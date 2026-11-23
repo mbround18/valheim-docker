@@ -8,8 +8,8 @@ ARG EXPECTED_OCTAL=775
 
 FROM rust:${RUST_VERSION} AS odin-base
 ENV DEBIAN_FRONTEND=noninteractive
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends cmake && \
     rm -rf /var/lib/apt/lists/*
@@ -40,8 +40,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Gale profile API - fails at TLS before it reaches the network. The valheim image below
 # copies these binaries into a base that carries its own bundle, but this stage has an
 # entrypoint of its own and has to be able to run on it.
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates && \
     rm -rf /var/lib/apt/lists/*
@@ -94,6 +94,11 @@ ARG EXPECTED_OCTAL
 
 COPY --chmod=${EXPECTED_OCTAL} --chown=steam:${PGID} --from=valheim-root /home/steam/.version /home/steam/.version
 
+# STEAMCMD_64BIT_BINARIES=1 runs the SteamCMD bootstrap at build time so the image ships
+# SteamCMD's 64-bit (linux64) binaries. They only appear after a self-update, and the
+# 32-bit binary that performs it cannot run under gVisor or Kata. Needed for
+# STEAMCMD_64BIT=1. Off by default so local and CI builds stay offline.
+ARG STEAMCMD_64BIT_BINARIES=0
 RUN --mount=type=bind,source=src/scripts/build/setup-steamcmd.sh,target=/tmp/setup-steamcmd.sh \
     bash /tmp/setup-steamcmd.sh
 

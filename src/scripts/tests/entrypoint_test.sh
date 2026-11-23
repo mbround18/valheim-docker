@@ -97,6 +97,37 @@ assert_contains "$output" "Unable to determine total system memory" \
 assert_eq "" "$(printf '%s' "$output" | grep -c 'syntax error' | tr -d '0')" \
   "check_memory emits no arithmetic syntax error"
 
+# --- check_steamcmd_64bit ----------------------------------------------------
+
+# shellcheck source=../utils.sh
+source "${SCRIPT_DIR}/../utils.sh"
+log() { printf '%s\n' "$*"; }
+
+steamcmd_dir="$(mktemp -d)"
+trap 'rm -rf "$steamcmd_dir"' EXIT
+
+unset STEAMCMD_64BIT
+check_steamcmd_64bit "$steamcmd_dir" >/dev/null
+assert_eq "0" "$?" "check_steamcmd_64bit is a no-op when STEAMCMD_64BIT is unset"
+
+STEAMCMD_64BIT=0 check_steamcmd_64bit "$steamcmd_dir" >/dev/null
+assert_eq "0" "$?" "check_steamcmd_64bit is a no-op when STEAMCMD_64BIT=0"
+
+output="$(STEAMCMD_64BIT=1 check_steamcmd_64bit "$steamcmd_dir")"
+assert_eq "1" "$?" "check_steamcmd_64bit fails when linux64/steamcmd is missing"
+assert_contains "$output" "STEAMCMD_64BIT_BINARIES=1" "check_steamcmd_64bit explains how to fix a missing binary"
+
+mkdir -p "$steamcmd_dir/linux64"
+printf '#!/bin/sh\n' >"$steamcmd_dir/linux64/steamcmd"
+chmod 644 "$steamcmd_dir/linux64/steamcmd"
+STEAMCMD_64BIT=1 check_steamcmd_64bit "$steamcmd_dir" >/dev/null
+assert_eq "1" "$?" "check_steamcmd_64bit fails when linux64/steamcmd is not executable"
+
+chmod 755 "$steamcmd_dir/linux64/steamcmd"
+output="$(STEAMCMD_64BIT=TRUE check_steamcmd_64bit "$steamcmd_dir")"
+assert_eq "0" "$?" "check_steamcmd_64bit passes with an executable linux64/steamcmd"
+assert_contains "$output" "64-bit" "check_steamcmd_64bit reports the 64-bit mode"
+
 # --- summary ---------------------------------------------------------------
 
 printf '\n%d assertions, %d failures\n' "$assertions" "$failures"

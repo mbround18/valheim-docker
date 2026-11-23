@@ -1,4 +1,5 @@
 use crate::executable::find_command;
+use crate::utils::environment::is_env_var_truthy;
 use log::{debug, error, info, warn};
 use std::{
   env, io,
@@ -34,7 +35,23 @@ impl RetryConfig {
   }
 }
 
+/// With `STEAMCMD_64BIT` truthy, have Valve's `steamcmd.sh` run the 64-bit binary
+/// (`linux64/steamcmd`) instead of the default 32-bit one. Runtimes without 32-bit
+/// support (gVisor, Kata) need this. Set per command so `odin` started any way
+/// (entrypoint, `docker exec`, scheduled jobs) behaves the same.
+fn apply_steam_platform(command: &mut Command, use_64bit: bool) {
+  if use_64bit {
+    command.env("STEAM_PLATFORM", "linux64");
+  }
+}
+
 pub fn steamcmd_command() -> Command {
+  let mut steamcmd = find_steamcmd();
+  apply_steam_platform(&mut steamcmd, is_env_var_truthy("STEAMCMD_64BIT"));
+  steamcmd
+}
+
+fn find_steamcmd() -> Command {
   if let Some(steamcmd) = find_command("steamcmd") {
     info!("steamcmd found in path");
     steamcmd
@@ -137,5 +154,32 @@ pub fn output_with_retries(args: &[String]) -> io::Result<Output> {
     thread::sleep(Duration::from_secs(delay_secs));
     delay_secs = delay_secs.saturating_mul(2);
     attempt += 1;
+  }
+}
+
+#[cfg(test)]
+mod steam_platform_tests {
+  use super::apply_steam_platform;
+  use std::{ffi::OsStr, process::Command};
+
+  fn steam_platform(command: &Command) -> Option<Option<&OsStr>> {
+    command
+      .get_envs()
+      .find(|(key, _)| *key == OsStr::new("STEAM_PLATFORM"))
+      .map(|(_, value)| value)
+  }
+
+  #[test]
+  fn sets_linux64_when_enabled() {
+    let mut command = Command::new("steamcmd");
+    apply_steam_platform(&mut command, true);
+    assert_eq!(steam_platform(&command), Some(Some(OsStr::new("linux64"))));
+  }
+
+  #[test]
+  fn leaves_platform_alone_when_disabled() {
+    let mut command = Command::new("steamcmd");
+    apply_steam_platform(&mut command, false);
+    assert_eq!(steam_platform(&command), None);
   }
 }
