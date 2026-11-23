@@ -61,7 +61,7 @@ serde_with = "3.24.0"
 regex = "1.13.1"
 tokio = { version = "1.53.1", features = ["full"] }
 notify = "8.2.0"
-json-patch = "4.2.0"
+json-patch = "5.0.0"
 cached = "4.0.0"
 anyhow = "1.0.104"
 thiserror = "2.0.21"
