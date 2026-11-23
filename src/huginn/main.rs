@@ -1,4 +1,5 @@
 mod routes;
+mod tracking;
 
 use log::{error, info, warn};
 use odin::{
@@ -155,6 +156,7 @@ fn fetch_info() -> ServerInfo {
     ServerInfo::offline()
   };
   let mut guard = lock_cache(cache);
+  tracking::record_info_snapshot(&fresh);
   *guard = Some(CachedInfo {
     fetched_at: Instant::now(),
     info: fresh.clone(),
@@ -181,6 +183,7 @@ pub(crate) fn fetch_mods() -> Vec<(String, Option<String>)> {
     .collect();
 
   let mut guard = lock_cache(cache);
+  tracking::record_mods_snapshot(&fresh);
   *guard = Some(CachedMods {
     fetched_at: Instant::now(),
     mods: fresh.clone(),

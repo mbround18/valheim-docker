@@ -18,16 +18,18 @@ pub fn invoke() -> String {
     version = escape_prom_label_value(&info.version),
     map = escape_prom_label_value(&info.map)
   );
-  let players = PlayerList::online().into_iter().flat_map(|p| {
-    let player = escape_prom_label_value(&p.name);
-    [
-      format!("valheim_player_online{{player=\"{player}\"}} 1"),
-      format!(
-        "valheim_player_joined_timestamp_seconds{{player=\"{player}\"}} {}",
-        p.joined_at
-      ),
-    ]
-  });
+  let players = PlayerList::online_limited(Some(info.players as usize))
+    .into_iter()
+    .flat_map(|p| {
+      let player = escape_prom_label_value(&p.name);
+      [
+        format!("valheim_player_online{{player=\"{player}\"}} 1"),
+        format!(
+          "valheim_player_joined_timestamp_seconds{{player=\"{player}\"}} {}",
+          p.joined_at
+        ),
+      ]
+    });
   let content = [
     format!(
       "valheim_online{labels} {online}",

@@ -11,6 +11,7 @@
 | PLAYER_EVENT_NOTIFICATIONS     | `0`                 | FALSE    | Set to `1` to send webhook notifications when players join or leave the server.                                                                                                                 |
 | WEBHOOK_SUPPRESS_NOTIFICATIONS | `0`                 | FALSE    | Set to `1` to deliver Discord messages silently. They still appear in the channel, but do not push a notification to members. Discord only.                                                     |
 | WEBHOOK_JOIN_URL               | `<nothing>`         | FALSE    | An `https://` URL to put behind a **Join Server** button on successful start notifications. Blank means no button. Discord only.                                                                |
+| JOIN_CODE_NOTIFICATION         | `0`                 | FALSE    | Set to `1` to emit a webhook event when Odin detects a PlayFab/crossplay join code in server logs. Event type is `JoinCode Triggered`, payload includes `event_message` with the code.         |
 
 ## POST Body Example
 

@@ -23,7 +23,7 @@ pub fn invoke() -> Json {
   let info = fetch_info();
 
   // Valheim does not publish names over A2S; Odin tracks them from the server log.
-  let sessions: Vec<Session> = PlayerList::online()
+  let sessions: Vec<Session> = PlayerList::online_limited(Some(info.players as usize))
     .into_iter()
     .map(|p| Session {
       name: p.name,
